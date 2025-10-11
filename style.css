@@ -2,29 +2,42 @@
 
 /* CSSカスタムプロパティの定義 */
 :root {
-    --bg-dark: #1a1a2e; /* より濃い青紫系のダークカラー */
+    --bg-dark: #1a1a2e;
     --text-light: #e0e0e0;
-    --header-height: 4rem; /* Tailwind h-16 (64px) */
+    --header-height: 4rem;
     font-family: 'Inter', sans-serif;
+
+    /* Repop進捗バーの色定義 */
+    --progress-0-60: #10b981;
+    --progress-60-80: #f59e0b;
+    --progress-80-100: #ef4444;
+
+    /* テキスト色定義 */
+    --text-next: #3e83c4;
+    --text-pop: #ffffff;
+
+    /* スポーンポイントの色定義 */
+    --color-b1: #3e83c4;
+    --color-b2: #e16666;
+    --color-lastone: #00ff3c;
+    --color-b-inverted: #6b7280;
 }
 
 body {
     background-color: var(--bg-dark);
     color: var(--text-light);
-    /* ヘッダーの高さ分コンテンツを下にずらす。Tailwindのpt-20 (5rem)は使わず、より正確なカスタムプロパティを使用 */
     padding-top: var(--header-height);
 }
 
-/* 視認性向上のためのテキストアウトライン (ヘッダーのタイトルなど) */
 .text-outline {
-    text-shadow: 
-        -1px -1px 0 #000033,  
+    text-shadow:
+        -1px -1px 0 #000033,
         1px -1px 0 #000033,
         -1px 1px 0 #000033,
         1px 1px 0 #000033;
 }
 
-/* タブのアクティブ状態を強調（既存スタイルを調整） */
+/* タブのアクティブ状態を強調 */
 .tab-button.active {
     filter: brightness(1.2);
     box-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
@@ -49,35 +62,67 @@ body {
     transform: scale(1.1);
 }
 
-/* 進捗バーのスタイル (CSSカスタムプロパティでJSから制御) */
-.progress-bar-bg {
-    /* JSから--progress-color-start / --progress-color-end を設定して色と進捗を表現 */
-    background-image: linear-gradient(to right, var(--progress-color-start, #10b981) 0%, var(--progress-color-end, #34d399) 100%);
-    height: 100%;
-    transition: width 0.5s ease-out;
-}
+/* --- 進捗バー関連のスタイル定義 --- */
+
 .progress-bar {
     background-color: rgba(0, 0, 0, 0.4);
     overflow: hidden;
 }
+.progress-bar-bg {
+    height: 100%;
+    transition: width 0.5s ease-out;
+}
 
-/* 詳細パネルの折りたたみアニメーション */
+/* 進行色クラス */
+.progress-p0-60 {
+    background-color: var(--progress-0-60);
+}
+.progress-p60-80 {
+    background-color: var(--progress-60-80);
+}
+.progress-p80-100 {
+    background-color: var(--progress-80-100);
+}
+
+/* テキスト色クラス */
+.progress-next-text {
+    color: var(--text-next);
+}
+.progress-pop-text {
+    color: var(--text-pop);
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+}
+
+/* 点滅アニメーション定義 */
+@keyframes max-over-blink {
+    0%, 100% { box-shadow: 0 0 10px rgba(255, 60, 60, 0.8); }
+    50% { box-shadow: 0 0 5px rgba(255, 60, 60, 0.2); }
+}
+
+/* 点滅クラス */
+.progress-max-over-blink {
+    animation: max-over-blink 2s ease-in-out infinite;
+}
+
+/* --- 詳細パネルの折りたたみアニメーション --- */
+
 .expandable-panel {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out, opacity 0.3s ease-in-out;
-    padding-top: 0 !important; /* Tailwindのpt/pbを上書き */
+    padding-top: 0 !important;
     padding-bottom: 0 !important;
     opacity: 0;
 }
 .expandable-panel.open {
-    max-height: 2000px; /* 適切な最大値 */
-    padding-top: 1rem !important;
-    padding-bottom: 1rem !important;
+    max-height: 2000px;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
     opacity: 1;
 }
 
-/* マップオーバーレイとスポーン点 */
+/* --- マップオーバーレイとスポーン点 --- */
+
 .map-content {
     position: relative;
 }
@@ -87,51 +132,80 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none; /* デフォルトでは非アクティブ */
+    pointer-events: none;
     z-index: 20;
 }
 .spawn-point {
     position: absolute;
-    width: 12px;
-    height: 12px;
     border-radius: 50%;
-    cursor: pointer;
-    pointer-events: auto; /* クリック可能にする */
-    transform: translate(-50%, -50%); /* 中心に配置 */
-    transition: transform 0.1s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease, box-shadow 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
+    pointer-events: auto;
 }
 .spawn-point:hover {
     transform: translate(-50%, -50%) scale(1.5);
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.7); /* ホバー時の発光 */
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
 }
-/* 湧き潰し済みスタイル */
-.spawn-point.culled {
-    background-color: #6b7280; /* グレー背景 */
-    border: 1px solid #ffffff; /* 白枠 */
+
+/* 影のクラス */
+.spawn-point-shadow {
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+/* インタラクティブなポイント */
+.spawn-point-interactive:hover {
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+}
+
+/* 1. S/A湧き潰し対象ポイント (未選択/選択済み) */
+.spawn-point-sa {
+    width: 10px;
+    height: 10px;
+    border: 2px solid #000000;
+}
+.spawn-point-culled {
+    width: 10px;
+    height: 10px;
+    background-color: var(--color-b-inverted);
+    border: 1px solid #ffffff;
     opacity: 0.6;
     box-shadow: none;
     cursor: default;
+    pointer-events: auto !important;
 }
-/* Bランク点（非インタラクティブ） */
-.spawn-point.rank-B {
+
+/* 2. Bランクのみポイント (非湧き潰し対象) */
+.spawn-point-b-only {
     width: 8px;
     height: 8px;
-    pointer-events: none;
+    pointer-events: none !important;
     opacity: 0.8;
+    box-shadow: none;
 }
-/* 最後の未処理の点（強調） */
-.spawn-point.important-last-uncut {
-    border: 2px solid #10b981; /* 内側緑 */
-    box-shadow: 0 0 10px rgba(16, 185, 129, 0.8), 0 0 5px rgba(0, 0, 0, 0.8); /* 外枠濃緑と影 */
+
+/* 3. ラストワン強調ポイント */
+.spawn-point-lastone {
+    width: 12px;
+    height: 12px;
+    border: 2px solid #ffffff;
 }
+
+/* --- 色クラス定義 --- */
+.color-b1 { background-color: var(--color-b1); }
+.color-b2 { background-color: var(--color-b2); }
+.color-lastone { background-color: var(--color-lastone); }
+.color-b1-only { background-color: var(--color-b1); }
+.color-b2-only { background-color: var(--color-b2); }
+.color-b-inverted {
+    background-color: var(--color-b-inverted);
+    opacity: 0.5;
+}
+.color-default { background-color: gray; }
+
 
 /* モーダルの背景 */
 #report-modal {
     background-color: rgba(0, 0, 0, 0.8);
     z-index: 50;
 }
-
-/* bodyの背景色のTailwindクラスをカスタム変数に置き換えたため、不要になる可能性のある定義を削除（代わりにbodyセレクタで対応） */
-/* .bg-gray-900 {
-    background-color: #111827;
-} */
