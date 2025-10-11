@@ -30,6 +30,10 @@ const RANK_COLORS = {
     B2: { bg: 'bg-blue-500', text: 'text-blue-500', hex: '#3b82f6' }
 };
 
+const rankMap = { FATE: 'F', // UI→データ
+  'F':'F','A':'A','S':'S','ALL':'ALL' };
+currentFilter.rank = rankMap[currentFilter.rank] || 'ALL';
+
 // DOM参照
 const DOMElements = {
     masterContainer: document.getElementById('master-mob-container'),
