@@ -53,6 +53,13 @@ const DOMElements = {
 let userId = localStorage.getItem('user_uuid') || null;
 let baseMobData = []; // mob_data.jsonの内容
 let globalMobData = []; // baseMobData + Firebaseデータ
+
+// デバッグ用にモジュール内部をグローバルへ露出（本番では削除）
+window.baseMobData = baseMobData;
+window.globalMobData = globalMobData;
+window.filterAndRender = filterAndRender;
+window.fetchBaseMobData = fetchBaseMobData;
+
 let currentFilter = JSON.parse(localStorage.getItem('huntFilterState')) || {
     rank: 'ALL',
     areaSets: { ALL: new Set() }
@@ -252,6 +259,16 @@ const fetchBaseMobData = async () => {
         // 初回は素のデータで描画開始 (データが揃うまでのフォールバック)
         globalMobData = [...baseMobData];
         filterAndRender();
+      
+// fetchBaseMobData の処理内（データパース後）
+baseMobData = data.mobConfig.map(/* ... */);
+globalMobData = [...baseMobData];
+
+// 実データが入ったら再露出して確認できるようにする
+window.baseMobData = baseMobData;
+window.globalMobData = globalMobData;
+
+filterAndRender();
 
     } catch (error) {
         console.error("Error loading base mob data:", error);
