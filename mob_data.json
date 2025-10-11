@@ -8,7 +8,8 @@
       "Condition": "",
       "REPOP": 12600,
       "MAX": 16200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11021,
@@ -18,7 +19,8 @@
       "Condition": "",
       "REPOP": 12600,
       "MAX": 16200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11031,
@@ -28,7 +30,8 @@
       "Condition": "",
       "REPOP": 12600,
       "MAX": 16200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11041,
@@ -38,7 +41,8 @@
       "Condition": "",
       "REPOP": 12600,
       "MAX": 16200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11051,
@@ -48,7 +52,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 18000,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11061,
@@ -58,7 +63,8 @@
       "Condition": "",
       "REPOP": 12600,
       "MAX": 16200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11071,
@@ -68,7 +74,8 @@
       "Condition": "",
       "REPOP": 12600,
       "MAX": 16200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11081,
@@ -78,7 +85,8 @@
       "Condition": "",
       "REPOP": 10800,
       "MAX": 14400,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11091,
@@ -88,7 +96,8 @@
       "Condition": "",
       "REPOP": 12600,
       "MAX": 16200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11101,
@@ -98,7 +107,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 18000,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11111,
@@ -108,7 +118,8 @@
       "Condition": "",
       "REPOP": 12600,
       "MAX": 16200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11121,
@@ -118,7 +129,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 18000,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11131,
@@ -128,7 +140,8 @@
       "Condition": "",
       "REPOP": 10800,
       "MAX": 14400,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11141,
@@ -138,7 +151,8 @@
       "Condition": "",
       "REPOP": 12600,
       "MAX": 16200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11151,
@@ -148,7 +162,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 18000,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11161,
@@ -158,7 +173,8 @@
       "Condition": "",
       "REPOP": 10800,
       "MAX": 14400,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 11171,
@@ -168,7 +184,8 @@
       "Condition": "",
       "REPOP": 12600,
       "MAX": 16200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 12011,
@@ -178,7 +195,8 @@
       "Condition": "「ラノシアンソイルG3を」採掘 (抽選)//※ET 19:00～21:59",
       "REPOP": 234000,
       "MAX": 270000,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 12021,
@@ -188,7 +206,8 @@
       "Condition": "満月直前のET17:00にPOP地点を踏む//※以降は満月中のET 17:00～3:00",
       "REPOP": 180000,
       "MAX": 180000,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 12031,
@@ -198,7 +217,8 @@
       "Condition": "LT 3時間20分 (200分間) 雨が降らない",
       "REPOP": 151200,
       "MAX": 172800,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 12041,
@@ -208,7 +228,8 @@
       "Condition": "「ラノシアリーキ」を採集 (抽選)//※ET 8:00～10:59",
       "REPOP": 234000,
       "MAX": 270000,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 12051,
@@ -332,7 +353,8 @@
       "Condition": "プレイヤーが戦闘不能になる (抽選)",
       "REPOP": 234000,
       "MAX": 255600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 12071,
@@ -342,7 +364,8 @@
       "Condition": "LT 30分間、雨が降り続く",
       "REPOP": 151200,
       "MAX": 172800,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 12081,
@@ -352,7 +375,8 @@
       "Condition": "傭兵 or 双蛇党リーヴを開始する (抽選)",
       "REPOP": 241200,
       "MAX": 280800,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 12091,
@@ -362,7 +386,8 @@
       "Condition": "新月のET0:00以降の夜間にPOP地点を踏む//※以降は新月中のET 17:00～2:59",
       "REPOP": 180000,
       "MAX": 180000,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 12101,
@@ -372,7 +397,8 @@
       "Condition": "フォールゴウド秋瓜湖畔で「ジャッジレイ」を釣り上げる (抽選) //※ET 17:00～20:59 餌: フェザントフライ",
       "REPOP": 205200,
       "MAX": 230400,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 12111,
@@ -382,7 +408,8 @@
       "Condition": "ノフィカの井戸で銅鏡を釣り上げる(抽選)//※「晴れ or 快晴」 餌: バターワーム",
       "REPOP": 205200,
       "MAX": 230400,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 12121,
@@ -542,7 +569,8 @@
       "Condition": "傭兵 or 不滅隊リーヴを開始する (抽選)",
       "REPOP": 241200,
       "MAX": 280800,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 12141,
@@ -552,7 +580,8 @@
       "Condition": "エリア全域のFATEを1時間失敗させない",
       "REPOP": 158400,
       "MAX": 194400,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 12151,
@@ -562,7 +591,8 @@
       "Condition": "「アーススプライト」100体討伐",
       "REPOP": 205200,
       "MAX": 226800,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 12161,
@@ -572,7 +602,8 @@
       "Condition": "高所から落下してHPが1になる (抽選)",
       "REPOP": 216000,
       "MAX": 302400,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 12171,
@@ -582,7 +613,8 @@
       "Condition": "モードゥナの宝の地図を開ける (抽選)//古ぼけた地図G5 / 隠された地図G1 / 謎めいた地図",
       "REPOP": 216000,
       "MAX": 302400,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 13011,
@@ -592,7 +624,8 @@
       "Condition": "",
       "REPOP": 86400,
       "MAX": 259200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 13021,
@@ -602,7 +635,8 @@
       "Condition": "",
       "REPOP": 86400,
       "MAX": 259200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 21011,
@@ -612,7 +646,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 21021,
@@ -622,7 +657,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 21031,
@@ -632,7 +668,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 21041,
@@ -642,7 +679,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 21051,
@@ -652,7 +690,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 21061,
@@ -662,7 +701,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 21071,
@@ -672,7 +712,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 21081,
@@ -682,7 +723,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 21091,
@@ -692,7 +734,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 21101,
@@ -702,7 +745,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 21111,
@@ -712,7 +756,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 21121,
@@ -722,7 +767,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 22011,
@@ -888,7 +934,8 @@
       "Condition": "Bモブ「スクオンク」の「チャープ」発動時 (抽選)",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 22031,
@@ -898,7 +945,8 @@
       "Condition": "「皇金鉱 (ET 2:00～3:59 / 14:00～15:59)」//「アストラルフラワー (ET 4:00～5:59 / 16:00～17:59)」を各50回採集",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 22041,
@@ -908,7 +956,8 @@
       "Condition": "FATE「卵をめぐる竜の戦争」を5回連続でコンプリートする",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 22051,
@@ -918,7 +967,8 @@
       "Condition": "低地ドラの「宝の地図G7 (古ぼけた地図G7)」の宝箱を開ける (抽選)",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 22061,
@@ -928,7 +978,8 @@
       "Condition": "「メラシディアン・ヴィーヴル」「レッサーハイドラ」//「アラガン・キマイラ」各50体討伐",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 23011,
@@ -938,7 +989,8 @@
       "Condition": "",
       "REPOP": 86400,
       "MAX": 172800,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 23021,
@@ -948,7 +1000,8 @@
       "Condition": "",
       "REPOP": 86400,
       "MAX": 172800,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 31011,
@@ -958,7 +1011,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 31021,
@@ -968,7 +1022,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 31031,
@@ -978,7 +1033,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 31041,
@@ -988,7 +1044,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 31051,
@@ -998,7 +1055,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 31061,
@@ -1008,7 +1066,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 31071,
@@ -1018,7 +1077,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 31081,
@@ -1028,7 +1088,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 31091,
@@ -1038,7 +1099,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 31101,
@@ -1048,7 +1110,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 31111,
@@ -1058,7 +1121,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 31121,
@@ -1068,7 +1132,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 32011,
@@ -1078,7 +1143,8 @@
       "Condition": "「レーシー」「ディアッカ」各100体討伐",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 32021,
@@ -1088,7 +1154,8 @@
       "Condition": "チョコボポーターで南北境界線を通過//※アラガーナ⇔アラギリが最適",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 32031,
@@ -1098,7 +1165,8 @@
       "Condition": "ギラバニア湖畔地帯でアイテムを50回捨てる",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 32041,
@@ -1108,7 +1176,8 @@
       "Condition": "「ユメミガイ」「カラナシユメミ」各100体討伐後、満月になる//※満月中に討伐数を満たすのも可",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 32051,
@@ -1334,7 +1403,8 @@
       "Condition": "",
       "REPOP": 86400,
       "MAX": 172800,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 33021,
@@ -1344,7 +1414,8 @@
       "Condition": "",
       "REPOP": 129600,
       "MAX": 259200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 41011,
@@ -1354,7 +1425,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 41021,
@@ -1364,7 +1436,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 41031,
@@ -1374,7 +1447,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 41041,
@@ -1384,7 +1458,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 41051,
@@ -1394,7 +1469,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 41061,
@@ -1404,7 +1480,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 41071,
@@ -1414,7 +1491,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 41081,
@@ -1424,7 +1502,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 41072,
@@ -1434,7 +1513,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 41082,
@@ -1444,7 +1524,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 41091,
@@ -1454,7 +1535,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 41101,
@@ -1464,7 +1546,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 41111,
@@ -1474,7 +1557,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 41121,
@@ -1484,7 +1568,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 42011,
@@ -1494,7 +1579,8 @@
       "Condition": "「レイルの笹身」を捨てる",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 42021,
@@ -1504,7 +1590,8 @@
       "Condition": "「ドワーフ綿花」を50回採集",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 42031,
@@ -1862,7 +1949,8 @@
       "Condition": "「クラックド・ロンカドール」「クラクド・ロンカソーン」//「クラックド・ロンカヴェッセル」各100体討伐",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 42061,
@@ -1872,7 +1960,8 @@
       "Condition": "クリオニッドにディープシーリーチを3匹捕食させ、最大化バフがついた//クリオニッドの「バッカルコーン」をプレイヤーが受ける (抽選)//※バリア有効。倒される必要なし",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 43011,
@@ -1882,7 +1971,8 @@
       "Condition": "",
       "REPOP": 86400,
       "MAX": 172800,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 43021,
@@ -1892,7 +1982,8 @@
       "Condition": "",
       "REPOP": 129600,
       "MAX": 259200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 51011,
@@ -1902,7 +1993,8 @@
       "Condition": "",
       "REPOP": 21600,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 51021,
@@ -1912,7 +2004,8 @@
       "Condition": "",
       "REPOP": 21600,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 51031,
@@ -1922,7 +2015,8 @@
       "Condition": "",
       "REPOP": 21600,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 51041,
@@ -1932,7 +2026,8 @@
       "Condition": "",
       "REPOP": 21600,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 51051,
@@ -1942,7 +2037,8 @@
       "Condition": "",
       "REPOP": 21600,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 51061,
@@ -1952,7 +2048,8 @@
       "Condition": "",
       "REPOP": 21600,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 51071,
@@ -1962,7 +2059,8 @@
       "Condition": "",
       "REPOP": 21600,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 51081,
@@ -1972,7 +2070,8 @@
       "Condition": "",
       "REPOP": 21600,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 51091,
@@ -1982,7 +2081,8 @@
       "Condition": "",
       "REPOP": 21600,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 51101,
@@ -1992,7 +2092,8 @@
       "Condition": "",
       "REPOP": 21600,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 51111,
@@ -2002,7 +2103,8 @@
       "Condition": "",
       "REPOP": 21600,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 51121,
@@ -2012,7 +2114,8 @@
       "Condition": "",
       "REPOP": 21600,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 52011,
@@ -2100,7 +2203,8 @@
       "Condition": "「アシュヴァッタ」「ヴァジュララングラ」//「ピシャーチャ」各100体討伐",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 52031,
@@ -2182,7 +2286,8 @@
       "Condition": "「シンカー」「ワンダラー」「ウィーパー」各100体討伐",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 52051,
@@ -2192,7 +2297,8 @@
       "Condition": "「エッグ・オブ・エルピス」を5個まとめて捨てる",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 52061,
@@ -2274,7 +2380,8 @@
       "Condition": "",
       "REPOP": 129600,
       "MAX": 259200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 53021,
@@ -2284,7 +2391,8 @@
       "Condition": "",
       "REPOP": 129600,
       "MAX": 259200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61011,
@@ -2294,7 +2402,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61021,
@@ -2304,7 +2413,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61012,
@@ -2314,7 +2424,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61022,
@@ -2324,7 +2435,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61013,
@@ -2334,7 +2446,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61023,
@@ -2344,7 +2457,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61031,
@@ -2354,7 +2468,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61041,
@@ -2364,7 +2479,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61051,
@@ -2374,7 +2490,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61061,
@@ -2384,7 +2501,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61071,
@@ -2394,7 +2512,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61081,
@@ -2404,7 +2523,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61072,
@@ -2414,7 +2534,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61082,
@@ -2424,7 +2545,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61073,
@@ -2434,7 +2556,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61083,
@@ -2444,7 +2567,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61091,
@@ -2454,7 +2578,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61101,
@@ -2464,7 +2589,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61111,
@@ -2474,7 +2600,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 61121,
@@ -2484,7 +2611,8 @@
       "Condition": "",
       "REPOP": 14400,
       "MAX": 21600,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 62011,
@@ -2782,7 +2910,8 @@
       "Condition": "「魚粉」を50個まとめて捨てる",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 62041,
@@ -2792,7 +2921,8 @@
       "Condition": "FATE 悪魔の種火「フレイムドリンカー」 を3回コンプリートする",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 62042,
@@ -2802,7 +2932,8 @@
       "Condition": "FATE 悪魔の種火「フレイムドリンカー」 を3回コンプリートする",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 62043,
@@ -2812,7 +2943,8 @@
       "Condition": "FATE 悪魔の種火「フレイムドリンカー」 を3回コンプリートする",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 62051,
@@ -2822,7 +2954,8 @@
       "Condition": "「ロネークステーキHQ」を制作する",
       "REPOP": 302400,
       "MAX": 475200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 62061,
@@ -2904,7 +3037,8 @@
       "Condition": "",
       "REPOP": 129600,
       "MAX": 259200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 63012,
@@ -2914,7 +3048,8 @@
       "Condition": "",
       "REPOP": 129600,
       "MAX": 259200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 63013,
@@ -2924,7 +3059,8 @@
       "Condition": "",
       "REPOP": 129600,
       "MAX": 259200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     },
     {
       "No": 63021,
@@ -2934,7 +3070,8 @@
       "Condition": "",
       "REPOP": 129600,
       "MAX": 259200,
-      "Map": ""
+      "Map": "",
+      "spawn_points": [] 
     }
   ],
   "locationDef": []
