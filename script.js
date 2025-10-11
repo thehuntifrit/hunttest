@@ -1,7 +1,3 @@
-// =========================================================================
-// The Hunt Tracker - Client-side JavaScript (script.js)
-// =========================================================================
-
 // Firebase SDKのインポート（モジュールとして扱う）
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
