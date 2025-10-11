@@ -438,16 +438,16 @@ const filterAndRender = () => {
     );
     const fragment = document.createDocumentFragment();
 
-    filteredData.forEach(mob => {
-        let card = existingCards.get(mob.No.toString());
-        if (!card) {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = createMobCard(mob);
-            card = tempDiv.firstChild;
-        }
+    filteredData.forEach(mob => {
+        let card = existingCards.get(mob.No.toString());
+        if (!card) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = createMobCard(mob);
+            card = tempDiv.firstElementChild; 
+        }
 
-        fragment.appendChild(card);
-    });
+        fragment.appendChild(card);
+    });
 
     DOMElements.masterContainer.innerHTML = '';
     DOMElements.masterContainer.appendChild(fragment);
