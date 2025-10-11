@@ -53,13 +53,6 @@ const DOMElements = {
 let userId = localStorage.getItem('user_uuid') || null;
 let baseMobData = []; // mob_data.jsonの内容
 let globalMobData = []; // baseMobData + Firebaseデータ
-
-// デバッグ用にモジュール内部をグローバルへ露出（本番では削除）
-window.baseMobData = baseMobData;
-window.globalMobData = globalMobData;
-window.filterAndRender = filterAndRender;
-window.fetchBaseMobData = fetchBaseMobData;
-
 let currentFilter = JSON.parse(localStorage.getItem('huntFilterState')) || {
     rank: 'ALL',
     areaSets: { ALL: new Set() }
@@ -830,6 +823,14 @@ onAuthStateChanged(auth, (user) => {
         signInAnonymously(auth).catch(e => console.error("Anonymous sign-in failed:", e));
     }
 });
+
+
+// デバッグ用にモジュール内部をグローバルへ露出（暫定、デバッグが終わったら削除）
+window.baseMobData = baseMobData;
+window.globalMobData = globalMobData;
+window.filterAndRender = filterAndRender;
+window.fetchBaseMobData = fetchBaseMobData;
+
 
 document.addEventListener('DOMContentLoaded', () => {
     // 認証と並行して、静的データ（mob_data.json）のロードを開始
