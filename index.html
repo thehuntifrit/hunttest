@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Hunt Tracker (FFXIV)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body class="min-h-screen">
+
+    <header id="main-header"
+        class="fixed top-0 left-0 right-0 bg-gray-800 shadow-lg z-30 h-16 flex flex-col justify-center">
+        <div class="container mx-auto px-4 flex items-center justify-between h-full">
+            <h1 class="text-xl font-bold text-yellow-400 text-outline">The Hunt Tracker</h1>
+
+            <div id="rank-tabs" class="flex space-x-2">
+                <button data-rank="ALL"
+                    class="tab-button px-3 py-1 rounded text-sm font-semibold bg-blue-600">ALL</button>
+                <button data-rank="S" class="tab-button px-3 py-1 rounded text-sm font-semibold bg-red-600">S</button>
+                <button data-rank="A"
+                    class="tab-button px-3 py-1 rounded text-sm font-semibold bg-yellow-600">A</button>
+                <button data-rank="FATE"
+                    class="tab-button px-3 py-1 rounded text-sm font-semibold bg-indigo-600">FATE</button>
+            </div>
+        </div>
+    </header>
+
+    <div id="area-filter-wrapper"
+        class="absolute top-16 left-0 right-0 bg-gray-700 shadow-xl z-20 transition-all duration-300 ease-in-out overflow-hidden max-h-0 opacity-0 pointer-events-none">
+        <div id="area-filter-panel" class="container mx-auto p-4 pt-2 flex flex-wrap gap-2">
+        </div>
+    </div>
+
+    <div id="status-message"
+        class="fixed top-16 left-0 right-0 text-center py-1 text-sm bg-transparent z-10 transition-colors duration-300">
+    </div>
+
+
+    <main class="container mx-auto px-4 pt-4 pb-10">
+        <div id="master-mob-container" class="hidden">
+        </div>
+
+        <div id="column-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-breakpoint-md="768"
+            data-breakpoint-lg="1024">
+            <div id="column-1" class="flex flex-col gap-4"></div>
+            <div id="column-2" class="flex flex-col gap-4"></div>
+            <div id="column-3" class="flex flex-col gap-4 hidden lg:flex"></div>
+        </div>
+    </main>
+
+    <div id="report-modal" class="fixed inset-0 hidden items-center justify-center p-4">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-2xl w-full max-w-md border border-gray-600">
+            <h2 class="text-xl font-semibold mb-4 text-yellow-300">討伐報告</h2>
+            <p id="modal-mob-name" class="text-lg mb-4"></p>
+
+            <form id="report-form" data-mob-no="">
+                <div class="mb-4">
+                    <label for="report-datetime" class="block text-sm font-medium mb-1">討伐日時 (JST)</label>
+                    <input type="datetime-local" id="report-datetime" required
+                        class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white">
+                </div>
+                <div class="mb-4">
+                    <label for="report-memo" class="block text-sm font-medium mb-1">メモ (任意)</label>
+                    <textarea id="report-memo" rows="3"
+                        class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white"></textarea>
+                </div>
+
+                <div id="modal-status" class="text-sm text-center my-3 text-red-400"></div>
+
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancel-report"
+                        class="px-4 py-2 rounded bg-gray-600 hover:bg-gray-500 transition">キャンセル</button>
+                    <button type="submit"
+                        class="px-4 py-2 rounded bg-green-600 hover:bg-green-500 transition font-semibold">完了して送信</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+
+</body>
+
+</html>
