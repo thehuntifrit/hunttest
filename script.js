@@ -6,7 +6,6 @@ import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, addDoc, quer
 // 💡 【重要】FunctionsのSDKをインポート
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-functions.js";
 
-
 // --- 1. 定数とグローバル変数 ---
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
