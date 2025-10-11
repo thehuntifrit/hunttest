@@ -60,7 +60,11 @@ let cullStatusMap = JSON.parse(localStorage.getItem('hunt_spawn_status')) || {};
 let app = initializeApp(FIREBASE_CONFIG);
 
 // firebase 初期化が終わった直後に追加（例: initializeApp(firebaseConfig) の直後）
-window.firebase = firebase;
+// モジュール版 SDK では firebase 名前空間は無いので、必要なオブジェクトだけグローバルに露出する
+window.firebaseApp = app;
+window.firebaseAuth = auth;
+window.firebaseDb = db;
+
 
 let db = getFirestore(app);
 let auth = getAuth(app);
