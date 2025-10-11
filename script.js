@@ -61,12 +61,12 @@ let openMobCardNo = localStorage.getItem('openMobCardNo') ? parseInt(localStorag
 let cullStatusMap = JSON.parse(localStorage.getItem('hunt_spawn_status')) || {}; // 湧き潰し状態
 
 // Firebaseインスタンスの初期化 (グローバルスコープで一度だけ実行)
-const app = initializeApp(FIREBASE_CONFIG);
-const db = getFirestore(app);
-const auth = getAuth(app);
+let app = initializeApp(FIREBASE_CONFIG);
+let db = getFirestore(app);
+let auth = getAuth(app);
 
 // 💡 【重要修正】Functionsの初期化とリージョン指定
-const functions = getFunctions(app, "asia-northeast2"); // ★リージョンをasia-northeast2に指定
+let functions = getFunctions(app, "asia-northeast2"); // ★リージョンをasia-northeast2に指定
 // 💡 【重要修正】Functions呼び出し名をサーバー側の関数名に合わせる
 const callHuntReport = httpsCallable(functions, 'processHuntReport'); 
 
