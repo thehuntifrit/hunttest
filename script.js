@@ -54,7 +54,22 @@ let currentFilter = JSON.parse(localStorage.getItem('huntFilterState')) || {
     areaSets: { ALL: new Set() }
 };
 
-window.currentFilter = currentFilter;
+// currentFilter をロードした直後に挿入する検証ガード
+const validRanks = new Set(['A','S','F','ALL']);
+if (!currentFilter || typeof currentFilter !== 'object') {
+  currentFilter = { rank: 'ALL', areaSets: { ALL: new Set() } };
+}
+if (!validRanks.has(currentFilter.rank)) {
+  console.warn('Invalid filter rank detected, resetting to ALL:', currentFilter.rank);
+  currentFilter.rank = 'ALL';
+}
+// ensure areaSets exists and has Sets for ranks used by UI
+currentFilter.areaSets = currentFilter.areaSets || {};
+['A','S','F','ALL'].forEach(r => {
+  if (!currentFilter.areaSets[r] || !(currentFilter.areaSets[r] instanceof Set)) {
+    currentFilter.areaSets[r] = new Set();
+  }
+});
 
 let openMobCardNo = localStorage.getItem('openMobCardNo') ? parseInt(localStorage.getItem('openMobCardNo')) : null;
 let cullStatusMap = JSON.parse(localStorage.getItem('hunt_spawn_status')) || {}; // 湧き潰し状態
