@@ -61,16 +61,13 @@ let cullStatusMap = JSON.parse(localStorage.getItem('hunt_spawn_status')) || {};
 
 // Firebaseインスタンスの初期化
 let app = initializeApp(FIREBASE_CONFIG);
+let db = getFirestore(app);
+let auth = getAuth(app);
 
-// firebase 初期化が終わった直後に追加（例: initializeApp(firebaseConfig) の直後）
-// モジュール版 SDK では firebase 名前空間は無いので、必要なオブジェクトだけグローバルに露出する
+// module 版 SDK の場合（initializeApp で返る app, auth, db を既に持っている前提）
 window.firebaseApp = app;
 window.firebaseAuth = auth;
 window.firebaseDb = db;
-
-
-let db = getFirestore(app);
-let auth = getAuth(app);
 
 // Functionsの初期化とリージョン指定
 let functions = getFunctions(app, "asia-northeast2"); // ★リージョンをasia-northeast2に指定
