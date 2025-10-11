@@ -81,7 +81,6 @@ const callHuntReport = httpsCallable(functions, 'processHuntReport');
 let unsubscribeMobStatus = null;
 let unsubscribeActiveCoords = null;
 
-
 // --- 2. ユーティリティとフォーマッタ ---
 
 /** ローカルISOからJSTに調整したISO文字列を生成 */
@@ -139,7 +138,6 @@ const displayStatus = (message, type = 'loading') => {
         DOMElements.statusMessage.classList.add('bg-blue-700/80', 'text-white');
     }
 };
-
 
 // --- 3. Repop計算と進捗描画 ---
 
@@ -229,7 +227,6 @@ const updateProgressBars = () => {
         progressBar.parentElement.style.setProperty('--progress-color-end', colorEnd);
     });
 };
-
 
 // --- 4. Firebase/データ取得とマージ ---
 
