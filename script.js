@@ -259,6 +259,16 @@ const fetchBaseMobData = async () => {
     }
 };
 
+// fetchBaseMobData の処理内（データパース後）
+baseMobData = data.mobConfig.map(/* ... */);
+globalMobData = [...baseMobData];
+
+// 実データが入ったら再露出して確認できるようにする
+window.baseMobData = baseMobData;
+window.globalMobData = globalMobData;
+
+filterAndRender();
+
 /** Firebaseリスナーを設定 */
 const startRealtimeListeners = () => {
     if (!db) return;
