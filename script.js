@@ -12,13 +12,13 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
 
 // --- 1. 定数とグローバル変数 ---
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
-  authDomain: "the-hunt-49493.firebaseapp.com",
-  projectId: "the-hunt-49493",
-  storageBucket: "the-hunt-49493.firebasestorage.app",
-  messagingSenderId: "465769826017",
-  appId: "1:465769826017:web:74ad7e62f3ab139cb359a0",
-  measurementId: "G-J1KGFE15XP"
+    apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
+    authDomain: "the-hunt-49493.firebaseapp.com",
+    projectId: "the-hunt-49493",
+    storageBucket: "the-hunt-49493.firebasestorage.app",
+    messagingSenderId: "465769826017",
+    appId: "1:465769826017:web:74ad7e62f3ab139cb359a0",
+    measurementId: "G-J1KGFE15XP"
 };
 
 const MOB_DATA_URL = "./mob_data.json"; // mob_data.jsonのパス
@@ -60,14 +60,14 @@ let currentFilter = JSON.parse(localStorage.getItem('huntFilterState')) || {
 let openMobCardNo = localStorage.getItem('openMobCardNo') ? parseInt(localStorage.getItem('openMobCardNo')) : null;
 let cullStatusMap = JSON.parse(localStorage.getItem('hunt_spawn_status')) || {}; // 湧き潰し状態
 
-// Firebaseインスタンスの初期化 (グローバルスコープで一度だけ実行)
+// Firebaseインスタンスの初期化
 let app = initializeApp(FIREBASE_CONFIG);
 let db = getFirestore(app);
 let auth = getAuth(app);
 
-// 💡 【重要修正】Functionsの初期化とリージョン指定
+// Functionsの初期化とリージョン指定
 let functions = getFunctions(app, "asia-northeast2"); // ★リージョンをasia-northeast2に指定
-// 💡 【重要修正】Functions呼び出し名をサーバー側の関数名に合わせる
+// Functions呼び出し名をサーバー側の関数名に合わせる
 const callHuntReport = httpsCallable(functions, 'processHuntReport'); 
 
 // Firestoreリスナー解除用変数
@@ -111,13 +111,26 @@ const debounce = (func, wait) => {
 
 /** エラー/ステータスメッセージ表示 */
 const displayStatus = (message, type = 'loading') => {
+    // 常に hidden を外し、表示処理を開始
+    DOMElements.statusMessage.classList.remove('hidden'); 
+    
     DOMElements.statusMessage.textContent = message;
-    DOMElements.statusMessage.className = 'fixed top-16 left-0 right-0 z-50 text-center py-1 text-sm transition-colors duration-300';
+    // ナビゲーションバーの高さ（h-14、56pxを仮定）の直下に配置
+    // z-index を調整し、ナビゲーションの下または上に正しく配置します。
+    DOMElements.statusMessage.className = 'fixed top-14 left-0 right-0 z-40 text-center py-1 text-sm transition-colors duration-300';
+    
+    // 色のクラスをリセット
+    DOMElements.statusMessage.classList.remove('bg-red-700/80', 'bg-green-700/80', 'bg-blue-700/80', 'text-white');
+    
     if (type === 'error') {
         DOMElements.statusMessage.classList.add('bg-red-700/80', 'text-white');
     } else if (type === 'success') {
         DOMElements.statusMessage.classList.add('bg-green-700/80', 'text-white');
-        setTimeout(() => DOMElements.statusMessage.textContent = '', 3000); // 成功は3秒で消す
+        setTimeout(() => {
+            DOMElements.statusMessage.textContent = '';
+            // 💡 修正: 成功時は完全に非表示にする
+            DOMElements.statusMessage.classList.add('hidden'); 
+        }, 3000); // 成功は3秒で消す
     } else {
         DOMElements.statusMessage.classList.add('bg-blue-700/80', 'text-white');
     }
@@ -218,6 +231,7 @@ const updateProgressBars = () => {
 
 /** mob_data.jsonを読み込み、拡張名などを付与 */
 const fetchBaseMobData = async () => {
+    console.log("Fetching base mob data...");
     try {
         const response = await fetch(MOB_DATA_URL);
         if (!response.ok) throw new Error('Mob data failed to load.');
@@ -395,7 +409,6 @@ const drawSpawnPoint = (point, cullStatus, mobNo) => {
     const interactiveClass = isS_A ? 'cursor-pointer' : 'rank-B'; 
 
     let specialClass = '';
-    // 最後の未処理の点強調ロジックはJSのイベント/描画関数で処理する
     
     const color = RANK_COLORS[point.mob_ranks[0]]?.hex || '#ccc'; // 色は最初のランクで決定
 
@@ -451,7 +464,8 @@ const filterAndRender = () => {
         if (mob.Rank !== currentFilter.rank) return false;
         
         const areaSet = currentFilter.areaSets[currentFilter.rank];
-        if (!areaSet || areaSet.size === 0) return true; // フィルタ未設定なら全て表示
+        // Setオブジェクトであることを確認
+        if (!areaSet || !(areaSet instanceof Set) || areaSet.size === 0) return true; // フィルタ未設定なら全て表示
         
         return areaSet.has(mob.Expansion);
     });
@@ -460,7 +474,11 @@ const filterAndRender = () => {
     filteredData.sort((a, b) => b.repopInfo?.elapsedPercent - a.repopInfo?.elapsedPercent);
     
     // 3. masterContainerのDOMをソート
-    const existingCards = new Map(Array.from(DOMElements.masterContainer.children).map(c => [c.dataset.mobNo, c]));
+    // 💡 修正: data-mob-no属性を持たない子要素を除外する
+    const existingCards = new Map(Array.from(DOMElements.masterContainer.children)
+        .filter(c => c.dataset.mobNo) // data-mob-no が存在する要素のみをフィルタ
+        .map(c => [c.dataset.mobNo, c])
+    );
     const fragment = document.createDocumentFragment();
 
     filteredData.forEach(mob => {
@@ -471,9 +489,6 @@ const filterAndRender = () => {
             tempDiv.innerHTML = createMobCard(mob);
             card = tempDiv.firstChild;
         } 
-        // 既存のカードには、データ更新時に再描画が必要な要素（進捗、メモ、開閉状態など）を更新するロジックが必要ですが、
-        // ここではシンプルに「ソートのためのDOM入れ替え」のみに留めます。
-        // updateProgressBars() で進捗は更新されます。
         
         fragment.appendChild(card);
     });
@@ -488,11 +503,10 @@ const filterAndRender = () => {
     // 5. フィルタUIの更新
     updateFilterUI();
     
-    // 状態の保存
+    // 状態の保存 (SetをArrayに変換して保存)
     localStorage.setItem('huntFilterState', JSON.stringify({
         ...currentFilter,
         areaSets: Object.keys(currentFilter.areaSets).reduce((acc, key) => {
-            // SetをArrayに変換して保存
             if (currentFilter.areaSets[key] instanceof Set) {
                 acc[key] = Array.from(currentFilter.areaSets[key]);
             } else {
@@ -535,7 +549,10 @@ const renderAreaFilterPanel = () => {
             return set;
         }, new Set());
     
-    const currentAreaSet = currentFilter.areaSets[currentFilter.rank] || new Set();
+    // areaSetsがSetであることを保証
+    const currentAreaSet = currentFilter.areaSets[currentFilter.rank] instanceof Set 
+                           ? currentFilter.areaSets[currentFilter.rank] 
+                           : new Set();
     
     // 全選択/解除ボタン
     const allButton = document.createElement('button');
@@ -648,7 +665,7 @@ const setupEventListeners = () => {
             toggleAreaFilterPanel(true); // パネルは閉じる
             
             // 該当ランクのエリアセットを初期化（存在しない場合）
-            if (!currentFilter.areaSets[newRank]) {
+            if (!currentFilter.areaSets[newRank] || !(currentFilter.areaSets[newRank] instanceof Set)) {
                 currentFilter.areaSets[newRank] = new Set();
             }
             filterAndRender();
@@ -661,7 +678,8 @@ const setupEventListeners = () => {
         if (!btn) return;
         
         const rank = currentFilter.rank;
-        let areaSet = currentFilter.areaSets[rank] || new Set();
+        // Setオブジェクトが保証されているため、直接操作
+        let areaSet = currentFilter.areaSets[rank];
         
         if (btn.dataset.area === 'ALL') {
             const allAreas = Array.from(globalMobData.filter(m => m.Rank === rank).reduce((set, mob) => {
@@ -683,7 +701,6 @@ const setupEventListeners = () => {
             } else {
                 areaSet.add(area);
             }
-            currentFilter.areaSets[rank] = areaSet;
         }
         
         filterAndRender();
@@ -780,8 +797,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 認証と並行して、静的データ（mob_data.json）のロードを開始
     fetchBaseMobData();
     
-    // localStorageからフィルタセットを復元 (Array -> Setに変換)
-    // 以前の保存データ構造をループで全てSetに変換し直す
+    // 💡 エラー修正: localStorageからフィルタセットを復元 (Array -> Setに変換)
     const newAreaSets = {};
     for (const rankKey in currentFilter.areaSets) {
         let savedData = currentFilter.areaSets[rankKey];
