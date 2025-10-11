@@ -846,6 +846,10 @@ window.globalMobData = globalMobData;
 window.filterAndRender = filterAndRender;
 window.fetchBaseMobData = fetchBaseMobData;
 window.currentFilter = currentFilter;
+// 一時デバッグ露出（反映後は削除）
+window.DOMElements = DOMElements;
+window.createMobCard = createMobCard;
+
 
 document.addEventListener('DOMContentLoaded', () => {
     // 認証と並行して、静的データ（mob_data.json）のロードを開始
