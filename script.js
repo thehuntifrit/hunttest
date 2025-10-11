@@ -831,6 +831,7 @@ window.baseMobData = baseMobData;
 window.globalMobData = globalMobData;
 window.filterAndRender = filterAndRender;
 window.fetchBaseMobData = fetchBaseMobData;
+window.currentFilter = currentFilter;
 
 
 document.addEventListener('DOMContentLoaded', () => {
