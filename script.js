@@ -91,10 +91,7 @@ const formatDuration = (seconds) => {
 
 /** テキスト整形 (POP条件の//を<br>に) */
 // FIX: textがnull/undefinedの場合に備えて空文字列を返すように修正
-const processText = (text) => {
-  if (text === null || text === undefined) return '';
-  return String(text).replace(/\/\//g, '<br>');
-};
+const processText = (text) => (text || '').replace(/\/\//g, '<br>');
 
 /** デバウンス関数 */
 const debounce = (func, wait) => {
@@ -231,38 +228,35 @@ const updateProgressBars = () => {
 
 /** mob_data.jsonを読み込み、拡張名などを付与 */
 const fetchBaseMobData = async () => {
-  console.log("Fetching base mob data...");
-  try {
-    const response = await fetch(MOB_DATA_URL);
-    if (!response.ok) throw new Error('Mob data failed to load.');
-    const data = await response.json();
+    console.log("Fetching base mob data...");
+    try {
+        const response = await fetch(MOB_DATA_URL);
+        if (!response.ok) throw new Error('Mob data failed to load.');
+        const data = await response.json();
 
-    // JSON を一度だけパースして baseMobData を構築する
-    baseMobData = data.mobConfig.map(mob => ({
-      ...mob,
-      Expansion: EXPANSION_MAP[Math.floor(mob.No / 10000)] || "Unknown",
-      REPOP_s: mob.REPOP * 3600,
-      MAX_s: mob.MAX * 3600,
-      last_kill_time: 0,
-      last_kill_memo: '',
-      spawn_cull_status: {},
-    }));
+        baseMobData = data.mobConfig.map(mob => ({
+            ...mob,
+            // 拡張名の付与
+            Expansion: EXPANSION_MAP[Math.floor(mob.No / 10000)] || "Unknown",
+            REPOP_s: mob.REPOP * 3600, // JSONのREPOPを秒に変換
+            MAX_s: mob.MAX * 3600,      // JSONのMAXを秒に変換
+            // 動的情報用の初期値
+            last_kill_time: 0,
+            last_kill_memo: '',
+            spawn_cull_status: {}, // active_coordsからマージされる
+        }));
 
-    // 初期レンダリング用に global にコピーして描画開始
-    globalMobData = [...baseMobData];
-
-    // デバッグ用に現在のデータをグローバルに露出（デバッグ後は削除）
-    window.baseMobData = baseMobData;
-    window.globalMobData = globalMobData;
-
-    // レンダリング
-    filterAndRender();
-  } catch (error) {
-    console.error("Error loading base mob data:", error);
-    displayStatus("ベースモブデータのロードに失敗しました。", 'error');
-  }
-};
-
+        // 初回は素のデータで描画開始 (データが揃うまでのフォールバック)
+        globalMobData = [...baseMobData];
+        filterAndRender();
+      
+        // 実データが入ったら再露出して確認できるようにする (デバッグ用)
+        window.baseMobData = baseMobData;
+        window.globalMobData = globalMobData;
+    } catch (error) {
+        console.error("Error loading base mob data:", error);
+        displayStatus("ベースモブデータのロードに失敗しました。", 'error');
+    }
 };
 
 /** Firebaseリスナーを設定 */
