@@ -1,35 +1,26 @@
+// =========================================================================
+// The Hunt Tracker - Client-side JavaScript (script.js)
+// =========================================================================
+
 // Firebase SDKのインポート（モジュールとして扱う）
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, addDoc, query, where } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-// 💡 【重要】FunctionsのSDKをインポート
+// FunctionsのSDKをインポート
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-functions.js";
 
 // --- 1. 定数とグローバル変数 ---
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
-  authDomain: "the-hunt-49493.firebaseapp.com",
-  projectId: "the-hunt-49493",
-  storageBucket: "the-hunt-49493.firebasestorage.app",
-  messagingSenderId: "465769826017",
-  appId: "1:465769826017:web:74ad7e62f3ab139cb359a0",
-  measurementId: "G-J1KGFE15XP"
+    apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
+    authDomain: "the-hunt-49493.firebaseapp.com",
+    projectId: "the-hunt-49493",
+    storageBucket: "the-hunt-49493.firebasestorage.app",
+    messagingSenderId: "465769826017",
+    appId: "1:465769826017:web:74ad7e62f3ab139cb359a0",
+    measurementId: "G-J1KGFE15XP"
 };
 
-// Initialize Firebase
-const app = initializeApp(FIREBASE_CONFIG); 
-// const analytics = getAnalytics(app); // analyticsが不要なら削除してもOK
-
-// 💡 【ここ！】Firebase Appの初期化直後、他のサービス初期化と並行して配置
-const db = getFirestore(app);
-const auth = getAuth(app);
-const functions = getFunctions(app, "asia-northeast2"); // ★この行を追加/修正
-
-// 以下の行で、Functionsを呼び出すためのCallableインスタンスを作成します
-const callHuntReport = httpsCallable(functions, 'callHuntReport'); 
-
-// ... (中略：これ以降に他のロジックが続く) ...
 const MOB_DATA_URL = "./mob_data.json"; // mob_data.jsonのパス
 
 const EXPANSION_MAP = {
@@ -64,13 +55,22 @@ let baseMobData = []; // mob_data.jsonの内容
 let globalMobData = []; // baseMobData + Firebaseデータ
 let currentFilter = JSON.parse(localStorage.getItem('huntFilterState')) || {
     rank: 'ALL',
-    areaSets: { ALL: new Set() } // 拡張エリアのセット
+    areaSets: { ALL: new Set() }
 };
 let openMobCardNo = localStorage.getItem('openMobCardNo') ? parseInt(localStorage.getItem('openMobCardNo')) : null;
 let cullStatusMap = JSON.parse(localStorage.getItem('hunt_spawn_status')) || {}; // 湧き潰し状態
 
-// Firebaseインスタンス
-let app, auth, db;
+// Firebaseインスタンスの初期化 (グローバルスコープで一度だけ実行)
+const app = initializeApp(FIREBASE_CONFIG);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// 💡 【重要修正】Functionsの初期化とリージョン指定
+const functions = getFunctions(app, "asia-northeast2"); // ★リージョンをasia-northeast2に指定
+// 💡 【重要修正】Functions呼び出し名をサーバー側の関数名に合わせる
+const callHuntReport = httpsCallable(functions, 'processHuntReport'); 
+
+// Firestoreリスナー解除用変数
 let unsubscribeMobStatus = null;
 let unsubscribeActiveCoords = null;
 
@@ -112,7 +112,7 @@ const debounce = (func, wait) => {
 /** エラー/ステータスメッセージ表示 */
 const displayStatus = (message, type = 'loading') => {
     DOMElements.statusMessage.textContent = message;
-    DOMElements.statusMessage.className = 'fixed top-16 left-0 right-0 text-center py-1 text-sm transition-colors duration-300';
+    DOMElements.statusMessage.className = 'fixed top-16 left-0 right-0 z-50 text-center py-1 text-sm transition-colors duration-300';
     if (type === 'error') {
         DOMElements.statusMessage.classList.add('bg-red-700/80', 'text-white');
     } else if (type === 'success') {
@@ -228,7 +228,7 @@ const fetchBaseMobData = async () => {
             // 拡張名の付与
             Expansion: EXPANSION_MAP[Math.floor(mob.No / 10000)] || "Unknown",
             REPOP_s: mob.REPOP * 3600, // JSONのREPOPを秒に変換
-            MAX_s: mob.MAX * 3600,     // JSONのMAXを秒に変換
+            MAX_s: mob.MAX * 3600,      // JSONのMAXを秒に変換
             // 動的情報用の初期値
             last_kill_time: 0,
             last_kill_memo: '',
@@ -256,7 +256,8 @@ const startRealtimeListeners = () => {
         snapshot.forEach(doc => {
             const data = doc.data();
             mobStatusMap[parseInt(doc.id)] = {
-                last_kill_time: data.last_kill_time?.seconds || 0, // Firestore Timestampを秒に
+                // last_kill_timeがFirestoreのTimestampオブジェクトの場合の処理
+                last_kill_time: data.last_kill_time?.seconds || 0, 
                 last_kill_memo: data.last_kill_memo || ''
             };
         });
@@ -267,7 +268,7 @@ const startRealtimeListeners = () => {
         displayStatus("モブステータスのリアルタイム同期エラー。", 'error');
     });
     
-    // active_coords リスナー
+    // active_coords リスナー (S/Aモブの湧き潰し状態を反映)
     if (unsubscribeActiveCoords) unsubscribeActiveCoords();
     unsubscribeActiveCoords = onSnapshot(collection(db, "active_coords"), (snapshot) => {
         const coordsMap = {};
@@ -355,14 +356,14 @@ const createMobCard = (mob) => {
         </div>
 
         <div class="expandable-panel ${isOpen ? 'open' : ''}">
-            <div class="px-4 text-sm space-y-3">
+            <div class="px-4 py-3 text-sm space-y-3">
                 
                 <div class="grid grid-cols-2 gap-x-4">
                     <div class="col-span-2 font-semibold text-yellow-300">抽選条件</div>
                     <div class="col-span-2 text-gray-300">${processText(mob.Condition)}</div>
                     
-                    <div class="col-span-1 text-sm text-gray-400">最短リポップ開始</div>
-                    <div class="col-span-1 text-sm text-right font-mono">${mob.repopInfo?.minRepop ? new Date(mob.repopInfo.minRepop * 1000).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '未確定'}</div>
+                    <div class="col-span-1 text-sm text-gray-400 mt-2">最短リポップ開始</div>
+                    <div class="col-span-1 text-sm text-right font-mono mt-2">${mob.repopInfo?.minRepop ? new Date(mob.repopInfo.minRepop * 1000).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '未確定'}</div>
                     
                     <div class="col-span-1 text-sm text-gray-400">前回討伐時刻</div>
                     <div class="col-span-1 text-sm text-right font-mono">${lastKillDisplay}</div>
@@ -371,9 +372,9 @@ const createMobCard = (mob) => {
                 ${mob.last_kill_memo ? `<div class="p-2 rounded bg-gray-600/50"><span class="font-semibold text-gray-300">メモ: </span>${mob.last_kill_memo}</div>` : ''}
 
                 ${mob.Map ? `
-                    <div class="map-content py-2 flex justify-center">
+                    <div class="map-content py-2 flex justify-center relative">
                         <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="w-full h-auto rounded shadow-lg border border-gray-600">
-                        <div class="map-overlay" data-mob-no="${mob.No}">
+                        <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">
                             ${mob.spawn_points ? mob.spawn_points.map(point => drawSpawnPoint(point, mob.spawn_cull_status, mob.No)).join('') : ''}
                         </div>
                     </div>
@@ -391,7 +392,7 @@ const drawSpawnPoint = (point, cullStatus, mobNo) => {
     const isS_A = point.mob_ranks.some(r => r === 'S' || r === 'A');
     const isCulled = cullStatus[point.id] || false;
     const rankClass = point.mob_ranks.some(r => r === 'B1') ? 'rank-B1' : point.mob_ranks.some(r => r === 'B2') ? 'rank-B2' : 'rank-A';
-    const interactiveClass = isS_A ? 'cursor-pointer' : 'rank-B'; // Bランクのみは非インタラクティブ
+    const interactiveClass = isS_A ? 'cursor-pointer' : 'rank-B'; 
 
     let specialClass = '';
     // 最後の未処理の点強調ロジックはJSのイベント/描画関数で処理する
@@ -412,19 +413,21 @@ const drawSpawnPoint = (point, cullStatus, mobNo) => {
 const distributeCards = () => {
     const numCards = DOMElements.masterContainer.children.length;
     const windowWidth = window.innerWidth;
-    const mdBreakpoint = parseInt(DOMElements.colContainer.dataset.breakpointMd);
-    const lgBreakpoint = parseInt(DOMElements.colContainer.dataset.breakpointLg);
+    // HTMLからブレークポイントを取得 (未設定ならデフォルト値)
+    const mdBreakpoint = DOMElements.colContainer.dataset.breakpointMd ? parseInt(DOMElements.colContainer.dataset.breakpointMd) : 768;
+    const lgBreakpoint = DOMElements.colContainer.dataset.breakpointLg ? parseInt(DOMElements.colContainer.dataset.breakpointLg) : 1024;
+
 
     let numColumns = 1;
     if (windowWidth >= lgBreakpoint) {
         numColumns = 3;
-        DOMElements.cols[2].classList.remove('hidden', 'lg:flex');
+        DOMElements.cols[2].classList.remove('hidden');
     } else if (windowWidth >= mdBreakpoint) {
         numColumns = 2;
-        DOMElements.cols[2].classList.add('hidden', 'lg:flex'); // 3列目を非表示
+        DOMElements.cols[2].classList.add('hidden'); // 3列目を非表示
     } else {
         numColumns = 1;
-        DOMElements.cols[2].classList.add('hidden', 'lg:flex');
+        DOMElements.cols[2].classList.add('hidden');
     }
 
     // カラムをクリア
@@ -457,7 +460,6 @@ const filterAndRender = () => {
     filteredData.sort((a, b) => b.repopInfo?.elapsedPercent - a.repopInfo?.elapsedPercent);
     
     // 3. masterContainerのDOMをソート
-    // DOM操作を最小限にするため、存在しないカードのみを作成し、順序を入れ替える
     const existingCards = new Map(Array.from(DOMElements.masterContainer.children).map(c => [c.dataset.mobNo, c]));
     const fragment = document.createDocumentFragment();
 
@@ -468,10 +470,11 @@ const filterAndRender = () => {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = createMobCard(mob);
             card = tempDiv.firstChild;
-        } else {
-            // 既にDOMが存在する場合はマップから削除し、残ったものは後で削除
-            existingCards.delete(mob.No.toString());
-        }
+        } 
+        // 既存のカードには、データ更新時に再描画が必要な要素（進捗、メモ、開閉状態など）を更新するロジックが必要ですが、
+        // ここではシンプルに「ソートのためのDOM入れ替え」のみに留めます。
+        // updateProgressBars() で進捗は更新されます。
+        
         fragment.appendChild(card);
     });
     
@@ -489,7 +492,12 @@ const filterAndRender = () => {
     localStorage.setItem('huntFilterState', JSON.stringify({
         ...currentFilter,
         areaSets: Object.keys(currentFilter.areaSets).reduce((acc, key) => {
-            acc[key] = Array.from(currentFilter.areaSets[key]);
+            // SetをArrayに変換して保存
+            if (currentFilter.areaSets[key] instanceof Set) {
+                acc[key] = Array.from(currentFilter.areaSets[key]);
+            } else {
+                acc[key] = currentFilter.areaSets[key];
+            }
             return acc;
         }, {})
     }));
@@ -573,6 +581,7 @@ const openReportModal = (mobNo) => {
     
     // 現在時刻をJST調整して設定
     const now = new Date();
+    // UTCからJST (UTC+9) への調整
     const jstNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (9 * 60 * 60 * 1000));
     const isoString = jstNow.toISOString().slice(0, 16);
     
@@ -604,12 +613,12 @@ const submitReport = async (mobNo, timeISO, memo) => {
     try {
         const killTime = new Date(timeISO).getTime() / 1000; // UNIX秒
         
+        // Firestoreに直接書き込むことでCloud Functionsをトリガー
         await addDoc(collection(db, "reports"), {
             mob_id: mobNo,
             kill_time: killTime,
             reporter_uid: userId,
             memo: memo,
-            // Cloud Functionsがトリガーされ、mob_statusを更新する
         });
 
         closeReportModal();
@@ -624,17 +633,6 @@ const submitReport = async (mobNo, timeISO, memo) => {
 // --- 7. イベントリスナー設定 ---
 
 const setupEventListeners = () => {
-    // 匿名認証後のユーザーID確定
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            userId = user.uid;
-            localStorage.setItem('user_uuid', userId);
-            // TODO: usersコレクションにキャラ名がなければ登録モーダルを出すロジック
-        } else {
-            signInAnonymously(auth).catch(e => console.error("Anonymous sign-in failed:", e));
-        }
-    });
-    
     // Tab切り替え (イベント委譲)
     DOMElements.rankTabs.addEventListener('click', (e) => {
         const btn = e.target.closest('.tab-button');
@@ -759,41 +757,42 @@ const setupEventListeners = () => {
     setInterval(updateProgressBars, 60000);
 };
 
-// --- 8. 初期化 ---
 
-const initializeApp = () => {
-    // Firebase初期化
-    app = initializeApp(FIREBASE_CONFIG);
-    auth = getAuth(app);
-    db = getFirestore(app);
-    
-    // 認証とイベント設定
-    setupEventListeners();
-    
-    // 静的データのロード
+// --- 8. 初期化と認証フロー ---
+
+// 匿名認証後のユーザーID確定とリアルタイムリスナーの開始
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        // 認証成功時
+        userId = user.uid;
+        localStorage.setItem('user_uuid', userId);
+        
+        // 認証が完了したらリアルタイムリスナーを開始
+        startRealtimeListeners(); 
+        
+    } else {
+        // 認証されていない場合、匿名認証を試みる
+        signInAnonymously(auth).catch(e => console.error("Anonymous sign-in failed:", e));
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 認証と並行して、静的データ（mob_data.json）のロードを開始
     fetchBaseMobData();
     
-    // リアルタイムリスナーの開始
-    // onAuthStateChangedでuserIdが確定してから実行
-    const checkAuthAndStartListeners = setInterval(() => {
-        if (userId) {
-            clearInterval(checkAuthAndStartListeners);
-            startRealtimeListeners();
-        }
-    }, 100);
-
-    // localStorageからフィルタセットを復元
+    // localStorageからフィルタセットを復元 (Array -> Setに変換)
     if (currentFilter.areaSets[currentFilter.rank] && Array.isArray(currentFilter.areaSets[currentFilter.rank])) {
         currentFilter.areaSets[currentFilter.rank] = new Set(currentFilter.areaSets[currentFilter.rank]);
     } else {
         currentFilter.areaSets[currentFilter.rank] = new Set();
     }
     
-    // 初回描画
+    // イベントリスナー設定
+    setupEventListeners();
+
+    // 初回描画 (データが揃う前の骨組み表示)
     updateFilterUI();
     sortAndRedistribute();
     
     displayStatus("アプリを初期化中...", 'loading');
-};
-
-document.addEventListener('DOMContentLoaded', initializeApp);
+});
