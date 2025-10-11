@@ -781,11 +781,20 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchBaseMobData();
     
     // localStorageからフィルタセットを復元 (Array -> Setに変換)
-    if (currentFilter.areaSets[currentFilter.rank] && Array.isArray(currentFilter.areaSets[currentFilter.rank])) {
-        currentFilter.areaSets[currentFilter.rank] = new Set(currentFilter.areaSets[currentFilter.rank]);
-    } else {
-        currentFilter.areaSets[currentFilter.rank] = new Set();
+    // 以前の保存データ構造をループで全てSetに変換し直す
+    const newAreaSets = {};
+    for (const rankKey in currentFilter.areaSets) {
+        let savedData = currentFilter.areaSets[rankKey];
+        if (Array.isArray(savedData)) {
+            newAreaSets[rankKey] = new Set(savedData);
+        } else if (savedData instanceof Set) {
+            newAreaSets[rankKey] = savedData;
+        } else {
+             // 予期しない形式の場合、空のSetとして初期化
+            newAreaSets[rankKey] = new Set();
+        }
     }
+    currentFilter.areaSets = newAreaSets;
     
     // イベントリスナー設定
     setupEventListeners();
