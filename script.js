@@ -6,13 +6,13 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
 
 // --- 1. 定数とグローバル変数 ---
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
-  authDomain: "the-hunt-49493.firebaseapp.com",
-  projectId: "the-hunt-49493",
-  storageBucket: "the-hunt-49493.firebasestorage.app",
-  messagingSenderId: "465769826017",
-  appId: "1:465769826017:web:74ad7e62f3ab139cb359a0",
-  measurementId: "G-J1KGFE15XP"
+    apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
+    authDomain: "the-hunt-49493.firebaseapp.com",
+    projectId: "the-hunt-49493",
+    storageBucket: "the-hunt-49493.firebasestorage.app",
+    messagingSenderId: "465769826017",
+    appId: "1:465769826017:web:74ad7e62f3ab139cb359a0",
+    measurementId: "G-J1KGFE15XP"
 };
 
 const MOB_DATA_URL = "./mob_data.json";
@@ -28,13 +28,28 @@ const FILTER_TO_DATA_RANK_MAP = {
     'A': 'A',
 };
 
+// 修正: B1/B2の色を具体的に定義
 const RANK_COLORS = {
     S: { bg: 'bg-red-600', text: 'text-red-600', hex: '#dc2626', label: 'S' },
     A: { bg: 'bg-yellow-600', text: 'text-yellow-600', hex: '#ca8a04', label: 'A' },
     F: { bg: 'bg-indigo-600', text: 'text-indigo-600', hex: '#4f46e5', label: 'FATE' },
-    B1: { bg: 'bg-green-500', text: 'text-green-500', hex: '#10b981', label: 'B1' },
-    B2: { bg: 'bg-blue-500', text: 'text-blue-500', hex: '#3b82f6', label: 'B2' }
+    B1: { bg: 'bg-blue-500', text: 'text-blue-500', hex: '#3e83c4', label: 'B1' }, // B1内色
+    B2: { bg: 'bg-red-500', text: 'text-red-500', hex: '#e16666', label: 'B2' } // B2内色
 };
+
+// 修正: プログレスバーのカスタム色/クラス名定義
+const PROGRESS_CLASSES = {
+    P0_60: 'progress-p0-60',
+    P60_80: 'progress-p60-80',
+    P80_100: 'progress-p80-100',
+    TEXT_NEXT: 'progress-next-text', // #3e83c4
+    TEXT_POP: 'progress-pop-text', // #ffffff
+    MAX_OVER_BLINK: 'progress-max-over-blink' // 2秒1サイクル点滅
+};
+
+// 修正: CSSの定義を削除
+// const setupCustomCSS = () => { /* ... 削除 ... */ };
+
 
 const DOMElements = {
     masterContainer: document.getElementById('master-mob-container'),
@@ -89,10 +104,9 @@ function processText(text) {
     if (typeof text !== 'string' || !text) {
         return '';
     }
-
-    return text.replace(/\[([^\]]+)\]/g, (match, content) => {
-        return content;
-    });
+    // 抽選条件の改行 (// -> <br>)
+    text = text.replace(/\/\//g, '<br>');
+    return text;
 }
 
 const debounce = (func, wait) => {
@@ -165,6 +179,7 @@ const calculateRepop = (mob) => {
     return { minRepop, maxRepop, elapsedPercent, timeRemaining, status };
 };
 
+// 修正: 進捗率に応じた色、テキスト色、点滅アニメーションをクラスとして適用
 const updateProgressBars = () => {
     document.querySelectorAll('.mob-card').forEach(card => {
         const mobNo = parseInt(card.dataset.mobNo);
@@ -174,37 +189,52 @@ const updateProgressBars = () => {
         const { elapsedPercent, timeRemaining, status } = mob.repopInfo;
         const progressBar = card.querySelector('.progress-bar-bg');
         const progressText = card.querySelector('.progress-text');
+        const progressBarWrapper = progressBar.parentElement;
 
         progressBar.style.width = `${elapsedPercent}%`;
         progressText.textContent = timeRemaining;
 
-        let colorStart = '#16a34a';
-        let colorEnd = '#16a34a';
+        let bgColorClass = '';
+        let textColorClass = '';
+        let blinkClass = '';
 
+        // 進行色クラスの決定
+        progressBar.classList.remove(PROGRESS_CLASSES.P0_60, PROGRESS_CLASSES.P60_80, PROGRESS_CLASSES.P80_100);
+        
         if (status === 'PopWindow') {
-            const h_start = 240;
-            const h_end = 0;
-            const h = h_start + ((h_end - h_start) * (elapsedPercent / 100));
-            colorStart = `hsl(${h_start}, 80%, 50%)`;
-            colorEnd = `hsl(${h}, 80%, 50%)`;
-
-            progressText.classList.remove('text-gray-400');
-            progressText.classList.add('text-white', 'text-outline');
-            progressBar.parentElement.classList.remove('animate-pulse');
-
+            if (elapsedPercent <= 60) {
+                bgColorClass = PROGRESS_CLASSES.P0_60;
+            } else if (elapsedPercent <= 80) {
+                bgColorClass = PROGRESS_CLASSES.P60_80;
+            } else {
+                bgColorClass = PROGRESS_CLASSES.P80_100;
+            }
+            textColorClass = PROGRESS_CLASSES.TEXT_POP;
+            blinkClass = '';
         } else if (status === 'MaxOver') {
-            colorStart = '#ef4444';
-            colorEnd = '#b91c1c';
-            progressText.classList.add('text-white', 'text-outline');
-            progressBar.parentElement.classList.add('animate-pulse');
-        } else {
-            progressText.classList.add('text-gray-400');
-            progressText.classList.remove('text-white', 'text-outline');
-            progressBar.parentElement.classList.remove('animate-pulse');
+            bgColorClass = PROGRESS_CLASSES.P80_100; 
+            textColorClass = PROGRESS_CLASSES.TEXT_POP;
+            blinkClass = PROGRESS_CLASSES.MAX_OVER_BLINK;
+        } else { // 'Next' or 'Unknown'
+            // Nextステータスの場合、バーの幅は0%だが、テキスト色のみ変更
+            bgColorClass = ''; // バーの幅が0なので、バーの色は不要
+            textColorClass = PROGRESS_CLASSES.TEXT_NEXT;
+            blinkClass = '';
         }
 
-        progressBar.parentElement.style.setProperty('--progress-color-start', colorStart);
-        progressBar.parentElement.style.setProperty('--progress-color-end', colorEnd);
+        if (bgColorClass) {
+             progressBar.classList.add(bgColorClass);
+        }
+        
+        // テキスト色クラスの適用
+        progressText.classList.remove(PROGRESS_CLASSES.TEXT_NEXT, PROGRESS_CLASSES.TEXT_POP);
+        progressText.classList.add(textColorClass);
+
+        // 点滅アニメーションの適用/解除
+        progressBarWrapper.classList.remove(PROGRESS_CLASSES.MAX_OVER_BLINK);
+        if (blinkClass) {
+            progressBarWrapper.classList.add(blinkClass);
+        }
     });
 };
 
@@ -295,6 +325,7 @@ const mergeMobData = (dataMap, type) => {
 
 // --- 5. UI描画とイベント ---
 
+// 修正: カードの余白調整を反映
 const createMobCard = (mob) => {
     const rank = mob.Rank;
     const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
@@ -305,14 +336,16 @@ const createMobCard = (mob) => {
         ? new Date(mob.last_kill_time * 1000).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
         : '未報告';
 
-    // ★ 修正: mob.spawn_points がない場合のフォールバックを ?? [] で強化
-    const spawnPointsHtml = (mob.spawn_points ?? []).map(point => drawSpawnPoint(point, mob.spawn_cull_status, mob.No)).join('');
+    const lastOneMob = globalMobData.find(m => m.No === mob.No);
+    const isLastOne = lastOneMob?.spawn_points?.length === 1 && lastOneMob.spawn_points[0].is_last_one;
+
+    const spawnPointsHtml = (mob.spawn_points ?? []).map(point => drawSpawnPoint(point, mob.spawn_cull_status, mob.No, mob.Rank, isLastOne)).join('');
 
     const cardHTML = `
     <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 hover:border-gray-500 transition duration-150"
         data-mob-no="${mob.No}" data-rank="${rank}">
         
-        <div class="p-4 flex items-center justify-between space-x-2 bg-gray-800/70" data-toggle="card-header">
+        <div class="p-1.5 flex items-center justify-between space-x-2 bg-gray-800/70" data-toggle="card-header">
             
             <div class="flex flex-col flex-shrink min-w-0">
                 <div class="flex items-center space-x-2">
@@ -322,39 +355,39 @@ const createMobCard = (mob) => {
                 <span class="text-xs text-gray-400 mt-0.5">${mob.Area} (${mob.Expansion})</span>
             </div>
 
-            <div class="progress-bar flex-grow mx-2 h-6 rounded-full relative" style="min-width: 80px;">
-                <div class="progress-bar-bg absolute left-0 top-0 rounded-full" style="width: 0;"></div>
-                <div class="progress-text absolute inset-0 flex items-center justify-center text-xs font-semibold">
+            <div class="progress-bar flex-grow mx-2 h-4 rounded-full relative overflow-hidden transition-all duration-100 ease-linear" style="min-width: 80px;">
+                <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear" style="width: 0;"></div>
+                <div class="progress-text absolute inset-0 flex items-center justify-center text-xs font-semibold" style="line-height: 1;">
                     Calculating...
                 </div>
             </div>
 
             <div class="flex-shrink-0">
                 ${rank === 'A'
-                    ? `<button data-report-type="instant" data-mob-no="${mob.No}" class="px-3 py-1 text-xs rounded bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-semibold transition">即時報告</button>`
-                    : `<button data-report-type="modal" data-mob-no="${mob.No}" class="px-3 py-1 text-xs rounded bg-green-500 hover:bg-green-400 text-gray-900 font-semibold transition">報告する</button>`
+                    ? `<button data-report-type="instant" data-mob-no="${mob.No}" class="px-2 py-0.5 text-xs rounded bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-semibold transition">即時報告</button>`
+                    : `<button data-report-type="modal" data-mob-no="${mob.No}" class="px-2 py-0.5 text-xs rounded bg-green-500 hover:bg-green-400 text-gray-900 font-semibold transition">報告する</button>`
                 }
             </div>
         </div>
 
         <div class="expandable-panel ${isOpen ? 'open' : ''}">
-            <div class="px-4 py-3 text-sm space-y-3">
+            <div class="px-2 py-1 text-sm space-y-1.5">
                 
                 <div class="grid grid-cols-2 gap-x-4">
                     <div class="col-span-2 font-semibold text-yellow-300">抽選条件</div>
                     <div class="col-span-2 text-gray-300">${processText(mob.Condition)}</div>
                     
-                    <div class="col-span-1 text-sm text-gray-400 mt-2">最短リポップ開始</div>
-                    <div class="col-span-1 text-sm text-right font-mono mt-2">${mob.repopInfo?.minRepop ? new Date(mob.repopInfo.minRepop * 1000).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '未確定'}</div>
+                    <div class="col-span-1 text-xs text-gray-400 mt-1">最短リポップ開始</div>
+                    <div class="col-span-1 text-xs text-right font-mono mt-1">${mob.repopInfo?.minRepop ? new Date(mob.repopInfo.minRepop * 1000).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '未確定'}</div>
                     
-                    <div class="col-span-1 text-sm text-gray-400">前回討伐時刻</div>
-                    <div class="col-span-1 text-sm text-right font-mono">${lastKillDisplay}</div>
+                    <div class="col-span-1 text-xs text-gray-400">前回討伐時刻</div>
+                    <div class="col-span-1 text-xs text-right font-mono">${lastKillDisplay}</div>
                 </div>
 
-                ${mob.last_kill_memo ? `<div class="p-2 rounded bg-gray-600/50"><span class="font-semibold text-gray-300">メモ: </span>${mob.last_kill_memo}</div>` : ''}
+                ${mob.last_kill_memo ? `<div class="p-1 rounded bg-gray-600/50 text-xs"><span class="font-semibold text-gray-300">メモ: </span>${mob.last_kill_memo}</div>` : ''}
 
                 ${mob.Map ? `
-                    <div class="map-content py-2 flex justify-center relative">
+                    <div class="map-content py-1.5 flex justify-center relative">
                         <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="w-full h-auto rounded shadow-lg border border-gray-600">
                         <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">
                             ${spawnPointsHtml}
@@ -369,25 +402,75 @@ const createMobCard = (mob) => {
     return cardHTML;
 };
 
-const drawSpawnPoint = (point, cullStatus, mobNo) => {
-    const isS_A = point.mob_ranks.some(r => r === 'S' || r === 'A');
+// 修正: drawSpawnPoint関数からインラインスタイルを削除し、クラス/データ属性に置き換え
+const drawSpawnPoint = (point, cullStatus, mobNo, mobRank, isLastOne) => {
+    const isS_A_Cullable = point.mob_ranks.some(r => r === 'S' || r === 'A');
     const isCulled = cullStatus[point.id] || false;
-    const rankClass = point.mob_ranks.some(r => r === 'B1') ? 'rank-B1' : point.mob_ranks.some(r => r === 'B2') ? 'rank-B2' : 'rank-A';
-    const interactiveClass = isS_A ? 'cursor-pointer' : 'rank-B';
+    const isB_Only = point.mob_ranks.every(r => r.startsWith('B'));
 
+    let sizeClass = '';
+    let colorClass = '';
     let specialClass = '';
+    let isInteractive = isS_A_Cullable;
 
-    const color = RANK_COLORS[point.mob_ranks[0]]?.hex || '#ccc'; 
+    // 1. ラストワンの場合
+    if (isLastOne) {
+        // ラストワンは最優先で固定色とサイズ
+        sizeClass = 'spawn-point-lastone'; // 12px, #00ff3c
+        colorClass = 'color-lastone';
+        specialClass = 'spawn-point-shadow';
+        isInteractive = false; 
+
+        // S/Aラストワン時、Bランクポイントをグレーに反転
+        if (isB_Only) {
+            sizeClass = 'spawn-point-b-only'; // 8px
+            colorClass = 'color-b-inverted'; // グレーに反転
+            specialClass = 'opacity-50'; 
+            isInteractive = false;
+        }
+
+    } else if (isS_A_Cullable) {
+        // 2. S/A湧き潰し対象ポイント (未選択/選択済み)
+        const rank = point.mob_ranks.find(r => r.startsWith('B')); // B1 or B2
+        colorClass = rank === 'B1' ? 'color-b1' : 'color-b2';
+        
+        if (isCulled) {
+            // 選択済み (湧き潰し済み)
+            sizeClass = 'spawn-point-culled'; // 8px内, 10px外 (グレー内, 白外)
+            specialClass = 'culled';
+        } else {
+            // 未選択
+            sizeClass = 'spawn-point-sa'; // 10px内, 12px外 (B1/B2色 + 濃い枠)
+            specialClass = 'spawn-point-shadow spawn-point-interactive'; // 影とインタラクティブ
+        }
+
+    } else if (isB_Only) {
+        // 3. Bランクのみポイント (非湧き潰し対象)
+        const rank = point.mob_ranks[0];
+        colorClass = rank === 'B1' ? 'color-b1-only' : 'color-b2-only'; // 内径8px
+        sizeClass = 'spawn-point-b-only'; 
+        isInteractive = false;
+        specialClass = '';
+    } else {
+        // Fallback
+        sizeClass = 'spawn-point-b-only';
+        colorClass = 'color-default';
+        isInteractive = false;
+        specialClass = '';
+    }
+    
+    // Bのみポイントが湧き潰し済み状態になるロジックを排除 (湧き潰し対象ではないため)
 
     return `
-        <div class="spawn-point ${rankClass} ${isCulled ? 'culled' : ''} ${specialClass} ${isS_A ? 'spawn-point-interactive' : ''}"
+        <div class="spawn-point absolute rounded-full transform -translate-x-1/2 -translate-y-1/2 ${sizeClass} ${colorClass} ${specialClass}"
             data-point-id="${point.id}"
             data-mob-no="${mobNo}"
-            data-is-interactive="${isS_A}"
-            style="left: ${point.x}%; top: ${point.y}%; background-color: ${color};"
+            data-is-interactive="${isInteractive}"
+            style="left: ${point.x}%; top: ${point.y}%;"
         ></div>
     `;
 };
+
 
 const distributeCards = () => {
     const numCards = DOMElements.masterContainer.children.length;
@@ -446,11 +529,9 @@ const filterAndRender = () => {
         if (!card) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = createMobCard(mob);
-            // ★ 修正点: firstChild (テキストノード) ではなく firstElementChild (要素ノード) を取得
             card = tempDiv.firstElementChild; 
         }
 
-        // card が null/undefined の場合はスキップして、エラーを防ぐ
         if (card) { 
              fragment.appendChild(card);
         }
@@ -520,8 +601,12 @@ const renderAreaFilterPanel = () => {
     allButton.dataset.area = 'ALL';
     DOMElements.areaFilterPanel.appendChild(allButton);
 
-    // ★ 修正点: .sort() の後に .reverse() を追加して、並び順を逆転させる (黄金 -> 新生)
-    Array.from(areas).sort().reverse().forEach(area => {
+    // 展開エリアの並び順を維持 (黄金 -> 新生)
+    Array.from(areas).sort((a, b) => {
+        const indexA = Object.values(EXPANSION_MAP).indexOf(a);
+        const indexB = Object.values(EXPANSION_MAP).indexOf(b);
+        return indexB - indexA; // 逆順 (5 -> 1)
+    }).forEach(area => {
         const btn = document.createElement('button');
         const isSelected = currentAreaSet.has(area);
         btn.textContent = area;
@@ -670,8 +755,17 @@ const setupEventListeners = () => {
         if (e.target.closest('[data-toggle="card-header"]')) {
             const panel = card.querySelector('.expandable-panel');
             if (panel) {
-                panel.classList.toggle('open');
-                openMobCardNo = panel.classList.contains('open') ? mobNo : null;
+                // 排他的開閉のロジック
+                if (!panel.classList.contains('open')) {
+                    document.querySelectorAll('.expandable-panel.open').forEach(openPanel => {
+                        openPanel.classList.remove('open');
+                    });
+                    panel.classList.add('open');
+                    openMobCardNo = mobNo;
+                } else {
+                    panel.classList.remove('open');
+                    openMobCardNo = null;
+                }
             }
         }
 
@@ -690,6 +784,21 @@ const setupEventListeners = () => {
         }
     });
 
+    // スポーンポイントのクリック処理
+    DOMElements.colContainer.addEventListener('click', (e) => {
+        const point = e.target.closest('.spawn-point');
+        // data-is-interactive="true" のポイントのみ処理
+        if (!point || point.dataset.isInteractive !== 'true') return;
+
+        const pointId = point.dataset.pointId;
+        
+        cullStatusMap[pointId] = !cullStatusMap[pointId];
+        localStorage.setItem('hunt_spawn_status', JSON.stringify(cullStatusMap));
+
+        // 再描画して最新の湧き潰し状態を反映
+        filterAndRender();
+    });
+
     document.getElementById('cancel-report').addEventListener('click', closeReportModal);
     DOMElements.reportForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -700,23 +809,12 @@ const setupEventListeners = () => {
         submitReport(mobNo, datetime, memo);
     });
 
-    DOMElements.colContainer.addEventListener('click', (e) => {
-        const point = e.target.closest('.spawn-point-interactive');
-        if (!point) return;
-
-        const pointId = point.dataset.pointId;
-        const mobNo = parseInt(point.dataset.mobNo);
-
-        cullStatusMap[pointId] = !cullStatusMap[pointId];
-        localStorage.setItem('hunt_spawn_status', JSON.stringify(cullStatusMap));
-
-        point.classList.toggle('culled');
-
-    });
-
     window.addEventListener('resize', sortAndRedistribute);
 
+    // 1分ごと (60000ms) の更新を維持
     setInterval(updateProgressBars, 60000);
+    // 初回ロードと毎秒の補完のために、1秒ごとに updateProgressBars を呼び出す
+    setInterval(updateProgressBars, 1000);
 };
 
 // --- 8. 初期化と認証フロー ---
