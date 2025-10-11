@@ -68,7 +68,7 @@ let auth = getAuth(app);
 // Functionsの初期化とリージョン指定
 let functions = getFunctions(app, "asia-northeast2"); // ★リージョンをasia-northeast2に指定
 // Functions呼び出し名をサーバー側の関数名に合わせる
-const callHuntReport = httpsCallable(functions, 'processHuntReport'); 
+const callHuntReport = httpsCallable(functions, 'processHuntReport');
 
 // Firestoreリスナー解除用変数
 let unsubscribeMobStatus = null;
@@ -112,16 +112,16 @@ const debounce = (func, wait) => {
 /** エラー/ステータスメッセージ表示 */
 const displayStatus = (message, type = 'loading') => {
     // 常に hidden を外し、表示処理を開始
-    DOMElements.statusMessage.classList.remove('hidden'); 
-    
+    DOMElements.statusMessage.classList.remove('hidden');
+
     DOMElements.statusMessage.textContent = message;
     // ナビゲーションバーの高さ（h-14、56pxを仮定）の直下に配置
     // z-index を調整し、ナビゲーションの下または上に正しく配置します。
     DOMElements.statusMessage.className = 'fixed top-14 left-0 right-0 z-40 text-center py-1 text-sm transition-colors duration-300';
-    
+
     // 色のクラスをリセット
     DOMElements.statusMessage.classList.remove('bg-red-700/80', 'bg-green-700/80', 'bg-blue-700/80', 'text-white');
-    
+
     if (type === 'error') {
         DOMElements.statusMessage.classList.add('bg-red-700/80', 'text-white');
     } else if (type === 'success') {
@@ -129,7 +129,7 @@ const displayStatus = (message, type = 'loading') => {
         setTimeout(() => {
             DOMElements.statusMessage.textContent = '';
             // 💡 修正: 成功時は完全に非表示にする
-            DOMElements.statusMessage.classList.add('hidden'); 
+            DOMElements.statusMessage.classList.add('hidden');
         }, 3000); // 成功は3秒で消す
     } else {
         DOMElements.statusMessage.classList.add('bg-blue-700/80', 'text-white');
@@ -185,7 +185,7 @@ const updateProgressBars = () => {
         const mobNo = parseInt(card.dataset.mobNo);
         const mob = globalMobData.find(m => m.No === mobNo);
         if (!mob || !mob.repopInfo) return;
-        
+
         const { elapsedPercent, timeRemaining, status } = mob.repopInfo;
         const progressBar = card.querySelector('.progress-bar-bg');
         const progressText = card.querySelector('.progress-text');
@@ -203,7 +203,7 @@ const updateProgressBars = () => {
             const h = h_start + ((h_end - h_start) * (elapsedPercent / 100));
             colorStart = `hsl(${h_start}, 80%, 50%)`;
             colorEnd = `hsl(${h}, 80%, 50%)`;
-            
+
             progressText.classList.remove('text-gray-400');
             progressText.classList.add('text-white', 'text-outline');
             progressBar.parentElement.classList.remove('animate-pulse');
@@ -220,7 +220,7 @@ const updateProgressBars = () => {
             progressText.classList.remove('text-white', 'text-outline');
             progressBar.parentElement.classList.remove('animate-pulse');
         }
-        
+
         progressBar.parentElement.style.setProperty('--progress-color-start', colorStart);
         progressBar.parentElement.style.setProperty('--progress-color-end', colorEnd);
     });
@@ -236,7 +236,7 @@ const fetchBaseMobData = async () => {
         const response = await fetch(MOB_DATA_URL);
         if (!response.ok) throw new Error('Mob data failed to load.');
         const data = await response.json();
-        
+
         baseMobData = data.mobConfig.map(mob => ({
             ...mob,
             // 拡張名の付与
@@ -248,11 +248,11 @@ const fetchBaseMobData = async () => {
             last_kill_memo: '',
             spawn_cull_status: {}, // active_coordsからマージされる
         }));
-        
+
         // 初回は素のデータで描画開始 (データが揃うまでのフォールバック)
         globalMobData = [...baseMobData];
-        filterAndRender(); 
-        
+        filterAndRender();
+
     } catch (error) {
         console.error("Error loading base mob data:", error);
         displayStatus("ベースモブデータのロードに失敗しました。", 'error');
@@ -262,7 +262,7 @@ const fetchBaseMobData = async () => {
 /** Firebaseリスナーを設定 */
 const startRealtimeListeners = () => {
     if (!db) return;
-    
+
     // mob_status リスナー
     if (unsubscribeMobStatus) unsubscribeMobStatus();
     unsubscribeMobStatus = onSnapshot(collection(db, "mob_status"), (snapshot) => {
@@ -271,7 +271,7 @@ const startRealtimeListeners = () => {
             const data = doc.data();
             mobStatusMap[parseInt(doc.id)] = {
                 // last_kill_timeがFirestoreのTimestampオブジェクトの場合の処理
-                last_kill_time: data.last_kill_time?.seconds || 0, 
+                last_kill_time: data.last_kill_time?.seconds || 0,
                 last_kill_memo: data.last_kill_memo || ''
             };
         });
@@ -281,7 +281,7 @@ const startRealtimeListeners = () => {
         console.error("Mob status real-time error:", error);
         displayStatus("モブステータスのリアルタイム同期エラー。", 'error');
     });
-    
+
     // active_coords リスナー (S/Aモブの湧き潰し状態を反映)
     if (unsubscribeActiveCoords) unsubscribeActiveCoords();
     unsubscribeActiveCoords = onSnapshot(collection(db, "active_coords"), (snapshot) => {
@@ -308,7 +308,7 @@ const mergeMobData = (dataMap, type) => {
                 mergedMob.last_kill_time = dynamicData.last_kill_time;
                 mergedMob.last_kill_memo = dynamicData.last_kill_memo;
             } else if (type === 'active_coords') {
-                 // spawn_pointsがJSONにある場合、coordsをマージして利用
+                   // spawn_pointsがJSONにある場合、coordsをマージして利用
                 if (mob.spawn_points) {
                     mergedMob.spawn_cull_status = dynamicData.reduce((map, point) => {
                         map[point.id] = point.culled || false;
@@ -317,7 +317,7 @@ const mergeMobData = (dataMap, type) => {
                 }
             }
         }
-        
+
         // Repop計算はマージ後に行う
         mergedMob.repopInfo = calculateRepop(mergedMob);
         return mergedMob;
@@ -335,14 +335,14 @@ const createMobCard = (mob) => {
     const rank = mob.Rank;
     const rankColor = RANK_COLORS[rank] || RANK_COLORS.A;
     const isOpen = mob.No === openMobCardNo;
-    const lastKillDisplay = mob.last_kill_time > 0 
+    const lastKillDisplay = mob.last_kill_time > 0
         ? new Date(mob.last_kill_time * 1000).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
         : '未報告';
-    
+
     // ヘッダー（Flexbox）
     const cardHTML = `
-    <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 hover:border-gray-500 transition duration-150" 
-         data-mob-no="${mob.No}" data-rank="${rank}">
+    <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 hover:border-gray-500 transition duration-150"
+          data-mob-no="${mob.No}" data-rank="${rank}">
         
         <div class="p-4 flex items-center justify-between space-x-2 bg-gray-800/70" data-toggle="card-header">
             
@@ -362,7 +362,7 @@ const createMobCard = (mob) => {
             </div>
 
             <div class="flex-shrink-0">
-                ${rank === 'A' 
+                ${rank === 'A'
                     ? `<button data-report-type="instant" data-mob-no="${mob.No}" class="px-3 py-1 text-xs rounded bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-semibold transition">即時報告</button>`
                     : `<button data-report-type="modal" data-mob-no="${mob.No}" class="px-3 py-1 text-xs rounded bg-green-500 hover:bg-green-400 text-gray-900 font-semibold transition">報告する</button>`
                 }
@@ -406,10 +406,10 @@ const drawSpawnPoint = (point, cullStatus, mobNo) => {
     const isS_A = point.mob_ranks.some(r => r === 'S' || r === 'A');
     const isCulled = cullStatus[point.id] || false;
     const rankClass = point.mob_ranks.some(r => r === 'B1') ? 'rank-B1' : point.mob_ranks.some(r => r === 'B2') ? 'rank-B2' : 'rank-A';
-    const interactiveClass = isS_A ? 'cursor-pointer' : 'rank-B'; 
+    const interactiveClass = isS_A ? 'cursor-pointer' : 'rank-B';
 
     let specialClass = '';
-    
+
     const color = RANK_COLORS[point.mob_ranks[0]]?.hex || '#ccc'; // 色は最初のランクで決定
 
     return `
@@ -452,7 +452,7 @@ const distributeCards = () => {
         const targetColIndex = index % numColumns;
         DOMElements.cols[targetColIndex].appendChild(card);
     });
-    
+
     updateProgressBars(); // 分配後、進捗バーを更新して色を確定
 };
 
@@ -462,17 +462,17 @@ const filterAndRender = () => {
     const filteredData = globalMobData.filter(mob => {
         if (currentFilter.rank === 'ALL') return true;
         if (mob.Rank !== currentFilter.rank) return false;
-        
+
         const areaSet = currentFilter.areaSets[currentFilter.rank];
         // Setオブジェクトであることを確認
         if (!areaSet || !(areaSet instanceof Set) || areaSet.size === 0) return true; // フィルタ未設定なら全て表示
-        
+
         return areaSet.has(mob.Expansion);
     });
-    
+
     // 2. ソート (Repop進捗降順)
     filteredData.sort((a, b) => b.repopInfo?.elapsedPercent - a.repopInfo?.elapsedPercent);
-    
+
     // 3. masterContainerのDOMをソート
     // 💡 修正: data-mob-no属性を持たない子要素を除外する
     const existingCards = new Map(Array.from(DOMElements.masterContainer.children)
@@ -488,22 +488,22 @@ const filterAndRender = () => {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = createMobCard(mob);
             card = tempDiv.firstChild;
-        } 
-        
+        }
+
         fragment.appendChild(card);
     });
-    
+
     // 既存のものをクリアし、ソート済みのカードを再挿入
     DOMElements.masterContainer.innerHTML = '';
     DOMElements.masterContainer.appendChild(fragment);
 
     // 4. カラム分配
     distributeCards();
-    
+
     // 5. フィルタUIの更新
     updateFilterUI();
-    
-    // 状態の保存 (SetをArrayに変換して保存)
+
+    // 6. 状態の保存 (SetをArrayに変換して保存)
     localStorage.setItem('huntFilterState', JSON.stringify({
         ...currentFilter,
         areaSets: Object.keys(currentFilter.areaSets).reduce((acc, key) => {
@@ -531,15 +531,16 @@ const updateFilterUI = () => {
             btn.classList.add(rank === 'ALL' ? 'bg-blue-800' : rank === 'S' ? 'bg-red-800' : rank === 'A' ? 'bg-yellow-800' : 'bg-indigo-800');
         }
     });
-    
-    // エリアパネルの再描画
-    renderAreaFilterPanel();
+
+    // エリアパネルの再描画 (ALL以外の場合にのみ実行)
+    if (currentFilter.rank !== 'ALL') {
+        renderAreaFilterPanel();
+    }
 };
 
 /** エリアフィルタパネルを生成 */
 const renderAreaFilterPanel = () => {
     DOMElements.areaFilterPanel.innerHTML = ''; // クリア
-    if (currentFilter.rank === 'ALL') return; // ALLの時はエリアフィルタなし
     
     // 該当ランクの拡張エリアを抽出
     const areas = globalMobData
@@ -548,20 +549,20 @@ const renderAreaFilterPanel = () => {
             if (mob.Expansion) set.add(mob.Expansion);
             return set;
         }, new Set());
-    
+
     // areaSetsがSetであることを保証
-    const currentAreaSet = currentFilter.areaSets[currentFilter.rank] instanceof Set 
-                           ? currentFilter.areaSets[currentFilter.rank] 
-                           : new Set();
-    
+    const currentAreaSet = currentFilter.areaSets[currentFilter.rank] instanceof Set
+        ? currentFilter.areaSets[currentFilter.rank]
+        : new Set();
+
     // 全選択/解除ボタン
     const allButton = document.createElement('button');
-    const isAllSelected = areas.size === currentAreaSet.size;
+    const isAllSelected = areas.size === currentAreaSet.size && areas.size > 0; // 全てのエリアが選択されているか
     allButton.textContent = isAllSelected ? '全解除' : '全選択';
     allButton.className = `area-filter-btn px-3 py-1 text-xs rounded font-semibold transition ${isAllSelected ? 'bg-red-500' : 'bg-gray-500 hover:bg-gray-400'}`;
     allButton.dataset.area = 'ALL';
     DOMElements.areaFilterPanel.appendChild(allButton);
-    
+
     // 各拡張エリアボタン
     Array.from(areas).sort().forEach(area => {
         const btn = document.createElement('button');
@@ -575,13 +576,20 @@ const renderAreaFilterPanel = () => {
 
 /** エリアフィルタパネルの開閉 */
 const toggleAreaFilterPanel = (forceClose = false) => {
+    // ALLランクの場合は常に閉じる
+    if (currentFilter.rank === 'ALL') {
+        forceClose = true;
+    }
+
     if (forceClose || DOMElements.areaFilterWrapper.classList.contains('open')) {
+        // 閉じる処理
         DOMElements.areaFilterWrapper.classList.remove('open');
         DOMElements.areaFilterWrapper.classList.add('max-h-0', 'opacity-0', 'pointer-events-none');
     } else {
+        // 開く処理
         DOMElements.areaFilterWrapper.classList.add('open');
         DOMElements.areaFilterWrapper.classList.remove('max-h-0', 'opacity-0', 'pointer-events-none');
-        renderAreaFilterPanel();
+        renderAreaFilterPanel(); // 開くときに中身を再描画
     }
 };
 
@@ -595,19 +603,19 @@ const sortAndRedistribute = debounce(filterAndRender, 200);
 const openReportModal = (mobNo) => {
     const mob = globalMobData.find(m => m.No === mobNo);
     if (!mob) return;
-    
+
     // 現在時刻をJST調整して設定
     const now = new Date();
     // UTCからJST (UTC+9) への調整
     const jstNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (9 * 60 * 60 * 1000));
     const isoString = jstNow.toISOString().slice(0, 16);
-    
+
     DOMElements.reportForm.dataset.mobNo = mobNo;
     DOMElements.modalMobName.textContent = `対象: ${mob.Name} (${mob.Area})`;
     document.getElementById('report-datetime').value = isoString;
     document.getElementById('report-memo').value = '';
     DOMElements.modalStatus.textContent = '';
-    
+
     DOMElements.reportModal.classList.remove('hidden');
     DOMElements.reportModal.classList.add('flex');
 };
@@ -624,12 +632,12 @@ const submitReport = async (mobNo, timeISO, memo) => {
         displayStatus("認証が完了していません。ページをリロードしてください。", 'error');
         return;
     }
-    
+
     DOMElements.modalStatus.textContent = '送信中...';
-    
+
     try {
         const killTime = new Date(timeISO).getTime() / 1000; // UNIX秒
-        
+
         // Firestoreに直接書き込むことでCloud Functionsをトリガー
         await addDoc(collection(db, "reports"), {
             mob_id: mobNo,
@@ -654,16 +662,29 @@ const setupEventListeners = () => {
     DOMElements.rankTabs.addEventListener('click', (e) => {
         const btn = e.target.closest('.tab-button');
         if (!btn) return;
-        
+
         const newRank = btn.dataset.rank;
+
         if (newRank === currentFilter.rank) {
-            // 同ランクを再クリック -> エリアフィルタトグル
-            toggleAreaFilterPanel();
+            // 💡 修正点: 同ランクを再クリック -> ALL以外ならエリアフィルタトグル
+            if (newRank !== 'ALL') {
+                toggleAreaFilterPanel();
+            } else {
+                // ALLを再クリックしても何も起こらない
+                toggleAreaFilterPanel(true);
+            }
         } else {
             // 異なるランクを選択
             currentFilter.rank = newRank;
-            toggleAreaFilterPanel(true); // パネルは閉じる
-            
+
+            // 💡 修正点: 新しいランクに基づいてパネルの開閉を制御
+            if (newRank === 'ALL') {
+                toggleAreaFilterPanel(true); // ALLなら強制的に閉じる
+            } else {
+                // S, A, FATEに切り替えた場合は、パネルを開く
+                toggleAreaFilterPanel(false);
+            }
+
             // 該当ランクのエリアセットを初期化（存在しない場合）
             if (!currentFilter.areaSets[newRank] || !(currentFilter.areaSets[newRank] instanceof Set)) {
                 currentFilter.areaSets[newRank] = new Set();
@@ -671,22 +692,22 @@ const setupEventListeners = () => {
             filterAndRender();
         }
     });
-    
+
     // エリアフィルタボタン (イベント委譲)
     DOMElements.areaFilterPanel.addEventListener('click', (e) => {
         const btn = e.target.closest('.area-filter-btn');
         if (!btn) return;
-        
+
         const rank = currentFilter.rank;
         // Setオブジェクトが保証されているため、直接操作
         let areaSet = currentFilter.areaSets[rank];
-        
+
         if (btn.dataset.area === 'ALL') {
             const allAreas = Array.from(globalMobData.filter(m => m.Rank === rank).reduce((set, mob) => {
                 if (mob.Expansion) set.add(mob.Expansion);
                 return set;
             }, new Set()));
-            
+
             if (areaSet.size === allAreas.length) {
                 // 全解除
                 currentFilter.areaSets[rank] = new Set();
@@ -702,7 +723,7 @@ const setupEventListeners = () => {
                 areaSet.add(area);
             }
         }
-        
+
         filterAndRender();
     });
 
@@ -720,13 +741,13 @@ const setupEventListeners = () => {
                 openMobCardNo = panel.classList.contains('open') ? mobNo : null;
             }
         }
-        
+
         // 2. 報告ボタン
         const reportBtn = e.target.closest('button[data-report-type]');
         if (reportBtn) {
             e.stopPropagation(); // パネル開閉を防ぐ
             const reportType = reportBtn.dataset.reportType;
-            
+
             if (reportType === 'modal') {
                 openReportModal(mobNo);
             } else if (reportType === 'instant') {
@@ -737,7 +758,7 @@ const setupEventListeners = () => {
             }
         }
     });
-    
+
     // モーダル操作
     document.getElementById('cancel-report').addEventListener('click', closeReportModal);
     DOMElements.reportForm.addEventListener('submit', (e) => {
@@ -745,31 +766,31 @@ const setupEventListeners = () => {
         const mobNo = parseInt(DOMElements.reportForm.dataset.mobNo);
         const datetime = document.getElementById('report-datetime').value;
         const memo = document.getElementById('report-memo').value;
-        
+
         submitReport(mobNo, datetime, memo);
     });
-    
+
     // マップ点クリック (湧き潰しトグル)
     DOMElements.colContainer.addEventListener('click', (e) => {
         const point = e.target.closest('.spawn-point-interactive');
         if (!point) return;
-        
+
         const pointId = point.dataset.pointId;
         const mobNo = parseInt(point.dataset.mobNo);
-        
+
         // ローカルストレージの状態をトグル
         cullStatusMap[pointId] = !cullStatusMap[pointId];
         localStorage.setItem('hunt_spawn_status', JSON.stringify(cullStatusMap));
-        
+
         // DOMを即時更新
         point.classList.toggle('culled');
-        
+
         // TODO: 最後の未処理の強調表示ロジックの再計算（ここでは省略）
     });
 
     // ウィンドウリサイズによるカラム再分配
     window.addEventListener('resize', sortAndRedistribute);
-    
+
     // 定期的な進捗バー更新 (60秒ごと)
     setInterval(updateProgressBars, 60000);
 };
@@ -783,10 +804,10 @@ onAuthStateChanged(auth, (user) => {
         // 認証成功時
         userId = user.uid;
         localStorage.setItem('user_uuid', userId);
-        
+
         // 認証が完了したらリアルタイムリスナーを開始
-        startRealtimeListeners(); 
-        
+        startRealtimeListeners();
+
     } else {
         // 認証されていない場合、匿名認証を試みる
         signInAnonymously(auth).catch(e => console.error("Anonymous sign-in failed:", e));
@@ -796,7 +817,7 @@ onAuthStateChanged(auth, (user) => {
 document.addEventListener('DOMContentLoaded', () => {
     // 認証と並行して、静的データ（mob_data.json）のロードを開始
     fetchBaseMobData();
-    
+
     // 💡 エラー修正: localStorageからフィルタセットを復元 (Array -> Setに変換)
     const newAreaSets = {};
     for (const rankKey in currentFilter.areaSets) {
@@ -806,18 +827,18 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (savedData instanceof Set) {
             newAreaSets[rankKey] = savedData;
         } else {
-             // 予期しない形式の場合、空のSetとして初期化
+            // 予期しない形式の場合、空のSetとして初期化
             newAreaSets[rankKey] = new Set();
         }
     }
     currentFilter.areaSets = newAreaSets;
-    
+
     // イベントリスナー設定
     setupEventListeners();
 
     // 初回描画 (データが揃う前の骨組み表示)
     updateFilterUI();
     sortAndRedistribute();
-    
+
     displayStatus("アプリを初期化中...", 'loading');
 });
