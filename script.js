@@ -267,6 +267,10 @@ const fetchBaseMobData = async () => {
     }
 };
 
+const master = document.getElementById('master-mob-container');
+if (master && master.children.length > 0) master.classList.remove('hidden');
+
+
 /** Firebaseリスナーを設定 */
 const startRealtimeListeners = () => {
     if (!db) return;
