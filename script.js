@@ -32,7 +32,6 @@ const RANK_COLORS = {
 
 const rankMap = { FATE: 'F', // UI→データ
   'F':'F','A':'A','S':'S','ALL':'ALL' };
-currentFilter.rank = rankMap[currentFilter.rank] || 'ALL';
 
 // DOM参照
 const DOMElements = {
@@ -57,6 +56,7 @@ let currentFilter = JSON.parse(localStorage.getItem('huntFilterState')) || {
     rank: 'ALL',
     areaSets: { ALL: new Set() }
 };
+currentFilter.rank = rankMap[currentFilter.rank] || 'ALL';
 
 // currentFilter をロードした直後に挿入する検証ガード
 const validRanks = new Set(['A','S','F','ALL']);
