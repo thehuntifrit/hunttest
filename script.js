@@ -513,7 +513,8 @@ const renderAreaFilterPanel = () => {
     allButton.dataset.area = 'ALL';
     DOMElements.areaFilterPanel.appendChild(allButton);
 
-    Array.from(areas).sort().forEach(area => {
+    // ★ 修正点: .sort() の後に .reverse() を追加して、並び順を逆転させる (例: 黄金 -> 新生)
+    Array.from(areas).sort().reverse().forEach(area => {
         const btn = document.createElement('button');
         const isSelected = currentAreaSet.has(area);
         btn.textContent = area;
