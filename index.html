@@ -8,12 +8,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="style.css">
+    <!-- style.cssを必ず読み込む -->
+    <link rel="stylesheet" href="style.css"> 
 
 </head>
 
 <body class="min-h-screen">
 
+    <!-- Header: 固定ヘッダー (h-16 = 4rem) -->
     <header id="main-header"
         class="fixed top-0 left-0 right-0 bg-gray-800 shadow-lg z-30 h-16 flex flex-col justify-center">
         <div class="container mx-auto px-4 flex items-center justify-between h-full">
@@ -31,18 +33,21 @@
         </div>
     </header>
 
+    <!-- エリアフィルターパネル -->
     <div id="area-filter-wrapper"
         class="absolute top-16 left-0 right-0 bg-gray-700 shadow-xl z-20 transition-all duration-300 ease-in-out overflow-hidden max-h-0 opacity-0 pointer-events-none">
         <div id="area-filter-panel" class="container mx-auto p-4 pt-2 flex flex-wrap gap-2">
         </div>
     </div>
 
+    <!-- ステータスメッセージ (Z-indexを上げ、初期非表示を徹底) -->
     <div id="status-message"
-        class="fixed top-16 left-0 right-0 text-center py-1 text-sm bg-transparent z-10 transition-colors duration-300">
+        class="hidden fixed top-16 left-0 right-0 text-center py-1 text-sm bg-transparent z-40 transition-colors duration-300">
     </div>
 
 
-    <main class="container mx-auto px-4 pt-4 pb-10">
+    <!-- メインコンテンツ領域 -->
+    <main class="container mx-auto px-4 pb-10">
         <div id="master-mob-container" class="hidden">
         </div>
 
@@ -54,6 +59,7 @@
         </div>
     </main>
 
+    <!-- 討伐報告モーダル -->
     <div id="report-modal" class="fixed inset-0 hidden items-center justify-center p-4">
         <div class="bg-gray-800 p-6 rounded-lg shadow-2xl w-full max-w-md border border-gray-600">
             <h2 class="text-xl font-semibold mb-4 text-yellow-300">討伐報告</h2>
@@ -83,6 +89,7 @@
         </div>
     </div>
 
+    <!-- Firebaseなどのスクリプトを読み込む -->
     <script type="module" src="script.js"></script>
 
 </body>
