@@ -510,17 +510,17 @@ const filterAndRender = () => {
     );
     const fragment = document.createDocumentFragment();
 
-    filteredData.forEach(mob => {
-        let card = existingCards.get(mob.No.toString());
-        if (!card) {
-            // カードが存在しない場合は作成
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = createMobCard(mob);
-            card = tempDiv.firstChild;
-        }
-
-        fragment.appendChild(card);
-    });
+  filtered.forEach((mob) => {
+    try {
+    const temp = document.createElement('div');
+    temp.innerHTML = createMobCard(mob);
+    if (temp.firstChild) frag.appendChild(temp.firstChild);
+    else console.warn('createMobCard produced no firstChild for', mob.No);
+  } catch (e) {
+    console.error('createMobCard failed for', mob.No, e);
+    // 続行して他の mob は生成する
+  }
+});
 
     // 既存のものをクリアし、ソート済みのカードを再挿入
     DOMElements.masterContainer.innerHTML = '';
