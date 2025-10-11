@@ -1,0 +1,111 @@
+:root {
+    --bg-dark: #1a1a2e;
+    --text-light: #e0e0e0;
+    --header-height: 4rem; /* Tailwind h-16 */
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    padding-top: var(--header-height); /* Headerの高さ分コンテンツを下にずらす */
+}
+
+/* 視認性向上のためのテキストアウトライン */
+.text-outline {
+    text-shadow: 
+        -1px -1px 0 #000033,  
+        1px -1px 0 #000033,
+        -1px 1px 0 #000033,
+        1px 1px 0 #000033;
+}
+
+/* ランクアイコンのスタイル */
+.rank-icon {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+}
+.rank-icon:hover {
+    transform: scale(1.1);
+}
+
+/* 進捗バーのスタイル (CSSカスタムプロパティでJSから制御) */
+.progress-bar-bg {
+    background-image: linear-gradient(to right, var(--progress-color-start, #0f0) 0%, var(--progress-color-end, #ff0) 100%);
+    height: 100%;
+    transition: width 0.5s ease-out;
+}
+.progress-bar {
+    background-color: rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+}
+
+/* 詳細パネルの折りたたみアニメーション */
+.expandable-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+}
+.expandable-panel.open {
+    max-height: 2000px; /* 適切な最大値 */
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    opacity: 1;
+}
+
+/* マップオーバーレイとスポーン点 */
+.map-content {
+    position: relative;
+}
+.map-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* デフォルトでは非アクティブ */
+    z-index: 20;
+}
+.spawn-point {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: auto; /* クリック可能にする */
+    transform: translate(-50%, -50%); /* 中心に配置 */
+    transition: transform 0.1s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+.spawn-point:hover {
+    transform: translate(-50%, -50%) scale(1.5);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.7); /* ホバー時の発光 */
+}
+/* 湧き潰し済みスタイル */
+.spawn-point.culled {
+    background-color: #6b7280; /* グレー背景 */
+    border: 1px solid #ffffff; /* 白枠 */
+    opacity: 0.6;
+    box-shadow: none;
+    cursor: default;
+}
+/* Bランク点（非インタラクティブ） */
+.spawn-point.rank-B {
+    width: 8px;
+    height: 8px;
+    pointer-events: none;
+    opacity: 0.8;
+}
+/* 最後の未処理の点（強調） */
+.spawn-point.important-last-uncut {
+    border: 2px solid #10b981; /* 内側緑 */
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.8), 0 0 5px rgba(0, 0, 0, 0.8); /* 外枠濃緑と影 */
+}
+
+/* モーダルの背景 */
+#report-modal {
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 50;
+}
