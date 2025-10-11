@@ -53,6 +53,9 @@ let currentFilter = JSON.parse(localStorage.getItem('huntFilterState')) || {
     rank: 'ALL',
     areaSets: { ALL: new Set() }
 };
+
+window.currentFilter = currentFilter;
+
 let openMobCardNo = localStorage.getItem('openMobCardNo') ? parseInt(localStorage.getItem('openMobCardNo')) : null;
 let cullStatusMap = JSON.parse(localStorage.getItem('hunt_spawn_status')) || {}; // 湧き潰し状態
 
