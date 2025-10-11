@@ -3,6 +3,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, addDoc, query, where } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
+// 💡 【重要】FunctionsのSDKをインポート
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-functions.js";
+
+
 // --- 1. 定数とグローバル変数 ---
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
@@ -13,6 +17,20 @@ const FIREBASE_CONFIG = {
   appId: "1:465769826017:web:74ad7e62f3ab139cb359a0",
   measurementId: "G-J1KGFE15XP"
 };
+
+// Initialize Firebase
+const app = initializeApp(FIREBASE_CONFIG); 
+// const analytics = getAnalytics(app); // analyticsが不要なら削除してもOK
+
+// 💡 【ここ！】Firebase Appの初期化直後、他のサービス初期化と並行して配置
+const db = getFirestore(app);
+const auth = getAuth(app);
+const functions = getFunctions(app, "asia-northeast2"); // ★この行を追加/修正
+
+// 以下の行で、Functionsを呼び出すためのCallableインスタンスを作成します
+const callHuntReport = httpsCallable(functions, 'callHuntReport'); 
+
+// ... (中略：これ以降に他のロジックが続く) ...
 const MOB_DATA_URL = "./mob_data.json"; // mob_data.jsonのパス
 
 const EXPANSION_MAP = {
