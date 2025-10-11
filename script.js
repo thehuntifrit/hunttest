@@ -1,4 +1,8 @@
-// Firebase SDKのインポート
+// =========================================================================
+// The Hunt Tracker - Client-side JavaScript (script.js)
+// =========================================================================
+
+// Firebase SDKのインポート（モジュールとして扱う）
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
@@ -17,17 +21,28 @@ const FIREBASE_CONFIG = {
   measurementId: "G-J1KGFE15XP"
 };
 
-const MOB_DATA_URL = "./mob_data.json";
+const MOB_DATA_URL = "./mob_data.json"; // mob_data.jsonのパス
 
 const EXPANSION_MAP = {
     1: "新生", 2: "蒼天", 3: "紅蓮", 4: "漆黒", 5: "暁月", 6: "黄金"
 };
+
+// UIのランク名 ('FATE'など) をデータ内のランク名 ('F'など) に変換するためのマップを定義
+const FILTER_TO_DATA_RANK_MAP = {
+    'FATE': 'F',
+    'ALL': 'ALL',
+    'S': 'S',
+    'A': 'A',
+};
+
+// ランクごとの色定義。キーはデータ側のランク名 (S, A, Fなど) に統一し、
+// UI表示用の label を追加。
 const RANK_COLORS = {
-    S: { bg: 'bg-red-600', text: 'text-red-600', hex: '#dc2626' },
-    A: { bg: 'bg-yellow-600', text: 'text-yellow-600', hex: '#ca8a04' },
-    FATE: { bg: 'bg-indigo-600', text: 'text-indigo-600', hex: '#4f46e5' },
-    B1: { bg: 'bg-green-500', text: 'text-green-500', hex: '#10b981' },
-    B2: { bg: 'bg-blue-500', text: 'text-blue-500', hex: '#3b82f6' }
+    S: { bg: 'bg-red-600', text: 'text-red-600', hex: '#dc2626', label: 'S' },
+    A: { bg: 'bg-yellow-600', text: 'text-yellow-600', hex: '#ca8a04', label: 'A' },
+    F: { bg: 'bg-indigo-600', text: 'text-indigo-600', hex: '#4f46e5', label: 'FATE' }, // データキーを 'F' に
+    B1: { bg: 'bg-green-500', text: 'text-green-500', hex: '#10b981', label: 'B1' }, // Bランク点用
+    B2: { bg: 'bg-blue-500', text: 'text-blue-500', hex: '#3b82f6', label: 'B2' }
 };
 
 // DOM参照
@@ -47,14 +62,14 @@ const DOMElements = {
 
 // グローバル状態
 let userId = localStorage.getItem('user_uuid') || null;
-let baseMobData = [];
-let globalMobData = [];
+let baseMobData = []; // mob_data.jsonの内容
+let globalMobData = []; // baseMobData + Firebaseデータ
 let currentFilter = JSON.parse(localStorage.getItem('huntFilterState')) || {
     rank: 'ALL',
     areaSets: { ALL: new Set() }
 };
 let openMobCardNo = localStorage.getItem('openMobCardNo') ? parseInt(localStorage.getItem('openMobCardNo')) : null;
-let cullStatusMap = JSON.parse(localStorage.getItem('hunt_spawn_status')) || {};
+let cullStatusMap = JSON.parse(localStorage.getItem('hunt_spawn_status')) || {}; // 湧き潰し状態
 
 // Firebaseインスタンスの初期化
 let app = initializeApp(FIREBASE_CONFIG);
@@ -62,7 +77,7 @@ let db = getFirestore(app);
 let auth = getAuth(app);
 
 // Functionsの初期化とリージョン指定
-let functions = getFunctions(app, "asia-northeast2");
+let functions = getFunctions(app, "asia-northeast2"); // ★リージョンをasia-northeast2に指定
 // Functions呼び出し名をサーバー側の関数名に合わせる
 const callHuntReport = httpsCallable(functions, 'processHuntReport');
 
@@ -90,7 +105,7 @@ const formatDuration = (seconds) => {
 };
 
 /** テキスト整形 (POP条件の//を<br>に) */
-const processText = (text) => (text || '').replace(/\/\//g, '<br>');
+const processText = (text) => text.replace(/\/\//g, '<br>');
 
 /** デバウンス関数 */
 const debounce = (func, wait) => {
@@ -111,8 +126,6 @@ const displayStatus = (message, type = 'loading') => {
     DOMElements.statusMessage.classList.remove('hidden');
 
     DOMElements.statusMessage.textContent = message;
-    // ナビゲーションバーの高さ（h-14、56pxを仮定）の直下に配置
-    // z-index を調整し、ナビゲーションの下または上に正しく配置します。
     DOMElements.statusMessage.className = 'fixed top-14 left-0 right-0 z-40 text-center py-1 text-sm transition-colors duration-300';
 
     // 色のクラスをリセット
@@ -125,7 +138,7 @@ const displayStatus = (message, type = 'loading') => {
         setTimeout(() => {
             DOMElements.statusMessage.textContent = '';
             DOMElements.statusMessage.classList.add('hidden');
-        }, 3000);
+        }, 3000); // 成功は3秒で消す
     } else {
         DOMElements.statusMessage.classList.add('bg-blue-700/80', 'text-white');
     }
@@ -136,7 +149,7 @@ const displayStatus = (message, type = 'loading') => {
 
 /** Repop時間と進捗を計算 */
 const calculateRepop = (mob) => {
-    const now = Date.now() / 1000;
+    const now = Date.now() / 1000; // UNIX秒
     const lastKill = mob.last_kill_time || 0;
     const repopSec = mob.REPOP_s;
     const maxSec = mob.MAX_s;
@@ -145,12 +158,12 @@ const calculateRepop = (mob) => {
     let maxRepop = lastKill + maxSec;
     let elapsedPercent = 0;
     let timeRemaining = 'Unknown';
-    let status = 'Unknown';
+    let status = 'Unknown'; // Next, PopWindow, MaxOver
 
     if (lastKill === 0) {
         // 未報告時: Nextを現在時刻+minRepopとして扱う (あくまで目安)
         minRepop = now + repopSec;
-        maxRepop = now + maxSec;
+        maxRepop = now + maxSec; // 使わないが定義
         timeRemaining = `Next: ${formatDuration(minRepop - now)}`;
         status = 'Next';
     } else if (now < minRepop) {
@@ -188,13 +201,13 @@ const updateProgressBars = () => {
         progressBar.style.width = `${elapsedPercent}%`;
         progressText.textContent = timeRemaining;
 
-        let colorStart = '#16a34a';
+        let colorStart = '#16a34a'; // Next: green-600
         let colorEnd = '#16a34a';
 
         if (status === 'PopWindow') {
             // 青 (0%) から赤 (100%) のグラデーション
-            const h_start = 240;
-            const h_end = 0;
+            const h_start = 240; // Blue
+            const h_end = 0; // Red
             const h = h_start + ((h_end - h_start) * (elapsedPercent / 100));
             colorStart = `hsl(${h_start}, 80%, 50%)`;
             colorEnd = `hsl(${h}, 80%, 50%)`;
@@ -205,8 +218,8 @@ const updateProgressBars = () => {
 
         } else if (status === 'MaxOver') {
             // 赤色で点滅
-            colorStart = '#ef4444';
-            colorEnd = '#b91c1c';
+            colorStart = '#ef4444'; // Red-500
+            colorEnd = '#b91c1c'; // Red-700
             progressText.classList.add('text-white', 'text-outline');
             progressBar.parentElement.classList.add('animate-pulse');
         } else {
@@ -236,15 +249,15 @@ const fetchBaseMobData = async () => {
             ...mob,
             // 拡張名の付与
             Expansion: EXPANSION_MAP[Math.floor(mob.No / 10000)] || "Unknown",
-            REPOP_s: mob.REPOP * 3600,
-            MAX_s: mob.MAX * 3600,
+            REPOP_s: mob.REPOP * 3600, // JSONのREPOPを秒に変換
+            MAX_s: mob.MAX * 3600,      // JSONのMAXを秒に変換
             // 動的情報用の初期値
             last_kill_time: 0,
             last_kill_memo: '',
-            spawn_cull_status: {},
+            spawn_cull_status: {}, // active_coordsからマージされる
         }));
 
-        // 初回は素のデータで描画開始
+        // 初回は素のデータで描画開始 (データが揃うまでのフォールバック)
         globalMobData = [...baseMobData];
         filterAndRender();
 
@@ -288,6 +301,7 @@ const startRealtimeListeners = () => {
         mergeMobData(coordsMap, 'active_coords');
     }, (error) => {
         console.error("Active coords real-time error:", error);
+        // エラー表示はmob_statusで代表させる
     });
 };
 
@@ -302,6 +316,7 @@ const mergeMobData = (dataMap, type) => {
                 mergedMob.last_kill_time = dynamicData.last_kill_time;
                 mergedMob.last_kill_memo = dynamicData.last_kill_memo;
             } else if (type === 'active_coords') {
+                   // spawn_pointsがJSONにある場合、coordsをマージして利用
                 if (mob.spawn_points) {
                     mergedMob.spawn_cull_status = dynamicData.reduce((map, point) => {
                         map[point.id] = point.culled || false;
@@ -325,8 +340,12 @@ const mergeMobData = (dataMap, type) => {
 
 /** モブカードHTMLを生成 */
 const createMobCard = (mob) => {
-    const rank = mob.Rank;
-    const rankColor = RANK_COLORS[rank] || RANK_COLORS.A;
+    const rank = mob.Rank; // 例: 'F'
+    // データランク (S, A, Fなど) に対応する設定を取得
+    const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
+    // UI表示用のラベルを取得 (例: 'F' の場合は 'FATE' と表示)
+    const rankLabel = rankConfig.label || rank;
+    
     const isOpen = mob.No === openMobCardNo;
     const lastKillDisplay = mob.last_kill_time > 0
         ? new Date(mob.last_kill_time * 1000).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
@@ -341,9 +360,10 @@ const createMobCard = (mob) => {
             
             <div class="flex flex-col flex-shrink min-w-0">
                 <div class="flex items-center space-x-2">
-                    <span class="rank-icon ${rankColor.bg} text-white text-xs font-bold px-2 py-0.5 rounded-full">${rank}</span>
+                    <!-- UI表示には rankLabel (FATE) を使用 -->
+                    <span class="rank-icon ${rankConfig.bg} text-white text-xs font-bold px-2 py-0.5 rounded-full">${rankLabel}</span>
                     <span class="mob-name text-lg font-bold text-outline truncate max-w-xs md:max-w-[150px] lg:max-w-full">${mob.Name}</span>
-                </div>
+            </div>
                 <span class="text-xs text-gray-400 mt-0.5">${mob.Area} (${mob.Expansion})</span>
             </div>
 
@@ -403,7 +423,9 @@ const drawSpawnPoint = (point, cullStatus, mobNo) => {
 
     let specialClass = '';
 
-    const color = RANK_COLORS[point.mob_ranks[0]]?.hex || '#ccc';
+    // 色は最初のランクで決定
+    // FATEモブはデータでは 'F' なので 'F' で検索する
+    const color = RANK_COLORS[point.mob_ranks[0]]?.hex || '#ccc'; 
 
     return `
         <div class="spawn-point ${rankClass} ${isCulled ? 'culled' : ''} ${specialClass} ${isS_A ? 'spawn-point-interactive' : ''}"
@@ -419,7 +441,7 @@ const drawSpawnPoint = (point, cullStatus, mobNo) => {
 const distributeCards = () => {
     const numCards = DOMElements.masterContainer.children.length;
     const windowWidth = window.innerWidth;
-    // HTMLからブレークポイントを取得
+    // HTMLからブレークポイントを取得 (未設定ならデフォルト値)
     const mdBreakpoint = DOMElements.colContainer.dataset.breakpointMd ? parseInt(DOMElements.colContainer.dataset.breakpointMd) : 768;
     const lgBreakpoint = DOMElements.colContainer.dataset.breakpointLg ? parseInt(DOMElements.colContainer.dataset.breakpointLg) : 1024;
 
@@ -430,7 +452,7 @@ const distributeCards = () => {
         DOMElements.cols[2].classList.remove('hidden');
     } else if (windowWidth >= mdBreakpoint) {
         numColumns = 2;
-        DOMElements.cols[2].classList.add('hidden');
+        DOMElements.cols[2].classList.add('hidden'); // 3列目を非表示
     } else {
         numColumns = 1;
         DOMElements.cols[2].classList.add('hidden');
@@ -446,19 +468,24 @@ const distributeCards = () => {
         DOMElements.cols[targetColIndex].appendChild(card);
     });
 
-    updateProgressBars();
+    updateProgressBars(); // 分配後、進捗バーを更新して色を確定
 };
 
 /** フィルタリング、ソート、分配を一括実行 */
 const filterAndRender = () => {
+    // UI側のランク名 (currentFilter.rank, 例: 'FATE') をデータ側のランク名 (例: 'F') に変換
+    const targetDataRank = FILTER_TO_DATA_RANK_MAP[currentFilter.rank] || currentFilter.rank;
+    
     // 1. フィルタリング
     const filteredData = globalMobData.filter(mob => {
         if (currentFilter.rank === 'ALL') return true;
-        if (mob.Rank !== currentFilter.rank) return false;
+        
+        // 変換後のデータランク (targetDataRank) とモブのランク (mob.Rank) を比較
+        if (mob.Rank !== targetDataRank) return false;
 
         const areaSet = currentFilter.areaSets[currentFilter.rank];
         // Setオブジェクトであることを確認
-        if (!areaSet || !(areaSet instanceof Set) || areaSet.size === 0) return true;
+        if (!areaSet || !(areaSet instanceof Set) || areaSet.size === 0) return true; // フィルタ未設定なら全て表示
 
         return areaSet.has(mob.Expansion);
     });
@@ -468,7 +495,7 @@ const filterAndRender = () => {
 
     // 3. masterContainerのDOMをソート
     const existingCards = new Map(Array.from(DOMElements.masterContainer.children)
-        .filter(c => c.dataset.mobNo)
+        .filter(c => c.dataset.mobNo) // data-mob-no が存在する要素のみをフィルタ
         .map(c => [c.dataset.mobNo, c])
     );
     const fragment = document.createDocumentFragment();
@@ -512,6 +539,10 @@ const filterAndRender = () => {
 
 /** フィルタUIの状態を更新 */
 const updateFilterUI = () => {
+    
+    // 現在のUIランク名 (例: 'FATE') をデータランク名 (例: 'F') に変換
+    const currentRankKeyForColor = FILTER_TO_DATA_RANK_MAP[currentFilter.rank] || currentFilter.rank;
+
     // タブの色更新
     DOMElements.rankTabs.querySelectorAll('.tab-button').forEach(btn => {
         btn.classList.remove('bg-blue-800', 'bg-red-800', 'bg-yellow-800', 'bg-indigo-800');
@@ -519,8 +550,9 @@ const updateFilterUI = () => {
         if (btn.dataset.rank === currentFilter.rank) {
             btn.classList.remove('bg-gray-600');
             const rank = btn.dataset.rank;
-            // アクティブなタブの色を濃くする
-            btn.classList.add(rank === 'ALL' ? 'bg-blue-800' : rank === 'S' ? 'bg-red-800' : rank === 'A' ? 'bg-yellow-800' : 'bg-indigo-800');
+            
+            // アクティブなタブの色を濃くする (データランクキーで判定)
+            btn.classList.add(rank === 'ALL' ? 'bg-blue-800' : currentRankKeyForColor === 'S' ? 'bg-red-800' : currentRankKeyForColor === 'A' ? 'bg-yellow-800' : currentRankKeyForColor === 'F' ? 'bg-indigo-800' : 'bg-gray-800');
         }
     });
 
@@ -532,11 +564,14 @@ const updateFilterUI = () => {
 
 /** エリアフィルタパネルを生成 */
 const renderAreaFilterPanel = () => {
-    DOMElements.areaFilterPanel.innerHTML = '';
+    DOMElements.areaFilterPanel.innerHTML = ''; // クリア
+    
+    // UIランク名 (例: 'FATE') をデータランク名 (例: 'F') に変換
+    const targetDataRank = FILTER_TO_DATA_RANK_MAP[currentFilter.rank] || currentFilter.rank;
 
     // 該当ランクの拡張エリアを抽出
     const areas = globalMobData
-        .filter(m => m.Rank === currentFilter.rank)
+        .filter(m => m.Rank === targetDataRank) // 変換後のデータランクでフィルタ
         .reduce((set, mob) => {
             if (mob.Expansion) set.add(mob.Expansion);
             return set;
@@ -549,7 +584,7 @@ const renderAreaFilterPanel = () => {
 
     // 全選択/解除ボタン
     const allButton = document.createElement('button');
-    const isAllSelected = areas.size === currentAreaSet.size && areas.size > 0;
+    const isAllSelected = areas.size === currentAreaSet.size && areas.size > 0; // 全てのエリアが選択されているか
     allButton.textContent = isAllSelected ? '全解除' : '全選択';
     allButton.className = `area-filter-btn px-3 py-1 text-xs rounded font-semibold transition ${isAllSelected ? 'bg-red-500' : 'bg-gray-500 hover:bg-gray-400'}`;
     allButton.dataset.area = 'ALL';
@@ -581,7 +616,7 @@ const toggleAreaFilterPanel = (forceClose = false) => {
         // 開く処理
         DOMElements.areaFilterWrapper.classList.add('open');
         DOMElements.areaFilterWrapper.classList.remove('max-h-0', 'opacity-0', 'pointer-events-none');
-        renderAreaFilterPanel();
+        renderAreaFilterPanel(); // 開くときに中身を再描画
     }
 };
 
@@ -628,7 +663,7 @@ const submitReport = async (mobNo, timeISO, memo) => {
     DOMElements.modalStatus.textContent = '送信中...';
 
     try {
-        const killTime = new Date(timeISO).getTime() / 1000;
+        const killTime = new Date(timeISO).getTime() / 1000; // UNIX秒
 
         // Firestoreに直接書き込むことでCloud Functionsをトリガー
         await addDoc(collection(db, "reports"), {
@@ -658,18 +693,22 @@ const setupEventListeners = () => {
         const newRank = btn.dataset.rank;
 
         if (newRank === currentFilter.rank) {
+            // 同ランクを再クリック -> ALL以外ならエリアフィルタトグル
             if (newRank !== 'ALL') {
                 toggleAreaFilterPanel();
             } else {
+                // ALLを再クリックしても何も起こらない
                 toggleAreaFilterPanel(true);
             }
         } else {
             // 異なるランクを選択
             currentFilter.rank = newRank;
 
+            // 新しいランクに基づいてパネルの開閉を制御
             if (newRank === 'ALL') {
-                toggleAreaFilterPanel(true);
+                toggleAreaFilterPanel(true); // ALLなら強制的に閉じる
             } else {
+                // S, A, FATEに切り替えた場合は、パネルを開く
                 toggleAreaFilterPanel(false);
             }
 
@@ -686,22 +725,25 @@ const setupEventListeners = () => {
         const btn = e.target.closest('.area-filter-btn');
         if (!btn) return;
 
-        const rank = currentFilter.rank;
+        const uiRank = currentFilter.rank; // 例: 'FATE'
+        // データランクに変換
+        const dataRank = FILTER_TO_DATA_RANK_MAP[uiRank] || uiRank;
+
         // Setオブジェクトが保証されているため、直接操作
-        let areaSet = currentFilter.areaSets[rank];
+        let areaSet = currentFilter.areaSets[uiRank];
 
         if (btn.dataset.area === 'ALL') {
-            const allAreas = Array.from(globalMobData.filter(m => m.Rank === rank).reduce((set, mob) => {
+            const allAreas = Array.from(globalMobData.filter(m => m.Rank === dataRank).reduce((set, mob) => {
                 if (mob.Expansion) set.add(mob.Expansion);
                 return set;
             }, new Set()));
 
             if (areaSet.size === allAreas.length) {
                 // 全解除
-                currentFilter.areaSets[rank] = new Set();
+                currentFilter.areaSets[uiRank] = new Set();
             } else {
                 // 全選択
-                currentFilter.areaSets[rank] = new Set(allAreas);
+                currentFilter.areaSets[uiRank] = new Set(allAreas);
             }
         } else {
             const area = btn.dataset.area;
@@ -733,7 +775,7 @@ const setupEventListeners = () => {
         // 2. 報告ボタン
         const reportBtn = e.target.closest('button[data-report-type]');
         if (reportBtn) {
-            e.stopPropagation();
+            e.stopPropagation(); // パネル開閉を防ぐ
             const reportType = reportBtn.dataset.reportType;
 
             if (reportType === 'modal') {
@@ -772,6 +814,8 @@ const setupEventListeners = () => {
 
         // DOMを即時更新
         point.classList.toggle('culled');
+
+        // TODO: 最後の未処理の強調表示ロジックの再計算（ここでは省略）
     });
 
     // ウィンドウリサイズによるカラム再分配
@@ -799,7 +843,6 @@ onAuthStateChanged(auth, (user) => {
         signInAnonymously(auth).catch(e => console.error("Anonymous sign-in failed:", e));
     }
 });
-
 
 document.addEventListener('DOMContentLoaded', () => {
     // 認証と並行して、静的データ（mob_data.json）のロードを開始
