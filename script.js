@@ -63,8 +63,6 @@ let cullStatusMap = JSON.parse(localStorage.getItem('hunt_spawn_status')) || {};
 let app = initializeApp(FIREBASE_CONFIG);
 let db = getFirestore(app);
 let auth = getAuth(app);
-
-// module 版 SDK の場合（initializeApp で返る app, auth, db を既に持っている前提）
 window.firebaseApp = app;
 window.firebaseAuth = auth;
 window.firebaseDb = db;
@@ -827,13 +825,12 @@ onAuthStateChanged(auth, (user) => {
 });
 
 
-// デバッグ用にモジュール内部をグローバルへ露出（暫定、デバッグが終わったら削除）
+// Debug exposures (temporary)
 window.baseMobData = baseMobData;
 window.globalMobData = globalMobData;
 window.filterAndRender = filterAndRender;
 window.fetchBaseMobData = fetchBaseMobData;
 window.currentFilter = currentFilter;
-
 
 document.addEventListener('DOMContentLoaded', () => {
     // 認証と並行して、静的データ（mob_data.json）のロードを開始
