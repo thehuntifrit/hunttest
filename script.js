@@ -305,9 +305,12 @@ const createMobCard = (mob) => {
         ? new Date(mob.last_kill_time * 1000).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
         : '未報告';
 
+    // ★ 修正: mob.spawn_points がない場合のフォールバックを ?? [] で強化
+    const spawnPointsHtml = (mob.spawn_points ?? []).map(point => drawSpawnPoint(point, mob.spawn_cull_status, mob.No)).join('');
+
     const cardHTML = `
     <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 hover:border-gray-500 transition duration-150"
-          data-mob-no="${mob.No}" data-rank="${rank}">
+        data-mob-no="${mob.No}" data-rank="${rank}">
         
         <div class="p-4 flex items-center justify-between space-x-2 bg-gray-800/70" data-toggle="card-header">
             
@@ -354,7 +357,7 @@ const createMobCard = (mob) => {
                     <div class="map-content py-2 flex justify-center relative">
                         <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="w-full h-auto rounded shadow-lg border border-gray-600">
                         <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">
-                            ${mob.spawn_points ? mob.spawn_points.map(point => drawSpawnPoint(point, mob.spawn_cull_status, mob.No)).join('') : ''}
+                            ${spawnPointsHtml}
                         </div>
                     </div>
                 ` : ''}
@@ -378,10 +381,10 @@ const drawSpawnPoint = (point, cullStatus, mobNo) => {
 
     return `
         <div class="spawn-point ${rankClass} ${isCulled ? 'culled' : ''} ${specialClass} ${isS_A ? 'spawn-point-interactive' : ''}"
-             data-point-id="${point.id}"
-             data-mob-no="${mobNo}"
-             data-is-interactive="${isS_A}"
-             style="left: ${point.x}%; top: ${point.y}%; background-color: ${color};"
+            data-point-id="${point.id}"
+            data-mob-no="${mobNo}"
+            data-is-interactive="${isS_A}"
+            style="left: ${point.x}%; top: ${point.y}%; background-color: ${color};"
         ></div>
     `;
 };
@@ -438,16 +441,20 @@ const filterAndRender = () => {
     );
     const fragment = document.createDocumentFragment();
 
-    filteredData.forEach(mob => {
-        let card = existingCards.get(mob.No.toString());
-        if (!card) {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = createMobCard(mob);
-            card = tempDiv.firstElementChild; 
-        }
+    filteredData.forEach(mob => {
+        let card = existingCards.get(mob.No.toString());
+        if (!card) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = createMobCard(mob);
+            // ★ 修正点: firstChild (テキストノード) ではなく firstElementChild (要素ノード) を取得
+            card = tempDiv.firstElementChild; 
+        }
 
-        fragment.appendChild(card);
-    });
+        // card が null/undefined の場合はスキップして、エラーを防ぐ
+        if (card) { 
+             fragment.appendChild(card);
+        }
+    });
 
     DOMElements.masterContainer.innerHTML = '';
     DOMElements.masterContainer.appendChild(fragment);
@@ -513,7 +520,7 @@ const renderAreaFilterPanel = () => {
     allButton.dataset.area = 'ALL';
     DOMElements.areaFilterPanel.appendChild(allButton);
 
-    // ★ 修正点: .sort() の後に .reverse() を追加して、並び順を逆転させる (例: 黄金 -> 新生)
+    // ★ 修正点: .sort() の後に .reverse() を追加して、並び順を逆転させる (黄金 -> 新生)
     Array.from(areas).sort().reverse().forEach(area => {
         const btn = document.createElement('button');
         const isSelected = currentAreaSet.has(area);
@@ -743,9 +750,9 @@ document.addEventListener('DOMContentLoaded', () => {
     currentFilter.areaSets = newAreaSets;
 
     setupEventListeners();
-  
-    updateFilterUI();
-    sortAndRedistribute();
+    
+    updateFilterUI();
+    sortAndRedistribute();
 
-    displayStatus("アプリを初期化中...", 'loading');
+    displayStatus("アプリを初期化中...", 'loading');
 });
