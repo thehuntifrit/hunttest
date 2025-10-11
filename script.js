@@ -100,7 +100,10 @@ const formatDuration = (seconds) => {
 };
 
 /** テキスト整形 (POP条件の//を<br>に) */
-const processText = (text) => text.replace(/\/\//g, '<br>');
+  const processText = (text) => {
+    if (text === null || text === undefined) return '';
+    return String(text).replace(/\/\//g, '<br>');
+};
 
 /** デバウンス関数 */
 const debounce = (func, wait) => {
