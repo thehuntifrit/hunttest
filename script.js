@@ -200,7 +200,10 @@ const calculateRepop = (mob) => {
         status = 'MaxOver';
     }
 
-    return { minRepop, maxRepop, elapsedPercent, timeRemaining, status };
+    // 次回リポップ時刻を Date オブジェクトで計算 (詳細パネル用)
+    const nextMinRepopDate = minRepop > now ? new Date(minRepop * 1000) : null;
+    
+    return { minRepop, maxRepop, elapsedPercent, timeRemaining, status, nextMinRepopDate };
 };
 
 const updateProgressBars = () => {
@@ -247,7 +250,7 @@ const updateProgressBars = () => {
         }
 
         if (bgColorClass) {
-             progressBar.classList.add(bgColorClass);
+            progressBar.classList.add(bgColorClass);
         }
         
         // テキスト色クラスの適用
@@ -353,19 +356,26 @@ const createMobCard = (mob) => {
     const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
     const rankLabel = rankConfig.label || rank;
     
-    // [仕様 IV-12] 前回討伐時刻のフォーマット
     const lastKillDisplay = formatLastKillTime(mob.last_kill_time);
+    
+    // 詳細パネル内の絶対時刻表示用のフォーマット
+    const absTimeFormat = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+    const nextTimeDisplay = mob.repopInfo?.nextMinRepopDate ? mob.repopInfo.nextMinRepopDate.toLocaleString('ja-JP', absTimeFormat) : '未確定';
+    const prevTimeDisplay = mob.last_kill_time > 0 ? new Date(mob.last_kill_time * 1000).toLocaleString('ja-JP', absTimeFormat) : '未報告';
 
+    // Sモブがラストワン状態かどうかの判定 (Bのみ反転ロジックに使用)
+    const isS_LastOne = rank === 'S' && mob.spawn_points && mob.spawn_points.some(p => p.is_last_one && (p.mob_ranks.includes('S') || p.mob_ranks.includes('A')));
+    
     // [仕様 I-3] Sモブのみ詳細パネルを展開
     const isExpandable = rank === 'S';
     const isOpen = isExpandable && mob.No === openMobCardNo;
     
     // Sモブのみマップを表示
     const spawnPointsHtml = (isExpandable && mob.Map) ? 
-        (mob.spawn_points ?? []).map(point => drawSpawnPoint(point, mob.spawn_cull_status, mob.No, mob.Rank, mob.spawn_points.length === 1 && mob.spawn_points[0].is_last_one)).join('')
+        (mob.spawn_points ?? []).map(point => drawSpawnPoint(point, mob.spawn_cull_status, mob.No, mob.Rank, point.is_last_one, isS_LastOne)).join('')
         : '';
 
-    // --- [仕様 I-2] ヘッダーレイアウト修正 ---
+    // --- [仕様 I-2, I-1] ヘッダーレイアウト修正 (最終時刻表示を削除) ---
     const cardHeaderHTML = `
         <div class="p-1.5 space-y-1 bg-gray-800/70" data-toggle="card-header">
             
@@ -384,8 +394,7 @@ const createMobCard = (mob) => {
                         ? `<button data-report-type="instant" data-mob-no="${mob.No}" class="px-2 py-0.5 text-xs rounded bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-semibold transition">即時報告</button>`
                         : `<button data-report-type="modal" data-mob-no="${mob.No}" class="px-2 py-0.5 text-xs rounded bg-green-500 hover:bg-green-400 text-gray-900 font-semibold transition">報告する</button>`
                     }
-                    <div class="text-xs text-gray-400">最終: ${lastKillDisplay}</div>
-                </div>
+                    </div>
             </div>
 
             <div class="progress-bar-wrapper h-4 rounded-full relative overflow-hidden transition-all duration-100 ease-linear">
@@ -397,20 +406,22 @@ const createMobCard = (mob) => {
         </div>
     `;
 
-    // Sモブのみ詳細パネルを作成
+    // Sモブのみ詳細パネルを作成 [仕様 III-3, III-4] 配置順序と最終討伐時刻の移動を厳守
     const expandablePanelHTML = isExpandable ? `
         <div class="expandable-panel ${isOpen ? 'open' : ''}">
             <div class="px-2 py-1 text-sm space-y-1.5">
                 
-                <div class="grid grid-cols-2 gap-x-4">
-                    <div class="col-span-2 font-semibold text-yellow-300">抽選条件</div>
-                    <div class="col-span-2 text-gray-300">${processText(mob.Condition)}</div>
+                <div class="flex justify-between items-start flex-wrap">
+                    <div class="w-full font-semibold text-yellow-300">抽出条件</div>
+                    <div class="w-full text-gray-300 mb-2">${processText(mob.Condition)}</div>
+
+                    <div class="w-full text-right text-sm font-mono text-blue-300">次回: ${nextTimeDisplay}</div>
+
+                    <div class="w-full text-right text-xs text-gray-400 mb-2">前回: ${prevTimeDisplay}</div>
                     
-                    <div class="col-span-1 text-xs text-gray-400 mt-1">最短リポップ開始</div>
-                    <div class="col-span-1 text-xs text-right font-mono mt-1">${mob.repopInfo?.minRepop ? new Date(mob.repopInfo.minRepop * 1000).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '未確定'}</div>
-                    
-                    <div class="col-span-1 text-xs text-gray-400">討伐メモ</div>
-                    <div class="col-span-1 text-xs text-right font-mono">${mob.last_kill_memo || 'なし'}</div>
+                    <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: ${mob.last_kill_memo || 'なし'}</div>
+
+                    <div class="w-full text-left text-xs text-gray-400 border-t border-gray-600 pt-1">最終討伐報告: ${lastKillDisplay}</div>
                 </div>
 
                 ${mob.Map ? `
@@ -438,7 +449,8 @@ const createMobCard = (mob) => {
     return cardHTML;
 };
 
-const drawSpawnPoint = (point, cullStatus, mobNo, mobRank, isLastOne) => {
+// [仕様 IV-5] Bのみ反転ロジック対応のため isS_LastOne を追加
+const drawSpawnPoint = (point, cullStatus, mobNo, mobRank, isLastOne, isS_LastOne) => {
     // S/A湧き潰しに関わるポイントか判定
     const isS_A_Cullable = point.mob_ranks.some(r => r === 'S' || r === 'A');
     // サーバーデータに基づく湧き潰し状態
@@ -480,9 +492,15 @@ const drawSpawnPoint = (point, cullStatus, mobNo, mobRank, isLastOne) => {
     } else if (isB_Only) {
         // 3. Bランクのみポイント (非インタラクティブ)
         const rank = point.mob_ranks[0];
-        colorClass = rank === 'B1' ? 'color-b1-only' : 'color-b2-only';
+        // [仕様 IV-5] S/Aがラストワンの場合は、Bのみポイントをグレーに反転
+        if (isS_LastOne) {
+            colorClass = 'color-b-inverted'; // B反転用CSSクラス（グレー）
+        } else {
+            colorClass = rank === 'B1' ? 'color-b1-only' : 'color-b2-only';
+        }
+        
         sizeClass = 'spawn-point-b-only'; // 内径 8px
-        specialClass = 'opacity-50'; // Bのみ反転は削除、単に非強調
+        specialClass = 'opacity-50'; 
     } else {
         // Fallback (非インタラクティブ)
         sizeClass = 'spawn-point-b-only';
@@ -582,6 +600,12 @@ const updateFilterUI = () => {
     DOMElements.rankTabs.querySelectorAll('.tab-button').forEach(btn => {
         btn.classList.remove('bg-blue-800', 'bg-red-800', 'bg-yellow-800', 'bg-indigo-800');
         btn.classList.add('bg-gray-600');
+        
+        // クリックカウントをリセット
+        if (btn.dataset.rank !== currentFilter.rank) {
+            btn.dataset.clickCount = 0;
+        }
+
         if (btn.dataset.rank === currentFilter.rank) {
             btn.classList.remove('bg-gray-600');
             const rank = btn.dataset.rank;
@@ -589,11 +613,11 @@ const updateFilterUI = () => {
             btn.classList.add(rank === 'ALL' ? 'bg-blue-800' : currentRankKeyForColor === 'S' ? 'bg-red-800' : currentRankKeyForColor === 'A' ? 'bg-yellow-800' : currentRankKeyForColor === 'F' ? 'bg-indigo-800' : 'bg-gray-800');
         }
     });
-
-    if (currentFilter.rank !== 'ALL') {
-        renderAreaFilterPanel();
-    }
+    
+    // エリアパネルの開閉状態をUIに反映（ランクタブのロジックに任せるため、ここでは明示的に開閉はしない）
+    // renderAreaFilterPanel() は toggleAreaFilterPanel() から呼び出される
 };
+
 
 const renderAreaFilterPanel = () => {
     DOMElements.areaFilterPanel.innerHTML = '';
@@ -656,7 +680,7 @@ const openReportModal = (mobNo) => {
     if (!mob) return;
 
     const now = new Date();
-    const jstNow = new Date(now.getTime() + (now.getTimezonezoneOffset() * 60000) + (9 * 60 * 60 * 1000));
+    const jstNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (9 * 60 * 60 * 1000));
     const isoString = jstNow.toISOString().slice(0, 16);
 
     DOMElements.reportForm.dataset.mobNo = mobNo;
@@ -743,27 +767,42 @@ const setupEventListeners = () => {
         if (!btn) return;
 
         const newRank = btn.dataset.rank;
+        let clickCount = parseInt(btn.dataset.clickCount || 0);
 
-        if (newRank === currentFilter.rank) {
-            if (newRank !== 'ALL') {
-                toggleAreaFilterPanel();
-            } else {
-                toggleAreaFilterPanel(true);
-            }
-        } else {
+        if (newRank !== currentFilter.rank) {
+            // ランクが変わった場合 (1回目)
             currentFilter.rank = newRank;
-
-            if (newRank === 'ALL') {
-                toggleAreaFilterPanel(true);
-            } else {
-                toggleAreaFilterPanel(false);
-            }
+            clickCount = 1; // ランク選択 = 1回目
+            toggleAreaFilterPanel(true); // エリアパネルを強制的に閉じる
 
             if (!currentFilter.areaSets[newRank] || !(currentFilter.areaSets[newRank] instanceof Set)) {
                 currentFilter.areaSets[newRank] = new Set();
             }
             filterAndRender();
+        } else {
+            // ランクが変わらない場合 (2回目以降)
+            if (newRank === 'ALL') {
+                toggleAreaFilterPanel(true); // ALLは常に閉じる
+                clickCount = 0;
+            } else {
+                clickCount = (clickCount % 3) + 1; // 1, 2, 3 のサイクル (実際は 1, 2, 0 に対応)
+
+                if (clickCount === 1) {
+                    // 1回目: ランク選択 (既に選択されているため何もせず)
+                    toggleAreaFilterPanel(true); // エリアパネルを閉じる（念のため）
+                } else if (clickCount === 2) {
+                    // 2回目: エリアタブ展開
+                    toggleAreaFilterPanel(false);
+                } else if (clickCount === 3) {
+                    // 3回目: エリアタブ閉じ
+                    toggleAreaFilterPanel(true);
+                    clickCount = 0; // 次のクリックは 1 になる
+                }
+            }
         }
+        
+        btn.dataset.clickCount = clickCount;
+        updateFilterUI(); // 選択色更新
     });
 
     DOMElements.areaFilterPanel.addEventListener('click', (e) => {
@@ -836,7 +875,7 @@ const setupEventListeners = () => {
         }
     });
 
-    // スポーンポイントのクリック処理 (座標報告)
+    // スポーンポイントのクリック処理 (座標報告) - ダブルクリックエミュレート
     DOMElements.colContainer.addEventListener('click', (e) => {
         const point = e.target.closest('.spawn-point');
         if (!point) return;
@@ -911,6 +950,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupEventListeners();
     
+    // ランクタブに初期のclickCountを設定
+    DOMElements.rankTabs.querySelectorAll('.tab-button').forEach(btn => {
+        if (btn.dataset.rank === currentFilter.rank) {
+             btn.dataset.clickCount = 1; // 起動時は既にランク選択状態
+        } else {
+             btn.dataset.clickCount = 0;
+        }
+    });
+
     updateFilterUI();
     sortAndRedistribute();
 
