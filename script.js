@@ -299,8 +299,8 @@ const fetchBaseMobData = async () => {
         baseMobData = data.mobConfig.map(mob => ({
             ...mob,
             Expansion: EXPANSION_MAP[Math.floor(mob.No / 10000)] || "Unknown",
-            REPOP_s: mob.REPOP * 3600,
-            MAX_s: mob.MAX * 3600,
+            REPOP_s: mob.REPOP,
+            MAX_s: mob.MAX,
             last_kill_time: 0,
             last_kill_memo: '',
             spawn_cull_status: {}, // 湧き潰し座標データ (pointsオブジェクト全体)
