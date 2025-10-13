@@ -4,13 +4,13 @@ import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc } from "https
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-functions.js";
 
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
-  authDomain: "the-hunt-49493.firebaseapp.com",
-  projectId: "the-hunt-49493",
-  storageBucket: "the-hunt-49493.firebasestorage.app",
-  messagingSenderId: "465769826017",
-  appId: "1:465769826017:web:74ad7e62f3ab139cb359a0",
-  measurementId: "G-J1KGFE15XP"
+    apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
+    authDomain: "the-hunt-49493.firebaseapp.com",
+    projectId: "the-hunt-49493",
+    storageBucket: "the-hunt-49493.firebasestorage.app",
+    messagingSenderId: "465769826017",
+    appId: "1:465769826017:web:74ad7e62f3ab139cb359a0",
+    measurementId: "G-J1KGFE15XP"
 };
 
 const MOB_DATA_URL = "./mob_data.json";
@@ -72,8 +72,10 @@ let db = getFirestore(app);
 let auth = getAuth(app);
 
 let functions = getFunctions(app, "asia-northeast2");
-const callHuntReport = httpsCallable(functions, 'processHuntReport');
-const callUpdateCrushStatus = httpsCallable(functions, 'updateCrushStatus');
+// 🚨 修正 1: 討伐報告関数はFirestore直接書き込みのため、この呼び出しは不要なので削除します。
+// const callHuntReport = httpsCallable(functions, 'processHuntReport'); 
+// 🚨 修正 2: 湧き潰し関数名を 'crushStatusUpdater' に修正します (必須)。
+const callUpdateCrushStatus = httpsCallable(functions, 'crushStatusUpdater');
 
 
 let unsubscribeActiveCoords = null; 
@@ -321,7 +323,7 @@ const fetchBaseMobData = async () => {
 const startRealtimeListeners = () => {
     if (unsubscribeActiveCoords) unsubscribeActiveCoords();
     
-    // mob_locationsコレクション全体を購読
+    // mob_locationsコレクション全体を購読 (LKT/PrevLKTと湧き潰しステータスを取得)
     unsubscribeActiveCoords = onSnapshot(collection(db, "mob_locations"), (snapshot) => {
         const locationsMap = {};
         snapshot.forEach(doc => {
@@ -329,6 +331,7 @@ const startRealtimeListeners = () => {
             const mobNo = parseInt(doc.id);
 
             locationsMap[mobNo] = {
+                // Firestore Timestampから秒単位のUnixタイムスタンプを取得
                 last_kill_time: data.last_kill_time?.seconds || 0,
                 prev_kill_time: data.prev_kill_time?.seconds || 0,
                 points: data.points || {}
@@ -352,7 +355,8 @@ const mergeMobData = (dataMap, type) => {
             if (mob.Rank === 'S') {
                 mergedMob.last_kill_time = dynamicData.last_kill_time;
                 mergedMob.prev_kill_time = dynamicData.prev_kill_time;
-                mergedMob.spawn_cull_status = dynamicData.points;
+                // last_kill_memoはmob_locationsに無いため、表示はされない（仕様通り）
+                mergedMob.spawn_cull_status = dynamicData.points; 
             }
         }
         
@@ -392,7 +396,7 @@ const createMobCard = (mob) => {
             point.is_last_one,
             isS_LastOne,
             mob.last_kill_time,
-            mob.prev_kill_time // prev_kill_time を追加
+            mob.prev_kill_time 
         )).join('')
         : '';
 
@@ -723,6 +727,8 @@ const submitReport = async (mobNo, timeISO, memo) => {
     try {
         const killTimeDate = new Date(timeISO);
         
+        // 討伐報告はFirestoreのreportsコレクションに直接書き込む
+        // Functions (reportProcessor) はこの書き込みをトリガーとして起動する
         await addDoc(collection(db, "reports"), {
             mob_id: mobNo.toString(),
             kill_time: killTimeDate,
@@ -759,6 +765,7 @@ const sendCrushStatusUpdate = async (mobNo, locationId, isCurrentlyCulled) => {
     displayStatus(`湧き潰し状態を${actionText}中...`, 'loading');
 
     try {
+        // 🚨 修正後の callUpdateCrushStatus を利用
         await callUpdateCrushStatus({
             mob_id: mobNo.toString(), 
             point_id: locationId, 
