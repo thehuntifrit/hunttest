@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+// Firestore TimestampのためのServerTimestampインポートを追加
+import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-functions.js";
 
 const FIREBASE_CONFIG = {
@@ -72,21 +73,32 @@ let db = getFirestore(app);
 let auth = getAuth(app);
 
 let functions = getFunctions(app, "asia-northeast2");
-// 🚨 修正 1: 討伐報告関数はFirestore直接書き込みのため、この呼び出しは不要なので削除します。
-// const callHuntReport = httpsCallable(functions, 'processHuntReport'); 
-// 🚨 修正 2: 湧き潰し関数名を 'crushStatusUpdater' に修正します (必須)。
+// 湧き潰し関数名を 'crushStatusUpdater' に修正
 const callUpdateCrushStatus = httpsCallable(functions, 'crushStatusUpdater');
 
 
-let unsubscribeActiveCoords = null; 
-
+// リアルタイムリスナー管理用の配列と関数を定義
+let unsubscribeListeners = [];
 
 // --- ユーティリティとフォーマッタ ---
 
+/**
+ * 現在のDateオブジェクト（ローカルタイム）からJST時刻のISO 8601形式文字列（yyyy-MM-ddTHH:mm）を生成
+ * @param {Date} date - 現在の時刻オブジェクト
+ * @returns {string} JSTに調整されたISO文字列
+ */
 const toJstAdjustedIsoString = (date) => {
-    const offset = date.getTimezoneOffset() * 60000;
-    const jstTime = date.getTime() - offset + (9 * 60 * 60 * 1000);
-    return new Date(jstTime).toISOString().slice(0, 16);
+    // タイムゾーンオフセット（分）をミリ秒に変換
+    const offsetMs = date.getTimezoneOffset() * 60000;
+    // JST (UTC+9) の補正時間（ミリ秒）
+    const jstOffsetMs = 9 * 60 * 60 * 1000;
+    
+    // 現在時刻からローカルオフセットを引いてUTCに戻し、JSTオフセットを足すことでJST時刻を計算
+    const jstTime = date.getTime() - offsetMs + jstOffsetMs;
+    const jstDate = new Date(jstTime);
+    
+    // YYYY-MM-DDTHH:MM 形式の文字列を返す
+    return jstDate.toISOString().slice(0, 16);
 };
 
 const formatDuration = (seconds) => {
@@ -95,6 +107,11 @@ const formatDuration = (seconds) => {
     return `${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m`;
 };
 
+/**
+ * FirestoreのUTC秒タイムスタンプをJSTに変換し、相対または絶対時刻形式で表示
+ * @param {number} timestamp - Firestoreの秒単位のUnixタイムスタンプ (UTC)
+ * @returns {string} フォーマットされた時刻文字列 (JST)
+ */
 const formatLastKillTime = (timestamp) => {
     if (timestamp === 0) return '未報告';
 
@@ -102,19 +119,26 @@ const formatLastKillTime = (timestamp) => {
     const nowMs = Date.now();
     const diffSeconds = Math.floor((nowMs - killTimeMs) / 1000);
 
+    // 1時間以内は相対時刻
     if (diffSeconds < 3600) {
         if (diffSeconds < 60) return `Just now`;
         const minutes = Math.floor(diffSeconds / 60);
         return `${minutes}m ago`;
     }
-
-    const date = new Date(killTimeMs);
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
     
-    return `${month}/${day} ${hours}:${minutes}`;
+    // JSTで表示するためのオプション
+    const options = {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Asia/Tokyo' // JSTを明示的に指定
+    };
+    
+    const date = new Date(killTimeMs);
+    
+    // JSTでフォーマット
+    return new Intl.DateTimeFormat('ja-JP', options).format(date);
 };
 
 
@@ -173,16 +197,17 @@ function isPointCrushed(point, lastKillTimeSec, prevKillTimeSec) {
     const cullResetSec = Math.max(lastKillTimeSec, prevKillTimeSec || 0);
     const cullResetTime = cullResetSec > 0 ? new Date(cullResetSec * 1000) : new Date(0);
 
-    const crushedTime = point.crushed_at?.toDate();
-    const uncrushedTime = point.uncrushed_at?.toDate();
+    // Firestore Timestampオブジェクトの場合、.toDate() でDateに変換
+    const crushedTime = point.crushed_at?.toDate ? point.crushed_at.toDate() : point.crushed_at;
+    const uncrushedTime = point.uncrushed_at?.toDate ? point.uncrushed_at.toDate() : point.uncrushed_at;
 
     let effectiveCrushedTime = null;
     let effectiveUncrushedTime = null;
 
-    if (crushedTime && crushedTime > cullResetTime) {
+    if (crushedTime instanceof Date && crushedTime > cullResetTime) {
         effectiveCrushedTime = crushedTime;
     }
-    if (uncrushedTime && uncrushedTime > cullResetTime) {
+    if (uncrushedTime instanceof Date && uncrushedTime > cullResetTime) {
         effectiveUncrushedTime = uncrushedTime;
     }
 
@@ -213,6 +238,7 @@ const calculateRepop = (mob) => {
     let status = 'Unknown';
 
     if (lastKill === 0) {
+        // LKT未報告の場合、現在時刻を基準にNextを計算
         minRepop = now + repopSec;
         maxRepop = now + maxSec;
         timeRemaining = `Next: ${formatDuration(minRepop - now)}`;
@@ -309,7 +335,9 @@ const fetchBaseMobData = async () => {
             last_kill_time: 0,
             prev_kill_time: 0,
             last_kill_memo: '',
-            spawn_cull_status: {},
+            spawn_cull_status: {}, // Sモブの湧き潰し座標データ
+            // BモブがどのAモブまたはFATEに関連しているかを格納
+            related_mob_no: mob.Rank.startsWith('B') ? mob.RelatedMobNo : null
         }));
 
         globalMobData = [...baseMobData];
@@ -320,52 +348,130 @@ const fetchBaseMobData = async () => {
     }
 };
 
-const startRealtimeListeners = () => {
-    if (unsubscribeActiveCoords) unsubscribeActiveCoords();
+/**
+ * LKT/PrevLKT/Memo を含む mob_status の 3ドキュメントのデータをマージする
+ * @param {Object} mobStatusDataMap - mob_statusのデータマップ
+ */
+const mergeMobStatusData = (mobStatusDataMap) => {
+    const newData = new Map();
+
+    // 3ドキュメントから全モブのLKT/PrevLKT/Memoを抽出
+    Object.values(mobStatusDataMap).forEach(docData => {
+        // mob_id: { last_kill_time, prev_kill_time, last_kill_memo } の構造を抽出
+        Object.entries(docData).forEach(([mobId, mobData]) => {
+            const mobNo = parseInt(mobId);
+            newData.set(mobNo, {
+                last_kill_time: mobData.last_kill_time?.seconds || 0,
+                prev_kill_time: mobData.prev_kill_time?.seconds || 0,
+                last_kill_memo: mobData.last_kill_memo || ''
+            });
+        });
+    });
+
+    // globalMobDataを更新
+    globalMobData = globalMobData.map(mob => {
+        let mergedMob = { ...mob };
+
+        // 1. A/F/Sモブの情報を更新
+        if (newData.has(mob.No)) {
+            const dynamicData = newData.get(mob.No);
+            mergedMob.last_kill_time = dynamicData.last_kill_time;
+            mergedMob.prev_kill_time = dynamicData.prev_kill_time;
+            mergedMob.last_kill_memo = dynamicData.last_kill_memo;
+        }
+
+        // 2. Bモブの情報を関連モブから更新
+        if (mob.Rank.startsWith('B') && mob.related_mob_no) {
+             const relatedMobData = newData.get(mob.related_mob_no);
+             if(relatedMobData) {
+                // Bモブは、関連モブ (A/F) のLKTを参照
+                mergedMob.last_kill_time = relatedMobData.last_kill_time;
+                mergedMob.prev_kill_time = relatedMobData.prev_kill_time;
+                // BモブにMemoは紐付けない（A/FモブカードでMemoを表示するため）
+             }
+        }
+
+        mergedMob.repopInfo = calculateRepop(mergedMob);
+        return mergedMob;
+    });
     
-    // mob_locationsコレクション全体を購読 (LKT/PrevLKTと湧き潰しステータスを取得)
-    unsubscribeActiveCoords = onSnapshot(collection(db, "mob_locations"), (snapshot) => {
+    // データが更新されたら再描画を予約
+    sortAndRedistribute();
+};
+
+/**
+ * 湧き潰しデータを含む mob_locations コレクションのデータをマージする
+ * @param {Object} locationsMap - mob_locationsのデータマップ
+ */
+const mergeMobLocationsData = (locationsMap) => {
+     // globalMobDataを更新
+     globalMobData = globalMobData.map(mob => {
+        let mergedMob = { ...mob };
+        const dynamicData = locationsMap[mob.No];
+
+        // SモブID（mob_locationsのドキュメントID）を持つモブのみ処理
+        if (mob.Rank === 'S' && dynamicData) {
+            // SモブのLKT/PrevLKTはmob_statusから取得するため上書きしない
+            // 湧き潰し情報のみを更新する
+            mergedMob.spawn_cull_status = dynamicData.points;
+        }
+        
+        // mob_statusリスナーが遅延した場合に備えrepopInfoを再計算
+        mergedMob.repopInfo = calculateRepop(mergedMob);
+        return mergedMob;
+    });
+
+    // データが更新されたら再描画を予約
+    sortAndRedistribute();
+};
+
+
+const startRealtimeListeners = () => {
+    // 既存のリスナーを全て解除
+    unsubscribeListeners.forEach(unsub => unsub());
+    unsubscribeListeners = [];
+    
+    // mob_status: LKT/PrevLKT/Memo (3ドキュメント方式)
+    const statusDocs = ['s_latest', 'a_latest', 'f_latest'];
+    const mobStatusDataMap = {}; // リアルタイムデータ保持用
+
+    statusDocs.forEach(docId => {
+        const docRef = doc(db, "mob_status", docId);
+        const unsubscribe = onSnapshot(docRef, (snapshot) => {
+            const data = snapshot.data();
+            if (data) {
+                // { s_latest: { '40001': {lkt, ...}, '40002': {lkt, ...} } } の形でデータを保持
+                mobStatusDataMap[docId] = data; 
+            }
+            // 3ドキュメント全てが揃っていなくても、届いたデータでマージを実行
+            mergeMobStatusData(mobStatusDataMap);
+            displayStatus("LKT/Memoデータ更新完了。", 'success');
+        }, (error) => {
+            displayStatus(`MobStatus (${docId}) のリアルタイム同期エラー。`, 'error');
+        });
+        unsubscribeListeners.push(unsubscribe);
+    });
+
+    // mob_locations: 湧き潰しステータス (コレクション全体)
+    const unsubscribeLocations = onSnapshot(collection(db, "mob_locations"), (snapshot) => {
         const locationsMap = {};
         snapshot.forEach(doc => {
             const data = doc.data();
             const mobNo = parseInt(doc.id);
 
             locationsMap[mobNo] = {
-                // Firestore Timestampから秒単位のUnixタイムスタンプを取得
-                last_kill_time: data.last_kill_time?.seconds || 0,
+                // LKT/PrevLKT は mob_status が優先だが、湧き潰しロジックで利用するため取得しておく（判定ロジックが最新を使うため、ほぼ影響なし）
+                last_kill_time: data.last_kill_time?.seconds || 0, 
                 prev_kill_time: data.prev_kill_time?.seconds || 0,
                 points: data.points || {}
             };
         });
-        mergeMobData(locationsMap, 'mob_locations');
-        displayStatus("データ更新完了。", 'success');
+        mergeMobLocationsData(locationsMap);
+        displayStatus("湧き潰しデータ更新完了。", 'success');
     }, (error) => {
-        displayStatus("Mob情報のリアルタイム同期エラー。", 'error');
+        displayStatus("MobLocationsのリアルタイム同期エラー。", 'error');
     });
-};
-
-const mergeMobData = (dataMap, type) => {
-    if (type !== 'mob_locations') return;
-    
-    const newGlobalData = baseMobData.map(mob => {
-        let mergedMob = { ...mob };
-        const dynamicData = dataMap[mob.No];
-
-        if (dynamicData) {
-            if (mob.Rank === 'S') {
-                mergedMob.last_kill_time = dynamicData.last_kill_time;
-                mergedMob.prev_kill_time = dynamicData.prev_kill_time;
-                // last_kill_memoはmob_locationsに無いため、表示はされない（仕様通り）
-                mergedMob.spawn_cull_status = dynamicData.points; 
-            }
-        }
-        
-        mergedMob.repopInfo = calculateRepop(mergedMob);
-        return mergedMob;
-    });
-
-    globalMobData = newGlobalData;
-    sortAndRedistribute();
+    unsubscribeListeners.push(unsubscribeLocations);
 };
 
 
@@ -376,18 +482,25 @@ const createMobCard = (mob) => {
     const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
     const rankLabel = rankConfig.label || rank;
     
+    // formatLastKillTimeはJSTに変換済み
     const lastKillDisplay = formatLastKillTime(mob.last_kill_time);
     
-    const absTimeFormat = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
-    const nextTimeDisplay = mob.repopInfo?.nextMinRepopDate ? mob.repopInfo.nextMinRepopDate.toLocaleString('ja-JP', absTimeFormat) : '未確定';
-    const prevTimeDisplay = mob.last_kill_time > 0 ? new Date(mob.last_kill_time * 1000).toLocaleString('ja-JP', absTimeFormat) : '未報告';
+    // JSTでの絶対時刻表示。Intl.DateTimeFormatを使用しJSTを明示
+    const absTimeFormat = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
+    
+    // Next Min Repop
+    const nextTimeDisplay = mob.repopInfo?.nextMinRepopDate ? new Intl.DateTimeFormat('ja-JP', absTimeFormat).format(mob.repopInfo.nextMinRepopDate) : '未確定';
+    
+    // Previous Kill Time (LKT)
+    const prevTimeDisplay = mob.last_kill_time > 0 ? new Intl.DateTimeFormat('ja-JP', absTimeFormat).format(new Date(mob.last_kill_time * 1000)) : '未報告';
 
     const isS_LastOne = rank === 'S' && mob.spawn_points && mob.spawn_points.some(p => p.is_last_one && (p.mob_ranks.includes('S') || p.mob_ranks.includes('A')));
     
-    const isExpandable = rank === 'S';
+    const isExpandable = rank === 'S' || rank === 'A' || rank === 'F';
     const isOpen = isExpandable && mob.No === openMobCardNo;
     
-    const spawnPointsHtml = (isExpandable && mob.Map) ?
+    // 湧き潰し情報（Sモブのみ表示）
+    const spawnPointsHtml = (rank === 'S' && mob.Map) ?
         (mob.spawn_points ?? []).map(point => drawSpawnPoint(
             point,
             mob.spawn_cull_status,
@@ -395,8 +508,8 @@ const createMobCard = (mob) => {
             mob.Rank,
             point.is_last_one,
             isS_LastOne,
-            mob.last_kill_time,
-            mob.prev_kill_time 
+            mob.last_kill_time, // mob_statusから取得したLKT
+            mob.prev_kill_time // mob_statusから取得したPrevLKT
         )).join('')
         : '';
 
@@ -414,7 +527,7 @@ const createMobCard = (mob) => {
                 </div>
 
                 <div class="flex-shrink-0 flex flex-col space-y-1 items-end" style="min-width: 120px;">
-                    ${rank === 'A'
+                    ${rank === 'A' || rank === 'F'
                         ? `<button data-report-type="instant" data-mob-no="${mob.No}" class="px-2 py-0.5 text-xs rounded bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-semibold transition">即時<br>報告</button>`
                         : `<button data-report-type="modal" data-mob-no="${mob.No}" class="px-2 py-0.5 text-xs rounded bg-green-500 hover:bg-green-400 text-gray-900 font-semibold transition">報告<br>する</button>`
                     }
@@ -430,6 +543,7 @@ const createMobCard = (mob) => {
         </div>
     `;
 
+    // S, A, Fモブのみ展開可能
     const expandablePanelHTML = isExpandable ? `
         <div class="expandable-panel ${isOpen ? 'open' : ''}">
             <div class="px-2 py-1 text-sm space-y-1.5">
@@ -447,7 +561,7 @@ const createMobCard = (mob) => {
                     <div class="w-full text-left text-xs text-gray-400 border-t border-gray-600 pt-1">最終討伐報告: ${lastKillDisplay}</div>
                 </div>
 
-                ${mob.Map ? `
+                ${mob.Map && rank === 'S' ? `
                     <div class="map-content py-1.5 flex justify-center relative">
                         <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="w-full h-auto rounded shadow-lg border border-gray-600">
                         <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">
@@ -476,6 +590,7 @@ const drawSpawnPoint = (point, cullPoints, mobNo, mobRank, isLastOne, isS_LastOn
     
     const cullData = cullPoints[point.id] || {};
     
+    // 湧き潰し判定は mob_status から取得した最新のLKT/PrevLKTを使用
     const isCulled = isPointCrushed({ ...point, ...cullData }, lastKillTimeSec, prevKillTimeSec);
     
     const isS_A_Cullable = point.mob_ranks.some(r => r === 'S' || r === 'A');
@@ -589,14 +704,26 @@ const filterAndRender = () => {
     const targetDataRank = FILTER_TO_DATA_RANK_MAP[currentFilter.rank] || currentFilter.rank;
     
     const filteredData = globalMobData.filter(mob => {
-        if (currentFilter.rank === 'ALL') return true;
+        // Bランクも対象となるフィルター処理
+        if (targetDataRank === 'ALL') return true;
         
-        if (mob.Rank !== targetDataRank) return false;
+        if (targetDataRank === 'A') {
+            if (mob.Rank !== 'A' && !mob.Rank.startsWith('B')) return false;
+        } else if (targetDataRank === 'F') {
+            if (mob.Rank !== 'F' && !mob.Rank.startsWith('B')) return false;
+        } else if (mob.Rank !== targetDataRank) {
+            return false;
+        }
 
         const areaSet = currentFilter.areaSets[currentFilter.rank];
+        // Bランクは関連するAランク/FATEのエリアでフィルタリング
+        const mobExpansion = mob.Rank.startsWith('B') 
+            ? globalMobData.find(m => m.No === mob.related_mob_no)?.Expansion || mob.Expansion
+            : mob.Expansion;
+            
         if (!areaSet || !(areaSet instanceof Set) || areaSet.size === 0) return true;
 
-        return areaSet.has(mob.Expansion);
+        return areaSet.has(mobExpansion);
     });
 
     filteredData.sort((a, b) => b.repopInfo?.elapsedPercent - a.repopInfo?.elapsedPercent);
@@ -616,6 +743,7 @@ const filterAndRender = () => {
 
     updateFilterUI();
 
+    // フィルター状態をLocalStorageに保存
     localStorage.setItem('huntFilterState', JSON.stringify({
         ...currentFilter,
         areaSets: Object.keys(currentFilter.areaSets).reduce((acc, key) => {
@@ -636,9 +764,19 @@ const renderAreaFilterPanel = () => {
     const targetDataRank = FILTER_TO_DATA_RANK_MAP[currentFilter.rank] || currentFilter.rank;
 
     const areas = globalMobData
-        .filter(m => m.Rank === targetDataRank)
+        // フィルター対象がAまたはFATEの場合はBモブも考慮してエリアを抽出
+        .filter(m => {
+            if (targetDataRank === 'A' || targetDataRank === 'F') {
+                return m.Rank === targetDataRank || m.Rank.startsWith('B');
+            }
+            return m.Rank === targetDataRank;
+        })
         .reduce((set, mob) => {
-            if (mob.Expansion) set.add(mob.Expansion);
+            // Bモブの場合は関連モブのエリアを使用
+            const mobExpansion = mob.Rank.startsWith('B') 
+                ? globalMobData.find(m => m.No === mob.related_mob_no)?.Expansion || mob.Expansion
+                : mob.Expansion;
+            if (mobExpansion) set.add(mobExpansion);
             return set;
         }, new Set());
 
@@ -647,7 +785,7 @@ const renderAreaFilterPanel = () => {
         : new Set();
 
     const allButton = document.createElement('button');
-    const isAllSelected = areas.size === currentAreaSet.size && areas.size > 0;
+    const isAllSelected = areas.size > 0 && currentAreaSet.size === areas.size;
     allButton.textContent = isAllSelected ? '全解除' : '全選択';
     allButton.className = `area-filter-btn px-3 py-1 text-xs rounded font-semibold transition ${isAllSelected ? 'bg-red-500' : 'bg-gray-500 hover:bg-gray-400'}`;
     allButton.dataset.area = 'ALL';
@@ -690,14 +828,14 @@ const openReportModal = (mobNo) => {
     const mob = globalMobData.find(m => m.No === mobNo);
     if (!mob) return;
 
-    const now = new Date();
-    const jstNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (9 * 60 * 60 * 1000));
-    const isoString = jstNow.toISOString().slice(0, 16);
+    // 現在のJST時刻を取得し設定（toJstAdjustedIsoStringでJST時刻文字列を取得）
+    const isoString = toJstAdjustedIsoString(new Date());
 
     DOMElements.reportForm.dataset.mobNo = mobNo;
     DOMElements.modalMobName.textContent = `対象: ${mob.Name} (${mob.Area})`;
     document.getElementById('report-datetime').value = isoString;
-    document.getElementById('report-memo').value = '';
+    document.getElementById('report-memo').value = mob.last_kill_memo || ''; // 既存メモがあればセット
+    document.getElementById('report-memo').placeholder = `LKTとして記録されます。例: ${mob.Area} (X:00.0, Y:00.0) // ログアウトします`;
     DOMElements.modalStatus.textContent = '';
 
     DOMElements.reportModal.classList.remove('hidden');
@@ -720,27 +858,29 @@ const submitReport = async (mobNo, timeISO, memo) => {
         displayStatus("モブデータが見つかりません。", 'error');
         return;
     }
-    const repopSeconds = mob.REPOP_s; 
+    
+    // timeISOはJST時刻の文字列として期待される
+    const killTimeDate = new Date(timeISO); 
+    // New Date(JST文字列) で作成されたDateオブジェクトは、UTCのタイムスタンプを持つため、Firebaseに渡すのに適している
 
     DOMElements.modalStatus.textContent = '送信中...';
 
     try {
-        const killTimeDate = new Date(timeISO);
-        
         // 討伐報告はFirestoreのreportsコレクションに直接書き込む
-        // Functions (reportProcessor) はこの書き込みをトリガーとして起動する
+        // kill_time は Dateオブジェクトとして渡し、FirestoreがUTCのTimestamp型に変換する
         await addDoc(collection(db, "reports"), {
             mob_id: mobNo.toString(),
             kill_time: killTimeDate,
             reporter_uid: userId,
             memo: memo,
-            repop_seconds: repopSeconds, 
-            rank: (mob.Rank === 'S') ? '2' : (mob.Rank === 'A' ? '1' : '0')
+            repop_seconds: mob.REPOP_s, 
+            rank: mob.Rank // A, S, F の文字列で保存
         });
 
         closeReportModal();
         displayStatus("報告が完了しました。データ反映を待っています。", 'success');
     } catch (error) {
+        console.error("レポート送信エラー:", error);
         DOMElements.modalStatus.textContent = "送信エラー: " + (error.message || "通信失敗");
     }
 };
@@ -765,7 +905,7 @@ const sendCrushStatusUpdate = async (mobNo, locationId, isCurrentlyCulled) => {
     displayStatus(`湧き潰し状態を${actionText}中...`, 'loading');
 
     try {
-        // 🚨 修正後の callUpdateCrushStatus を利用
+        // callUpdateCrushStatus を利用
         await callUpdateCrushStatus({
             mob_id: mobNo.toString(), 
             point_id: locationId, 
@@ -785,6 +925,8 @@ let lastClickTime = 0;
 const DOUBLE_CLICK_TIME = 300;
 
 const setupEventListeners = () => {
+    // 省略 (変更なし)
+
     DOMElements.rankTabs.addEventListener('click', (e) => {
         const btn = e.target.closest('.tab-button');
         if (!btn) return;
@@ -831,8 +973,16 @@ const setupEventListeners = () => {
         let areaSet = currentFilter.areaSets[uiRank];
 
         if (btn.dataset.area === 'ALL') {
-            const allAreas = Array.from(globalMobData.filter(m => m.Rank === dataRank).reduce((set, mob) => {
-                if (mob.Expansion) set.add(mob.Expansion);
+            const allAreas = Array.from(globalMobData.filter(m => {
+                if (dataRank === 'A' || dataRank === 'F') {
+                    return m.Rank === dataRank || m.Rank.startsWith('B');
+                }
+                return m.Rank === dataRank;
+            }).reduce((set, mob) => {
+                const mobExpansion = mob.Rank.startsWith('B') 
+                    ? globalMobData.find(m => m.No === mob.related_mob_no)?.Expansion || mob.Expansion
+                    : mob.Expansion;
+                if (mobExpansion) set.add(mobExpansion);
                 return set;
             }, new Set()));
 
@@ -859,7 +1009,8 @@ const setupEventListeners = () => {
         const mobNo = parseInt(card.dataset.mobNo);
         const rank = card.dataset.rank;
 
-        if (rank === 'S' && e.target.closest('[data-toggle="card-header"]')) {
+        // A/FATEも展開可能にする
+        if ((rank === 'S' || rank === 'A' || rank === 'F') && e.target.closest('[data-toggle="card-header"]')) {
             const panel = card.querySelector('.expandable-panel');
             if (panel) {
                 if (!panel.classList.contains('open')) {
@@ -883,9 +1034,8 @@ const setupEventListeners = () => {
             if (reportType === 'modal') {
                 openReportModal(mobNo);
             } else if (reportType === 'instant') {
-                const now = new Date();
-                const timeISO = toJstAdjustedIsoString(now);
-                submitReport(mobNo, timeISO, 'Aランク即時報告');
+                const timeISO = toJstAdjustedIsoString(new Date());
+                submitReport(mobNo, timeISO, `${rank}ランク即時報告`);
             }
         }
     });
