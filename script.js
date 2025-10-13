@@ -35,12 +35,12 @@ const RANK_COLORS = {
 };
 
 const PROGRESS_CLASSES = {
-    P0_60: 'progress-p0-60', 
-    P60_80: 'progress-p60-80', 
-    P80_100: 'progress-p80-100', 
-    TEXT_NEXT: 'progress-next-text', 
-    TEXT_POP: 'progress-pop-text', 
-    MAX_OVER_BLINK: 'progress-max-over-blink' 
+    P0_60: 'progress-p0-60',
+    P60_80: 'progress-p60-80',
+    P80_100: 'progress-p80-100',
+    TEXT_NEXT: 'progress-next-text',
+    TEXT_POP: 'progress-pop-text',
+    MAX_OVER_BLINK: 'progress-max-over-blink'
 };
 
 const DOMElements = {
@@ -76,7 +76,7 @@ const callHuntReport = httpsCallable(functions, 'processHuntReport');
 const callUpdateCrushStatus = httpsCallable(functions, 'updateCrushStatus');
 
 
-let unsubscribeActiveCoords = null; // MobStatusの購読はmob_locationsに統合
+let unsubscribeActiveCoords = null; 
 
 
 // --- ユーティリティとフォーマッタ ---
@@ -84,7 +84,7 @@ let unsubscribeActiveCoords = null; // MobStatusの購読はmob_locationsに統�
 const toJstAdjustedIsoString = (date) => {
     const offset = date.getTimezoneOffset() * 60000;
     const jstTime = date.getTime() - offset + (9 * 60 * 60 * 1000);
-    return new Date(jstTime).toISOString().slice(0, 19);
+    return new Date(jstTime).toISOString().slice(0, 16);
 };
 
 const formatDuration = (seconds) => {
@@ -163,10 +163,13 @@ const displayStatus = (message, type = 'loading') => {
  * 座標の現在の表示状態を判定するコアロジック
  * @param {object} point - Mobの湧き座標オブジェクト (crushed_at, uncrushed_atを持つ)
  * @param {number} lastKillTimeSec - mob_locations.last_kill_time (秒単位のUnixタイムスタンプ)
+ * @param {number} prevKillTimeSec - mob_locations.prev_kill_time (秒単位のUnixタイムスタンプ)
  * @returns {boolean} - true: 潰されていると表示 / false: 潰されていないと表示
  */
-function isPointCrushed(point, lastKillTimeSec) {
-    const displayTime = lastKillTimeSec > 0 ? new Date(lastKillTimeSec * 1000) : new Date(0); 
+function isPointCrushed(point, lastKillTimeSec, prevKillTimeSec) {
+    // リセット基準時刻 T_CullReset は LKT と PrevLKT の新しい方
+    const cullResetSec = Math.max(lastKillTimeSec, prevKillTimeSec || 0);
+    const cullResetTime = cullResetSec > 0 ? new Date(cullResetSec * 1000) : new Date(0);
 
     const crushedTime = point.crushed_at?.toDate();
     const uncrushedTime = point.uncrushed_at?.toDate();
@@ -174,10 +177,10 @@ function isPointCrushed(point, lastKillTimeSec) {
     let effectiveCrushedTime = null;
     let effectiveUncrushedTime = null;
 
-    if (crushedTime && crushedTime > displayTime) {
+    if (crushedTime && crushedTime > cullResetTime) {
         effectiveCrushedTime = crushedTime;
     }
-    if (uncrushedTime && uncrushedTime > displayTime) {
+    if (uncrushedTime && uncrushedTime > cullResetTime) {
         effectiveUncrushedTime = uncrushedTime;
     }
 
@@ -302,8 +305,9 @@ const fetchBaseMobData = async () => {
             REPOP_s: mob.REPOP,
             MAX_s: mob.MAX,
             last_kill_time: 0,
+            prev_kill_time: 0,
             last_kill_memo: '',
-            spawn_cull_status: {}, // 湧き潰し座標データ (pointsオブジェクト全体)
+            spawn_cull_status: {},
         }));
 
         globalMobData = [...baseMobData];
@@ -317,7 +321,7 @@ const fetchBaseMobData = async () => {
 const startRealtimeListeners = () => {
     if (unsubscribeActiveCoords) unsubscribeActiveCoords();
     
-    // mob_locationsコレクション全体を購読し、Sモブデータを一括取得
+    // mob_locationsコレクション全体を購読
     unsubscribeActiveCoords = onSnapshot(collection(db, "mob_locations"), (snapshot) => {
         const locationsMap = {};
         snapshot.forEach(doc => {
@@ -325,11 +329,12 @@ const startRealtimeListeners = () => {
             const mobNo = parseInt(doc.id);
 
             locationsMap[mobNo] = {
-                last_kill_time: data.last_kill_time?.seconds || 0, 
-                points: data.points || {} 
+                last_kill_time: data.last_kill_time?.seconds || 0,
+                prev_kill_time: data.prev_kill_time?.seconds || 0,
+                points: data.points || {}
             };
         });
-        mergeMobData(locationsMap, 'mob_locations'); 
+        mergeMobData(locationsMap, 'mob_locations');
         displayStatus("データ更新完了。", 'success');
     }, (error) => {
         displayStatus("Mob情報のリアルタイム同期エラー。", 'error');
@@ -345,10 +350,10 @@ const mergeMobData = (dataMap, type) => {
 
         if (dynamicData) {
             if (mob.Rank === 'S') {
-                mergedMob.last_kill_time = dynamicData.last_kill_time; 
+                mergedMob.last_kill_time = dynamicData.last_kill_time;
+                mergedMob.prev_kill_time = dynamicData.prev_kill_time;
                 mergedMob.spawn_cull_status = dynamicData.points;
             }
-            // A, FATEモブは last_kill_time = 0 のまま維持
         }
         
         mergedMob.repopInfo = calculateRepop(mergedMob);
@@ -378,15 +383,16 @@ const createMobCard = (mob) => {
     const isExpandable = rank === 'S';
     const isOpen = isExpandable && mob.No === openMobCardNo;
     
-    const spawnPointsHtml = (isExpandable && mob.Map) ? 
+    const spawnPointsHtml = (isExpandable && mob.Map) ?
         (mob.spawn_points ?? []).map(point => drawSpawnPoint(
-            point, 
-            mob.spawn_cull_status, 
-            mob.No, 
-            mob.Rank, 
-            point.is_last_one, 
+            point,
+            mob.spawn_cull_status,
+            mob.No,
+            mob.Rank,
+            point.is_last_one,
             isS_LastOne,
-            mob.last_kill_time
+            mob.last_kill_time,
+            mob.prev_kill_time // prev_kill_time を追加
         )).join('')
         : '';
 
@@ -462,11 +468,11 @@ const createMobCard = (mob) => {
     return cardHTML;
 };
 
-const drawSpawnPoint = (point, cullPoints, mobNo, mobRank, isLastOne, isS_LastOne, lastKillTimeSec) => {
+const drawSpawnPoint = (point, cullPoints, mobNo, mobRank, isLastOne, isS_LastOne, lastKillTimeSec, prevKillTimeSec) => {
     
     const cullData = cullPoints[point.id] || {};
     
-    const isCulled = isPointCrushed({ ...point, ...cullData }, lastKillTimeSec);
+    const isCulled = isPointCrushed({ ...point, ...cullData }, lastKillTimeSec, prevKillTimeSec);
     
     const isS_A_Cullable = point.mob_ranks.some(r => r === 'S' || r === 'A');
     const isB_Only = point.mob_ranks.every(r => r.startsWith('B'));
@@ -555,6 +561,26 @@ const distributeCards = () => {
     updateProgressBars();
 };
 
+const updateFilterUI = () => {
+    const currentRankKeyForColor = FILTER_TO_DATA_RANK_MAP[currentFilter.rank] || currentFilter.rank;
+
+    DOMElements.rankTabs.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('bg-blue-800', 'bg-red-800', 'bg-yellow-800', 'bg-indigo-800');
+        btn.classList.add('bg-gray-600');
+        
+        if (btn.dataset.rank !== currentFilter.rank) {
+            btn.dataset.clickCount = 0;
+        }
+
+        if (btn.dataset.rank === currentFilter.rank) {
+            btn.classList.remove('bg-gray-600');
+            const rank = btn.dataset.rank;
+            
+            btn.classList.add(rank === 'ALL' ? 'bg-blue-800' : currentRankKeyForColor === 'S' ? 'bg-red-800' : currentRankKeyForColor === 'A' ? 'bg-yellow-800' : currentRankKeyForColor === 'F' ? 'bg-indigo-800' : 'bg-gray-800');
+        }
+    });
+};
+
 const filterAndRender = () => {
     const targetDataRank = FILTER_TO_DATA_RANK_MAP[currentFilter.rank] || currentFilter.rank;
     
@@ -599,27 +625,6 @@ const filterAndRender = () => {
     }));
     localStorage.setItem('openMobCardNo', openMobCardNo);
 };
-
-const updateFilterUI = () => {
-    const currentRankKeyForColor = FILTER_TO_DATA_RANK_MAP[currentFilter.rank] || currentFilter.rank;
-
-    DOMElements.rankTabs.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('bg-blue-800', 'bg-red-800', 'bg-yellow-800', 'bg-indigo-800');
-        btn.classList.add('bg-gray-600');
-        
-        if (btn.dataset.rank !== currentFilter.rank) {
-            btn.dataset.clickCount = 0;
-        }
-
-        if (btn.dataset.rank === currentFilter.rank) {
-            btn.classList.remove('bg-gray-600');
-            const rank = btn.dataset.rank;
-            
-            btn.classList.add(rank === 'ALL' ? 'bg-blue-800' : currentRankKeyForColor === 'S' ? 'bg-red-800' : currentRankKeyForColor === 'A' ? 'bg-yellow-800' : currentRankKeyForColor === 'F' ? 'bg-indigo-800' : 'bg-gray-800');
-        }
-    });
-};
-
 
 const renderAreaFilterPanel = () => {
     DOMElements.areaFilterPanel.innerHTML = '';
@@ -705,6 +710,13 @@ const submitReport = async (mobNo, timeISO, memo) => {
         displayStatus("認証が完了していません。ページをリロードしてください。", 'error');
         return;
     }
+    
+    const mob = globalMobData.find(m => m.No === mobNo);
+    if (!mob) {
+        displayStatus("モブデータが見つかりません。", 'error');
+        return;
+    }
+    const repopSeconds = mob.REPOP_s; 
 
     DOMElements.modalStatus.textContent = '送信中...';
 
@@ -712,10 +724,12 @@ const submitReport = async (mobNo, timeISO, memo) => {
         const killTimeDate = new Date(timeISO);
         
         await addDoc(collection(db, "reports"), {
-            mob_id: mobNo,
+            mob_id: mobNo.toString(),
             kill_time: killTimeDate,
             reporter_uid: userId,
             memo: memo,
+            repop_seconds: repopSeconds, 
+            rank: (mob.Rank === 'S') ? '2' : (mob.Rank === 'A' ? '1' : '0')
         });
 
         closeReportModal();
@@ -739,27 +753,16 @@ const sendCrushStatusUpdate = async (mobNo, locationId, isCurrentlyCulled) => {
         return;
     }
     
-    const action = isCurrentlyCulled ? 'remove' : 'add';
+    const type = isCurrentlyCulled ? 'remove' : 'add';
     const actionText = isCurrentlyCulled ? '解除' : '追加';
 
     displayStatus(`湧き潰し状態を${actionText}中...`, 'loading');
 
     try {
-        const mob = globalMobData.find(m => m.No === mobNo);
-        const pointData = mob?.spawn_points?.find(p => p.id === locationId);
-
-        if (!pointData) {
-            throw new Error('ポイントデータが見つかりません。');
-        }
-
         await callUpdateCrushStatus({
-            s_mob_id: mobNo,
-            point: { 
-                id: locationId, 
-                x: pointData.x, 
-                y: pointData.y 
-            },
-            action: action
+            mob_id: mobNo.toString(), 
+            point_id: locationId, 
+            type: type
         });
 
         displayStatus(`湧き潰し状態を${actionText}しました。`, 'success');
@@ -914,7 +917,7 @@ const setupEventListeners = () => {
 
         // Sモブの湧き潰しポイント (ラストワン以外) のみ処理
         if (!point.classList.contains('spawn-point-lastone')) {
-             sendCrushStatusUpdate(mobNo, locationId, isCurrentlyCulled);
+            sendCrushStatusUpdate(mobNo, locationId, isCurrentlyCulled);
         }
     });
 
@@ -930,8 +933,8 @@ const setupEventListeners = () => {
 
     window.addEventListener('resize', sortAndRedistribute);
 
-    setInterval(updateProgressBars, 60000); // 1分毎に再計算
-    setInterval(updateProgressBars, 1000); // 1秒毎にプログレスバーアニメーション更新
+    setInterval(updateProgressBars, 60000); 
+    setInterval(updateProgressBars, 1000);
 };
 
 // --- 初期化と認証フロー ---
@@ -966,9 +969,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     DOMElements.rankTabs.querySelectorAll('.tab-button').forEach(btn => {
         if (btn.dataset.rank === currentFilter.rank) {
-             btn.dataset.clickCount = 1;
+            btn.dataset.clickCount = 1;
         } else {
-             btn.dataset.clickCount = 0;
+            btn.dataset.clickCount = 0;
         }
     });
 
