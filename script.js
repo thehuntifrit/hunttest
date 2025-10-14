@@ -687,7 +687,6 @@ const createMobCard = (mob) => {
     　　`;
 　　};
 
-
     const cardHTML = `
     <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 transition duration-150"
         data-mob-no="${mob.No}" data-rank="${rank}">
