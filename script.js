@@ -582,17 +582,10 @@ const drawSpawnPoint = (point, cullPoints, mobNo, mobRank, isLastOne, isS_LastOn
     `;
 };
 
+// hunt.js (またはメインのJavaScriptファイル) 内
+
 const createMobCard = (mob) => {
-    const rank = mob.Rank;
-    const rankConfig = RANK_CONFIG[rank] || { label: '?', bg: 'bg-gray-500' };
-    const rankLabel = rankConfig.label;
-
-    const repopInfo = calculateRepop(mob);
-    const nextTimeDisplay = repopInfo.nextMinRepopDate
-        ? new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' }).format(repopInfo.nextMinRepopDate)
-        : '不明';
-
-    const prevTimeDisplay = formatLastKillTime(mob.last_kill_time); 
+    // ... (中略) ...
 
     const lastKillDisplay = formatLastKillTime(mob.last_kill_time);
     
@@ -600,6 +593,8 @@ const createMobCard = (mob) => {
     const isExpandable = rank === 'S'; 
     const isOpen = isExpandable && mob.No === openMobCardNo;
     
+    // ... (中略) ...
+
     return `
         <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 transition duration-150"
              data-mob-no="${mob.No}" data-rank="${rank}">
@@ -646,43 +641,14 @@ const createMobCard = (mob) => {
                         <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: ${mob.last_kill_memo || 'なし'}</div>
 
                         <div class="w-full text-left text-xs text-gray-400 border-t border-gray-600 pt-1">最終討伐報告: ${lastKillDisplay}</div>
-                        </div>
                     </div>
-                ` : ''}
-
-            </div>
-        </div>
-    ` '';
-
-    const expandablePanelHTML = isExpandable ? `
-        <div class="expandable-panel ${isOpen ? 'open' : ''}">
-            <div class="px-2 py-1 text-sm space-y-1.5">
-                
-                <div class="flex justify-between items-start flex-wrap">
-                    <div class="w-full font-semibold text-yellow-300">抽出条件</div>
-                    <div class="w-full text-gray-300 mb-2">${processText(mob.Condition)}</div>
-
-                    <div class="w-full text-right text-sm font-mono text-blue-300">次回: ${nextTimeDisplay}</div>
-
-                    <div class="w-full text-right text-xs text-gray-400 mb-2">前回: ${prevTimeDisplay}</div>
-                    
-                    <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: ${mob.last_kill_memo || 'なし'}</div>
-
-                    <div class="w-full text-left text-xs text-gray-400 border-t border-gray-600 pt-1">最終討伐報告: ${lastKillDisplay}</div>
                 </div>
-
-                ${mob.Map && rank === 'S' ? `
-                    <div class="map-content py-1.5 flex justify-center relative">
-                        <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="w-full h-auto rounded shadow-lg border border-gray-600">
-                        <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">
-                            ${spawnPointsHtml}
-                        </div>
-                    </div>
-                ` : ''}
-
             </div>
+            ` : ''}
+
         </div>
-    ` '';
+    `;
+};
 
     const cardHTML = `
     <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 transition duration-150"
