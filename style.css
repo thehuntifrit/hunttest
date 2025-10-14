@@ -130,7 +130,6 @@ opacity: 1;
 }
 
 /* 影のクラス (基本は削除) */
-/* 既存の .spawn-point-shadow は使用しない方向で、新しい濃い影クラスに置き換えます */
 
 /* インタラクティブなポイント (ホバー時の強調) - ダブルクリック仕様に変更に伴い、ホバーのスケールは維持 */
 .spawn-point[data-is-interactive="true"]:hover {
@@ -141,8 +140,6 @@ opacity: 1;
 
 /* 湧き潰し/ラストワンポイントの新しい濃い外枠/影 */
 .spawn-point-shadow-sa {
-    /* S/A湧き潰し用 (B1/B2の色に対して濃い外枠/影) */
-    /* 例として、濃い青系の影を設定。実際のB1/B2の色に合わせて調整してください */
     box-shadow: 0 0 4px 2px rgba(0, 0, 139, 0.9); 
 }
 .spawn-point-shadow-lastone {
@@ -150,12 +147,11 @@ opacity: 1;
     box-shadow: 0 0 4px 2px rgba(0, 128, 0, 0.9);
 }
 
-
 /* 1. S/A湧き潰し対象ポイント (未選択) - レスポンシブ化 */
 .spawn-point-sa {
     /* スマホサイズ */
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border: 2px solid #000000; /* 現在は黒枠 */
 }
 @media (min-width: 1024px) { /* PCサイズ (lg breakpoint) */
@@ -167,14 +163,11 @@ opacity: 1;
 
 /* 湧き潰し済みポイント - 外枠白、未湧き潰し時と同サイズに修正 */
 .spawn-point-culled {
-    /* size-class: spawn-point-sa を適用するため、width/heightを削除し、
-       .spawn-point-sa のレスポンシブサイズを継承させます */
     background-color: var(--color-b-inverted-bg);
     border: 2px solid #ffffff; /* 白枠 (2pxに統一) */
     opacity: 0.7;
     box-shadow: none;
     cursor: default;
-    /* ホバー時の挙動をリセット（元の定義から変更なし） */
 }
 .spawn-point-culled:hover {
     transform: translate(-50%, -50%);
@@ -190,17 +183,17 @@ opacity: 1;
 /* 2. Bランクのみポイント (非湧き潰し対象) - 視認性向上とレスポンシブ化 */
 .spawn-point-b-only {
     /* スマホサイズ */
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     pointer-events: none !important;
     opacity: 0.75; /* 透過を 0.8 -> 0.75 に少し下げる */
     box-shadow: none;
-    border: 2px solid #ffffff; /* 白枠 2px を追加 */
+    border: 1px solid #ffffff; /* 白枠 2px を追加 */
 }
 @media (min-width: 1024px) { /* PCサイズ (lg breakpoint) */
     .spawn-point-b-only {
-        width: 10px; /* PCでのサイズ拡大 */
-        height: 10px;
+        width: 12px; /* PCでのサイズ拡大 */
+        height: 12px;
     }
 }
 
@@ -209,12 +202,12 @@ opacity: 1;
     /* スマホサイズ */
     width: 14px;
     height: 14px;
-    border: 3px solid #ffffff;
+    border: 2px solid #008000;
 }
 @media (min-width: 1024px) { /* PCサイズ (lg breakpoint) */
     .spawn-point-lastone {
-        width: 18px; /* PCでのサイズ拡大 */
-        height: 18px;
+        width: 16px; /* PCでのサイズ拡大 */
+        height: 16px;
     }
 }
 .spawn-point-lastone:hover {
@@ -222,7 +215,6 @@ opacity: 1;
 }
 
 /* --- 色クラス定義 --- */
-/* 既存の定義をそのまま維持 */
 .color-b1 { background-color: var(--color-b1); }
 .color-b2 { background-color: var(--color-b2); }
 .color-lastone { background-color: var(--color-lastone); }
