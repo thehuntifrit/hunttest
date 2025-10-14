@@ -9,6 +9,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="style.css">
+    <!-- 湧き潰しポイントのカーソルを修正するCSS -->
+    <style>
+        /* 湧き潰し操作可能なポイントにポインターカーソルを適用し、テキスト選択を無効化 */
+        .spawn-point-interactive,
+        [data-is-interactive="true"] {
+            cursor: pointer;
+            user-select: none;
+        }
+    </style>
 </head>
 
 <body class="min-h-screen bg-gray-900 text-white">
@@ -31,8 +40,8 @@
     </header>
 
     <div id="area-filter-wrapper"
-        class="absolute top-16 left-0 right-0 bg-gray-700 shadow-xl z-20 transition-all duration-300 ease-in-out overflow-hidden max-h-0 opacity-0 pointer-events-none **flex justify-end items-end**">
-        <div id="area-filter-panel" class="p-4 pt-2 flex flex-wrap gap-2 **justify-end**">
+        class="absolute top-16 left-0 right-0 bg-gray-700 shadow-xl z-20 transition-all duration-300 ease-in-out overflow-hidden max-h-0 opacity-0 pointer-events-none flex justify-end items-center">
+        <div id="area-filter-panel" class="p-4 pt-2 flex flex-wrap gap-2 justify-end">
         </div>
     </div>
 
