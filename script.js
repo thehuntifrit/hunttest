@@ -679,13 +679,13 @@ const createMobCard = (mob) => {
                         <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="w-full h-auto rounded shadow-lg border border-gray-600">
                         <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">
                             ${spawnPointsHtml}
-                        </div>
-                    </div>
-                ` : ''}
-
+　　　　　　　　　　　</div>
+                </div>
             </div>
-        </div>
-    ` : '';
+            ` : ''}
+        　</div>
+    　　`;
+　　};
 
 
     const cardHTML = `
