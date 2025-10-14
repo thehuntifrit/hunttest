@@ -4,13 +4,13 @@ import { getFirestore, collection, onSnapshot, doc, addDoc, serverTimestamp } fr
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-functions.js";
 
 const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
-    authDomain: "the-hunt-49493.firebaseapp.com",
-    projectId: "the-hunt-49493",
-    storageBucket: "the-hunt-49493.firebasestorage.app",
-    messagingSenderId: "465769826017",
-    appId: "1:465769826017:web:74ad7e62f3ab139cb359a0",
-    measurementId: "G-J1KGFE15XP"
+  apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
+  authDomain: "the-hunt-49493.firebaseapp.com",
+  projectId: "the-hunt-49493",
+  storageBucket: "the-hunt-49493.firebasestorage.app",
+  messagingSenderId: "465769826017",
+  appId: "1:465769826017:web:74ad7e62f3ab139cb359a0",
+  measurementId: "G-J1KGFE15XP"
 };
 
 const MOB_DATA_URL = "./mob_data.json";
