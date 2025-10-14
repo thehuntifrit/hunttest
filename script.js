@@ -897,100 +897,83 @@ const setupEventListeners = () => {
         updateFilterUI();
     });
 
-    DOMElements.areaFilterPanel.addEventListener('click', (e) => {
-        const btn = e.target.closest('.area-filter-btn');
-        if (!btn) return;
+    DOMElements.colContainer.addEventListener('click', (e) => {
+        const card = e.target.closest('.mob-card');
+        if (!card) return;
 
-        const uiRank = currentFilter.rank;
-        const dataRank = FILTER_TO_DATA_RANK_MAP[uiRank] || uiRank;
-
-        let areaSet = currentFilter.areaSets[uiRank];
-
-        if (btn.dataset.area === 'ALL') {
-            const allAreas = Array.from(globalMobData.filter(m => {
-                if (dataRank === 'A' || dataRank === 'F') {
-                    return m.Rank === dataRank || m.Rank.startsWith('B');
-                }
-                return m.Rank === dataRank;
-            }).reduce((set, mob) => {
-                const mobExpansion = mob.Rank.startsWith('B') 
-                    ? globalMobData.find(m => m.No === mob.related_mob_no)?.Expansion || mob.Expansion
-                    : mob.Expansion;
-                if (mobExpansion) set.add(mobExpansion);
-                return set;
-            }, new Set()));
-
-            if (areaSet.size === allAreas.length) {
-                currentFilter.areaSets[uiRank] = new Set();
-            } else {
-                currentFilter.areaSets[uiRank] = new Set(allAreas);
-            }
-        } else {
-            const area = btn.dataset.area;
-            if (areaSet.has(area)) {
-                areaSet.delete(area);
-            } else {
-                areaSet.add(area);
-            }
-        }
-
-        filterAndRender();
-    });
-
-DOMElements.colContainer.addEventListener('click', (e) => {
-    const point = e.target.closest('.spawn-point');
-    if (!point) return;
-    
-    if (point.dataset.isInteractive !== 'true') return;
-
-    const currentTime = Date.now();
-    const mobNo = parseInt(point.dataset.mobNo);
-    const locationId = point.dataset.locationId;
-    const isCurrentlyCulled = point.dataset.isCulled === 'true';
-
-    // ダブルクリック (湧き潰し/解除、またはLKT報告) 検出
-    if (currentTime - lastClickTime < DOUBLE_CLICK_TIME) {
-        e.preventDefault(); 
-        e.stopPropagation(); 
-
-        // ラストワンポイントの場合 (ダブルクリックでLKT報告モーダル)
-        if (point.classList.contains('spawn-point-lastone')) {
-            openReportModal(mobNo);
-        } 
-        // S/Aモブの湧き潰しポイントの場合 (ダブルクリックで湧き潰し/解除報告)
-        else {
-            toggleCrushStatus(mobNo, locationId, isCurrentlyCulled);
-        }
+        const mobNo = parseInt(card.dataset.mobNo);
+        const rank = card.dataset.rank;
         
-        lastClickTime = 0; 
-        return;
-    }
+        // 1. 報告ボタンのクリック
+        const reportBtn = e.target.closest('button[data-report-type]');
+        if (reportBtn) {
+            e.stopPropagation();
+            const reportType = reportBtn.dataset.reportType;
 
-    lastClickTime = currentTime;
-
-    // シングルクリック時は何もしない (ダブルクリックの待機)
-    e.preventDefault();
-    e.stopPropagation();
-});
-    
-        // カードヘッダーのクリックで展開/格納
-        if ((rank === 'S' || rank === 'A' || rank === 'F') && e.target.closest('[data-toggle="card-header"]')) {
-            const panel = card.querySelector('.expandable-panel');
-            if (panel) {
-                if (!panel.classList.contains('open')) {
-                    document.querySelectorAll('.expandable-panel.open').forEach(openPanel => {
-                        openPanel.classList.remove('open');
-                    });
-                    panel.classList.add('open');
-                    openMobCardNo = mobNo;
-                } else {
-                    panel.classList.remove('open');
-                    openMobCardNo = null;
-                }
-                localStorage.setItem('openMobCardNo', openMobCardNo);
+            if (reportType === 'modal') {
+                openReportModal(mobNo);
+            } else if (reportType === 'instant') {
+                const timeISO = toJstAdjustedIsoString(new Date());
+                submitReport(mobNo, timeISO, `${rank}ランク即時報告`);
             }
+            return;
         }
 
+        // 2. スポーンポイントのクリック処理 (ダブルクリックロジック)
+        const point = e.target.closest('.spawn-point');
+        if (point && point.dataset.isInteractive === 'true') {
+            e.preventDefault(); 
+            e.stopPropagation();
+
+            const currentTime = Date.now();
+            const locationId = point.dataset.locationId;
+            const isCurrentlyCulled = point.dataset.isCulled === 'true';
+
+            // ダブルクリック (討伐報告 または 湧き潰し/解除) 検出
+            if (currentTime - lastClickTime < DOUBLE_CLICK_TIME) {
+                
+                if (point.classList.contains('spawn-point-lastone')) {
+                    // ラストワン: LKT報告モーダル
+                    openReportModal(mobNo);
+                } else {
+                    // ラストワン以外: 湧き潰し/解除報告
+                    toggleCrushStatus(mobNo, locationId, isCurrentlyCulled);
+                }
+                
+                lastClickTime = 0; 
+                return;
+            }
+
+            lastClickTime = currentTime;
+
+            // シングルクリック時は何もしない (ダブルクリックの待機)
+            return;
+        }
+
+        // 3. カードヘッダーのクリックで展開/格納 (報告ボタン、湧き潰しポイント以外がクリックされた場合)
+        if (e.target.closest('[data-toggle="card-header"]')) {
+            if (rank === 'S' || rank === 'A' || rank === 'F') {
+                const panel = card.querySelector('.expandable-panel');
+                if (panel) {
+                    if (!panel.classList.contains('open')) {
+                        document.querySelectorAll('.expandable-panel.open').forEach(openPanel => {
+                            // クリックされたカード以外を閉じる
+                            if (openPanel.closest('.mob-card') !== card) {
+                                openPanel.classList.remove('open');
+                            }
+                        });
+                        panel.classList.add('open');
+                        openMobCardNo = mobNo;
+                    } else {
+                        panel.classList.remove('open');
+                        openMobCardNo = null;
+                    }
+                    localStorage.setItem('openMobCardNo', openMobCardNo);
+                }
+            }
+        }
+    });
+    
         // 報告ボタンのクリック
         const reportBtn = e.target.closest('button[data-report-type]');
         if (reportBtn) {
