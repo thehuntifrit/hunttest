@@ -67,7 +67,8 @@ let currentFilter = JSON.parse(localStorage.getItem('huntFilterState')) || {
     areaSets: { ALL: new Set() }
 };
 let openMobCardNo = localStorage.getItem('openMobCardNo') ? parseInt(localStorage.getItem('openMobCardNo')) : null;
-
+let lastClickTime = 0;
+const DOUBLE_CLICK_TIME = 500; // 0.5秒に設定
 
 let app = initializeApp(FIREBASE_CONFIG);
 let db = getFirestore(app);
@@ -75,7 +76,6 @@ let auth = getAuth(app);
 
 let functions = getFunctions(app, "asia-northeast2");
 const callUpdateCrushStatus = httpsCallable(functions, 'crushStatusUpdater');
-
 
 let unsubscribeListeners = [];
 let progressUpdateInterval = null;
@@ -524,17 +524,17 @@ const drawSpawnPoint = (point, cullPoints, mobNo, mobRank, isLastOne, isS_LastOn
     if (isLastOne) {
         sizeClass = 'spawn-point-lastone';
         colorClass = 'color-lastone';
-        specialClass = 'spawn-point-shadow';
+        specialClass = 'spawn-point-shadow-lastone'; // ラストワン用の新しい濃い影/枠
     } else if (isS_A_Cullable) {
         const rank = point.mob_ranks.find(r => r.startsWith('B'));
         colorClass = rank === 'B1' ? 'color-b1' : 'color-b2';
         
         if (isCulled) {
-            sizeClass = 'spawn-point-culled';
-            specialClass = 'culled';
+            sizeClass = 'spawn-point-sa'; // 湧き潰し前と同サイズに戻す
+            specialClass = 'culled-with-white-border'; // 白枠（押された後の反転色）
         } else {
             sizeClass = 'spawn-point-sa';
-            specialClass = 'spawn-point-shadow spawn-point-interactive';
+            specialClass = 'spawn-point-shadow-sa spawn-point-interactive'; // S/A湧き潰し用の新しい濃い影/枠
         }
 
     } else if (isB_Only) {
@@ -546,7 +546,7 @@ const drawSpawnPoint = (point, cullPoints, mobNo, mobRank, isLastOne, isS_LastOn
         }
         
         sizeClass = 'spawn-point-b-only';
-        specialClass = 'opacity-50';
+        specialClass = 'opacity-75 spawn-point-b-border'; // 透過を下げ、2pxの白枠を追加
     } else {
         sizeClass = 'spawn-point-b-only';
         colorClass = 'color-default';
@@ -937,12 +937,42 @@ const setupEventListeners = () => {
         filterAndRender();
     });
 
-    DOMElements.colContainer.addEventListener('click', (e) => {
-        const card = e.target.closest('.mob-card');
-        if (!card) return;
-        const mobNo = parseInt(card.dataset.mobNo);
-        const rank = card.dataset.rank;
+DOMElements.colContainer.addEventListener('click', (e) => {
+    const point = e.target.closest('.spawn-point');
+    if (!point) return;
+    
+    if (point.dataset.isInteractive !== 'true') return;
 
+    const currentTime = Date.now();
+    const mobNo = parseInt(point.dataset.mobNo);
+    const locationId = point.dataset.locationId;
+    const isCurrentlyCulled = point.dataset.isCulled === 'true';
+
+    // ダブルクリック (湧き潰し/解除、またはLKT報告) 検出
+    if (currentTime - lastClickTime < DOUBLE_CLICK_TIME) {
+        e.preventDefault(); 
+        e.stopPropagation(); 
+
+        // ラストワンポイントの場合 (ダブルクリックでLKT報告モーダル)
+        if (point.classList.contains('spawn-point-lastone')) {
+            openReportModal(mobNo);
+        } 
+        // S/Aモブの湧き潰しポイントの場合 (ダブルクリックで湧き潰し/解除報告)
+        else {
+            toggleCrushStatus(mobNo, locationId, isCurrentlyCulled);
+        }
+        
+        lastClickTime = 0; 
+        return;
+    }
+
+    lastClickTime = currentTime;
+
+    // シングルクリック時は何もしない (ダブルクリックの待機)
+    e.preventDefault();
+    e.stopPropagation();
+});
+    
         // カードヘッダーのクリックで展開/格納
         if ((rank === 'S' || rank === 'A' || rank === 'F') && e.target.closest('[data-toggle="card-header"]')) {
             const panel = card.querySelector('.expandable-panel');
