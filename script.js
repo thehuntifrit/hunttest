@@ -646,14 +646,13 @@ const createMobCard = (mob) => {
                         <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: ${mob.last_kill_memo || 'なし'}</div>
 
                         <div class="w-full text-left text-xs text-gray-400 border-t border-gray-600 pt-1">最終討伐報告: ${lastKillDisplay}</div>
+                        </div>
                     </div>
-                </div>
-            </div>
-            ` : ''}
+                ` : ''}
 
+            </div>
         </div>
-    `
-};
+    ` : '';
 
     const expandablePanelHTML = isExpandable ? `
         <div class="expandable-panel ${isOpen ? 'open' : ''}">
@@ -677,13 +676,13 @@ const createMobCard = (mob) => {
                         <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="w-full h-auto rounded shadow-lg border border-gray-600">
                         <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">
                             ${spawnPointsHtml}
-　　　　　　　　　　　</div>
-                </div>
+                        </div>
+                    </div>
+                ` : ''}
+
             </div>
-            ` : ''}
-        　</div>
-    　　`
-　　};
+        </div>
+    ` : '';
 
     const cardHTML = `
     <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 transition duration-150"
