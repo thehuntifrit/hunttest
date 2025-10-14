@@ -41,11 +41,6 @@ text-shadow:
 }
 
 /* タブのアクティブ状態を強調 (JSがTailwindクラスで背景色を変更) /
-.tab-button {
-transition: background-color 0.2s, box-shadow 0.2s, border 0.2s;
-}
-.tab-button[data-rank][data-click-count="1"],
-.tab-button[data-rank][data-click-count="2"] {
 / 選択中のランクを視覚的に強調 */
 box-shadow: 0 0 12px rgba(255, 255, 100, 0.6);
 border: 2px solid #FFD700;
@@ -119,76 +114,115 @@ opacity: 1;
 /* --- マップオーバーレイとスポーン点 --- */
 
 .map-content {
-position: relative;
-border-radius: 0.5rem;
+    position: relative;
+    border-radius: 0.5rem;
 }
 .map-overlay {
-pointer-events: none;
-z-index: 20;
+    pointer-events: none;
+    z-index: 20;
 }
 .spawn-point {
-position: absolute;
-border-radius: 50%;
-transform: translate(-50%, -50%);
-transition: transform 0.1s ease, box-shadow 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
-pointer-events: auto;
+    position: absolute;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease, box-shadow 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
+    pointer-events: auto;
 }
 
-/* 影のクラス */
-.spawn-point-shadow {
-box-shadow: 0 0 8px rgba(0, 0, 0, 1.0);
-}
+/* 影のクラス (基本は削除) */
+/* 既存の .spawn-point-shadow は使用しない方向で、新しい濃い影クラスに置き換えます */
 
-/* インタラクティブなポイント (ホバー時の強調) */
+/* インタラクティブなポイント (ホバー時の強調) - ダブルクリック仕様に変更に伴い、ホバーのスケールは維持 */
 .spawn-point[data-is-interactive="true"]:hover {
-cursor: pointer;
-transform: translate(-50%, -50%) scale(1.6);
-box-shadow: 0 0 15px rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    transform: translate(-50%, -50%) scale(1.6);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.9);
 }
 
-/* 1. S/A湧き潰し対象ポイント (未選択) */
+/* 湧き潰し/ラストワンポイントの新しい濃い外枠/影 */
+.spawn-point-shadow-sa {
+    /* S/A湧き潰し用 (B1/B2の色に対して濃い外枠/影) */
+    /* 例として、濃い青系の影を設定。実際のB1/B2の色に合わせて調整してください */
+    box-shadow: 0 0 4px 2px rgba(0, 0, 139, 0.9); 
+}
+.spawn-point-shadow-lastone {
+    /* ラストワン用 (緑系の色に対して濃い外枠/影) */
+    box-shadow: 0 0 4px 2px rgba(0, 128, 0, 0.9);
+}
+
+
+/* 1. S/A湧き潰し対象ポイント (未選択) - レスポンシブ化 */
 .spawn-point-sa {
-width: 10px;
-height: 10px;
-border: 2px solid #000000;
+    /* スマホサイズ */
+    width: 10px;
+    height: 10px;
+    border: 2px solid #000000; /* 現在は黒枠 */
+}
+@media (min-width: 1024px) { /* PCサイズ (lg breakpoint) */
+    .spawn-point-sa {
+        width: 14px; /* PCでのサイズ拡大 */
+        height: 14px;
+    }
 }
 
-/* 湧き潰し済みポイント */
+/* 湧き潰し済みポイント - 外枠白、未湧き潰し時と同サイズに修正 */
 .spawn-point-culled {
-width: 10px;
-height: 10px;
-background-color: var(--color-b-inverted-bg);
-border: 1px solid #ffffff;
-opacity: 0.7;
-box-shadow: none;
-cursor: default;
-pointer-events: auto !important;
+    /* size-class: spawn-point-sa を適用するため、width/heightを削除し、
+       .spawn-point-sa のレスポンシブサイズを継承させます */
+    background-color: var(--color-b-inverted-bg);
+    border: 2px solid #ffffff; /* 白枠 (2pxに統一) */
+    opacity: 0.7;
+    box-shadow: none;
+    cursor: default;
+    /* ホバー時の挙動をリセット（元の定義から変更なし） */
 }
 .spawn-point-culled:hover {
-transform: translate(-50%, -50%);
-box-shadow: none;
+    transform: translate(-50%, -50%);
+    box-shadow: none;
+}
+/* 新しいクラス: 湧き潰し済の時に適用する白枠/サイズ固定クラス（drawSpawnPointで使用） */
+.culled-with-white-border {
+    border: 2px solid #ffffff;
+    box-shadow: none;
+    opacity: 0.7;
 }
 
-/* 2. Bランクのみポイント (非湧き潰し対象) */
+/* 2. Bランクのみポイント (非湧き潰し対象) - 視認性向上とレスポンシブ化 */
 .spawn-point-b-only {
-width: 8px;
-height: 8px;
-pointer-events: none !important;
-opacity: 0.8;
-box-shadow: none;
+    /* スマホサイズ */
+    width: 8px;
+    height: 8px;
+    pointer-events: none !important;
+    opacity: 0.75; /* 透過を 0.8 -> 0.75 に少し下げる */
+    box-shadow: none;
+    border: 2px solid #ffffff; /* 白枠 2px を追加 */
+}
+@media (min-width: 1024px) { /* PCサイズ (lg breakpoint) */
+    .spawn-point-b-only {
+        width: 10px; /* PCでのサイズ拡大 */
+        height: 10px;
+    }
 }
 
-/* 3. ラストワン強調ポイント */
+/* 3. ラストワン強調ポイント - レスポンシブ化 */
 .spawn-point-lastone {
-width: 14px;
-height: 14px;
-border: 3px solid #ffffff;
+    /* スマホサイズ */
+    width: 14px;
+    height: 14px;
+    border: 3px solid #ffffff;
+}
+@media (min-width: 1024px) { /* PCサイズ (lg breakpoint) */
+    .spawn-point-lastone {
+        width: 18px; /* PCでのサイズ拡大 */
+        height: 18px;
+    }
 }
 .spawn-point-lastone:hover {
-transform: translate(-50%, -50%) scale(1.4);
+    transform: translate(-50%, -50%) scale(1.4);
 }
 
 /* --- 色クラス定義 --- */
+/* 既存の定義をそのまま維持 */
 .color-b1 { background-color: var(--color-b1); }
 .color-b2 { background-color: var(--color-b2); }
 .color-lastone { background-color: var(--color-lastone); }
@@ -197,8 +231,8 @@ transform: translate(-50%, -50%) scale(1.4);
 
 /* [仕様 IV-5] B反転ロジック用 */
 .color-b-inverted {
-background-color: var(--color-b-inverted);
-opacity: 0.4;
+    background-color: var(--color-b-inverted);
+    opacity: 0.4;
 }
 
 /* モーダルの背景 */
