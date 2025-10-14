@@ -1001,7 +1001,6 @@ const setupEventListeners = () => {
             }
         }
     });
-    // ==============================================================
 
     document.getElementById('cancel-report').addEventListener('click', closeReportModal);
     DOMElements.reportForm.addEventListener('submit', (e) => {
