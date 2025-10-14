@@ -128,6 +128,14 @@ opacity: 1;
     transform: translate(-50%, -50%);
     transition: transform 0.1s ease, box-shadow 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
     pointer-events: auto;
+    user-select: none;
+    cursor: default; 
+}
+
+/* ただし、操作可能なポイントではポインターを表示する方が親切なため、以下のルールを優先*/
+.spawn-point-interactive,
+[data-is-interactive="true"] {
+    cursor: pointer;
 }
 
 /* インタラクティブなポイント (ホバー時の強調) - ダブルクリック仕様に変更に伴い、ホバーのスケールは維持 */
