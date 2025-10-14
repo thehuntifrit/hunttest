@@ -724,7 +724,7 @@ const updateFilterUI = () => {
     });
 };
 
-// filterAndRender関数からupdateFilterUI()の呼び出しを削除しました
+// updateFilterUI()の呼び出しを元に戻しました (安定性の回復)
 const filterAndRender = (isInitialLoad = false) => {
     const targetDataRank = FILTER_TO_DATA_RANK_MAP[currentFilter.rank] || currentFilter.rank;
     
@@ -764,10 +764,7 @@ const filterAndRender = (isInitialLoad = false) => {
 
     distributeCards();
 
-    // 【案2】updateFilterUIの呼び出しを削除 (冗長な処理を排除)
-    if (isInitialLoad) {
-        updateFilterUI(); // 初期ロード時のみ実行を維持
-    }
+    updateFilterUI(); // ← 安定性確保のため、呼び出しを元に戻しました
 
     localStorage.setItem('huntFilterState', JSON.stringify({
         ...currentFilter,
@@ -886,7 +883,7 @@ const setupEventListeners = () => {
                 currentFilter.areaSets[newRank] = new Set();
             }
             filterAndRender(true); // ランク切り替え時はUI更新も実行する
-            updateFilterUI(); // 【案2】ランク切り替え時のみここで明示的に呼び出す
+            // updateFilterUI() の呼び出しを削除
         } else {
             if (newRank === 'ALL') {
                 toggleAreaFilterPanel(true);
@@ -905,9 +902,7 @@ const setupEventListeners = () => {
         }
         
         btn.dataset.clickCount = clickCount;
-        if (newRank === currentFilter.rank && newRank !== 'ALL') {
-            updateFilterUI(); // 同じランク内でフィルターパネルの開閉時にもUI更新する
-        }
+        // updateFilterUI() の呼び出しを削除 (filterAndRender内で実行されるため)
     });
 
     DOMElements.areaFilterPanel.addEventListener('click', (e) => {
@@ -947,10 +942,10 @@ const setupEventListeners = () => {
             }
         }
 
-        // 【案1】UIの即時更新: エリアフィルタパネルの色を再描画
+        // 【修正点】エリアフィルタパネルの色を即座に再描画し、視覚的なフィードバックを最優先
         renderAreaFilterPanel();
         
-        // 【案1】リストの再描画はデバウンスで遅延実行
+        // リストの再描画はデバウンスで遅延実行
         sortAndRedistribute();
     });
 
@@ -1045,10 +1040,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 初期表示の際、filterAndRenderの中でupdateFilterUIが呼ばれるようになったため、
-    // ここでの冗長な呼び出しを削除します。
-    // updateFilterUI(); 
-    
     // 初回描画（filterAndRenderがfetchBaseMobData内で呼ばれるため、ここでは不要）
 
     displayStatus("アプリを初期化中...", 'loading');
