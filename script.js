@@ -192,7 +192,7 @@ function isPointCrushed(point, lastKillTimeSec, prevKillTimeSec) {
     return false;
 }
 
-// 修正: ユーザー指示に完全に準拠した calculateRepop 関数
+// ユーザー指示に完全に準拠した calculateRepop 関数
 const calculateRepop = (mob) => {
     const now = Date.now() / 1000;
     const lastKill = mob.last_kill_time || 0;
@@ -638,13 +638,19 @@ const createMobCard = (mob) => {
                 <div class="flex justify-between items-start space-x-2">
                     
                     <div class="flex flex-col flex-shrink min-w-0">
+                        
+                        <!-- 1. ランクアイコンとモブ名を横並びにするコンテナ -->
                         <div class="flex items-center space-x-2">
                             <span class="rank-icon ${rankConfig.bg} text-white text-xs font-bold px-2 py-0.5 rounded-full">${rankLabel}</span>
-                            <!-- 修正: 16文字以上で短縮 -->
+                            
+                            <!-- 2. モブ名 -->
                             <span class="mob-name text-lg font-bold text-outline truncate" 
-                                  style="${nameMaxWidthStyle}">${mob.Name}</span>
+                                style="${nameMaxWidthStyle}">${mob.Name}</span>
                         </div>
+                        
+                        <!-- 3. エリア名 (モブ名/ランクアイコンの下) -->
                         <span class="text-xs text-gray-400 mt-0.5">${mob.Area} (${mob.Expansion})</span>
+                        
                     </div>
 
                     <div class="flex-shrink-0 flex flex-col space-y-1 items-end" style="min-width: 120px;">
@@ -785,18 +791,15 @@ const filterAndRender = (isInitialLoad = false) => {
     
     const filteredData = globalMobData.filter(mob => {
         if (uiRank === 'ALL') {
-            // 修正: ALLタブの挙動を、S, A, FATEの選択エリアの合計でフィルタする仕様に戻す
+            // ALLタブの挙動: S, A, FATEの選択エリアの合計でフィルタ
             const combinedAreaSet = new Set();
             ['S', 'A', 'FATE'].forEach(rankKey => {
                 const areaSet = currentFilter.areaSets[rankKey] instanceof Set ? currentFilter.areaSets[rankKey] : new Set();
                 areaSet.forEach(area => combinedAreaSet.add(area));
             });
             
-            // 結合されたAreaSetが空（＝フィルタなし）なら全てのランク・エリアを表示
-            // ALLタブが「すべて選択中」になっている挙動の修正：AreaSetが空の場合は全表示
             if (combinedAreaSet.size === 0) return true;
 
-            // 選択エリアがあれば、そのエリアに属するモブのみ表示
             return combinedAreaSet.has(mob.Expansion);
 
         } else {
@@ -806,7 +809,6 @@ const filterAndRender = (isInitialLoad = false) => {
             if (targetDataRank === 'A') {
                 if (mob.Rank !== 'A' && !mob.Rank.startsWith('B')) return false;
             } else if (targetDataRank === 'F') {
-                // 修正: FATE (F) のモブがエリア選択中にもかかわらず表示されない問題を修正
                 if (mob.Rank !== 'F' && !mob.Rank.startsWith('B')) return false;
             } else if (mob.Rank !== targetDataRank) {
                 return false;
@@ -860,7 +862,7 @@ const filterAndRender = (isInitialLoad = false) => {
         if (cardElement) {
             const expandablePanel = cardElement.querySelector('.expandable-panel');
             if (expandablePanel) {
-                panel.classList.add('open');
+                expandablePanel.classList.add('open');
             }
         }
     }
