@@ -652,7 +652,7 @@ const createMobCard = (mob) => {
             ` : ''}
 
         </div>
-    `; 
+    `
 };
 
     const expandablePanelHTML = isExpandable ? `
