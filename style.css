@@ -40,14 +40,8 @@ text-shadow:
 1px 1px 0 #000033;
 }
 
-
-/* タブのアクティブ状態を強調 (JSがTailwindクラスで背景色を変更) */
-.tab-button {
-transition: background-color 0.2s, box-shadow 0.2s, border 0.2s;
-}
-.tab-button[data-rank][data-click-count="1"],
-.tab-button[data-rank][data-click-count="2"] {
-/* 選択中のランクを視覚的に強調 */
+/* タブのアクティブ状態を強調 (JSがTailwindクラスで背景色を変更) /
+/ 選択中のランクを視覚的に強調 */
 box-shadow: 0 0 12px rgba(255, 255, 100, 0.6);
 border: 2px solid #FFD700;
 }
