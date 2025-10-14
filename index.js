@@ -1,7 +1,7 @@
 const admin = require('firebase-admin');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { onTaskDispatched } = require('firebase-functions/v2/tasks');
-const { onCall } = require('firebase-functions/v2/https');
+const { onCall, HttpsError } = require('firebase-functions/v2/https'); // HttpsErrorをv2からインポート
 const { getFunctions } = require('firebase-admin/functions');
 
 admin.initializeApp();
@@ -311,10 +311,8 @@ exports.averageStatusCalculator = onTaskDispatched({
  */
 exports.crushStatusUpdater = onCall({ region: DEFAULT_REGION }, async (request) => {
 
-    const functions = require('firebase-functions');
-
     if (!request.auth) {
-        throw new functions.https.HttpsError('unauthenticated', '認証が必要です。');
+        throw new HttpsError('unauthenticated', '認証が必要です。');
     }
 
     const data = request.data;
@@ -322,12 +320,12 @@ exports.crushStatusUpdater = onCall({ region: DEFAULT_REGION }, async (request) 
     const nowTimestamp = admin.firestore.Timestamp.now();
 
     if (!mobId || !pointId || (type !== 'add' && type !== 'remove')) {
-        throw new functions.https.HttpsError('invalid-argument', '必須データ（mob_id, point_id, type）が不足しています。');
+        throw new HttpsError('invalid-argument', '必須データ（mob_id, point_id, type）が不足しています。');
     }
 
     // Sランクのみの検証
     if (getRankFromMobId(mobId) !== 'S') {
-         throw new functions.https.HttpsError('invalid-argument', '湧き潰しポイントの更新はSランクモブでのみ許可されています。');
+         throw new HttpsError('invalid-argument', '湧き潰しポイントの更新はSランクモブでのみ許可されています。');
     }
 
     const mobLocationsRef = db.collection(COLLECTIONS.MOB_LOCATIONS).doc(mobId);
