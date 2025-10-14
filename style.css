@@ -8,13 +8,13 @@
 font-family: 'Inter', sans-serif;
 
 /* Repop進捗バーの色定義 */
---progress-0-60: #10b981; /* Green */
---progress-60-80: #f59e0b; /* Amber */
---progress-80-100: #ef4444; /* Red */
+--progress-0-60: #d9ead4;
+--progress-60-80: #fff3ce;
+--progress-80-100: #fce5ce;
 
 /* テキスト色定義 */
 --text-next: #3e83c4; /* Blue */
---text-pop: #ffffff;
+--text-pop: #3e83c4;
 
 /* スポーンポイントの色定義 */
 --color-b1: #3e83c4;
@@ -81,7 +81,7 @@ transition: width 0.5s ease-out;
 /* テキスト色クラス */
 .progress-pop-text {
 color: var(--text-pop);
-text-shadow: 0 0 4px rgba(0, 0, 0, 1.0);
+text-shadow: 0 0 8px rgba(0, 0, 0, 1.0);
 }
 
 /* 点滅アニメーション定義 */
