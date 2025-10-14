@@ -1,431 +1,144 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, doc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-functions.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { 
+    getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { 
+    getFirestore, doc, setDoc, onSnapshot, collection, query, updateDoc,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-lite.js";
 
-const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
-    authDomain: "the-hunt-49493.firebaseapp.com",
-    projectId: "the-hunt-49493",
-    storageBucket: "the-hunt-49493.firebasestorage.app",
-    messagingSenderId: "465769826017",
-    appId: "1:465769826017:web:74ad7e62f3ab139cb359a0",
-    measurementId: "G-J1KGFE15XP"
-};
 
-const MOB_DATA_URL = "./mob_data.json";
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-const EXPANSION_MAP = {
-    1: "新生", 2: "蒼天", 3: "紅蓮", 4: "漆黒", 5: "暁月", 6: "黄金"
-};
+let app, db, auth;
+let userId = null;
 
-const FILTER_TO_DATA_RANK_MAP = {
-    'FATE': 'F',
-    'ALL': 'ALL',
-    'S': 'S',
-    'A': 'A',
-};
+let globalMobData = [];
+let lktData = {};
+let cullStatusData = {};
 
-const RANK_COLORS = {
-    S: { bg: 'bg-red-600', text: 'text-red-600', hex: '#dc2626', label: 'S' },
-    A: { bg: 'bg-yellow-600', text: 'text-yellow-600', hex: '#ca8a04', label: 'A' },
-    F: { bg: 'bg-indigo-600', text: 'text-indigo-600', hex: '#4f46e5', label: 'FATE' },
-    B1: { bg: 'bg-blue-500', text: 'text-blue-500', hex: '#3e83c4', label: 'B1' },
-    B2: { bg: 'bg-red-500', text: 'text-red-500', hex: '#e16666', label: 'B2' }
-};
+let openMobCardNo = localStorage.getItem('openMobCardNo') ? parseInt(localStorage.getItem('openMobCardNo'), 10) : null;
 
-const PROGRESS_CLASSES = {
-    P0_60: 'progress-p0-60',
-    P60_80: 'progress-p60-80',
-    P80_100: 'progress-p80-100',
-    TEXT_NEXT: 'progress-next-text',
-    TEXT_POP: 'progress-pop-text',
-    MAX_OVER_BLINK: 'progress-max-over-blink'
-};
 
 const DOMElements = {
-    masterContainer: document.getElementById('master-mob-container'),
-    colContainer: document.getElementById('column-container'),
-    cols: [document.getElementById('column-1'), document.getElementById('column-2'), document.getElementById('column-3')],
+    masterContainer: document.getElementById('master-card-container'),
+    colContainer: document.getElementById('col-container'),
+    cols: [
+        document.getElementById('col-1'),
+        document.getElementById('col-2'),
+        document.getElementById('col-3'),
+    ],
     rankTabs: document.getElementById('rank-tabs'),
     areaFilterWrapper: document.getElementById('area-filter-wrapper'),
     areaFilterPanel: document.getElementById('area-filter-panel'),
-    statusMessage: document.getElementById('status-message'),
     reportModal: document.getElementById('report-modal'),
     reportForm: document.getElementById('report-form'),
     modalMobName: document.getElementById('modal-mob-name'),
+    modalTimeInput: document.getElementById('modal-time-input'),
+    modalMemoInput: document.getElementById('modal-memo-input'),
     modalStatus: document.getElementById('modal-status'),
-    modalTimeInput: document.getElementById('report-datetime'),
-    modalMemoInput: document.getElementById('report-memo')
+    authStatus: document.getElementById('auth-status'),
+    userIdDisplay: document.getElementById('user-id-display'),
+    statusDisplay: document.getElementById('app-status'),
 };
 
-let userId = localStorage.getItem('user_uuid') || null;
-let baseMobData = [];
-let globalMobData = [];
-let currentFilter = JSON.parse(localStorage.getItem('huntFilterState')) || {
-    rank: 'ALL',
-    areaSets: { ALL: new Set() }
+const EXPANSION_MAP = {
+    'ARR': '新生エオルゼア',
+    'HW': '蒼天のイシュガルド',
+    'SB': '紅蓮のリベレーター',
+    'SHB': '漆黒のヴィランズ',
+    'EW': '暁月のフィナーレ',
+    'DT': '黄金のレガシー',
 };
-let openMobCardNo = localStorage.getItem('openMobCardNo') ? parseInt(localStorage.getItem('openMobCardNo')) : null;
-let lastClickTime = 0;
-const DOUBLE_CLICK_TIME = 500; // 0.5秒に設定
 
-let app = initializeApp(FIREBASE_CONFIG);
-let db = getFirestore(app);
-let auth = getAuth(app);
+const RANK_COLORS = {
+    'S': { label: 'S', bg: 'bg-red-600', text: 'text-red-300' },
+    'A': { label: 'A', bg: 'bg-yellow-600', text: 'text-yellow-300' },
+    'F': { label: 'F', bg: 'bg-indigo-600', text: 'text-indigo-300' },
+    'B': { label: 'B', bg: 'bg-green-600', text: 'text-green-300' },
+    'ALL': { label: 'ALL', bg: 'bg-blue-600', text: 'text-blue-300' },
+};
 
-let functions = getFunctions(app, "asia-northeast2");
-const callUpdateCrushStatus = httpsCallable(functions, 'crushStatusUpdater');
+const FILTER_TO_DATA_RANK_MAP = {
+    'S_RANK': 'S',
+    'A_RANK': 'A',
+    'F_RANK': 'F',
+    'ALL': 'ALL',
+};
 
-let unsubscribeListeners = [];
-let progressUpdateInterval = null;
-let currentReportMobNo = null;
+const savedFilter = localStorage.getItem('huntFilterState');
+let currentFilter = savedFilter ? JSON.parse(savedFilter) : {
+    rank: 'S_RANK',
+    areaSets: {
+        'S_RANK': new Set(),
+        'A_RANK': new Set(),
+        'F_RANK': new Set(),
+        'ALL': new Set(),
+    }
+};
+
+
+const debounce = (func, delay) => {
+    let timeoutId;
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(this, args), delay);
+    };
+};
 
 const toJstAdjustedIsoString = (date) => {
-    const offsetMs = date.getTimezoneOffset() * 60000;
-    const jstOffsetMs = 9 * 60 * 60 * 1000;
-    
-    const jstTime = date.getTime() - offsetMs + jstOffsetMs;
-    const jstDate = new Date(jstTime);
-    
-    return jstDate.toISOString().slice(0, 16);
-};
+    const offset = date.getTimezoneOffset() * 60000;
+    const jstOffset = 9 * 60 * 60000;
+    const adjustedDate = new Date(date.getTime() - offset + jstOffset);
 
-const formatDuration = (seconds) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    return `${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m`;
+    const year = adjustedDate.getFullYear();
+    const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(adjustedDate.getDate()).padStart(2, '0');
+    const hours = String(adjustedDate.getHours()).padStart(2, '0');
+    const minutes = String(adjustedDate.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
 const formatLastKillTime = (timestamp) => {
-    if (timestamp === 0) return '未報告';
-
-    const killTimeMs = timestamp * 1000;
-    const nowMs = Date.now();
-    const diffSeconds = Math.floor((nowMs - killTimeMs) / 1000);
-
-    if (diffSeconds < 3600) {
-        if (diffSeconds < 60) return `Just now`;
-        const minutes = Math.floor(diffSeconds / 60);
-        return `${minutes}m ago`;
-    }
+    if (!timestamp || timestamp === 0) return '未報告';
     
-    const options = {
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'Asia/Tokyo'
-    };
-    
-    const date = new Date(killTimeMs);
-    
-    return new Intl.DateTimeFormat('ja-JP', options).format(date);
-};
-
-function processText(text) {
-    if (typeof text !== 'string' || !text) {
-        return '';
-    }
-    text = text.replace(/\/\//g, '<br>');
-    return text;
-}
-
-const debounce = (func, wait) => {
-    let timeout;
-    return function executed(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-};
-
-const displayStatus = (message, type = 'loading') => {
-    DOMElements.statusMessage.classList.remove('hidden');
-
-    DOMElements.statusMessage.textContent = message;
-    DOMElements.statusMessage.className = 'fixed top-14 left-0 right-0 z-40 text-center py-1 text-sm transition-colors duration-300';
-
-    DOMElements.statusMessage.classList.remove('bg-red-700/80', 'bg-green-700/80', 'bg-blue-700/80', 'text-white');
-
-    if (type === 'error') {
-        DOMElements.statusMessage.classList.add('bg-red-700/80', 'text-white');
-    } else if (type === 'success') {
-        DOMElements.statusMessage.classList.add('bg-green-700/80', 'text-white');
-        setTimeout(() => {
-            DOMElements.statusMessage.textContent = '';
-            DOMElements.statusMessage.classList.add('hidden');
-        }, 3000);
-    } else {
-        DOMElements.statusMessage.classList.add('bg-blue-700/80', 'text-white');
-    }
-};
-
-function isPointCrushed(point, lastKillTimeSec, prevKillTimeSec) {
-    const cullResetSec = Math.max(lastKillTimeSec, prevKillTimeSec || 0);
-    const cullResetTime = cullResetSec > 0 ? new Date(cullResetSec * 1000) : new Date(0);
-
-    const crushedTime = point.crushed_at?.toDate ? point.crushed_at.toDate() : point.crushed_at;
-    const uncrushedTime = point.uncrushed_at?.toDate ? point.uncrushed_at.toDate() : point.uncrushed_at;
-
-    let effectiveCrushedTime = null;
-    let effectiveUncrushedTime = null;
-
-    if (crushedTime instanceof Date && crushedTime > cullResetTime) {
-        effectiveCrushedTime = crushedTime;
-    }
-    if (uncrushedTime instanceof Date && uncrushedTime > cullResetTime) {
-        effectiveUncrushedTime = uncrushedTime;
-    }
-
-    if (!effectiveCrushedTime && !effectiveUncrushedTime) {
-        return false;
-    }
-
-    if (effectiveCrushedTime && 
-        (!effectiveUncrushedTime || effectiveCrushedTime.getTime() > effectiveUncrushedTime.getTime())) {
-        return true;
-    }
-    
-    return false;
-}
-
-const calculateRepop = (mob) => {
     const now = Date.now() / 1000;
-    const lastKill = mob.last_kill_time || 0;
-    const repopSec = mob.REPOP_s;
-    const maxSec = mob.MAX_s;
+    const elapsedSeconds = now - timestamp;
+    
+    if (elapsedSeconds < 60) return `${Math.floor(elapsedSeconds)}秒前`;
 
-    let minRepop = lastKill + repopSec;
-    let maxRepop = lastKill + maxSec;
-    let elapsedPercent = 0;
-    let timeRemaining = 'Unknown';
-    let status = 'Unknown';
+    const elapsedMinutes = elapsedSeconds / 60;
+    if (elapsedMinutes < 60) return `${Math.floor(elapsedMinutes)}分前`;
 
-    if (lastKill === 0) {
-        minRepop = now + repopSec;
-        maxRepop = now + maxSec;
-        timeRemaining = `Next: ${formatDuration(minRepop - now)}`;
-        status = 'Next';
-    } else if (now < minRepop) {
-        elapsedPercent = 0;
-        timeRemaining = `Next: ${formatDuration(minRepop - now)}`;
-        status = 'Next';
-    } else if (now >= minRepop && now < maxRepop) {
-        elapsedPercent = ((now - minRepop) / (maxRepop - minRepop)) * 100;
-        elapsedPercent = Math.min(elapsedPercent, 100);
-        timeRemaining = `${elapsedPercent.toFixed(0)}% (${formatDuration(maxRepop - now)} Left)`;
-        status = 'PopWindow';
+    const elapsedHours = elapsedMinutes / 60;
+    if (elapsedHours < 24) return `${Math.floor(elapsedHours)}時間前`;
+
+    const elapsedDays = elapsedHours / 24;
+    return `${Math.floor(elapsedDays)}日前`;
+};
+
+const processText = (text) => {
+    if (!text) return '条件なし';
+    return text.replace(/([XY]):(\d{1,2}\.\d)/g, '<span class="text-blue-400 font-mono font-bold">$1:$2</span>');
+};
+
+const displayStatus = (message, type = 'info') => {
+    DOMElements.statusDisplay.textContent = message;
+    DOMElements.statusDisplay.className = 'py-1 px-2 text-sm font-semibold rounded-full ';
+    
+    if (type === 'loading') {
+        DOMElements.statusDisplay.classList.add('bg-blue-600', 'text-white');
+    } else if (type === 'success') {
+        DOMElements.statusDisplay.classList.add('bg-green-600', 'text-white');
+    } else if (type === 'error') {
+        DOMElements.statusDisplay.classList.add('bg-red-600', 'text-white');
     } else {
-        elapsedPercent = 100;
-        timeRemaining = `POP済み (+${formatDuration(now - maxRepop)} over)`;
-        status = 'MaxOver';
+        DOMElements.statusDisplay.classList.add('bg-gray-600', 'text-white');
     }
-
-    const nextMinRepopDate = minRepop > now ? new Date(minRepop * 1000) : null;
-    
-    return { minRepop, maxRepop, elapsedPercent, timeRemaining, status, nextMinRepopDate };
-};
-
-const updateProgressBars = () => {
-    globalMobData = globalMobData.map(mob => ({
-        ...mob,
-        repopInfo: calculateRepop(mob)
-    }));
-
-    document.querySelectorAll('.mob-card').forEach(card => {
-        const mobNo = parseInt(card.dataset.mobNo);
-        const mob = globalMobData.find(m => m.No === mobNo);
-        if (!mob || !mob.repopInfo) return;
-
-        const { elapsedPercent, timeRemaining, status } = mob.repopInfo;
-        const progressBar = card.querySelector('.progress-bar-bg');
-        const progressText = card.querySelector('.progress-text');
-        const progressBarWrapper = progressBar ? progressBar.parentElement : null;
-
-        if (!progressBar || !progressText) return;
-
-        progressBar.style.width = `${elapsedPercent}%`;
-        progressText.textContent = timeRemaining;
-
-        let bgColorClass = '';
-        let textColorClass = '';
-        let blinkClass = '';
-
-        progressBar.classList.remove(PROGRESS_CLASSES.P0_60, PROGRESS_CLASSES.P60_80, PROGRESS_CLASSES.P80_100);
-        
-        if (status === 'PopWindow') {
-            if (elapsedPercent <= 60) {
-                bgColorClass = PROGRESS_CLASSES.P0_60;
-            } else if (elapsedPercent <= 80) {
-                bgColorClass = PROGRESS_CLASSES.P60_80;
-            } else {
-                bgColorClass = PROGRESS_CLASSES.P80_100;
-            }
-            textColorClass = PROGRESS_CLASSES.TEXT_POP;
-            blinkClass = '';
-        } else if (status === 'MaxOver') {
-            bgColorClass = PROGRESS_CLASSES.P80_100;
-            textColorClass = PROGRESS_CLASSES.TEXT_POP;
-            blinkClass = PROGRESS_CLASSES.MAX_OVER_BLINK;
-        } else {
-            bgColorClass = '';
-            textColorClass = PROGRESS_CLASSES.TEXT_NEXT;
-            blinkClass = '';
-        }
-
-        if (bgColorClass) {
-            progressBar.classList.add(bgColorClass);
-        }
-        
-        progressText.classList.remove(PROGRESS_CLASSES.TEXT_NEXT, PROGRESS_CLASSES.TEXT_POP);
-        progressText.classList.add(textColorClass);
-
-        progressBarWrapper.classList.remove(PROGRESS_CLASSES.MAX_OVER_BLINK);
-        if (blinkClass) {
-            progressBarWrapper.classList.add(blinkClass);
-        }
-    });
-};
-
-const fetchBaseMobData = async () => {
-    try {
-        const response = await fetch(MOB_DATA_URL);
-        if (!response.ok) throw new Error('Mob data failed to load.');
-        const data = await response.json();
-
-        baseMobData = data.mobConfig.map(mob => ({
-            ...mob,
-            Expansion: EXPANSION_MAP[Math.floor(mob.No / 10000)] || "Unknown",
-            REPOP_s: mob.REPOP,
-            MAX_s: mob.MAX,
-            last_kill_time: 0,
-            prev_kill_time: 0,
-            last_kill_memo: '',
-            spawn_cull_status: {},
-            related_mob_no: mob.Rank.startsWith('B') ? mob.RelatedMobNo : null
-        }));
-
-        globalMobData = [...baseMobData];
-        filterAndRender();
-
-    } catch (error) {
-        displayStatus("ベースモブデータのロードに失敗しました。", 'error');
-    }
-};
-
-const mergeMobStatusData = (mobStatusDataMap) => {
-    const newData = new Map();
-
-    Object.values(mobStatusDataMap).forEach(docData => {
-        Object.entries(docData).forEach(([mobId, mobData]) => {
-            const mobNo = parseInt(mobId);
-            newData.set(mobNo, {
-                last_kill_time: mobData.last_kill_time?.seconds || 0,
-                prev_kill_time: mobData.prev_kill_time?.seconds || 0,
-                last_kill_memo: mobData.last_kill_memo || ''
-            });
-        });
-    });
-
-    globalMobData = globalMobData.map(mob => {
-        let mergedMob = { ...mob };
-
-        if (newData.has(mob.No)) {
-            const dynamicData = newData.get(mob.No);
-            mergedMob.last_kill_time = dynamicData.last_kill_time;
-            mergedMob.prev_kill_time = dynamicData.prev_kill_time;
-            mergedMob.last_kill_memo = dynamicData.last_kill_memo;
-        }
-
-        mergedMob.repopInfo = calculateRepop(mergedMob);
-        return mergedMob;
-    });
-    
-    sortAndRedistribute();
-};
-
-const mergeMobLocationsData = (locationsMap) => {
-    globalMobData = globalMobData.map(mob => {
-        let mergedMob = { ...mob };
-        const dynamicData = locationsMap[mob.No];
-
-        if (mob.Rank === 'S' && dynamicData) {
-            // mob_locations からの last_kill_time, prev_kill_time のマージを削除
-            mergedMob.spawn_cull_status = dynamicData.points;
-        }
-        
-        mergedMob.repopInfo = calculateRepop(mergedMob);
-        return mergedMob;
-    });
-
-    sortAndRedistribute();
-};
-
-const startRealtimeListeners = () => {
-    clearInterval(progressUpdateInterval);
-
-    unsubscribeListeners.forEach(unsub => unsub());
-    unsubscribeListeners = [];
-    
-    const statusDocs = ['s_latest', 'a_latest', 'f_latest'];
-    const mobStatusDataMap = {};
-
-    statusDocs.forEach(docId => {
-        const docRef = doc(db, "mob_status", docId);
-        const unsubscribe = onSnapshot(docRef, (snapshot) => {
-            const data = snapshot.data();
-            if (data) {
-                mobStatusDataMap[docId] = data;
-            }
-            mergeMobStatusData(mobStatusDataMap);
-            displayStatus("LKT/Memoデータ更新完了。", 'success');
-        }, (error) => {
-            displayStatus(`MobStatus (${docId}) のリアルタイム同期エラー。`, 'error');
-        });
-        unsubscribeListeners.push(unsubscribe);
-    });
-
-    const unsubscribeLocations = onSnapshot(collection(db, "mob_locations"), (snapshot) => {
-        const locationsMap = {};
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const mobNo = parseInt(doc.id);
-
-            locationsMap[mobNo] = {
-                points: data.points || {}
-            };
-        });
-        mergeMobLocationsData(locationsMap);
-        displayStatus("湧き潰しデータ更新完了。", 'success');
-    }, (error) => {
-        displayStatus("MobLocationsのリアルタイム同期エラー。", 'error');
-    });
-    unsubscribeListeners.push(unsubscribeLocations);
-
-    progressUpdateInterval = setInterval(updateProgressBars, 10000);
-};
-
-const setupAuthentication = () => {
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            userId = user.uid;
-            localStorage.setItem('user_uuid', userId);
-            displayStatus(`ユーザー認証成功: ${userId.substring(0, 8)}...`, 'success');
-            if (baseMobData.length > 0) {
-                startRealtimeListeners();
-            } else {
-                fetchBaseMobData().then(() => startRealtimeListeners());
-            }
-        } else {
-            signInAnonymously(auth).catch((error) => {
-                displayStatus(`認証エラー: ${error.message}`, 'error');
-            });
-        }
-    });
 };
 
 const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
@@ -434,137 +147,385 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
         return;
     }
 
-    const action = isCurrentlyCulled ? 'uncrush' : 'crush';
-    const mob = globalMobData.find(m => m.No === mobNo);
-    if (!mob) return;
+    const mobKey = mobNo.toString();
+    const newStatus = isCurrentlyCulled ? 'NOT_CULLED' : 'CULLED';
+    const culledAt = newStatus === 'CULLED' ? serverTimestamp() : null;
+    const culledBy = newStatus === 'CULLED' ? userId : null;
+    
+    // ユーザー固有の湧き潰し状態ドキュメントパス
+    const cullDocPath = `/artifacts/${appId}/users/${userId}/hunt_cull_status/cull_data`;
+    const cullDocRef = doc(db, cullDocPath);
 
-    displayStatus(`${mob.Name} (${locationId}) ${action === 'crush' ? '湧き潰し' : '解除'}報告中...`);
+    const updateData = {
+        [locationId]: {
+            status: newStatus,
+            culledAt: culledAt,
+            culledBy: culledBy,
+            mobNo: mobNo // どのモブに関連するか保存
+        }
+    };
 
     try {
-        const result = await callUpdateCrushStatus({
-            mob_id: mobNo.toString(),
-            point_id: locationId,
-            type: action === 'crush' ? 'add' : 'remove', // Cloud Functionの引数名に合わせる
-            userId: userId // 検証のために維持
-            // timestamp は削除しました
-        });
-
-        if (result.data?.success) {
-            displayStatus(`${mob.Name} の状態を更新しました。`, 'success');
-        } else {
-            displayStatus(`更新失敗: ${result.data?.message || '不明なエラー'}`, 'error');
-        }
+        await updateDoc(cullDocRef, updateData);
+        displayStatus(`湧き潰し状態を更新しました: ${locationId} -> ${newStatus}`, 'success');
     } catch (error) {
-        displayStatus(`湧き潰し報告エラー: ${error.message}`, 'error');
+        if (error.code === 'not-found') {
+             try {
+                // ドキュメントが存在しない場合はsetDocで作成
+                await setDoc(cullDocRef, updateData, { merge: true });
+                displayStatus(`湧き潰し状態を初期作成し、更新しました: ${locationId} -> ${newStatus}`, 'success');
+             } catch (e) {
+                console.error("湧き潰し状態の初期作成に失敗:", e);
+                displayStatus("湧き潰し状態の更新に失敗しました (Firestore初期作成エラー)", 'error');
+             }
+        } else {
+            console.error("湧き潰し状態の更新に失敗:", error);
+            displayStatus("湧き潰し状態の更新に失敗しました (Firestoreエラー)", 'error');
+        }
     }
 };
 
-const submitReport = async (mobNo, timeISO, memo) => {
+const setupAuthentication = async () => {
+    try {
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        setLogLevel('Debug');
+
+        if (initialAuthToken) {
+            await signInWithCustomToken(auth, initialAuthToken);
+        } else {
+            await signInAnonymously(auth);
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userId = user.uid;
+                DOMElements.authStatus.textContent = '認証済み';
+                DOMElements.userIdDisplay.textContent = `User ID: ${userId}`;
+                
+                setupDataListeners(userId);
+                
+                displayStatus("認証完了。データ監視中...", 'info');
+
+            } else {
+                userId = null;
+                DOMElements.authStatus.textContent = '未認証 (匿名)';
+                DOMElements.userIdDisplay.textContent = 'User ID: N/A';
+                displayStatus("匿名認証に失敗しました。", 'error');
+            }
+        });
+
+    } catch (e) {
+        console.error("Firebase初期化または認証に失敗:", e);
+        displayStatus("初期化エラー。コンソールを確認してください。", 'error');
+    }
+};
+
+const setupDataListeners = (currentUserId) => {
+    if (!db) return;
+
+    // LKT (Last Kill Time) データの監視 (パブリックデータ)
+    const lktQuery = query(collection(db, `/artifacts/${appId}/public/data/hunt_lkt_records`));
+    onSnapshot(lktQuery, (snapshot) => {
+        const newLktData = {};
+        snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            newLktData[doc.id] = {
+                last_kill_time: data.last_kill_time || 0,
+                prev_kill_time: data.prev_kill_time || 0,
+                last_kill_memo: data.last_kill_memo || '',
+                reporter_id: data.reporter_id || '',
+            };
+        });
+        lktData = newLktData;
+        calculateAndRender();
+    }, (error) => {
+        console.error("LKTデータ監視エラー:", error);
+        displayStatus("LKTデータ取得エラー。", 'error');
+    });
+
+    // 湧き潰し状態データの監視 (ユーザー個別のプライベートデータ)
+    const cullDocRef = doc(db, `/artifacts/${appId}/users/${currentUserId}/hunt_cull_status/cull_data`);
+    onSnapshot(cullDocRef, (doc) => {
+        if (doc.exists()) {
+            cullStatusData = doc.data() || {};
+        } else {
+            cullStatusData = {};
+        }
+        calculateAndRender();
+    }, (error) => {
+        console.error("湧き潰しデータ監視エラー:", error);
+        displayStatus("湧き潰しデータ取得エラー。", 'error');
+    });
+};
+
+const submitReport = async (mobNo, datetime, memo) => {
     if (!userId) {
-        displayStatus("認証が完了していません。ページをリロードしてください。", 'error');
+        displayStatus("認証が完了していません。報告できません。", 'error');
         return;
     }
     
-    const mob = globalMobData.find(m => m.No === mobNo);
-    if (!mob) {
-        displayStatus("モブデータが見つかりません。", 'error');
-        return;
-    }
-    
-    const killTimeDate = new Date(timeISO);
-    if (isNaN(killTimeDate)) {
-        displayStatus("時刻形式が不正です。", 'error');
+    const killDate = new Date(datetime);
+
+    if (isNaN(killDate.getTime())) {
+        DOMElements.modalStatus.textContent = '無効な日時形式です。';
+        DOMElements.modalStatus.classList.add('text-red-500');
         return;
     }
 
-    DOMElements.modalStatus.textContent = '送信中...';
-    displayStatus(`${mob.Name} 討伐時間報告中...`);
+    const mobKey = mobNo.toString();
+    const docRef = doc(db, `/artifacts/${appId}/public/data/hunt_lkt_records`, mobKey);
+
+    const lktRecord = lktData[mobKey] || {};
+    const currentLktTime = lktRecord.last_kill_time || 0;
+    
+    // UTC秒単位のタイムスタンプ
+    const newKillTimeSeconds = Math.floor(killDate.getTime() / 1000);
+
+    const dataToSet = {
+        last_kill_time: newKillTimeSeconds,
+        prev_kill_time: currentLktTime,
+        last_kill_memo: memo,
+        reporter_id: userId,
+        updated_at: serverTimestamp(),
+    };
 
     try {
-        await addDoc(collection(db, "reports"), {
-            mob_id: mobNo.toString(),
-            kill_time: killTimeDate,
-            reporter_uid: userId,
-            memo: memo,
-            repop_seconds: mob.REPOP_s
-            // rank: mob.Rank の送信を削除しました
-        });
-
+        await setDoc(docRef, dataToSet, { merge: true });
         closeReportModal();
-        displayStatus("報告が完了しました。データ反映を待っています。", 'success');
-    } catch (error) {
-        console.error("レポート送信エラー:", error);
-        DOMElements.modalStatus.textContent = "送信エラー: " + (error.message || "通信失敗");
-        displayStatus(`LKT報告エラー: ${error.message || "通信失敗"}`, 'error');
+        displayStatus(`${mobNo} (${mobKey}) の討伐時刻を報告しました。`, 'success');
+    } catch (e) {
+        console.error("報告の送信に失敗:", e);
+        DOMElements.modalStatus.textContent = '報告の送信に失敗しました。';
+        DOMElements.modalStatus.classList.add('text-red-500');
+        displayStatus("報告送信エラー。", 'error');
     }
 };
 
-const drawSpawnPoint = (point, cullPoints, mobNo, mobRank, isLastOne, isS_LastOne, lastKillTimeSec, prevKillTimeSec) => {
-    
-    const cullData = cullPoints[point.id] || {};
-    
-    // isPointCrushed は提供されていないため、この呼び出しが正しい前提で進めます
-    const isCulled = isPointCrushed({ ...point, ...cullData }, lastKillTimeSec, prevKillTimeSec); 
-    
-    const isS_A_Cullable = point.mob_ranks.some(r => r === 'S' || r === 'A');
-    const isB_Only = point.mob_ranks.every(r => r.startsWith('B'));
+const calculateRepopInfo = () => {
+    const now = Date.now() / 1000;
 
-    let sizeClass = '';
-    let colorClass = '';
-    let specialClass = '';
-    let isInteractive = false; // 初期値は false
-    let locationIdAttribute = '';
-
-    // ★ 修正点: ラストワンではない S/A 湧き潰し地点のみをインタラクティブにする
-    if (isS_A_Cullable && !isLastOne) {
-        isInteractive = true;
-        locationIdAttribute = `data-location-id="${point.id}"`;
-        locationIdAttribute += ` data-mob-no="${mobNo}"`;
-        locationIdAttribute += ` data-is-culled="${isCulled ? 'true' : 'false'}"`;
-    } 
-    // ※ isLastOne の地点は isInteractive = false のままになります
-
-    if (isLastOne) {
-        sizeClass = 'spawn-point-lastone';
-        colorClass = 'color-lastone';
-        specialClass = 'spawn-point-shadow-lastone'; // ラストワン用の新しい濃い影/枠
-    } else if (isS_A_Cullable) {
-        // Bランク情報を持つS/A湧き潰し地点の処理を維持
-        const rank = point.mob_ranks.find(r => r.startsWith('B'));
-        colorClass = rank === 'B1' ? 'color-b1' : 'color-b2';
+    globalMobData.forEach(mob => {
+        const lkt = lktData[mob.No] || {};
+        const lastKillTime = lkt.last_kill_time || 0;
+        const prevKillTime = lkt.prev_kill_time || 0;
         
-        if (isCulled) {
-            sizeClass = 'spawn-point-sa'; // 湧き潰し前と同サイズに戻す
-            specialClass = 'culled-with-white-border'; // 白枠（押された後の反転色）
+        mob.last_kill_time = lastKillTime;
+        mob.prev_kill_time = prevKillTime;
+        mob.last_kill_memo = lkt.last_kill_memo || '';
+
+        mob.spawn_cull_status = cullStatusData;
+
+        let repopInfo = {};
+        
+        const minRepopSeconds = mob.MinRepopTime * 60;
+        const maxRepopSeconds = mob.MaxRepopTime * 60;
+
+        if (lastKillTime > 0) {
+            const minRepopTime = lastKillTime + minRepopSeconds;
+            const maxRepopTime = lastKillTime + maxRepopSeconds;
+
+            const elapsedSeconds = now - lastKillTime;
+            const repopWindowLength = maxRepopSeconds - minRepopSeconds;
+
+            if (elapsedSeconds < minRepopSeconds) {
+                repopInfo.status = 'WAITING';
+                repopInfo.percent = 0;
+                repopInfo.nextMinRepopDate = new Date(minRepopTime * 1000);
+            } else if (elapsedSeconds >= minRepopSeconds && elapsedSeconds <= maxRepopSeconds) {
+                repopInfo.status = 'WINDOW';
+                const windowElapsed = elapsedSeconds - minRepopSeconds;
+                repopInfo.percent = (windowElapsed / repopWindowLength) * 100;
+                repopInfo.nextMinRepopDate = new Date(minRepopTime * 1000);
+                repopInfo.nextMaxRepopDate = new Date(maxRepopTime * 1000);
+            } else {
+                repopInfo.status = 'OVERDUE';
+                repopInfo.percent = 100;
+                repopInfo.nextMinRepopDate = new Date(minRepopTime * 1000);
+            }
+            repopInfo.elapsedPercent = elapsedSeconds / maxRepopSeconds * 100;
         } else {
-            sizeClass = 'spawn-point-sa';
-            specialClass = 'spawn-point-shadow-sa spawn-point-interactive'; // S/A湧き潰し用の新しい濃い影/枠
+            repopInfo.status = 'UNKNOWN';
+            repopInfo.percent = 0;
+            repopInfo.elapsedPercent = 0;
+            repopInfo.nextMinRepopDate = null;
         }
 
-    } else if (isB_Only) {
-        // Bランクのみの地点の処理を維持
-        const rank = point.mob_ranks[0];
-        if (isS_LastOne) {
-            colorClass = 'color-b-inverted';
-        } else {
-            colorClass = rank === 'B1' ? 'color-b1-only' : 'color-b2-only';
+        mob.repopInfo = repopInfo;
+    });
+};
+
+const calculateAndRender = () => {
+    calculateRepopInfo();
+    filterAndRender();
+    updateProgressBars();
+};
+
+const updateProgressBars = () => {
+    const now = Date.now() / 1000;
+
+    document.querySelectorAll('.mob-card').forEach(card => {
+        const mobNo = parseInt(card.dataset.mobNo);
+        const mob = globalMobData.find(m => m.No === mobNo);
+        if (!mob || !mob.repopInfo) return;
+
+        const info = mob.repopInfo;
+        const progressBarBg = card.querySelector('.progress-bar-bg');
+        const progressBarWrapper = card.querySelector('.progress-bar-wrapper');
+        const progressText = card.querySelector('.progress-text');
+        
+        if (!progressBarBg || !progressBarWrapper || !progressText) return;
+
+        let width = 0;
+        let bgColor = 'bg-gray-500';
+        let text = 'N/A';
+        
+        const minRepopMinutes = mob.MinRepopTime;
+        const maxRepopMinutes = mob.MaxRepopTime;
+
+        if (info.status === 'WAITING' && mob.last_kill_time > 0) {
+            const minRepopTimeSeconds = mob.last_kill_time + (minRepopMinutes * 60);
+            const remainingSeconds = minRepopTimeSeconds - now;
+            const totalWaitSeconds = minRepopMinutes * 60;
+            
+            width = 100 - (remainingSeconds / totalWaitSeconds) * 100;
+            bgColor = 'bg-blue-500';
+            
+            const hours = Math.floor(remainingSeconds / 3600);
+            const minutes = Math.floor((remainingSeconds % 3600) / 60);
+            const seconds = Math.floor(remainingSeconds % 60);
+            
+            text = remainingSeconds > 0 ? `湧き窓まで ${hours}h ${minutes}m ${seconds}s` : `湧き窓突入`;
+
+        } else if (info.status === 'WINDOW') {
+            width = info.percent;
+            bgColor = 'bg-yellow-500';
+            
+            const maxRepopTimeSeconds = mob.last_kill_time + (maxRepopMinutes * 60);
+            const remainingSeconds = maxRepopTimeSeconds - now;
+            
+            const hours = Math.floor(remainingSeconds / 3600);
+            const minutes = Math.floor((remainingSeconds % 3600) / 60);
+            const seconds = Math.floor(remainingSeconds % 60);
+
+            text = `窓終了まで ${hours}h ${minutes}m ${seconds}s (${Math.floor(info.percent)}%)`;
+
+        } else if (info.status === 'OVERDUE') {
+            width = 100;
+            bgColor = 'bg-red-500';
+            text = `【${formatLastKillTime(mob.last_kill_time)}】 湧き窓超過`;
+            
+        } else if (info.status === 'UNKNOWN') {
+            width = 0;
+            bgColor = 'bg-gray-600';
+            text = 'LKT未報告';
         }
         
-        sizeClass = 'spawn-point-b-only';
-        specialClass = 'opacity-75 spawn-point-b-border'; // 透過を下げ、2pxの白枠を追加
+        progressBarBg.style.width = `${Math.min(100, width)}%`;
+        progressBarBg.className = `progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear ${bgColor}`;
+        progressBarWrapper.classList.toggle('opacity-50', info.status === 'UNKNOWN');
+        progressText.textContent = text;
+        
+        const rank = mob.Rank;
+        card.classList.remove('border-red-500', 'border-yellow-500', 'border-indigo-500', 'border-gray-700', 'border-green-500');
+
+        if (rank === 'S' && info.status === 'WINDOW') {
+            card.classList.add('border-red-500');
+        } else if (rank === 'S' && info.status === 'OVERDUE') {
+             card.classList.add('border-red-500', 'border-4');
+        } else if (rank === 'A' && info.status === 'WINDOW') {
+             card.classList.add('border-yellow-500');
+        } else if (rank === 'A' && info.status === 'OVERDUE') {
+             card.classList.add('border-yellow-500', 'border-4');
+        } else if (rank === 'F' && info.status === 'WINDOW') {
+             card.classList.add('border-indigo-500');
+        } else if (rank === 'F' && info.status === 'OVERDUE') {
+             card.classList.add('border-indigo-500', 'border-4');
+        } else {
+             card.classList.add('border-gray-700');
+        }
+    });
+
+    // 1秒ごとに再実行
+    setTimeout(updateProgressBars, 1000);
+};
+
+const fetchBaseMobData = async () => {
+    const mockMobData = [
+        { No: 1, Name: 'アグリッパ', Area: 'モードゥナ', Expansion: 'ARR', Rank: 'S', MinRepopTime: 48, MaxRepopTime: 72, Condition: '未確定。要報告。', Map: 'moduna.jpg', spawn_points: [{ id: 'p1', x: 50, y: 50, is_last_one: false, mob_ranks: ['A'] }, { id: 'p2', x: 20, y: 80, is_last_one: false, mob_ranks: ['A'] }] },
+        { No: 2, Name: 'レドロネット', Area: 'クルザス中央高地', Expansion: 'ARR', Rank: 'A', MinRepopTime: 3, MaxRepopTime: 5, Condition: 'F.A.T.E.「邪念を追う者」を成功させる', Map: 'coerthas_central.jpg', spawn_points: [{ id: 'p3', x: 30, y: 60, is_last_one: false, mob_ranks: ['A'] }, { id: 'p4', x: 70, y: 40, is_last_one: false, mob_ranks: ['A'] }] },
+        { No: 3, Name: 'ケロゲロス', Area: 'アバラシア雲海', Expansion: 'HW', Rank: 'S', MinRepopTime: 48, MaxRepopTime: 72, Condition: '未確定。要報告。', Map: 'sea_of_clouds.jpg', spawn_points: [{ id: 'p5', x: 10, y: 10, is_last_one: false, mob_ranks: ['A'] }, { id: 'p6', x: 90, y: 90, is_last_one: false, mob_ranks: ['A'] }] },
+        { No: 4, Name: 'ラーヴァナ', Area: 'アジス・ラー', Expansion: 'HW', Rank: 'A', MinRepopTime: 3, MaxRepopTime: 5, Condition: '敵を討伐する (X: 18.2, Y: 18.2)', Map: 'azys_lla.jpg', spawn_points: [{ id: 'p7', x: 80, y: 20, is_last_one: false, mob_ranks: ['A'] }, { id: 'p8', x: 20, y: 80, is_last_one: false, mob_ranks: ['A'] }] },
+        { No: 5, Name: 'ガンマ', Area: 'ギラバニア山岳地帯', Expansion: 'SB', Rank: 'S', MinRepopTime: 48, MaxRepopTime: 72, Condition: '未確定。要報告。', Map: 'peaks.jpg', spawn_points: [{ id: 'p9', x: 50, y: 50, is_last_one: false, mob_ranks: ['A'] }, { id: 'p10', x: 50, y: 70, is_last_one: false, mob_ranks: ['A'] }] },
+        { No: 6, Name: 'オルガナ', Area: 'アム・アレーン', Expansion: 'SHB', Rank: 'F', MinRepopTime: 0, MaxRepopTime: 12, Condition: 'F.A.T.E.「アム・アレーンの異変」を成功させる', Map: 'am_ahren.jpg', spawn_points: [] },
+        { No: 7, Name: 'オメガ', Area: 'ラケティカ大森林', Expansion: 'SHB', Rank: 'A', MinRepopTime: 3, MaxRepopTime: 5, Condition: '敵を討伐する (X: 20.0, Y: 20.0)', Map: 'raketika.jpg', spawn_points: [{ id: 'p11', x: 40, y: 30, is_last_one: false, mob_ranks: ['A'] }, { id: 'p12', x: 60, y: 60, is_last_one: false, mob_ranks: ['A'] }] },
+        { No: 8, Name: 'エンケドラス', Area: 'ガレマルド', Expansion: 'EW', Rank: 'S', MinRepopTime: 48, MaxRepopTime: 72, Condition: '未確定。要報告。', Map: 'garlemald.jpg', spawn_points: [{ id: 'p13', x: 30, y: 30, is_last_one: false, mob_ranks: ['A'] }, { id: 'p14', x: 70, y: 70, is_last_one: false, mob_ranks: ['A'] }] },
+        { No: 9, Name: 'ゾディアック', Area: 'サベネア島', Expansion: 'EW', Rank: 'A', MinRepopTime: 3, MaxRepopTime: 5, Condition: '敵を討伐する (X: 10.0, Y: 10.0)', Map: 'thavnair.jpg', spawn_points: [{ id: 'p15', x: 10, y: 50, is_last_one: false, mob_ranks: ['A'] }, { id: 'p16', x: 90, y: 50, is_last_one: false, mob_ranks: ['A'] }] },
+        { No: 101, Name: '湧き潰しB-1', Area: 'モードゥナ', Expansion: 'ARR', Rank: 'B-CULL', MinRepopTime: 0, MaxRepopTime: 0, Condition: 'アグリッパの湧き潰し対象', related_mob_no: 1, Map: 'moduna.jpg', spawn_points: [{ id: 'p1', x: 50, y: 50, is_last_one: false, mob_ranks: ['B'] }, { id: 'p2', x: 20, y: 80, is_last_one: false, mob_ranks: ['B'] }] },
+        { No: 102, Name: '湧き潰しB-2', Area: 'クルザス中央高地', Expansion: 'ARR', Rank: 'B-CULL', MinRepopTime: 0, MaxRepopTime: 0, Condition: 'レドロネットの湧き潰し対象', related_mob_no: 2, Map: 'coerthas_central.jpg', spawn_points: [{ id: 'p3', x: 30, y: 60, is_last_one: false, mob_ranks: ['B'] }, { id: 'p4', x: 70, y: 40, is_last_one: false, mob_ranks: ['B'] }] },
+    ];
+    
+    globalMobData = mockMobData;
+    calculateAndRender();
+    displayStatus("ベースデータ取得完了。", 'success');
+};
+
+
+const drawSpawnPoint = (point, cullStatus, mobNo, rank, isLastOne, isS_LastOne, lastKillTime, prevKillTime) => {
+    const locationId = point.id;
+    // cullStatusは全体オブジェクトとして渡されるため、locationIdでアクセス
+    const status = cullStatus[locationId]?.status || 'NOT_CULLED';
+    const isCulled = status === 'CULLED';
+
+    const isLastOneApplicable = isLastOne && (rank === 'S' || rank === 'A');
+    const isLastOneVisible = isLastOneApplicable && lastKillTime === 0;
+
+    let size = 'w-3 h-3';
+    let color = 'bg-gray-400';
+    let ring = 'ring-2 ring-gray-600';
+    let label = '';
+    let isInteractive = 'true';
+
+    if (rank === 'S' && isLastOneApplicable) {
+        size = 'w-4 h-4';
+        color = 'bg-purple-500';
+        ring = 'ring-4 ring-purple-300 ring-offset-1 ring-offset-gray-700';
+        label = 'L';
+        isInteractive = 'false';
+
+        if (!isLastOneVisible) {
+             return '';
+        }
+
+    } else if (isCulled) {
+        color = 'bg-green-500';
+        ring = 'ring-4 ring-green-300 ring-offset-1 ring-offset-gray-700';
+        label = 'C';
+        size = 'w-4 h-4';
     } else {
-        sizeClass = 'spawn-point-b-only';
-        colorClass = 'color-default';
+        color = 'bg-yellow-500';
+        ring = 'ring-4 ring-yellow-300 ring-offset-1 ring-offset-gray-700';
+        size = 'w-3 h-3';
     }
+
+    const tooltip = isCulled ? '湧き潰し済み (クリックで解除)' : '未湧き潰し (クリックで湧き潰し)';
     
+    const x = point.x - (isInteractive === 'true' ? 1.5 : 2);
+    const y = point.y - (isInteractive === 'true' ? 1.5 : 2);
+
     return `
-        <div class="spawn-point absolute rounded-full transform -translate-x-1/2 -translate-y-1/2 ${sizeClass} ${colorClass} ${specialClass}"
-            data-is-interactive="${isInteractive}" // ★ ラストワン時は false
-            ${locationIdAttribute}
-            style="left: ${point.x}%; top: ${point.y}%;"
-        ></div>
+        <div class="spawn-point absolute rounded-full ${size} ${color} ${ring} flex items-center justify-center text-[8px] font-bold text-gray-900 cursor-pointer transition transform hover:scale-125 duration-100"
+            style="left: ${x}%; top: ${y}%;"
+            data-location-id="${locationId}"
+            data-is-culled="${isCulled}"
+            data-is-interactive="${isInteractive}"
+            title="${tooltip}">
+            ${label}
+        </div>
     `;
 };
+
 
 const createMobCard = (mob) => {
     const rank = mob.Rank;
@@ -605,7 +566,7 @@ const createMobCard = (mob) => {
                 <div class="flex flex-col flex-shrink min-w-0">
                     <div class="flex items-center space-x-2">
                         <span class="rank-icon ${rankConfig.bg} text-white text-xs font-bold px-2 py-0.5 rounded-full">${rankLabel}</span>
-                        <span class="mob-name text-lg font-bold text-outline truncate max-w-xs md:max-w-[150px] lg:max-w-full">${mob.Name}</span>
+                        <span class="mob-name text-lg font-bold text-white text-outline truncate max-w-xs md:max-w-[150px] lg:max-w-full">${mob.Name}</span>
                     </div>
                     <span class="text-xs text-gray-400 mt-0.5">${mob.Area} (${mob.Expansion})</span>
                 </div>
@@ -618,9 +579,9 @@ const createMobCard = (mob) => {
                 </div>
             </div>
 
-            <div class="progress-bar-wrapper h-4 rounded-full relative overflow-hidden transition-all duration-100 ease-linear">
+            <div class="progress-bar-wrapper h-4 rounded-full relative overflow-hidden transition-all duration-100 ease-linear bg-gray-600">
                 <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear" style="width: 0;"></div>
-                <div class="progress-text absolute inset-0 flex items-center justify-center text-xs font-semibold" style="line-height: 1;">
+                <div class="progress-text absolute inset-0 flex items-center justify-center text-xs font-semibold text-white" style="line-height: 1;">
                     Calculating...
                 </div>
             </div>
@@ -646,7 +607,7 @@ const createMobCard = (mob) => {
 
                 ${mob.Map && rank === 'S' ? `
                     <div class="map-content py-1.5 flex justify-center relative">
-                        <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="w-full h-auto rounded shadow-lg border border-gray-600">
+                        <img src="https://placehold.co/400x400/1f2937/ffffff?text=${mob.Area}+Map+Placeholder" alt="${mob.Area} Map" class="w-full h-auto rounded shadow-lg border border-gray-600">
                         <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">
                             ${spawnPointsHtml}
                         </div>
@@ -670,10 +631,8 @@ const createMobCard = (mob) => {
 };
 
 const distributeCards = () => {
-    const numCards = DOMElements.masterContainer.children.length;
     const windowWidth = window.innerWidth;
-    // Tailwind CSSのデフォルト値
-    const mdBreakpoint = 768; 
+    const mdBreakpoint = 768;
     const lgBreakpoint = 1024;
 
 
@@ -704,7 +663,7 @@ const updateFilterUI = () => {
     const currentRankKeyForColor = FILTER_TO_DATA_RANK_MAP[currentFilter.rank] || currentFilter.rank;
 
     DOMElements.rankTabs.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('bg-blue-800', 'bg-red-800', 'bg-yellow-800', 'bg-indigo-800');
+        btn.classList.remove('bg-blue-800', 'bg-red-800', 'bg-yellow-800', 'bg-indigo-800', 'bg-gray-800');
         btn.classList.add('bg-gray-600');
         
         if (btn.dataset.rank !== currentFilter.rank) {
@@ -724,17 +683,22 @@ const filterAndRender = () => {
     const targetDataRank = FILTER_TO_DATA_RANK_MAP[currentFilter.rank] || currentFilter.rank;
     
     const filteredData = globalMobData.filter(mob => {
-        if (targetDataRank === 'ALL') return true;
-        
-        if (targetDataRank === 'A') {
-            if (mob.Rank !== 'A' && !mob.Rank.startsWith('B')) return false;
-        } else if (targetDataRank === 'F') {
-            if (mob.Rank !== 'F' && !mob.Rank.startsWith('B')) return false;
-        } else if (mob.Rank !== targetDataRank) {
-            return false;
+        if (targetDataRank !== 'ALL') {
+            if (targetDataRank === 'A' || targetDataRank === 'F') {
+                if (mob.Rank !== targetDataRank && !mob.Rank.startsWith('B')) return false;
+
+                if (mob.Rank.startsWith('B')) {
+                     const relatedMob = globalMobData.find(m => m.No === mob.related_mob_no);
+                     if (!relatedMob || relatedMob.Rank !== targetDataRank) return false;
+                }
+
+            } else if (mob.Rank !== targetDataRank) {
+                return false;
+            }
         }
 
         const areaSet = currentFilter.areaSets[currentFilter.rank];
+        
         const mobExpansion = mob.Rank.startsWith('B') 
             ? globalMobData.find(m => m.No === mob.related_mob_no)?.Expansion || mob.Expansion
             : mob.Expansion;
@@ -802,19 +766,20 @@ const renderAreaFilterPanel = () => {
     const allButton = document.createElement('button');
     const isAllSelected = areas.size > 0 && currentAreaSet.size === areas.size;
     allButton.textContent = isAllSelected ? '全解除' : '全選択';
-    allButton.className = `area-filter-btn px-3 py-1 text-xs rounded font-semibold transition ${isAllSelected ? 'bg-red-500' : 'bg-gray-500 hover:bg-gray-400'}`;
+    allButton.className = `area-filter-btn px-3 py-1 text-xs rounded font-semibold transition ${isAllSelected ? 'bg-red-500 hover:bg-red-400' : 'bg-gray-500 hover:bg-gray-400'}`;
     allButton.dataset.area = 'ALL';
     DOMElements.areaFilterPanel.appendChild(allButton);
 
     Array.from(areas).sort((a, b) => {
-        const indexA = Object.values(EXPANSION_MAP).indexOf(a);
-        const indexB = Object.values(EXPANSION_MAP).indexOf(b);
-        return indexB - indexA;
+        const expansionOrder = Object.values(EXPANSION_MAP);
+        const indexA = expansionOrder.indexOf(a);
+        const indexB = expansionOrder.indexOf(b);
+        return indexA - indexB; 
     }).forEach(area => {
         const btn = document.createElement('button');
         const isSelected = currentAreaSet.has(area);
         btn.textContent = area;
-        btn.className = `area-filter-btn px-3 py-1 text-xs rounded font-semibold transition ${isSelected ? 'bg-green-500' : 'bg-gray-500 hover:bg-gray-400'}`;
+        btn.className = `area-filter-btn px-3 py-1 text-xs rounded font-semibold transition ${isSelected ? 'bg-green-500 hover:bg-green-400' : 'bg-gray-500 hover:bg-gray-400'}`;
         btn.dataset.area = area;
         DOMElements.areaFilterPanel.appendChild(btn);
     });
@@ -861,44 +826,55 @@ const closeReportModal = () => {
 
 const setupEventListeners = () => {
     
-    // イベントリスナーはDOM全体に対して委譲 (Delegation)
+    // ランクタブのリスナー (3クリック動作ロジック)
     DOMElements.rankTabs.addEventListener('click', (e) => {
         const btn = e.target.closest('.tab-button');
         if (!btn) return;
 
         const newRank = btn.dataset.rank;
-        let clickCount = parseInt(btn.dataset.clickCount || 0);
+        let currentClickCount = parseInt(btn.dataset.clickCount || 0, 10);
+        const isSameRank = newRank === currentFilter.rank;
 
-        if (newRank !== currentFilter.rank) {
+        if (!isSameRank) {
+            const prevButton = DOMElements.rankTabs.querySelector(`[data-rank="${currentFilter.rank}"]`);
+            if (prevButton) {
+                prevButton.dataset.clickCount = 0;
+            }
+
             currentFilter.rank = newRank;
-            clickCount = 1;
-            toggleAreaFilterPanel(true);
+
+            if (newRank === 'ALL') {
+                toggleAreaFilterPanel(true);
+                btn.dataset.clickCount = 0;
+            } else {
+                toggleAreaFilterPanel(true);
+                btn.dataset.clickCount = 1; 
+            }
 
             if (!currentFilter.areaSets[newRank] || !(currentFilter.areaSets[newRank] instanceof Set)) {
                 currentFilter.areaSets[newRank] = new Set();
             }
             filterAndRender();
-        } else {
-            if (newRank === 'ALL') {
-                toggleAreaFilterPanel(true);
-                clickCount = 0;
-            } else {
-                // ランクタブの連続クリック: 1回目(開く) -> 2回目(フィルターパネル表示) -> 3回目(閉じる)
-                clickCount = (clickCount % 3) + 1;
 
-                if (clickCount === 2) {
-                    toggleAreaFilterPanel(false);
-                } else if (clickCount === 3) {
-                    toggleAreaFilterPanel(true);
-                    clickCount = 0;
-                }
+        } else if (newRank !== 'ALL') {
+            currentClickCount = (currentClickCount + 1) % 3;
+
+            if (currentClickCount === 1) {
+                toggleAreaFilterPanel(false);
+            } else {
+                toggleAreaFilterPanel(true);
             }
+            
+            btn.dataset.clickCount = currentClickCount.toString();
+        } else {
+            toggleAreaFilterPanel(true);
+            btn.dataset.clickCount = 0;
         }
         
-        btn.dataset.clickCount = clickCount;
         updateFilterUI();
     });
 
+    // エリアフィルターボタンのクリック処理
     DOMElements.areaFilterPanel.addEventListener('click', (e) => {
         const btn = e.target.closest('.area-filter-btn');
         if (!btn) return;
@@ -936,12 +912,11 @@ const setupEventListeners = () => {
             }
         }
 
+        renderAreaFilterPanel();
         filterAndRender();
     });
 
-    // ==============================================================
-    // 統合された DOMElements.colContainer のリスナー (湧き潰し機能維持版)
-    // ==============================================================
+    // カードとスポーンポイントのイベントリスナー
     DOMElements.colContainer.addEventListener('click', (e) => {
         const card = e.target.closest('.mob-card');
         if (!card) return;
@@ -949,7 +924,7 @@ const setupEventListeners = () => {
         const mobNo = parseInt(card.dataset.mobNo);
         const rank = card.dataset.rank;
         
-        // 1. 報告ボタンのクリック
+        // 報告ボタンのクリック
         const reportBtn = e.target.closest('button[data-report-type]');
         if (reportBtn) {
             e.stopPropagation();
@@ -964,9 +939,8 @@ const setupEventListeners = () => {
             return;
         }
 
-        // 2. スポーンポイントのクリック処理 (シングルクリックで湧き潰し/解除)
+        // スポーンポイントのクリック処理
         const point = e.target.closest('.spawn-point');
-        // data-is-interactive="true" のポイント（＝ラストワンではない湧き潰しポイント）のみ処理
         if (point && point.dataset.isInteractive === 'true') { 
             e.preventDefault(); 
             e.stopPropagation();
@@ -978,14 +952,13 @@ const setupEventListeners = () => {
             return;
         }
 
-        // 3. カードヘッダーのクリックで展開/格納
+        // カードヘッダーのクリックで展開/格納
         if (e.target.closest('[data-toggle="card-header"]')) {
             if (rank === 'S' || rank === 'A' || rank === 'F') {
                 const panel = card.querySelector('.expandable-panel');
                 if (panel) {
                     if (!panel.classList.contains('open')) {
                         document.querySelectorAll('.expandable-panel.open').forEach(openPanel => {
-                            // クリックされたカード以外を閉じる
                             if (openPanel.closest('.mob-card') !== card) {
                                 openPanel.classList.remove('open');
                             }
@@ -1001,7 +974,6 @@ const setupEventListeners = () => {
             }
         }
     });
-    // ==============================================================
 
     document.getElementById('cancel-report').addEventListener('click', closeReportModal);
     DOMElements.reportForm.addEventListener('submit', (e) => {
@@ -1016,9 +988,8 @@ const setupEventListeners = () => {
     window.addEventListener('resize', sortAndRedistribute);
 };
 
+// 初期化
 document.addEventListener('DOMContentLoaded', () => {
-    fetchBaseMobData();
-
     const newAreaSets = {};
     for (const rankKey in currentFilter.areaSets) {
         let savedData = currentFilter.areaSets[rankKey];
@@ -1033,18 +1004,21 @@ document.addEventListener('DOMContentLoaded', () => {
     currentFilter.areaSets = newAreaSets;
 
     setupEventListeners();
-    setupAuthentication(); 
+    setupAuthentication();
     
     DOMElements.rankTabs.querySelectorAll('.tab-button').forEach(btn => {
         if (btn.dataset.rank === currentFilter.rank) {
-            btn.dataset.clickCount = 1;
+            if (currentFilter.rank !== 'ALL') {
+                btn.dataset.clickCount = 1;
+            } else {
+                 btn.dataset.clickCount = 0;
+            }
         } else {
             btn.dataset.clickCount = 0;
         }
     });
 
     updateFilterUI();
-    sortAndRedistribute();
-
+    fetchBaseMobData();
     displayStatus("アプリを初期化中...", 'loading');
 });
