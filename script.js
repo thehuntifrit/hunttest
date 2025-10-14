@@ -341,14 +341,6 @@ const mergeMobStatusData = (mobStatusDataMap) => {
             mergedMob.last_kill_memo = dynamicData.last_kill_memo;
         }
 
-        if (mob.Rank.startsWith('B') && mob.related_mob_no) {
-             const relatedMobData = newData.get(mob.related_mob_no);
-             if(relatedMobData) {
-                 mergedMob.last_kill_time = relatedMobData.last_kill_time;
-                 mergedMob.prev_kill_time = relatedMobData.prev_kill_time;
-             }
-        }
-
         mergedMob.repopInfo = calculateRepop(mergedMob);
         return mergedMob;
     });
@@ -357,21 +349,21 @@ const mergeMobStatusData = (mobStatusDataMap) => {
 };
 
 const mergeMobLocationsData = (locationsMap) => {
-     globalMobData = globalMobData.map(mob => {
-         let mergedMob = { ...mob };
-         const dynamicData = locationsMap[mob.No];
+    globalMobData = globalMobData.map(mob => {
+        let mergedMob = { ...mob };
+        const dynamicData = locationsMap[mob.No];
 
-         if (mob.Rank === 'S' && dynamicData) {
-             mergedMob.spawn_cull_status = dynamicData.points;
-         }
-         
-         mergedMob.repopInfo = calculateRepop(mergedMob);
-         return mergedMob;
-     });
+        if (mob.Rank === 'S' && dynamicData) {
+            // mob_locations からの last_kill_time, prev_kill_time のマージを削除
+            mergedMob.spawn_cull_status = dynamicData.points;
+        }
+        
+        mergedMob.repopInfo = calculateRepop(mergedMob);
+        return mergedMob;
+    });
 
-     sortAndRedistribute();
+    sortAndRedistribute();
 };
-
 
 const startRealtimeListeners = () => {
     clearInterval(progressUpdateInterval);
@@ -404,8 +396,6 @@ const startRealtimeListeners = () => {
             const mobNo = parseInt(doc.id);
 
             locationsMap[mobNo] = {
-                last_kill_time: data.last_kill_time?.seconds || 0,
-                prev_kill_time: data.prev_kill_time?.seconds || 0,
                 points: data.points || {}
             };
         });
@@ -416,7 +406,6 @@ const startRealtimeListeners = () => {
     });
     unsubscribeListeners.push(unsubscribeLocations);
 
-    // 進捗バーの更新を10秒間隔に
     progressUpdateInterval = setInterval(updateProgressBars, 10000);
 };
 
@@ -456,8 +445,8 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
             mob_id: mobNo.toString(),
             point_id: locationId,
             type: action === 'crush' ? 'add' : 'remove', // Cloud Functionの引数名に合わせる
-            userId: userId,
-            timestamp: serverTimestamp()
+            userId: userId // 検証のために維持
+            // timestamp は削除しました
         });
 
         if (result.data?.success) {
@@ -497,8 +486,8 @@ const submitReport = async (mobNo, timeISO, memo) => {
             kill_time: killTimeDate,
             reporter_uid: userId,
             memo: memo,
-            repop_seconds: mob.REPOP_s,
-            rank: mob.Rank
+            repop_seconds: mob.REPOP_s
+            // rank: mob.Rank の送信を削除しました
         });
 
         closeReportModal();
