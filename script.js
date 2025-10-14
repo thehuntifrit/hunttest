@@ -66,6 +66,15 @@ let currentFilter = JSON.parse(localStorage.getItem('huntFilterState')) || {
     rank: 'ALL',
     areaSets: { ALL: new Set() }
 };
+// ⚠️ localStorageから読み込む際にSetを復元
+for (const key in currentFilter.areaSets) {
+    if (Array.isArray(currentFilter.areaSets[key])) {
+        currentFilter.areaSets[key] = new Set(currentFilter.areaSets[key]);
+    } else if (!(currentFilter.areaSets[key] instanceof Set)) {
+        currentFilter.areaSets[key] = new Set();
+    }
+}
+
 let openMobCardNo = localStorage.getItem('openMobCardNo') ? parseInt(localStorage.getItem('openMobCardNo')) : null;
 let lastClickTime = 0;
 const DOUBLE_CLICK_TIME = 500; // 0.5秒に設定
@@ -310,8 +319,7 @@ const fetchBaseMobData = async () => {
         }));
 
         globalMobData = [...baseMobData];
-        filterAndRender();
-
+        filterAndRender(true); // 初期ロード時はUI更新も実行
     } catch (error) {
         displayStatus("ベースモブデータのロードに失敗しました。", 'error');
     }
@@ -512,20 +520,13 @@ const drawSpawnPoint = (point, cullPoints, mobNo, mobRank, isLastOne, isS_LastOn
     let sizeClass = '';
     let colorClass = '';
     let specialClass = '';
-    let isInteractive = false; // 初期値は false
-    // ★ 修正後の変数: すべてのデータ属性を格納する
+    const isInteractive = isS_A_Cullable && !isLastOne; // ラストワンではない S/A 湧き潰し地点のみを true にする
     let dataAttributes = ''; 
 
-    // ★★★ 修正箇所 1: データ属性は常に設定する ★★★
+    // 湧き潰し地点のデータ属性は常に設定する
     dataAttributes += ` data-location-id="${point.id}"`;
     dataAttributes += ` data-mob-no="${mobNo}"`;
     dataAttributes += ` data-is-culled="${isCulled ? 'true' : 'false'}"`;
-
-    // ★ 修正箇所 2: isInteractive の判定ロジックは変えない（ラストワンではない S/A 湧き潰し地点のみを true にする）
-    if (isS_A_Cullable && !isLastOne) {
-        isInteractive = true;
-    } 
-    // ※ isLastOne の地点は isInteractive = false のままになります
 
     if (isLastOne) {
         sizeClass = 'spawn-point-lastone';
@@ -562,8 +563,9 @@ const drawSpawnPoint = (point, cullPoints, mobNo, mobRank, isLastOne, isS_LastOn
     
     return `
         <div class="spawn-point absolute rounded-full transform -translate-x-1/2 -translate-y-1/2 ${sizeClass} ${colorClass} ${specialClass}"
-            data-is-interactive="${isInteractive}" // ★ ラストワン時は false
-            ${dataAttributes}             style="left: ${point.x}%; top: ${point.y}%;"
+            data-is-interactive="${isInteractive}" 
+            ${dataAttributes}
+            style="left: ${point.x}%; top: ${point.y}%;"
         ></div>
     `;
 };
@@ -722,7 +724,8 @@ const updateFilterUI = () => {
     });
 };
 
-const filterAndRender = () => {
+// filterAndRender関数からupdateFilterUI()の呼び出しを削除しました
+const filterAndRender = (isInitialLoad = false) => {
     const targetDataRank = FILTER_TO_DATA_RANK_MAP[currentFilter.rank] || currentFilter.rank;
     
     const filteredData = globalMobData.filter(mob => {
@@ -761,7 +764,10 @@ const filterAndRender = () => {
 
     distributeCards();
 
-    updateFilterUI();
+    // 【案2】updateFilterUIの呼び出しを削除 (冗長な処理を排除)
+    if (isInitialLoad) {
+        updateFilterUI(); // 初期ロード時のみ実行を維持
+    }
 
     localStorage.setItem('huntFilterState', JSON.stringify({
         ...currentFilter,
@@ -879,7 +885,8 @@ const setupEventListeners = () => {
             if (!currentFilter.areaSets[newRank] || !(currentFilter.areaSets[newRank] instanceof Set)) {
                 currentFilter.areaSets[newRank] = new Set();
             }
-            filterAndRender();
+            filterAndRender(true); // ランク切り替え時はUI更新も実行する
+            updateFilterUI(); // 【案2】ランク切り替え時のみここで明示的に呼び出す
         } else {
             if (newRank === 'ALL') {
                 toggleAreaFilterPanel(true);
@@ -898,7 +905,9 @@ const setupEventListeners = () => {
         }
         
         btn.dataset.clickCount = clickCount;
-        updateFilterUI();
+        if (newRank === currentFilter.rank && newRank !== 'ALL') {
+            updateFilterUI(); // 同じランク内でフィルターパネルの開閉時にもUI更新する
+        }
     });
 
     DOMElements.areaFilterPanel.addEventListener('click', (e) => {
@@ -938,7 +947,11 @@ const setupEventListeners = () => {
             }
         }
 
-        filterAndRender();
+        // 【案1】UIの即時更新: エリアフィルタパネルの色を再描画
+        renderAreaFilterPanel();
+        
+        // 【案1】リストの再描画はデバウンスで遅延実行
+        sortAndRedistribute();
     });
 
     // ==============================================================
@@ -1003,7 +1016,8 @@ const setupEventListeners = () => {
             }
         }
     });
-  
+    // ==============================================================
+
     document.getElementById('cancel-report').addEventListener('click', closeReportModal);
     DOMElements.reportForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -1018,21 +1032,8 @@ const setupEventListeners = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    fetchBaseMobData();
-
-    const newAreaSets = {};
-    for (const rankKey in currentFilter.areaSets) {
-        let savedData = currentFilter.areaSets[rankKey];
-        if (Array.isArray(savedData)) {
-            newAreaSets[rankKey] = new Set(savedData);
-        } else if (savedData instanceof Set) {
-            newAreaSets[rankKey] = savedData;
-        } else {
-            newAreaSets[rankKey] = new Set();
-        }
-    }
-    currentFilter.areaSets = newAreaSets;
-
+    // 永続化されたエリアセットをSetオブジェクトに戻す処理はファイルの先頭に移動しました
+    // ...
     setupEventListeners();
     setupAuthentication(); 
     
@@ -1044,8 +1045,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    updateFilterUI();
-    sortAndRedistribute();
+    // 初期表示の際、filterAndRenderの中でupdateFilterUIが呼ばれるようになったため、
+    // ここでの冗長な呼び出しを削除します。
+    // updateFilterUI(); 
+    
+    // 初回描画（filterAndRenderがfetchBaseMobData内で呼ばれるため、ここでは不要）
 
     displayStatus("アプリを初期化中...", 'loading');
 });
