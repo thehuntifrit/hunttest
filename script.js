@@ -503,7 +503,8 @@ const drawSpawnPoint = (point, cullPoints, mobNo, mobRank, isLastOne, isS_LastOn
     
     const cullData = cullPoints[point.id] || {};
     
-    const isCulled = isPointCrushed({ ...point, ...cullData }, lastKillTimeSec, prevKillTimeSec);
+    // isPointCrushed は提供されていないため、この呼び出しが正しい前提で進めます
+    const isCulled = isPointCrushed({ ...point, ...cullData }, lastKillTimeSec, prevKillTimeSec); 
     
     const isS_A_Cullable = point.mob_ranks.some(r => r === 'S' || r === 'A');
     const isB_Only = point.mob_ranks.every(r => r.startsWith('B'));
@@ -511,21 +512,24 @@ const drawSpawnPoint = (point, cullPoints, mobNo, mobRank, isLastOne, isS_LastOn
     let sizeClass = '';
     let colorClass = '';
     let specialClass = '';
-    let isInteractive = false;
+    let isInteractive = false; // 初期値は false
     let locationIdAttribute = '';
 
-    if (isS_A_Cullable || isLastOne) {
+    // ★ 修正点: ラストワンではない S/A 湧き潰し地点のみをインタラクティブにする
+    if (isS_A_Cullable && !isLastOne) {
         isInteractive = true;
         locationIdAttribute = `data-location-id="${point.id}"`;
         locationIdAttribute += ` data-mob-no="${mobNo}"`;
         locationIdAttribute += ` data-is-culled="${isCulled ? 'true' : 'false'}"`;
-    }
+    } 
+    // ※ isLastOne の地点は isInteractive = false のままになります
 
     if (isLastOne) {
         sizeClass = 'spawn-point-lastone';
         colorClass = 'color-lastone';
         specialClass = 'spawn-point-shadow-lastone'; // ラストワン用の新しい濃い影/枠
     } else if (isS_A_Cullable) {
+        // Bランク情報を持つS/A湧き潰し地点の処理を維持
         const rank = point.mob_ranks.find(r => r.startsWith('B'));
         colorClass = rank === 'B1' ? 'color-b1' : 'color-b2';
         
@@ -538,6 +542,7 @@ const drawSpawnPoint = (point, cullPoints, mobNo, mobRank, isLastOne, isS_LastOn
         }
 
     } else if (isB_Only) {
+        // Bランクのみの地点の処理を維持
         const rank = point.mob_ranks[0];
         if (isS_LastOne) {
             colorClass = 'color-b-inverted';
@@ -554,13 +559,12 @@ const drawSpawnPoint = (point, cullPoints, mobNo, mobRank, isLastOne, isS_LastOn
     
     return `
         <div class="spawn-point absolute rounded-full transform -translate-x-1/2 -translate-y-1/2 ${sizeClass} ${colorClass} ${specialClass}"
-            data-is-interactive="${isInteractive}"
+            data-is-interactive="${isInteractive}" // ★ ラストワン時は false
             ${locationIdAttribute}
             style="left: ${point.x}%; top: ${point.y}%;"
         ></div>
     `;
 };
-
 
 const createMobCard = (mob) => {
     const rank = mob.Rank;
@@ -855,9 +859,6 @@ const closeReportModal = () => {
     DOMElements.reportModal.classList.remove('flex');
 };
 
-let lastClickTime = 0;
-const DOUBLE_CLICK_TIME = 300;
-
 const setupEventListeners = () => {
     
     // イベントリスナーはDOM全体に対して委譲 (Delegation)
@@ -882,6 +883,7 @@ const setupEventListeners = () => {
                 toggleAreaFilterPanel(true);
                 clickCount = 0;
             } else {
+                // ランクタブの連続クリック: 1回目(開く) -> 2回目(フィルターパネル表示) -> 3回目(閉じる)
                 clickCount = (clickCount % 3) + 1;
 
                 if (clickCount === 2) {
@@ -897,6 +899,49 @@ const setupEventListeners = () => {
         updateFilterUI();
     });
 
+    DOMElements.areaFilterPanel.addEventListener('click', (e) => {
+        const btn = e.target.closest('.area-filter-btn');
+        if (!btn) return;
+
+        const uiRank = currentFilter.rank;
+        const dataRank = FILTER_TO_DATA_RANK_MAP[uiRank] || uiRank;
+
+        let areaSet = currentFilter.areaSets[uiRank];
+
+        if (btn.dataset.area === 'ALL') {
+            const allAreas = Array.from(globalMobData.filter(m => {
+                if (dataRank === 'A' || dataRank === 'F') {
+                    return m.Rank === dataRank || m.Rank.startsWith('B');
+                }
+                return m.Rank === dataRank;
+            }).reduce((set, mob) => {
+                const mobExpansion = mob.Rank.startsWith('B') 
+                    ? globalMobData.find(m => m.No === mob.related_mob_no)?.Expansion || mob.Expansion
+                    : mob.Expansion;
+                if (mobExpansion) set.add(mobExpansion);
+                return set;
+            }, new Set()));
+
+            if (areaSet.size === allAreas.length) {
+                currentFilter.areaSets[uiRank] = new Set();
+            } else {
+                currentFilter.areaSets[uiRank] = new Set(allAreas);
+            }
+        } else {
+            const area = btn.dataset.area;
+            if (areaSet.has(area)) {
+                areaSet.delete(area);
+            } else {
+                areaSet.add(area);
+            }
+        }
+
+        filterAndRender();
+    });
+
+    // ==============================================================
+    // 統合された DOMElements.colContainer のリスナー (湧き潰し機能維持版)
+    // ==============================================================
     DOMElements.colContainer.addEventListener('click', (e) => {
         const card = e.target.closest('.mob-card');
         if (!card) return;
@@ -919,38 +964,21 @@ const setupEventListeners = () => {
             return;
         }
 
-        // 2. スポーンポイントのクリック処理 (ダブルクリックロジック)
+        // 2. スポーンポイントのクリック処理 (シングルクリックで湧き潰し/解除)
         const point = e.target.closest('.spawn-point');
-        if (point && point.dataset.isInteractive === 'true') {
+        // data-is-interactive="true" のポイント（＝ラストワンではない湧き潰しポイント）のみ処理
+        if (point && point.dataset.isInteractive === 'true') { 
             e.preventDefault(); 
             e.stopPropagation();
 
-            const currentTime = Date.now();
             const locationId = point.dataset.locationId;
             const isCurrentlyCulled = point.dataset.isCulled === 'true';
-
-            // ダブルクリック (討伐報告 または 湧き潰し/解除) 検出
-            if (currentTime - lastClickTime < DOUBLE_CLICK_TIME) {
-                
-                if (point.classList.contains('spawn-point-lastone')) {
-                    // ラストワン: LKT報告モーダル
-                    openReportModal(mobNo);
-                } else {
-                    // ラストワン以外: 湧き潰し/解除報告
-                    toggleCrushStatus(mobNo, locationId, isCurrentlyCulled);
-                }
-                
-                lastClickTime = 0; 
-                return;
-            }
-
-            lastClickTime = currentTime;
-
-            // シングルクリック時は何もしない (ダブルクリックの待機)
+            
+            toggleCrushStatus(mobNo, locationId, isCurrentlyCulled);
             return;
         }
 
-        // 3. カードヘッダーのクリックで展開/格納 (報告ボタン、湧き潰しポイント以外がクリックされた場合)
+        // 3. カードヘッダーのクリックで展開/格納
         if (e.target.closest('[data-toggle="card-header"]')) {
             if (rank === 'S' || rank === 'A' || rank === 'F') {
                 const panel = card.querySelector('.expandable-panel');
@@ -973,59 +1001,7 @@ const setupEventListeners = () => {
             }
         }
     });
-    
-        // 報告ボタンのクリック
-        const reportBtn = e.target.closest('button[data-report-type]');
-        if (reportBtn) {
-            e.stopPropagation();
-            const reportType = reportBtn.dataset.reportType;
-
-            if (reportType === 'modal') {
-                openReportModal(mobNo);
-            } else if (reportType === 'instant') {
-                const timeISO = toJstAdjustedIsoString(new Date());
-                submitReport(mobNo, timeISO, `${rank}ランク即時報告`);
-            }
-        }
-    });
-
-    // スポーンポイントのクリック処理 (湧き潰し/解除)
-    DOMElements.colContainer.addEventListener('click', (e) => {
-        const point = e.target.closest('.spawn-point');
-        if (!point) return;
-        
-        if (point.dataset.isInteractive !== 'true') return;
-
-        const currentTime = Date.now();
-        const mobNo = parseInt(point.dataset.mobNo);
-        const locationId = point.dataset.locationId;
-        const isCurrentlyCulled = point.dataset.isCulled === 'true';
-
-        // ダブルクリック (討伐報告) 検出
-        if (currentTime - lastClickTime < DOUBLE_CLICK_TIME) {
-            e.preventDefault(); 
-            e.stopPropagation(); 
-
-            // Sモブのラストワンポイントのみ報告モーダルを開く
-            if (point.classList.contains('spawn-point-lastone')) {
-                openReportModal(mobNo);
-            }
-            
-            lastClickTime = 0; 
-            return;
-        }
-
-        lastClickTime = currentTime;
-
-        // シングルクリック (湧き潰し/解除)
-        e.preventDefault(); 
-        e.stopPropagation();
-
-        // Sモブの湧き潰しポイント (ラストワン以外) のみ処理
-        if (!point.classList.contains('spawn-point-lastone')) {
-            toggleCrushStatus(mobNo, locationId, isCurrentlyCulled);
-        }
-    });
+    // ==============================================================
 
     document.getElementById('cancel-report').addEventListener('click', closeReportModal);
     DOMElements.reportForm.addEventListener('submit', (e) => {
