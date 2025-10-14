@@ -81,7 +81,7 @@ transition: width 0.5s ease-out;
 /* テキスト色クラス */
 .progress-pop-text {
 color: var(--text-pop);
-text-shadow: 0 0 8px rgba(0, 0, 0, 1.0);
+text-shadow: 0 0 4px rgba(0, 0, 0, 1.0);
 }
 
 /* 点滅アニメーション定義 */
