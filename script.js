@@ -652,7 +652,7 @@ const createMobCard = (mob) => {
 
             </div>
         </div>
-    ` : '';
+    ` '';
 
     const expandablePanelHTML = isExpandable ? `
         <div class="expandable-panel ${isOpen ? 'open' : ''}">
@@ -682,7 +682,7 @@ const createMobCard = (mob) => {
 
             </div>
         </div>
-    ` : '';
+    ` '';
 
     const cardHTML = `
     <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 transition duration-150"
