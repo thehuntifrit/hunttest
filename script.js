@@ -682,7 +682,7 @@ const createMobCard = (mob) => {
             </div>
             ` : ''}
         　</div>
-    　　`;
+    　　`
 　　};
 
     const cardHTML = `
