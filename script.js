@@ -582,19 +582,26 @@ const drawSpawnPoint = (point, cullPoints, mobNo, mobRank, isLastOne, isS_LastOn
     `;
 };
 
-// hunt.js (またはメインのJavaScriptファイル) 内
-
 const createMobCard = (mob) => {
-    // ... (中略) ...
+    const rank = mob.Rank;
+    const rankConfig = RANK_CONFIG[rank] || { label: '?', bg: 'bg-gray-500' };
+    const rankLabel = rankConfig.label;
+
+    const repopInfo = calculateRepop(mob);
+    const nextTimeDisplay = repopInfo.nextMinRepopDate 
+        ? new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' }).format(repopInfo.nextMinRepopDate)
+        : '不明';
+
+    // last_kill_timeが前回表示に使用されていた場合は、それを適切に処理
+    const prevTimeDisplay = formatLastKillTime(mob.last_kill_time); // 項目6では使用しないが、定義は残す
 
     const lastKillDisplay = formatLastKillTime(mob.last_kill_time);
     
-    // 項目5: 詳細展開はSランクのみ
+    // ★変更箇所：項目5: 詳細展開はSランクのみ
     const isExpandable = rank === 'S'; 
     const isOpen = isExpandable && mob.No === openMobCardNo;
     
-    // ... (中略) ...
-
+    // --- 項目2: カードの横幅調整のため、max-w-xsなどの制限を削除/調整 ---
     return `
         <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 transition duration-150"
              data-mob-no="${mob.No}" data-rank="${rank}">
@@ -648,17 +655,6 @@ const createMobCard = (mob) => {
 
         </div>
     `;
-};
-
-    const cardHTML = `
-    <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 transition duration-150"
-        data-mob-no="${mob.No}" data-rank="${rank}">
-        
-        ${cardHeaderHTML}
-        ${expandablePanelHTML}
-    </div>
-    `;
-    return cardHTML;
 };
 
 const distributeCards = () => {
