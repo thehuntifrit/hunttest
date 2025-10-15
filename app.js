@@ -1,12 +1,12 @@
 /**
  * app.js - アプリケーションのエントリポイント
- * 責務: 全モジュールの初期化と連携の統括
  */
 
-import { initializeApp, getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth'; // Firebase Authの関数をインポート
-import * as DataManager from './dataManager'; // dataManager.js をインポート
-import * as UIRenderer from './uiRenderer';   // uiRenderer.js をインポート
-import { firebaseConfig } from './config'; // Firebase設定オブジェクトをインポート
+// firebaseConfig.js から初期化済みの app インスタンスをインポート
+import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth'; 
+import { app } from './firebaseConfig'; 
+import * as DataManager from './dataManager'; 
+import * as UIRenderer from './uiRenderer';
 
 let _auth = null;
 
@@ -18,8 +18,7 @@ let _auth = null;
  * @returns {Promise<Object | null>} Firebase Userオブジェクト
  */
 const _setupUserAuthentication = async () => {
-    // Firebaseアプリが既に初期化されている前提（またはここで実施）
-    const app = initializeApp(firebaseConfig);
+    // app インスタンスは firebaseConfig.js で既に初期化済み
     _auth = getAuth(app);
 
     return new Promise((resolve) => {
@@ -56,13 +55,13 @@ const main = async () => {
         let reporterUID = 'anonymous-user';
         if (user) {
             reporterUID = user.uid;
-            // 報告者UIDをdataManagerに設定する（dataManagerで管理しない場合は、
-            // submitHuntReport時に直接渡すことになるため、ここではUI側で一時保持させる）
             
-            // 例: UIの隠しフィールドにUIDをセットする（uiRendererの責務だが、ここでは連携処理として扱う）
+            // UIの隠しフィールドにUIDをセット
             const uidInput = document.getElementById('reporter-uid-input');
             if (uidInput) {
-                 uidInput.value = reporterUID;
+                uidInput.value = reporterUID;
+                // 認証ステータスを更新 (index.htmlの #auth-status)
+                document.getElementById('auth-status').textContent = `認証済み (UID: ${user.uid.substring(0, 8)}...)`;
             }
         }
         
@@ -76,12 +75,9 @@ const main = async () => {
         UIRenderer.initialize(DataManager);
         console.log('UIRenderer initialized successfully.');
 
-        // 最終的なUIの初期描画（リスナーによって行われるが、念のため）
-        UIRenderer.renderMobList(DataManager.getGlobalMobData());
-
     } catch (error) {
         console.error('Application failed to start during main sequence:', error);
-        // ユーザーにエラーを通知するUI処理
+        document.getElementById('auth-status').textContent = '認証失敗';
         alert('アプリケーションの初期化に失敗しました。コンソールを確認してください。');
     }
 };
@@ -90,7 +86,6 @@ const main = async () => {
  * DOMが完全にロードされた後にメイン関数を実行する
  */
 const startApp = () => {
-    // DOMContentLoaded イベントを待ってから main 関数を実行
     document.addEventListener('DOMContentLoaded', main);
 };
 
