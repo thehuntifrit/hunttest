@@ -3,9 +3,9 @@
  */
 
 import { db, firestore as fs, functions } from './firebaseConfig.js'; 
-import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { MOB_DATA_JSON_PATH, DEFAULT_REPOP_SECONDS } from './config.js'; 
-import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+
+import { collection, onSnapshot } from 'firebase/firestore'; 
+import { httpsCallable } from 'firebase/functions';
 
 let _globalMobData = {}; 
 let _listeners = [];      
