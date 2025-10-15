@@ -4,7 +4,7 @@
  */
 
 // CDNからのインポート (変更なし)
-import { getAuth, onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js'; 
+import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth'; 
 
 import { app } from './firebaseConfig.js'; 
 import * as DataManager from './dataManager.js'; 
