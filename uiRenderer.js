@@ -2,6 +2,9 @@
  * uiRenderer.js
  */
 
+import { db, functions, firestore as fs } from './firebaseConfig'; 
+import { MOB_DATA_JSON_PATH, DEFAULT_REPOP_SECONDS } from './config'; 
+
 let _dataManager = null;
 const listContainer = document.getElementById('mob-list-container');
 const detailContainer = document.getElementById('detail-view-container');
@@ -137,7 +140,7 @@ export const renderDetailView = (mobId) => {
         <section id="crush-point-section">
             <h3>湧き潰しポイント (${mobData.rank === 'S' ? 'Sランク' : '対象外'})</h3>
             <div class="map-container" id="map-container-${mobId}">
-                <img src="/assets/maps/${mobData.map_image_filename}" 
+                <img src="maps/${mobData.map_image_filename}" 
                      alt="${mobData.map_area_name} マップ" class="hunt-map-image">
                 
                 <div class="point-overlay-container" id="point-overlay-${mobId}">
