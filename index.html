@@ -5,15 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FF14 Hunt Tracker</title>
     <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
 
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js"></script>
+    </head>
+<body>
     <header>
-        <h1>討伐報告システム</h1>
-        <p id="auth-status">認証中...</p>
+        <h1>FF14 Mob Hunt Tracker</h1>
+        <p id="auth-status">認証状態: 認証中...</p>
+        <input type="hidden" id="reporter-uid-input" value=""> 
     </header>
 
-    <main id="app-container">
+    <main>
         <section id="mob-list-section">
             <h2>モブ一覧</h2>
             <div id="mob-list-container">
@@ -26,14 +31,11 @@
                 </div>
         </section>
     </main>
-    
-    <input type="hidden" id="reporter-uid-input" value="">
 
-    <footer>
-        <p>&copy; 2024 Hunt Tracker</p>
+    <footer style="margin-top: 20px; padding: 10px; border-top: 1px solid #ccc; text-align: center;">
+        <p>&copy; 2024 FF14 Hunt Tracker. Data powered by community reports.</p>
     </footer>
 
-    <script type="module" src="js/app.js"></script> 
-    
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
