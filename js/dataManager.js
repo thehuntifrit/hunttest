@@ -2,8 +2,8 @@
  * dataManager.js
  */
 
-import { db, functions, firestore as fs } from './firebaseConfig'; 
-import { MOB_DATA_JSON_PATH, DEFAULT_REPOP_SECONDS } from './config'; 
+import { db, firestore as fs, functions } from './firebaseConfig.js'; 
+import { MOB_DATA_JSON_PATH, DEFAULT_REPOP_SECONDS } from './config.js'; 
 
 const COLLECTIONS = {
     REPORTS: 'reports',
