@@ -684,11 +684,17 @@ const createMobCard = (mob) => {
 
                         <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: ${mob.last_kill_memo || 'なし'}</div>
 
-                        <!-- 修正: 「前回:」項目の削除により、最終討伐報告のみを残す -->
                         <div class="w-full text-left text-xs text-gray-400 border-t border-gray-600 pt-1">最終討伐報告: ${lastKillDisplay}</div>
                     </div>
                 </div>
             </div>
+            ${mob.Map && rank === 'S' ? `
+                    <div class="map-content py-1.5 flex justify-center relative">
+                        <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="w-full h-auto rounded shadow-lg border border-gray-600">
+                        <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">
+                            ${spawnPointsHtml}
+                        </div>
+                    </div>
             ` : ''}
 
         </div>
