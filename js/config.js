@@ -1,8 +1,7 @@
 /**
  * config.js - アプリケーション設定と定数管理
+ * 責務: Firebase接続情報、静的データパス、デフォルト値の提供
  */
-
-// --- Firebase 接続情報 ---
 export const firebaseConfig = {
   apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
   authDomain: "the-hunt-49493.firebaseapp.com",
@@ -13,8 +12,8 @@ export const firebaseConfig = {
   measurementId: "G-J1KGFE15XP"
 };
 
-// --- 静的データパス ---
+// static フォルダに mob_data.json がある前提
 export const MOB_DATA_JSON_PATH = '/static/mob_data.json';
 
-// --- アプリケーション定数 ---
-export const DEFAULT_REPOP_SECONDS = 21600;
+// データ欠損時のフォールバック値など
+export const DEFAULT_REPOP_SECONDS = 21600; // 6時間 (データ検証用)
