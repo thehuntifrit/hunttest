@@ -676,30 +676,30 @@ const createMobCard = (mob) => {
                     
                     ${getSpawnPointHTML(mob)} <!-- Sモブの画像とポインタを復元 -->
 
-                    <div class="flex justify-between items-start flex-wrap">
-                        <div class="w-full font-semibold text-yellow-300">抽選条件</div>
-                        <div class="w-full text-gray-300 mb-2">${processText(mob.Condition)}</div>
+                <div class="flex justify-between items-start flex-wrap">
+                    <div class="w-full font-semibold text-yellow-300">抽出条件</div>
+                    <div class="w-full text-gray-300 mb-2">${processText(mob.Condition)}</div>
 
-                        <div class="w-full text-right text-sm font-mono text-blue-300">次回: ${nextTimeDisplay}</div>
+                    <div class="w-full text-right text-sm font-mono text-blue-300">次回: ${nextTimeDisplay}</div>
+                    
+                    <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: ${mob.last_kill_memo || 'なし'}</div>
 
-                        <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: ${mob.last_kill_memo || 'なし'}</div>
-
-                        <div class="w-full text-left text-xs text-gray-400 border-t border-gray-600 pt-1">最終討伐報告: ${lastKillDisplay}</div>
-                    </div>
+                    <div class="w-full text-left text-xs text-gray-400 border-t border-gray-600 pt-1">最終討伐報告: ${lastKillDisplay}</div>
                 </div>
-            </div>
-            ${mob.Map && rank === 'S' ? `
+
+                ${mob.Map && rank === 'S' ? `
                     <div class="map-content py-1.5 flex justify-center relative">
                         <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="w-full h-auto rounded shadow-lg border border-gray-600">
                         <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">
                             ${spawnPointsHtml}
                         </div>
                     </div>
-            ` : ''}
+                ` : ''}
 
+            </div>
         </div>
-    `; 
-};
+    ` : '';
+
 
 // モック関数
 const sortMobData = (a, b) => {
