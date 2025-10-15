@@ -1,12 +1,14 @@
 /**
  * app.js - アプリケーションのエントリポイント
+ * 責務: 全モジュールの初期化と連携の統括
  */
 
-// firebaseConfig.js から初期化済みの app インスタンスをインポート
-import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth'; 
+// import { initializeApp, getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth'; 
+
 import { app } from './firebaseConfig'; 
 import * as DataManager from './dataManager'; 
 import * as UIRenderer from './uiRenderer';
+// config.js の import は不要 (firebaseConfig.js でのみ使用)
 
 let _auth = null;
 
@@ -18,17 +20,17 @@ let _auth = null;
  * @returns {Promise<Object | null>} Firebase Userオブジェクト
  */
 const _setupUserAuthentication = async () => {
-    // app インスタンスは firebaseConfig.js で既に初期化済み
+    // グローバルな getAuth を使用
     _auth = getAuth(app);
 
     return new Promise((resolve) => {
-        // 既存の認証状態を監視
+        // グローバルな onAuthStateChanged を使用
         onAuthStateChanged(_auth, (user) => {
             if (user) {
                 console.log('User is authenticated:', user.uid);
                 resolve(user);
             } else {
-                // ユーザーがいない場合、匿名認証を試みる
+                // ユーザーがいない場合、匿名認証を試みる (グローバルな signInAnonymously を使用)
                 console.log('No user detected. Signing in anonymously...');
                 signInAnonymously(_auth).then((credentials) => {
                     console.log('Signed in anonymously:', credentials.user.uid);
@@ -63,6 +65,8 @@ const main = async () => {
                 // 認証ステータスを更新 (index.htmlの #auth-status)
                 document.getElementById('auth-status').textContent = `認証済み (UID: ${user.uid.substring(0, 8)}...)`;
             }
+        } else {
+             document.getElementById('auth-status').textContent = '認証失敗';
         }
         
         // 2. DataManagerの初期化 (静的データのロードとFirestoreリスナー設定)
