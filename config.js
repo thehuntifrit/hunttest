@@ -6,13 +6,13 @@
 // --- Firebase 接続情報 ---
 // **注意**: ここに記載する値は、ご自身の Firebase プロジェクトの値に必ず置き換えてください。
 export const firebaseConfig = {
-    apiKey: "YOUR_API_KEY_HERE",
-    authDomain: "your-project-id.firebaseapp.com",
-    projectId: "your-project-id",
-    storageBucket: "your-project-id.appspot.com",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID",
-    // measurementId: "G-XXXXXXXXXX" // 必要に応じて
+  apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
+  authDomain: "the-hunt-49493.firebaseapp.com",
+  projectId: "the-hunt-49493",
+  storageBucket: "the-hunt-49493.firebasestorage.app",
+  messagingSenderId: "465769826017",
+  appId: "1:465769826017:web:74ad7e62f3ab139cb359a0",
+  measurementId: "G-J1KGFE15XP"
 };
 
 // --- 静的データパス ---
