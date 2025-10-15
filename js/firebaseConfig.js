@@ -2,9 +2,9 @@
  * firebaseConfig.js - Firebaseサービス設定とエクスポート
  * 責務: 初期化されたFirestoreとFunctionsのインスタンスを他のモジュールに提供
  */
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, Timestamp, FieldValue } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getFunctions } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, Timestamp, FieldValue } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
 
 import { firebaseConfig } from './config.js';
 
