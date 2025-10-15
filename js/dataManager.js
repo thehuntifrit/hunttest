@@ -3,6 +3,7 @@
  */
 
 import { db, firestore as fs, functions } from './firebaseConfig.js'; 
+import { collection, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js'; 
 import { MOB_DATA_JSON_PATH, DEFAULT_REPOP_SECONDS } from './config.js'; 
 
 const COLLECTIONS = {
