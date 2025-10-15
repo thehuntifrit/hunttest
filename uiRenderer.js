@@ -2,8 +2,8 @@
  * uiRenderer.js
  */
 
-import { db, functions, firestore as fs } from './firebaseConfig'; 
-import { MOB_DATA_JSON_PATH, DEFAULT_REPOP_SECONDS } from './config'; 
+// dataManager.js から提供される_dataManagerを介してデータにアクセスするため、
+// Firebaseオブジェクトやconfig定数を直接importする必要はありません。
 
 let _dataManager = null;
 const listContainer = document.getElementById('mob-list-container');
