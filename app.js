@@ -3,8 +3,6 @@
  * 責務: 全モジュールの初期化と連携の統括
  */
 
-// --- 外部モジュールのインポート ---
-// 注: これらのファイルがプロジェクト内に存在することを前提とします。
 import { initializeApp, getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth'; // Firebase Authの関数をインポート
 import * as DataManager from './dataManager'; // dataManager.js をインポート
 import * as UIRenderer from './uiRenderer';   // uiRenderer.js をインポート
