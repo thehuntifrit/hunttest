@@ -6,10 +6,12 @@
  * - ログ機能は arrayUnion を使用し、更新前のデータをログコレクションに追記。
  * - Mob Status はランク別単一ドキュメント (a_latest, s_latest, f_latest) で管理。
  * - REPOP検証に 5分の猶予期間を適用。
+ * * 🚨 修正点: mob_status の初回ドキュメント作成エラーを防ぐため、
+ * t.update() を t.set(..., { merge: true }) に変更。
  */
 const admin = require('firebase-admin');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
-const { onTaskDispatched, TaskQueue, getTaskQueue } = require('firebase-functions/v2/tasks');
+const { onTaskDispatched } = require('firebase-functions/v2/tasks');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFunctions } = require('firebase-admin/functions');
 
@@ -163,19 +165,17 @@ exports.reportProcessor = onDocumentCreated({
             };
 
             // 5.1 mob_status_logs への追記 (既存の Mob 固有の状態全体をログとして保存)
-            // 既に確定した情報（current_kill_time）がある場合のみログに保存
             if (existingMobStatus.current_kill_time) {
                  const statusLogRef = db.collection(COLLECTIONS.MOB_STATUS_LOG).doc(logDocId); 
                  t.set(statusLogRef, {
-                    logs: admin.firestore.FieldValue.arrayUnion({
-                        ...logEntry,
-                        data: existingMobStatus, // Mob固有のフィールド内容
-                    }),
+                     logs: admin.firestore.FieldValue.arrayUnion({
+                         ...logEntry,
+                         data: existingMobStatus, // Mob固有のフィールド内容
+                     }),
                  }, { merge: true });
             }
 
             // 5.2 mob_locations_logs への追記 (既存の湧き潰し状態を全てログとして保存)
-            // locationsデータが存在し、pointsフィールドに要素がある場合のみログに保存
             const hasLocationsData = mobLocationsDoc.exists && mobLocationsDoc.data().points && Object.keys(mobLocationsDoc.data().points).length > 0;
             if (hasLocationsData) {
                 const locationsLogRef = db.collection(COLLECTIONS.MOB_LOCATIONS_LOG).doc(logDocId); 
@@ -198,10 +198,11 @@ exports.reportProcessor = onDocumentCreated({
                 last_report_id: reportId,
             };
 
+            // 🚨 修正: t.update() から t.set(..., { merge: true }) に変更
             // mob_status/{latestDocId} の Mob ID フィールドのみを更新
-            t.update(mobStatusRef, {
+            t.set(mobStatusRef, { // 👈 set に変更
                 [mobStr]: newMobStatusField,
-            });
+            }, { merge: true }); // 👈 merge: true で新規ドキュメント作成に対応
 
             // 7. mob_locations の delete_after_timestamp と last_kill_time の設定
             const expiryMs = LOCATION_EXPIRY_MS[rankId];
@@ -212,6 +213,7 @@ exports.reportProcessor = onDocumentCreated({
                     delete_after_timestamp: deleteAfterTimestamp,
                     last_kill_time: killTime,
                 }, { merge: true });
+
                 console.log(`Set location expiry for ${mobStr} to ${new Date(deleteAfterTimestamp).toISOString()}`);
             }
 
@@ -290,7 +292,7 @@ exports.averageStatusCalculator = onTaskDispatched(TASK_QUEUE_CONFIG, async (req
             const mobLocationsRef = db.collection(COLLECTIONS.MOB_LOCATIONS).doc(mobStr);
 
             const mobStatusDoc = await t.get(mobStatusRef);
-            const existingMobStatus = mobStatusDoc.data()[mobStr] || {}; 
+            const existingMobStatus = (mobStatusDoc.exists ? mobStatusDoc.data()[mobStr] : {}) || {}; // ドキュメントが存在しない場合を考慮
             
             const prevLKT = existingMobStatus.prev_kill_time || admin.firestore.Timestamp.fromMillis(0);
             
@@ -307,10 +309,11 @@ exports.averageStatusCalculator = onTaskDispatched(TASK_QUEUE_CONFIG, async (req
                 current_reporter_uid: latestReporterUid,
             };
 
+            // 🚨 修正: t.update() から t.set(..., { merge: true }) に変更
             // mob_status/{latestDocId} の Mob ID フィールドのみを更新
-            t.update(mobStatusRef, {
+            t.set(mobStatusRef, { // 👈 set に変更
                 [mobStr]: newMobData
-            });
+            }, { merge: true }); // 👈 merge: true で新規ドキュメント作成に対応
 
             // mob_locations の last_kill_time も平均値で更新
             t.set(mobLocationsRef, { 
@@ -320,7 +323,7 @@ exports.averageStatusCalculator = onTaskDispatched(TASK_QUEUE_CONFIG, async (req
             console.log(`[Mob ${mobStr}] 最終LKTを平均 ${avgTime.toISOString()} に設定。${reportsQuerySnap.size}件の報告を処理済み。`);
         });
     } catch (error) {
-        console.error(`[Mob ${mobId}] averageStatusCalculator 処理失敗`, error);
+        console.error(`[Mob ${mobStr}] averageStatusCalculator 処理失敗`, error);
         throw error;
     }
 });
@@ -329,7 +332,6 @@ exports.averageStatusCalculator = onTaskDispatched(TASK_QUEUE_CONFIG, async (req
 
 /**
  * 4.1 updateCrushStatus: 湧き潰し座標のON/OFF時刻を更新
- * (Sモブのみの更新を前提とするが、Mob IDからランクを判定し、全Mob IDをキーとするLocationsドキュメントを更新)
  */
 exports.updateCrushStatus = onCall({ region: DEFAULT_REGION }, async (data, context) => {
     if (!context.auth) {
@@ -346,11 +348,12 @@ exports.updateCrushStatus = onCall({ region: DEFAULT_REGION }, async (data, cont
     
     // Sモブ以外を拒否する検証
     if (getMobMetadata(mobStr).rankId !== '2') {
-         throw new HttpsError('invalid-argument', '湧き潰しポイントの更新はSランクモブでのみ許可されています。');
+        throw new HttpsError('invalid-argument', '湧き潰しポイントの更新はSランクモブでのみ許可されています。');
     }
 
     const mobLocationsRef = db.collection(COLLECTIONS.MOB_LOCATIONS).doc(mobStr);
-    const updateFieldKey = `points.${point.id}.${(action === 'add' ? 'crushed_at' : 'uncrushed_at')}`;
+    // クライアント側（uiRenderer.js）の呼び出しに合わせるため、point.id を使用
+    const updateFieldKey = `points.${point.id}.${(action === 'add' ? 'crushed_at' : 'uncrushed_at')}`; 
 
     try {
         await db.runTransaction(async (t) => {
@@ -375,9 +378,9 @@ exports.updateCrushStatus = onCall({ region: DEFAULT_REGION }, async (data, cont
                 
                 // 反対側の時刻フィールドを削除
                 if (action === 'add') {
-                     update[`points.${point.id}.uncrushed_at`] = admin.firestore.FieldValue.delete();
+                    update[`points.${point.id}.uncrushed_at`] = admin.firestore.FieldValue.delete();
                 } else if (action === 'remove') {
-                     update[`points.${point.id}.crushed_at`] = admin.firestore.FieldValue.delete();
+                    update[`points.${point.id}.crushed_at`] = admin.firestore.FieldValue.delete();
                 }
 
                 t.update(mobLocationsRef, update);
