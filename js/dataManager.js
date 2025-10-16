@@ -8,21 +8,55 @@ import { collection, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions'; 
 
 let _globalMobData = {}; 
-let _listeners = [];      
+let _listeners = [];
+let _isInitialized = false;     // 🔥 修正点1: 初期化フラグ
+let _unsubscribeFirestore = null; // 🔥 修正点2: Firestoreの購読解除関数
 
 // --- 初期化とリスナー管理 ---
 
 export const initialize = async () => {
+    // 🔥 修正点3: 多重初期化防止ガード
+    if (_isInitialized) {
+        // console.warn('dataManager is already initialized. Skipping.'); // ログは削除
+        return;
+    }
+    
     try {
         await _loadStaticData();
-        _setupFirestoreListeners();
+        _setupFirestoreListeners(); // 購読を開始し、購読解除関数を保持
+        _isInitialized = true;
+        _notifyListeners(); // 静的データロード後、即座に一度リストを描画する（空の状態を解消）
     } catch (error) {
         throw error;
     }
 };
 
+/**
+ * リスナーを登録し、解除関数を返す (重複登録防止機能付き)
+ */
 export const addListener = (listener) => {
-    _listeners.push(listener);
+    // 🔥 修正点4: リスナーの重複登録を防止
+    if (!_listeners.includes(listener)) {
+        _listeners.push(listener);
+    }
+    
+    // 🔥 修正点5: リスナーの解除関数を返す
+    return () => { 
+        _listeners = _listeners.filter(l => l !== listener); 
+    };
+};
+
+/**
+ * Firestore購読とすべてのリスナーを解除するクリーンアップ関数
+ */
+export const cleanup = () => {
+    if (_unsubscribeFirestore) {
+        _unsubscribeFirestore();
+        _unsubscribeFirestore = null;
+    }
+    _listeners = [];
+    _globalMobData = {};
+    _isInitialized = false;
 };
 
 const _notifyListeners = () => {
@@ -35,7 +69,9 @@ const _loadStaticData = async () => {
     try {
         const response = await fetch(MOB_DATA_JSON_PATH); 
         
+        // 🔥 修正点6: エラーハンドリングを詳細化
         if (!response.ok) {
+            // パスとステータスをログに残す
             throw new Error(`Failed to load mob_data.json from path: ${MOB_DATA_JSON_PATH}. Status: ${response.status}`);
         }
         
@@ -47,7 +83,6 @@ const _loadStaticData = async () => {
             _globalMobData[id] = {
                 ...mobConfigs[id],
                 id: id, 
-                // キャメルケースに統一
                 currentKillTime: null,
                 nextRespawnMin: null,
                 nextRespawnMax: null,
@@ -60,7 +95,8 @@ const _loadStaticData = async () => {
         });
 
     } catch (error) {
-        throw new Error('Failed to load mob_data.json');
+        // 既に詳細なエラーメッセージになっているため、そのまま投げる
+        throw error;
     }
 };
 
@@ -69,7 +105,8 @@ const _loadStaticData = async () => {
 const _setupFirestoreListeners = () => {
     const q = collection(db, 'mob_status'); 
     
-    onSnapshot(q, (snapshot) => {
+    // 🔥 修正点7: onSnapshot の返り値（購読解除関数）を保持
+    _unsubscribeFirestore = onSnapshot(q, (snapshot) => {
         let changed = false;
         const now = fs.Timestamp.now().toMillis() / 1000; 
 
@@ -94,12 +131,10 @@ const _setupFirestoreListeners = () => {
 };
 
 const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
-    // Firestoreデータ内のキーをキャメルケース (currentKillTime) に想定
     const killTimeSeconds = dynamicStatus.currentKillTime 
                             ? dynamicStatus.currentKillTime.toMillis() / 1000 
                             : null;
 
-    // JSONからrepSeconds (最短) と maxRepopSeconds (最長) を直接取得
     const repopSeconds = staticMob.repopSeconds || DEFAULT_REPOP_SECONDS; 
     const maxRepopSeconds = staticMob.maxRepopSeconds || repopSeconds;
 
@@ -111,21 +146,24 @@ const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
 
     if (killTimeSeconds === null) {
         timerState = 'initial';
+        timeRemaining = null;
     } else if (nowSeconds < nextMinSeconds) {
         timerState = 'imminent';
-        timeRemaining = nextMinSeconds - nowSeconds; 
+        timeRemaining = nextMinSeconds - nowSeconds; // 最短まで残り
     } else if (nowSeconds >= nextMinSeconds && nowSeconds < nextMaxSeconds) {
+        // 🔥 修正点8: spawned 状態では、最長湧きまでの残り時間を返す
         timerState = 'spawned';
-        timeRemaining = nextMinSeconds - nowSeconds;
-    } else if (nowSeconds >= nextMaxSeconds) {
+        timeRemaining = nextMaxSeconds - nowSeconds; // 最長まで残り
+    } else { // nowSeconds >= nextMaxSeconds
         timerState = 'expired';
-        timeRemaining = nextMaxSeconds - nowSeconds;
+        // 🔥 修正点9: expired 状態では、負値の計算を避けるため、UI側で処理できるよう0を返す（またはnull/負値を許可する設計）
+        // UI側が負値を扱うことに慣れているため、ここではexpiredの経過時間として負値を返します
+        timeRemaining = nextMaxSeconds - nowSeconds; 
     }
 
     return {
         ...staticMob,
         ...dynamicStatus,
-        // 返却する動的ステータスのキーをキャメルケースに統一
         currentKillTime: killTimeSeconds,
         nextRespawnMin: nextMinSeconds,
         nextRespawnMax: nextMaxSeconds,
