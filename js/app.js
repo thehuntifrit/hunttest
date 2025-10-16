@@ -12,7 +12,6 @@ const appContainer = document.getElementById('app-container');
 const handleAppError = (error) => {
     console.error("Critical Application Error:", error);
     if (appContainer) {
-        // 既存の内容を上書きし、クリティカルエラーを表示
         appContainer.innerHTML = `
             <div class="error-message">
                 <h2>データのロードに失敗しました</h2>
@@ -31,15 +30,13 @@ const main = async () => {
         // DataManagerを初期化する前にエラーリスナーを登録
         DataManager.addErrorListener(handleAppError); 
 
-        // データマネージャーの初期化（成功するとリストが表示される）
+        // データマネージャーの初期化（静的データロード後、即座にUIに通知が行く）
         await DataManager.initialize();
         
         // UIレンダラーの初期化（DataManagerからの更新を受け取る）
         UIRenderer.initialize(DataManager); 
         
     } catch (error) {
-        // DataManager.initialize() 内の catch ブロックで既にエラーリスナーが呼ばれるため、
-        // ここは主に未定義のエラーをキャッチするための場所。
         handleAppError(error);
     }
 };
