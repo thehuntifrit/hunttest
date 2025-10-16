@@ -2,9 +2,10 @@
  * dataManager.js - Firestoreデータの読み込みと更新、静的データの管理
  */
 
+import { MOB_DATA_JSON_PATH, DEFAULT_REPOP_SECONDS } from './config.js'; 
 import { db, firestore as fs, functions } from './firebaseConfig.js'; 
 import { collection, onSnapshot } from 'firebase/firestore'; 
-import { httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions'; 
 
 let _globalMobData = {}; 
 let _listeners = [];      
@@ -35,21 +36,26 @@ const _loadStaticData = async () => {
         const response = await fetch(MOB_DATA_JSON_PATH); 
         
         if (!response.ok) {
-            throw new Error(`Failed to load mob_data.json. Status: ${response.status}`);
+            throw new Error(`Failed to load mob_data.json from path: ${MOB_DATA_JSON_PATH}. Status: ${response.status}`);
         }
         
         const staticData = await response.json();
         
-        Object.keys(staticData).forEach(id => {
+        const mobConfigs = staticData.mobs || staticData;
+        
+        Object.keys(mobConfigs).forEach(id => {
             _globalMobData[id] = {
-                ...staticData[id],
-                current_kill_time: null,
-                next_respawn_min: null,
-                time_remaining_seconds: 0,
-                timer_state: 'initial', 
-                crush_points_status: {},
-                last_updated_report_id: null,
-                current_kill_memo: null,
+                ...mobConfigs[id],
+                id: id, 
+                // キャメルケースに統一
+                currentKillTime: null,
+                nextRespawnMin: null,
+                nextRespawnMax: null,
+                timeRemainingSeconds: 0,
+                timerState: 'initial', 
+                crushPointsStatus: {},
+                lastUpdatedReportId: null,
+                currentKillMemo: null,
             };
         });
 
@@ -61,12 +67,11 @@ const _loadStaticData = async () => {
 // --- 動的データの処理 (Firestore) ---
 
 const _setupFirestoreListeners = () => {
-    // Firestore v10 構文を使用: db.collection('mob_status') を collection(db, 'mob_status') に変更
     const q = collection(db, 'mob_status'); 
     
     onSnapshot(q, (snapshot) => {
         let changed = false;
-        const now = fs.Timestamp.now().toMillis() / 1000;
+        const now = fs.Timestamp.now().toMillis() / 1000; 
 
         snapshot.docChanges().forEach(change => {
             if (change.type === 'added' || change.type === 'modified') {
@@ -89,18 +94,18 @@ const _setupFirestoreListeners = () => {
 };
 
 const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
-    const killTimeSeconds = dynamicStatus.current_kill_time 
-                            ? dynamicStatus.current_kill_time.toMillis() / 1000 
+    // Firestoreデータ内のキーをキャメルケース (currentKillTime) に想定
+    const killTimeSeconds = dynamicStatus.currentKillTime 
+                            ? dynamicStatus.currentKillTime.toMillis() / 1000 
                             : null;
 
-    const repopSeconds = staticMob.repop_seconds || DEFAULT_REPOP_SECONDS;
+    // JSONからrepSeconds (最短) と maxRepopSeconds (最長) を直接取得
+    const repopSeconds = staticMob.repopSeconds || DEFAULT_REPOP_SECONDS; 
+    const maxRepopSeconds = staticMob.maxRepopSeconds || repopSeconds;
 
     const nextMinSeconds = killTimeSeconds ? killTimeSeconds + repopSeconds : null;
+    const nextMaxSeconds = killTimeSeconds ? killTimeSeconds + maxRepopSeconds : null;
     
-    const nextMaxSeconds = (staticMob.rank === 'S' && killTimeSeconds) 
-                           ? killTimeSeconds + repopSeconds * 1.5
-                           : nextMinSeconds;
-
     let timeRemaining = null;
     let timerState = 'initial';
 
@@ -109,10 +114,10 @@ const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
     } else if (nowSeconds < nextMinSeconds) {
         timerState = 'imminent';
         timeRemaining = nextMinSeconds - nowSeconds; 
-    } else if (nowSeconds >= nextMinSeconds && (!nextMaxSeconds || nowSeconds < nextMaxSeconds)) {
+    } else if (nowSeconds >= nextMinSeconds && nowSeconds < nextMaxSeconds) {
         timerState = 'spawned';
-        timeRemaining = nextMinSeconds - nowSeconds; 
-    } else if (nextMaxSeconds && nowSeconds >= nextMaxSeconds) {
+        timeRemaining = nextMinSeconds - nowSeconds;
+    } else if (nowSeconds >= nextMaxSeconds) {
         timerState = 'expired';
         timeRemaining = nextMaxSeconds - nowSeconds;
     }
@@ -120,11 +125,12 @@ const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
     return {
         ...staticMob,
         ...dynamicStatus,
-        current_kill_time: killTimeSeconds,
-        next_respawn_min: nextMinSeconds,
-        next_respawn_max: nextMaxSeconds,
-        time_remaining_seconds: timeRemaining, 
-        timer_state: timerState,
+        // 返却する動的ステータスのキーをキャメルケースに統一
+        currentKillTime: killTimeSeconds,
+        nextRespawnMin: nextMinSeconds,
+        nextRespawnMax: nextMaxSeconds,
+        timeRemainingSeconds: timeRemaining, 
+        timerState: timerState,
     };
 };
 
