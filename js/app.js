@@ -8,7 +8,6 @@ import { initialize as authInitialize } from './firebaseAuth.js';
 
 const appContainer = document.getElementById('app-container');
 
-// エラー発生時にUIにメッセージを表示するハンドラ
 const handleAppError = (error) => {
     console.error("Critical Application Error:", error);
     if (appContainer) {
@@ -23,18 +22,21 @@ const handleAppError = (error) => {
 };
 
 const main = async () => {
-    // 認証情報の初期化
-    await authInitialize(); 
-
+    let reporterUID = null;
+    
     try {
-        // DataManagerを初期化する前にエラーリスナーを登録
+        reporterUID = await authInitialize(); 
+        
+        if (!reporterUID) {
+            throw new Error("ユーザー認証に失敗しました。");
+        }
+
         DataManager.addErrorListener(handleAppError); 
 
-        // データマネージャーの初期化（静的データロード後、即座にUIに通知が行く）
-        await DataManager.initialize();
+        // 認証済みUIDを渡してDataManagerを初期化
+        await DataManager.initialize(reporterUID);
         
-        // UIレンダラーの初期化（DataManagerからの更新を受け取る）
-        UIRenderer.initialize(DataManager); 
+        UIRenderer.initialize(DataManager);
         
     } catch (error) {
         handleAppError(error);
