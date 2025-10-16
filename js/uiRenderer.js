@@ -56,6 +56,7 @@ const _renderMobList = (mobData) => {
     mobArray.forEach(mob => {
         const card = _createMobCard(mob);
         listContainer.appendChild(card);
+        console.log("RENDER DEBUG: Card appended for:", mob.name);
     });
 };
 
