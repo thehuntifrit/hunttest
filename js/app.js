@@ -14,11 +14,13 @@ let _auth = null;
 
 // --- 認証処理 (簡易版) ---
 const _setupUserAuthentication = async () => {
+    console.log('Auth: Start checking...');
     _auth = getAuth(app);
 
     return new Promise((resolve) => {
         onAuthStateChanged(_auth, (user) => {
             if (user) {
+                console.log('Auth: User is authenticated:', user.uid);
                 console.log('User is authenticated:', user.uid);
                 resolve(user);
             } else {
@@ -39,7 +41,9 @@ const _setupUserAuthentication = async () => {
 const main = async () => {
     try {
         // 1. 認証処理
+        console.log('Main: Starting authentication...');
         const user = await _setupUserAuthentication();
+        console.log('Main: Authentication complete. User:', user ? user.uid : 'null');
         
         let reporterUID = 'anonymous-user';
         if (user) {
