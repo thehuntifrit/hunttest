@@ -150,7 +150,11 @@ const _setupFirestoreListeners = () => {
             _notifyListeners();
         }
     }, (error) => {
-        console.error("Firestore data listener error:", error);
+        // 🚨 修正: ここで詳細エラーをログに出力します
+        console.error("FIRESTORE ERROR: 🔴 詳細コード:", error.code); 
+        console.error("FIRESTORE ERROR: 🔴 メッセージ:", error.message);
+        console.error("FIRESTORE ERROR: 🔴 全体オブジェクト:", error);
+        
         _notifyErrorListeners(error); 
     });
 };
