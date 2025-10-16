@@ -21,6 +21,7 @@ const formatTime = (totalSeconds) => {
 };
 
 export const initialize = (dataManager) => {
+    console.log("UIRenderer.initialize called");
     _dataManager = dataManager;
     
     // ロード中メッセージをクリア
