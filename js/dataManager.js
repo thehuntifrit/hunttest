@@ -9,23 +9,21 @@ import { httpsCallable } from 'firebase/functions';
 
 let _globalMobData = {}; 
 let _listeners = [];
-let _isInitialized = false;     // 🔥 修正点1: 初期化フラグ
-let _unsubscribeFirestore = null; // 🔥 修正点2: Firestoreの購読解除関数
+let _isInitialized = false;     
+let _unsubscribeFirestore = null; 
 
 // --- 初期化とリスナー管理 ---
 
 export const initialize = async () => {
-    // 🔥 修正点3: 多重初期化防止ガード
     if (_isInitialized) {
-        // console.warn('dataManager is already initialized. Skipping.'); // ログは削除
         return;
     }
     
     try {
         await _loadStaticData();
-        _setupFirestoreListeners(); // 購読を開始し、購読解除関数を保持
+        _setupFirestoreListeners(); 
         _isInitialized = true;
-        _notifyListeners(); // 静的データロード後、即座に一度リストを描画する（空の状態を解消）
+        _notifyListeners(); 
     } catch (error) {
         throw error;
     }
@@ -35,12 +33,10 @@ export const initialize = async () => {
  * リスナーを登録し、解除関数を返す (重複登録防止機能付き)
  */
 export const addListener = (listener) => {
-    // 🔥 修正点4: リスナーの重複登録を防止
     if (!_listeners.includes(listener)) {
         _listeners.push(listener);
     }
     
-    // 🔥 修正点5: リスナーの解除関数を返す
     return () => { 
         _listeners = _listeners.filter(l => l !== listener); 
     };
@@ -69,9 +65,7 @@ const _loadStaticData = async () => {
     try {
         const response = await fetch(MOB_DATA_JSON_PATH); 
         
-        // 🔥 修正点6: エラーハンドリングを詳細化
         if (!response.ok) {
-            // パスとステータスをログに残す
             throw new Error(`Failed to load mob_data.json from path: ${MOB_DATA_JSON_PATH}. Status: ${response.status}`);
         }
         
@@ -95,7 +89,6 @@ const _loadStaticData = async () => {
         });
 
     } catch (error) {
-        // 既に詳細なエラーメッセージになっているため、そのまま投げる
         throw error;
     }
 };
@@ -105,7 +98,6 @@ const _loadStaticData = async () => {
 const _setupFirestoreListeners = () => {
     const q = collection(db, 'mob_status'); 
     
-    // 🔥 修正点7: onSnapshot の返り値（購読解除関数）を保持
     _unsubscribeFirestore = onSnapshot(q, (snapshot) => {
         let changed = false;
         const now = fs.Timestamp.now().toMillis() / 1000; 
@@ -149,15 +141,12 @@ const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
         timeRemaining = null;
     } else if (nowSeconds < nextMinSeconds) {
         timerState = 'imminent';
-        timeRemaining = nextMinSeconds - nowSeconds; // 最短まで残り
+        timeRemaining = nextMinSeconds - nowSeconds; 
     } else if (nowSeconds >= nextMinSeconds && nowSeconds < nextMaxSeconds) {
-        // 🔥 修正点8: spawned 状態では、最長湧きまでの残り時間を返す
         timerState = 'spawned';
-        timeRemaining = nextMaxSeconds - nowSeconds; // 最長まで残り
-    } else { // nowSeconds >= nextMaxSeconds
+        timeRemaining = nextMaxSeconds - nowSeconds; 
+    } else { 
         timerState = 'expired';
-        // 🔥 修正点9: expired 状態では、負値の計算を避けるため、UI側で処理できるよう0を返す（またはnull/負値を許可する設計）
-        // UI側が負値を扱うことに慣れているため、ここではexpiredの経過時間として負値を返します
         timeRemaining = nextMaxSeconds - nowSeconds; 
     }
 
