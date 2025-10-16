@@ -15,7 +15,7 @@ const app = initializeApp(firebaseConfig);
 // 2. サービスインスタンスの取得
 export const db = getFirestore(app);
 export const auth = getAuth(app);
-export const functions = getFunctions(app, "asia-northeast2"); // Cloud Functionsのリージョンを指定
+export const functions = getFunctions(app, "asia-northeast2");
 
 // 3. Auth SDKの関数をエクスポート
 export { onAuthStateChanged, signInAnonymously };
