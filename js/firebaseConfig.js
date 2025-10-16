@@ -5,7 +5,8 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator, Timestamp as fsTimestamp } from 'firebase/firestore';
 import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'firebase/functions';
-import { getAuth, connectAuthEmulator, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+// 修正点: Auth SDKから関数をインポート
+import { getAuth, connectAuthEmulator, onAuthStateChanged, signInAnonymously } from 'firebase/auth'; 
 
 import { firebaseConfig } from './config.js';
 
@@ -17,7 +18,10 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const functions = getFunctions(app, "asia-northeast2"); // Cloud Functionsのリージョンを指定
 
-// 3. エクスポート用エイリアス
+// 3. Auth SDKの関数をエクスポート
+export { onAuthStateChanged, signInAnonymously }; // 👈 これでエラーが解消
+
+// 4. エクスポート用エイリアス
 export const firestore = {
     Timestamp: fsTimestamp
 };
