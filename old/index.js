@@ -6,8 +6,8 @@
  * - ログ機能は arrayUnion を使用し、更新前のデータをログコレクションに追記。
  * - Mob Status はランク別単一ドキュメント (a_latest, s_latest, f_latest) で管理。
  * - REPOP検証に 5分の猶予期間を適用。
- * * 🚨 修正点: mob_status の初回ドキュメント作成エラーを防ぐため、
- * t.update() を t.set(..., { merge: true }) に変更。
+ * * 🚨 修正済み: mob_status の初回ドキュメント作成エラーを防ぐため、
+ * t.update() を t.set(..., { merge: true }) に変更しました。
  */
 const admin = require('firebase-admin');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
@@ -198,7 +198,7 @@ exports.reportProcessor = onDocumentCreated({
                 last_report_id: reportId,
             };
 
-            // 🚨 修正: t.update() から t.set(..., { merge: true }) に変更
+            // ✅ 修正済み: t.update() から t.set(..., { merge: true }) に変更
             // mob_status/{latestDocId} の Mob ID フィールドのみを更新
             t.set(mobStatusRef, { // 👈 set に変更
                 [mobStr]: newMobStatusField,
@@ -309,7 +309,7 @@ exports.averageStatusCalculator = onTaskDispatched(TASK_QUEUE_CONFIG, async (req
                 current_reporter_uid: latestReporterUid,
             };
 
-            // 🚨 修正: t.update() から t.set(..., { merge: true }) に変更
+            // ✅ 修正済み: t.update() から t.set(..., { merge: true }) に変更
             // mob_status/{latestDocId} の Mob ID フィールドのみを更新
             t.set(mobStatusRef, { // 👈 set に変更
                 [mobStr]: newMobData
@@ -352,7 +352,6 @@ exports.updateCrushStatus = onCall({ region: DEFAULT_REGION }, async (data, cont
     }
 
     const mobLocationsRef = db.collection(COLLECTIONS.MOB_LOCATIONS).doc(mobStr);
-    // クライアント側（uiRenderer.js）の呼び出しに合わせるため、point.id を使用
     const updateFieldKey = `points.${point.id}.${(action === 'add' ? 'crushed_at' : 'uncrushed_at')}`; 
 
     try {
