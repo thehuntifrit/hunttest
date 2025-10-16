@@ -31,6 +31,7 @@ const _renderMobList = (mobData) => {
     if (!listContainer) return;
     
     if (Object.keys(mobData).length === 0) {
+        // 静的データロード失敗時や空の場合の表示
         listContainer.innerHTML = '<p>データをロード中...</p>';
         return;
     }
@@ -38,7 +39,7 @@ const _renderMobList = (mobData) => {
     listContainer.innerHTML = '';
     // リスト描画用の配列を作成 (ソート用)
     const mobArray = Object.values(mobData).sort((a, b) => {
-        const rankOrder = { 'S': 1, 'A': 2, 'FATE': 3 };
+        const rankOrder = { 'S': 1, 'A': 2, 'F': 3 };
         if (rankOrder[a.rank] !== rankOrder[b.rank]) {
             return rankOrder[a.rank] - rankOrder[b.rank];
         }
@@ -65,13 +66,10 @@ const _createMobCard = (mob) => {
     if (mob.currentKillTime === null) {
         timerText = '討伐報告待ち';
     } else if (timerClass === 'imminent') {
-        // timeRemainingSeconds: 最短までの残り時間（正の値）
         timerText = `湧きまで: ${formatTime(displayTime)}`;
     } else if (timerClass === 'spawned') {
-        // timeRemainingSeconds: 最長までの残り時間（正の値）
         timerText = `湧き期間中 (残り: ${formatTime(displayTime)})`; 
     } else if (timerClass === 'expired') {
-        // timeRemainingSeconds: 0
         timerText = `最大湧き時間超過`; 
     } else {
         timerText = '計算不能';
@@ -115,7 +113,6 @@ const _hideDetailView = () => {
 };
 
 const _renderDetailView = (mobId) => {
-    // getGlobalMobData()はディープコピーを返すため、安全
     const mobData = _dataManager.getGlobalMobData()[mobId];
     if (!detailContainer || !mobData) return;
     
