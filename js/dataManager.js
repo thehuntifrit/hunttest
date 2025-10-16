@@ -22,7 +22,9 @@ export const initialize = async () => {
     
     try {
         await _loadStaticData();
+        // 静的データロード後、即座にUIに初回通知
         _notifyListeners(); 
+        
         _setupFirestoreListeners(); 
         _isInitialized = true;
     } catch (error) {
