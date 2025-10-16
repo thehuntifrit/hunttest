@@ -1,6 +1,6 @@
 {
   "mobs": {
-    "11011": {"rank": "A", "name":"醜男のヴォガージャ", "area": "中央ラノシア",
+      "11011": {"rank": "A", "name":"醜男のヴォガージャ", "area": "中央ラノシア",
       "condition": "",
       "repopSeconds": 12600, "maxRepopSeconds": 16200,
       "mapImage": "",
