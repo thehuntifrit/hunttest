@@ -26,8 +26,10 @@ export const initialize = async () => {
         _setupFirestoreListeners(); 
         _isInitialized = true;
     } catch (error) {
+        // エラーをコンソールに出力し、エラーリスナーに通知
         console.error("Initialization Error:", error);
         _notifyErrorListeners(error); 
+        // 初期化失敗時、アプリケーションがクラッシュしないよう、エラーを再 throw はしない
     }
 };
 
@@ -72,6 +74,7 @@ export const cleanup = () => {
 };
 
 const _notifyListeners = () => {
+    // データ不変性を保証するため、ディープコピーをリスナーに渡す
     const snapshot = JSON.parse(JSON.stringify(_globalMobData));
     _listeners.forEach(listener => listener(snapshot));
 };
@@ -110,6 +113,8 @@ const _loadStaticData = async () => {
         });
 
     } catch (error) {
+        // エラー通知の一貫性を保つため、エラーリスナーに通知してから再 throw
+        _notifyErrorListeners(error); 
         throw error;
     }
 };
@@ -206,10 +211,13 @@ const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
 // --- パブリックインターフェース (API) ---
 
 export const getGlobalMobData = () => {
+    // データ不変性を保証するため、ディープコピーを返す
+    // 備考: パフォーマンスが問題になった場合、structuredCloneへの切り替えを検討可能
     return JSON.parse(JSON.stringify(_globalMobData));
 };
 
 export const getMobList = () => {
+    // Mobデータを配列として返すユーティリティ。ディープコピーを適用
     const mobArray = Object.values(_globalMobData);
     return JSON.parse(JSON.stringify(mobArray));
 };
