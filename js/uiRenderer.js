@@ -33,7 +33,7 @@ export const initialize = (dataManager) => {
 };
 
 const _renderMobList = (mobData) => { 
-    console.log("UI RENDER: Starting render. Mob Count:", Object.keys(mobData).length);
+    console.log("UI RENDER: Function started. Count:", Object.keys(mobData).length);
     if (!listContainer) return;
     
     if (Object.keys(mobData).length === 0) {
@@ -42,6 +42,8 @@ const _renderMobList = (mobData) => {
     }
     
     listContainer.innerHTML = '';
+    
+    console.log("UI RENDER: Starting sort.");
     
     const mobArray = Object.values(mobData).sort((a, b) => {
         const rankOrder = { 'S': 1, 'A': 2, 'F': 3 };
