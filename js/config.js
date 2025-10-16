@@ -1,7 +1,7 @@
 /**
  * config.js - アプリケーション設定と定数管理
- * 責務: Firebase接続情報、静的データパス、デフォルト値の提供
  */
+// **注意**: ここに記載する値は、ご自身の Firebase プロジェクトの値に必ず置き換えてください。
 export const firebaseConfig = {
   apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
   authDomain: "the-hunt-49493.firebaseapp.com",
@@ -12,7 +12,7 @@ export const firebaseConfig = {
   measurementId: "G-J1KGFE15XP"
 };
 
-// static フォルダに mob_data.json がある前提
-export const MOB_DATA_JSON_PATH = '../static/mob_data.json';
+// 🔥 修正点: 404 エラーを解消する正しい相対パス
+export const MOB_DATA_JSON_PATH = '../static/mob_data.json'; 
 // データ欠損時のフォールバック値など
 export const DEFAULT_REPOP_SECONDS = 21600; // 6時間 (データ検証用)
