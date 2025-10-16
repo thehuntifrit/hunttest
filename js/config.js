@@ -1,7 +1,6 @@
 /**
  * config.js - アプリケーション設定と定数管理
  */
-// **注意**: ここに記載する値は、ご自身の Firebase プロジェクトの値に必ず置き換えてください。
 export const firebaseConfig = {
   apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
   authDomain: "the-hunt-49493.firebaseapp.com",
@@ -13,5 +12,5 @@ export const firebaseConfig = {
 };
 
 export const MOB_DATA_JSON_PATH = '../mob_data.json';
-// データ欠損時のフォールバック値など
-export const DEFAULT_REPOP_SECONDS = 21600; // 6時間 (データ検証用)
+
+export const DEFAULT_REPOP_SECONDS = 21600; 
