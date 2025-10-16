@@ -3,7 +3,6 @@
  */
 
 import { db, firestore as fs, functions } from './firebaseConfig.js'; 
-
 import { collection, onSnapshot } from 'firebase/firestore'; 
 import { httpsCallable } from 'firebase/functions';
 
