@@ -12,17 +12,23 @@ let _listeners = [];
 let _errorListeners = []; 
 let _isInitialized = false;     
 let _unsubscribeFirestore = null; 
+let _currentReporterUID = null;
 
 // --- 初期化とリスナー管理 ---
 
-export const initialize = async () => {
+export const initialize = async (reporterUID) => {
     if (_isInitialized) {
         return;
+    }
+
+    if (reporterUID) {
+        _currentReporterUID = reporterUID;
+    } else {
+        console.warn("DataManager initialized without a valid Reporter UID.");
     }
     
     try {
         await _loadStaticData();
-        // 静的データロード後、即座にUIに初回通知
         _notifyListeners(); 
         
         _setupFirestoreListeners(); 
@@ -33,9 +39,6 @@ export const initialize = async () => {
     }
 };
 
-/**
- * 通常のデータ変更リスナーを登録し、解除関数を返す
- */
 export const addListener = (listener) => {
     if (!_listeners.includes(listener)) {
         _listeners.push(listener);
@@ -46,9 +49,6 @@ export const addListener = (listener) => {
     };
 };
 
-/**
- * エラー通知リスナーを登録し、解除関数を返す
- */
 export const addErrorListener = (listener) => {
     if (!_errorListeners.includes(listener)) {
         _errorListeners.push(listener);
@@ -59,9 +59,6 @@ export const addErrorListener = (listener) => {
     };
 };
 
-/**
- * Firestore購読とすべてのリスナーを解除するクリーンアップ関数
- */
 export const cleanup = () => {
     if (_unsubscribeFirestore) {
         _unsubscribeFirestore();
@@ -74,7 +71,6 @@ export const cleanup = () => {
 };
 
 const _notifyListeners = () => {
-    // データ不変性を保証するため、ディープコピーをリスナーに渡す
     const snapshot = JSON.parse(JSON.stringify(_globalMobData));
     _listeners.forEach(listener => listener(snapshot));
 };
@@ -113,7 +109,6 @@ const _loadStaticData = async () => {
         });
 
     } catch (error) {
-        // エラー通知の一貫性を保つため、エラーリスナーに通知してから再 throw
         _notifyErrorListeners(error); 
         throw error;
     }
@@ -160,9 +155,6 @@ const _setupFirestoreListeners = () => {
     });
 };
 
-/**
- * Mobの状態を計算し、時間情報を付加する
- */
 const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
     let killTimeSeconds = null;
 
@@ -179,11 +171,6 @@ const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
     let timeRemaining = null;
     let timerState = 'initial';
     
-    // timeRemainingSeconds の意味：
-    // - imminent: 最短リポップまでの残り秒数
-    // - spawned: 最長リポップまでの残り秒数
-    // - expired: 0
-
     if (killTimeSeconds === null) {
         timerState = 'initial';
         timeRemaining = null;
@@ -212,23 +199,24 @@ const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
 // --- パブリックインターフェース (API) ---
 
 export const getGlobalMobData = () => {
-    // データ不変性を保証するため、ディープコピーを返す
     return JSON.parse(JSON.stringify(_globalMobData));
 };
 
 export const getMobList = () => {
-    // Mobデータを配列として返すユーティリティ。ディープコピーを適用
     const mobArray = Object.values(_globalMobData);
     return JSON.parse(JSON.stringify(mobArray));
 };
 
-export const submitHuntReport = async (mobId, memo, reporterUID) => {
+export const submitHuntReport = async (mobId, memo) => { 
+    if (!_currentReporterUID) {
+        throw new Error("Cannot submit report: Reporter UID is not initialized.");
+    }
     const reportProcessor = httpsCallable(functions, 'reportProcessor');
 
     const reportData = {
         mobId: mobId,
         memo: memo,
-        reporterUID: reporterUID,
+        reporterUID: _currentReporterUID,
         reportTime: fs.Timestamp.now(), 
     };
 
