@@ -220,6 +220,7 @@ const _renderCrushPoints = (mobData) => {
         pointElement.addEventListener('click', async () => {
             const action = isCrushed ? 'remove' : 'add';
             try {
+                // Cloud Functionsの呼び出し形式に合わせて、mobId, pointId(string), actionを渡す
                 await _dataManager.updateCrushStatus(mobData.id, point.id, action);
             } catch (error) {
                 console.error("湧き潰し状態の更新に失敗:", error);
