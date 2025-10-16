@@ -28,6 +28,7 @@ export const initialize = (dataManager) => {
 };
 
 const _renderMobList = (mobData) => { 
+    console.log("Rendering Mob List...");
     if (!listContainer) return;
     
     if (Object.keys(mobData).length === 0) {
