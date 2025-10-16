@@ -13,5 +13,4 @@ export const firebaseConfig = {
 
 export const MOB_DATA_JSON_PATH = './mob_data.json';
 
-
 export const DEFAULT_REPOP_SECONDS = 21600; 
