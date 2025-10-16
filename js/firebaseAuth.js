@@ -6,8 +6,11 @@ import { auth, signInAnonymously, onAuthStateChanged } from './firebaseConfig.js
 let currentReporterUID = null;
 
 const updateUIWithUID = (uid) => {
+    const authStatusElement = document.getElementById('auth-status'); 
     const uidDisplay = document.getElementById('reporter-uid-display');
     const uidInput = document.getElementById('reporter-uid-input');
+    
+    if (authStatusElement) authStatusElement.textContent = `認証状態: 認証済み`; 
     
     if (uidDisplay) uidDisplay.textContent = `認証済み: ${uid.substring(0, 8)}...`;
     if (uidInput) uidInput.value = uid;
@@ -20,7 +23,6 @@ export const initialize = () => {
             if (user) {
                 unsubscribe();
                 
-                console.log("AUTH DEBUG: ✅ User is signed in. UID:", user.uid);
                 currentReporterUID = user.uid;
                 updateUIWithUID(user.uid);
                 
@@ -29,7 +31,7 @@ export const initialize = () => {
             } else {
                 signInAnonymously(auth)
                     .then(() => {
-                        console.log("AUTH DEBUG: 🟡 Signed in anonymously. Waiting for next onAuthStateChanged.");
+                        // 匿名認証成功。onAuthStateChangedが再度呼ばれるのを待つ
                     })
                     .catch((error) => {
                         unsubscribe(); 
