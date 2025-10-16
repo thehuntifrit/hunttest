@@ -2,38 +2,31 @@
  * uiRenderer.js
  */
 
-// dataManager.js から提供される_dataManagerを介してデータにアクセスするため、
-// Firebaseオブジェクトやconfig定数を直接importする必要はありません。
-
 let _dataManager = null;
 const listContainer = document.getElementById('mob-list-container');
 const detailContainer = document.getElementById('detail-view-container');
 
-const getElement = (id) => document.getElementById(id);
-
 const formatTime = (totalSeconds) => {
     if (totalSeconds === null) return 'N/A';
-    const seconds = Math.floor(totalSeconds % 60);
-    const minutes = Math.floor((totalSeconds / 60) % 60);
-    const hours = Math.floor(totalSeconds / 3600);
     
-    const sign = totalSeconds < 0 ? '-' : '';
-    const absSeconds = Math.abs(seconds);
-    const absMinutes = Math.abs(minutes);
-    const absHours = Math.abs(hours);
-
-    return sign + 
-           [absHours, absMinutes, absSeconds]
+    const absTotalSeconds = Math.abs(totalSeconds);
+    
+    const seconds = Math.floor(absTotalSeconds % 60);
+    const minutes = Math.floor((absTotalSeconds / 60) % 60);
+    const hours = Math.floor(absTotalSeconds / 3600);
+    
+    return [hours, minutes, seconds]
            .map(v => v < 10 ? '0' + v : v)
            .join(':');
 };
 
 export const initialize = (dataManager) => {
     _dataManager = dataManager;
-    _dataManager.addListener(renderMobList);
+    _dataManager.addListener(_renderMobList); 
+    _setupGlobalEvents();
 };
 
-export const renderMobList = (mobData) => {
+const _renderMobList = (mobData) => { 
     if (!listContainer) return;
     
     if (Object.keys(mobData).length === 0) {
@@ -47,8 +40,8 @@ export const renderMobList = (mobData) => {
         if (rankOrder[a.rank] !== rankOrder[b.rank]) {
             return rankOrder[a.rank] - rankOrder[b.rank];
         }
-        if (a.timer_state === 'imminent' && b.timer_state === 'imminent') {
-             return a.time_remaining_seconds - b.time_remaining_seconds;
+        if (a.timerState === 'imminent' && b.timerState === 'imminent') {
+             return a.timeRemainingSeconds - b.timeRemainingSeconds;
         }
         return 0;
     });
@@ -57,24 +50,25 @@ export const renderMobList = (mobData) => {
         const card = _createMobCard(mob);
         listContainer.appendChild(card);
     });
-
-    _bindCardEvents();
 };
 
 const _createMobCard = (mob) => {
     const card = document.createElement('div');
-    const timerClass = mob.timer_state;
-    const displayTime = mob.time_remaining_seconds;
+    const timerClass = mob.timerState;
+    const displayTime = mob.timeRemainingSeconds;
     
     let timerText = '';
-    if (mob.current_kill_time === null) {
+    
+    if (mob.currentKillTime === null) {
         timerText = '討伐報告待ち';
     } else if (timerClass === 'imminent') {
         timerText = `湧きまで: ${formatTime(displayTime)}`;
     } else if (timerClass === 'spawned') {
-        timerText = `湧き期間中 (経過: ${formatTime(displayTime)})`;
+        const elapsedSeconds = Math.abs(displayTime);
+        timerText = `湧き期間中 (経過: ${formatTime(elapsedSeconds)})`;
     } else if (timerClass === 'expired') {
-        timerText = `最大湧き時間超過 (+${formatTime(displayTime)})`;
+        const overSeconds = Math.abs(displayTime);
+        timerText = `最大湧き時間超過 (超過: ${formatTime(overSeconds)})`;
     } else {
         timerText = '計算不能';
     }
@@ -84,45 +78,47 @@ const _createMobCard = (mob) => {
 
     card.innerHTML = `
         <h3>${mob.name} (${mob.rank})</h3>
-        <p>${mob.map_area_name}</p>
+        <p>${mob.mapAreaName}</p>
         <div class="timer-display ${timerClass}">
             ${timerText}
         </div>
         <div class="memo-display">
-            最終報告: ${mob.current_kill_memo || 'なし'}
+            最終報告: ${mob.currentKillMemo || 'なし'}
         </div>
         <button class="view-detail-btn">詳細を見る</button>
     `;
     return card;
 };
 
-const _bindCardEvents = () => {
-    document.querySelectorAll('.view-detail-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const mobId = e.target.closest('.mob-card').dataset.mobId;
-            renderDetailView(mobId);
-        });
+const _setupGlobalEvents = () => {
+    // Mobリストが表示されているセクションにイベントリスナーを追加
+    listContainer.addEventListener('click', (e) => {
+        const button = e.target.closest('.view-detail-btn');
+        if (button) {
+             const mobId = e.target.closest('.mob-card').dataset.mobId;
+             _renderDetailView(mobId);
+        }
     });
 };
 
-const showDetailView = () => {
-    getElement('mob-list-section').style.display = 'none';
-    getElement('detail-section').style.display = 'block';
+const _showDetailView = () => {
+    document.getElementById('mob-list-section').style.display = 'none';
+    document.getElementById('detail-section').style.display = 'block';
 };
 
-const hideDetailView = () => {
-    getElement('mob-list-section').style.display = 'block';
-    getElement('detail-section').style.display = 'none';
+const _hideDetailView = () => {
+    document.getElementById('mob-list-section').style.display = 'block';
+    document.getElementById('detail-section').style.display = 'none';
 };
 
-export const renderDetailView = (mobId) => {
+const _renderDetailView = (mobId) => {
     const mobData = _dataManager.getGlobalMobData()[mobId];
     if (!detailContainer || !mobData) return;
     
-    showDetailView();
+    _showDetailView();
 
     detailContainer.innerHTML = `
-        <h2>${mobData.name} (${mobData.map_area_name}) 詳細</h2>
+        <h2>${mobData.name} (${mobData.mapAreaName}) 詳細</h2>
         <button id="back-to-list">一覧に戻る</button>
         
         <section id="report-form-section">
@@ -140,8 +136,8 @@ export const renderDetailView = (mobId) => {
         <section id="crush-point-section">
             <h3>湧き潰しポイント (${mobData.rank === 'S' ? 'Sランク' : '対象外'})</h3>
             <div class="map-container" id="map-container-${mobId}">
-                <img src="maps/${mobData.map_image_filename}" 
-                     alt="${mobData.map_area_name} マップ" class="hunt-map-image">
+                <img src="maps/${mobData.mapImageFilename}" 
+                     alt="${mobData.mapAreaName} マップ" class="hunt-map-image">
                 
                 <div class="point-overlay-container" id="point-overlay-${mobId}">
                 </div>
@@ -152,8 +148,8 @@ export const renderDetailView = (mobId) => {
         </section>
         
         <section id="log-section">
-             <h3>過去の報告ログ</h3>
-             <p>（このセクションは、将来的に過去ログを表示するために使用されます。）</p>
+              <h3>過去の報告ログ</h3>
+              <p>（このセクションは、将来的に過去ログを表示するために使用されます。）</p>
         </section>
     `;
 
@@ -165,17 +161,17 @@ export const renderDetailView = (mobId) => {
 };
 
 const _bindDetailEvents = (mobId) => {
-    const backButton = getElement('back-to-list');
+    const backButton = document.getElementById('back-to-list');
     if (backButton) {
-        backButton.addEventListener('click', hideDetailView);
+        backButton.addEventListener('click', _hideDetailView);
     }
 
-    const form = getElement('report-form');
+    const form = document.getElementById('report-form');
     if (form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const memo = getElement('memo').value.trim();
-            const reporterUID = getElement('reporter-uid-input').value;
+            const memo = document.getElementById('memo').value.trim();
+            const reporterUID = document.getElementById('reporter-uid-input').value;
             
             if (!reporterUID) {
                  alert('認証情報が見つかりません。匿名認証が完了しているか確認してください。');
@@ -184,12 +180,12 @@ const _bindDetailEvents = (mobId) => {
 
             try {
                 const reportId = await _dataManager.submitHuntReport(mobId, memo, reporterUID);
-                alert(`討伐を報告しました！ (ID: ${reportId})`);
+                alert(`討伐を報告しました！ (ID: ${reportId.substring(0, 8)}...)`);
                 form.reset();
-                getElement('report-form-status').innerHTML = `<p style="color:green;">報告成功!</p>`;
+                document.getElementById('report-form-status').innerHTML = `<p style="color:green;">報告成功!</p>`;
             } catch (error) {
                 console.error("報告エラー:", error);
-                getElement('report-form-status').innerHTML = `<p style="color:red;">報告に失敗しました。</p>`;
+                document.getElementById('report-form-status').innerHTML = `<p style="color:red;">報告に失敗しました。</p>`;
             }
         });
     }
@@ -197,8 +193,8 @@ const _bindDetailEvents = (mobId) => {
 
 const _renderCrushPoints = (mobData) => {
     const staticPoints = mobData.locations;
-    const crushStatus = mobData.crush_points_status || {}; 
-    const overlayContainer = getElement(`point-overlay-${mobData.id}`);
+    const crushStatus = mobData.crushPointsStatus || {}; 
+    const overlayContainer = document.getElementById(`point-overlay-${mobData.id}`);
     
     if (!overlayContainer || !staticPoints) return;
 
