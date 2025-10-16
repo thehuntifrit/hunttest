@@ -3,7 +3,6 @@
  * 責務: 全モジュールの初期化と連携の統括
  */
 
-// CDNからのインポート (変更なし)
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth'; 
 
 import { app } from './firebaseConfig.js';
@@ -14,19 +13,19 @@ let _auth = null;
 
 // --- 認証処理 (簡易版) ---
 const _setupUserAuthentication = async () => {
-    console.log('Auth: Start checking...');
+    // console.log('Auth: Start checking...'); // ログは削除
     _auth = getAuth(app);
 
     return new Promise((resolve) => {
         onAuthStateChanged(_auth, (user) => {
             if (user) {
-                console.log('Auth: User is authenticated:', user.uid);
-                console.log('User is authenticated:', user.uid);
+                // console.log('Auth: User is authenticated:', user.uid); // ログは削除
+                // console.log('User is authenticated:', user.uid); // ログは削除
                 resolve(user);
             } else {
-                console.log('No user detected. Signing in anonymously...');
+                // console.log('No user detected. Signing in anonymously...'); // ログは削除
                 signInAnonymously(_auth).then((credentials) => {
-                    console.log('Signed in anonymously:', credentials.user.uid);
+                    // console.log('Signed in anonymously:', credentials.user.uid); // ログは削除
                     resolve(credentials.user);
                 }).catch((error) => {
                     console.error('Anonymous sign-in failed:', error);
@@ -41,9 +40,9 @@ const _setupUserAuthentication = async () => {
 const main = async () => {
     try {
         // 1. 認証処理
-        console.log('Main: Starting authentication...');
+        // console.log('Main: Starting authentication...'); // ログは削除
         const user = await _setupUserAuthentication();
-        console.log('Main: Authentication complete. User:', user ? user.uid : 'null');
+        // console.log('Main: Authentication complete. User:', user ? user.uid : 'null'); // ログは削除
         
         let reporterUID = 'anonymous-user';
         if (user) {
@@ -59,14 +58,14 @@ const main = async () => {
         }
         
         // 2. DataManagerの初期化
-        console.log('Initializing DataManager...');
+        // console.log('Initializing DataManager...'); // ログは削除
         await DataManager.initialize();
-        console.log('DataManager initialized successfully.');
+        // console.log('DataManager initialized successfully.'); // ログは削除
 
         // 3. UIRendererの初期化と連携
-        console.log('Initializing UIRenderer...');
+        // console.log('Initializing UIRenderer...'); // ログは削除
         UIRenderer.initialize(DataManager);
-        console.log('UIRenderer initialized successfully.');
+        // console.log('UIRenderer initialized successfully.'); // ログは削除
 
     } catch (error) {
         console.error('Application failed to start during main sequence:', error);
