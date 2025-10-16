@@ -1,5 +1,5 @@
 /**
- * firebaseAuth.js - 匿名認証の管理
+ * firebaseAuth.js
  */
 import { auth, signInAnonymously, onAuthStateChanged } from './firebaseConfig.js';
 
@@ -31,7 +31,6 @@ export const initialize = () => {
             } else {
                 signInAnonymously(auth)
                     .then(() => {
-                        // 匿名認証成功。onAuthStateChangedが再度呼ばれるのを待つ
                     })
                     .catch((error) => {
                         unsubscribe(); 
