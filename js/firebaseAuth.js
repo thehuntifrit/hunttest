@@ -1,7 +1,6 @@
 /**
  * firebaseAuth.js - 匿名認証の管理
  */
-// 修正点: firebaseConfig.jsからエクスポートされた関数をインポート
 import { auth, signInAnonymously, onAuthStateChanged } from './firebaseConfig.js';
 
 let currentReporterUID = null;
@@ -18,12 +17,10 @@ export const initialize = () => {
     return new Promise((resolve) => {
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // 認証済み
                 currentReporterUID = user.uid;
                 updateUIWithUID(user.uid);
                 resolve(user.uid);
             } else {
-                // 未認証の場合、匿名認証を実行
                 signInAnonymously(auth)
                     .then((userCredential) => {
                         const user = userCredential.user;
