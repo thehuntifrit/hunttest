@@ -11,6 +11,7 @@ export const firebaseConfig = {
   measurementId: "G-J1KGFE15XP"
 };
 
-export const MOB_DATA_JSON_PATH = '/mob_data.json';
+export const MOB_DATA_JSON_PATH = './mob_data.json';
+
 
 export const DEFAULT_REPOP_SECONDS = 21600; 
