@@ -1,221 +1,238 @@
+/**
+ * FF14 Hunt Tracker - Firebase Cloud Functions (index.js) v2
+ *
+ * 最終仕様に基づく実装:
+ * - v2 Functions (onDocumentCreated, onTaskDispatched, onCall) を使用。
+ * - ログ機能は arrayUnion を使用し、更新前のデータをログコレクションに追記。
+ * - Mob Status はランク別単一ドキュメント (a_latest, s_latest, f_latest) で管理。
+ * - REPOP検証に 5分の猶予期間を適用。
+ */
 const admin = require('firebase-admin');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
-const { onTaskDispatched } = require('firebase-functions/v2/tasks');
-const { onCall, HttpsError } = require('firebase-functions/v2/https'); // HttpsErrorをv2からインポート
+const { onTaskDispatched, TaskQueue, getTaskQueue } = require('firebase-functions/v2/tasks');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFunctions } = require('firebase-admin/functions');
 
 admin.initializeApp();
-
 const db = admin.firestore();
+
+// --- 1. 定数とコレクション定義 ---------------------------------------------------
+const DEFAULT_REGION = 'asia-northeast2';
+const TASK_QUEUE_CONFIG = {
+    queue: 'mob-averaging-queue-new', // Cloud Tasks キューID
+    region: DEFAULT_REGION,
+};
 
 const COLLECTIONS = {
     REPORTS: 'reports',
-    MOB_STATUS: 'mob_status',
-    MOB_LOCATIONS: 'mob_locations',
-    MOB_STATUS_LOG: 'mob_status_log',
-    MOB_LOCATIONS_LOG: 'mob_locations_log',
-    MOB_DEFINITIONS: 'mob_definitions',
+    MOB_STATUS: 'mob_status', // docId: a_latest, s_latest, f_latest
+    MOB_LOCATIONS: 'mob_locations', // docId: mobId (e.g., '62061')
+    MOB_STATUS_LOG: 'mob_status_logs',
+    MOB_LOCATIONS_LOG: 'mob_locations_logs',
+    USERS: 'users',
 };
 
-const DEFAULT_REGION = 'asia-northeast2';
+// 猶予時間やウィンドウ
+const REPORT_GRACE_PERIOD_SEC = 5 * 60;
+const AVERAGE_WINDOW_SEC = 5 * 60;
+const AVERAGE_TASK_DELAY_SEC = 10 * 60;
 
-const TASK_QUEUE_CONFIG = {
-    queue: 'mob-report-queue'
+// Mob IDの2桁目によるランクとTTL (ms)
+const MobRankMap = { '1': 'a', '2': 's', '3': 'f' };
+
+const LOCATION_EXPIRY_MS = {
+    '1': 48 * 60 * 60 * 1000,
+    '2': 168 * 60 * 60 * 1000,
+    '3': 168 * 60 * 60 * 1000,
 };
 
-const AVERAGE_WINDOW_MIN = 5;
-const AVG_WINDOW_HALF_MS = AVERAGE_WINDOW_MIN * 60 * 1000;
-const FIVE_MINUTES_IN_SECONDS = 5 * 60;
+// --- 2. ユーティリティ関数 --------------------------------------------------
 
 /**
- * モブのランクに基づいて討伐報告ドキュメントの生存時間（TTL）を計算します。
- * @param {string} rank モブのランク（'S', 'A', 'F'）
- * @returns {number} TTL期間（ミリ秒）
+ * Mob IDからランク、ステータスドキュメントID、ログドキュメントIDを取得
+ * @param {string} mobId - Mob固有の識別番号 (e.g., '62061')
+ * @returns {{rankId: string, rank: string, latestDocId: string, logDocId: string}}
  */
-function getTtlMs(rank) {
-    if (rank === 'A') return 2 * 24 * 60 * 60 * 1000;
-    return 7 * 24 * 60 * 60 * 1000;
-}
+const getMobMetadata = (mobId) => {
+    const mobStr = String(mobId);
+    const rankId = mobStr.charAt(1); 
+    const rank = MobRankMap[rankId] || 'u';
+    
+    // mob_status コレクションのドキュメントID (ランク別単一ドキュメント)
+    const latestDocId = `${rank}_latest`; 
+    
+    // mob_status_logs/mob_locations_logs コレクションのドキュメントID (Mob固有)
+    const logDocId = mobStr;
 
-/**
- * モブID文字列（例: '42042'）をモブステータスドキュメントIDに変換します。
- * @param {string} mobId - モブID（例: '42042'）
- * @returns {string | null} モブステータスドキュメントID（'s_latest', 'a_latest', 'f_latest'）または null
- */
-const getStatusDocId = (mobId) => {
-    if (typeof mobId !== 'string' || mobId.length < 2) {
-        return null;
-    }
-    const rankCode = mobId[1];
-    switch (rankCode) {
-        case '2': return 's_latest';
-        case '1': return 'a_latest';
-        case '3': return 'f_latest';
-        default: return null;
-    }
+    return { rankId, rank: rank.toUpperCase(), latestDocId, logDocId };
 };
 
 /**
- * モブID文字列（例: '42042'）からランクコード（S, A, F）を取得します。
- * @param {string} mobId - モブID（例: '42042'）
- * @returns {string | null} ランクコード（'S', 'A', 'F'）または null
+ * Firestore users/{uid} を参照し、character_name を返す
  */
-const getRankFromMobId = (mobId) => {
-    if (typeof mobId !== 'string' || mobId.length < 2) {
-        return null;
+const getReporterName = async (reporterUID) => {
+    if (!reporterUID) return '名無し';
+    
+    try {
+        const doc = await db.collection(COLLECTIONS.USERS).doc(reporterUID).get();
+        if (doc.exists) {
+            return doc.data().character_name || '名無し';
+        }
+    } catch (error) {
+        console.warn(`Failed to fetch reporter name for ${reporterUID}: ${error.message}`);
     }
-    const rankCode = mobId[1];
-    switch (rankCode) {
-        case '2': return 'S';
-        case '1': return 'A';
-        case '3': return 'F';
-        default: return null;
-    }
-}
+    return '名無し';
+};
 
-
-// ====================================================================
-// reportProcessor: 討伐報告を受け付け、即時Mob Statusを更新し、平均化タスクをキューイング
-// ====================================================================
+// --- 3. Cloud Functions (コアロジック) ---------------------------------------
 
 /**
- * 討伐報告を処理し、Mobステータスを即時更新し、平均化タスクをキューイングします。
+ * 3.1 reportProcessor: 討伐報告を受け付け、即時更新し、平均化タスクをキューイング
+ * トリガー: Firestore reports/{reportId} onCreate (v2)
  */
 exports.reportProcessor = onDocumentCreated({
     document: `${COLLECTIONS.REPORTS}/{reportId}`,
     region: DEFAULT_REGION
 }, async (event) => {
-
     const snap = event.data;
     if (!snap) return null;
 
     const reportData = snap.data();
+    const reportId = snap.id;
 
     const {
         mob_id: mobId,
-        kill_time: reportTimeData,
+        kill_time: killTime,
         reporter_uid: reporterUID,
         memo: reportMemo,
-        repop_seconds: repopSeconds,
+        repop_seconds: mobRepopSec, // Reportsに添付されたREPOP秒数
     } = reportData;
 
-    // 必須データ（mob_id, kill_time, repop_seconds）を検証します。
-    if (!mobId || !reportTimeData || repopSeconds === undefined || repopSeconds === null) {
+    if (!mobId || !killTime || !mobRepopSec) {
         console.error('SKIP: 必須データ（mob_id, kill_time, repop_seconds）が不足しています。');
         return null;
     }
 
-    const rank = getRankFromMobId(mobId);
-    const statusDocId = getStatusDocId(mobId);
+    const mobStr = String(mobId);
+    const { rankId, rank, latestDocId, logDocId } = getMobMetadata(mobStr);
 
-    if (!rank || !statusDocId) {
+    if (!LOCATION_EXPIRY_MS[rankId]) {
         console.error(`SKIP: 無効なMob ID (${mobId}) またはランクが特定できません。`);
         return null;
     }
+    
+    const reportTimestamp = killTime.toMillis() / 1000; // UNIX秒
+    const reporterName = await getReporterName(reporterUID);
+    const finalMemo = `[${reporterName}] ${reportMemo}`;
 
-    const reportTimestamp = reportTimeData;
-    const reportTime = reportTimestamp.toDate();
-    const rankStatusRef = db.collection(COLLECTIONS.MOB_STATUS).doc(statusDocId);
-    const mobStatusLogRef = db.collection(COLLECTIONS.MOB_STATUS_LOG).doc(mobId);
-    const mobLocationsLogRef = db.collection(COLLECTIONS.MOB_LOCATIONS_LOG).doc(mobId);
-
-    const repopMinSeconds = repopSeconds;
-    const repopMinTimeMs = repopMinSeconds * 1000;
-
-    // mob_statusの即時更新とロギングのためのトランザクション
+    // トランザクションでデータの整合性を確保
     try {
         await db.runTransaction(async (t) => {
-            const rankStatusSnap = await t.get(rankStatusRef);
-            const mobLocationsRef = db.collection(COLLECTIONS.MOB_LOCATIONS).doc(mobId);
-            const mobLocationsSnap = await t.get(mobLocationsRef);
+            const mobStatusRef = db.collection(COLLECTIONS.MOB_STATUS).doc(latestDocId);
+            const mobLocationsRef = db.collection(COLLECTIONS.MOB_LOCATIONS).doc(logDocId); 
+            
+            // 2. 既存データの読み込み (ログ記録と検証のため)
+            const mobStatusDoc = await t.get(mobStatusRef);
+            const mobLocationsDoc = await t.get(mobLocationsRef);
 
-            const rankStatusData = rankStatusSnap.data() || {};
-            const locationsData = mobLocationsSnap.data() || {};
-
-            const existingMobData = rankStatusData[mobId] || {};
-            const currentLKT = existingMobData.last_kill_time || null;
-            const currentPrevLKT = existingMobData.prev_kill_time || null;
-
-            const currentLKTTime = currentLKT ? currentLKT.toDate() : new Date(0);
-            const prevLKTTime = currentPrevLKT ? currentPrevLKT.toDate() : new Date(0);
-
-            let isUpdateValid = false;
-            let logMemo = existingMobData.last_kill_memo || '';
-
-            // リポップ時間の検証
-            if (currentLKT) {
-                const timeDiff = reportTime.getTime() - currentLKTTime.getTime();
-
-                // LKT巻き戻し（PrevLKTより古い報告）をチェック
-                if (reportTime <= prevLKTTime) {
-                     console.warn(`[Mob ${mobId}] LKT巻き戻しを検知。更新をスキップし、ログのみ記録します。報告時間: ${reportTime.toISOString()}`);
-                }
-                // 最小リポップ時間をチェック
-                else if (timeDiff < repopMinTimeMs) {
-                    const minRepopHours = (repopMinSeconds / 3600).toFixed(1);
-                    console.warn(`[Mob ${mobId}] 報告時間が短すぎます。更新をスキップします。LKT: ${currentLKTTime.toISOString()}, New Report: ${reportTime.toISOString()}, Min Repop: ${minRepopHours} hours.`);
-                }
-                else if (reportTime.getTime() > currentLKTTime.getTime()) {
-                    isUpdateValid = true;
-                    console.log(`[Mob ${mobId}] mob_statusを即時更新します。`);
-                }
-            } else {
-                isUpdateValid = true;
-                console.log(`[Mob ${mobId}] 初回報告としてmob_statusを更新します。`);
+            const now = admin.firestore.Timestamp.now();
+            const existingStatusData = mobStatusDoc.exists ? mobStatusDoc.data() : {};
+            const existingMobStatus = existingStatusData[mobStr] || {}; 
+            
+            const prevKillTimeSec = existingMobStatus.prev_kill_time ? existingMobStatus.prev_kill_time.toMillis() / 1000 : 0;
+            const currentKillTimeSec = existingMobStatus.current_kill_time ? existingMobStatus.current_kill_time.toMillis() / 1000 : 0;
+            
+            // 3. REPOP期間の検証 (Reportsのrepop_seconds + 猶予時間)
+            const minAllowedTimeSec = prevKillTimeSec + mobRepopSec - REPORT_GRACE_PERIOD_SEC;
+            
+            if (prevKillTimeSec !== 0 && reportTimestamp < minAllowedTimeSec) {
+                console.warn(`[REJECTED] Report ID ${reportId} for ${mobStr} is too early. Min Allowed: ${new Date(minAllowedTimeSec * 1000).toISOString()}.`);
+                return;
             }
 
-            if (isUpdateValid) {
-                const newMobData = {
-                    prev_kill_time: currentLKT,
-                    prev_kill_memo: existingMobData.last_kill_memo || '',
-                    last_kill_time: reportTimestamp,
-                    last_kill_memo: reportMemo,
-                    current_reporter_uid: reporterUID,
-                };
-
-                t.update(rankStatusRef, { [mobId]: newMobData });
-                logMemo = newMobData.last_kill_memo;
+            // 4. 古い報告の検証 (既に確定している時刻より古い報告は無視)
+            if (reportTimestamp < currentKillTimeSec) {
+                console.warn(`[REJECTED] Report ID ${reportId} for ${mobStr} is older than current status.`);
+                return;
             }
 
-            // Mobステータスをログに記録（巻き戻し保護のため）
-            t.set(mobStatusLogRef, {
-                last_kill_time: reportTimestamp,
-                prev_kill_time: currentLKT,
-                memo: logMemo,
-                last_reported_at: admin.firestore.FieldValue.serverTimestamp(),
-                last_report_id: snap.id,
-            }, { merge: true });
+            // --- 5. 【最重要】ログ記録 (更新前のデータをlogsコレクションへ追記) ----------------------
+            const logEntry = {
+                timestamp: now,
+                report_id: reportId,
+            };
 
-            // Mob位置のスナップショットをログに記録（Sランクのみ）
-            if (rank === 'S') {
-                t.set(mobLocationsLogRef, {
-                    locations_snapshot: locationsData.points || {},
-                    reported_at: admin.firestore.FieldValue.serverTimestamp(),
-                    report_id: snap.id,
+            // 5.1 mob_status_logs への追記 (既存の Mob 固有の状態全体をログとして保存)
+            // 既に確定した情報（current_kill_time）がある場合のみログに保存
+            if (existingMobStatus.current_kill_time) {
+                 const statusLogRef = db.collection(COLLECTIONS.MOB_STATUS_LOG).doc(logDocId); 
+                 t.set(statusLogRef, {
+                    logs: admin.firestore.FieldValue.arrayUnion({
+                        ...logEntry,
+                        data: existingMobStatus, // Mob固有のフィールド内容
+                    }),
+                 }, { merge: true });
+            }
+
+            // 5.2 mob_locations_logs への追記 (既存の湧き潰し状態を全てログとして保存)
+            // locationsデータが存在し、pointsフィールドに要素がある場合のみログに保存
+            const hasLocationsData = mobLocationsDoc.exists && mobLocationsDoc.data().points && Object.keys(mobLocationsDoc.data().points).length > 0;
+            if (hasLocationsData) {
+                const locationsLogRef = db.collection(COLLECTIONS.MOB_LOCATIONS_LOG).doc(logDocId); 
+                t.set(locationsLogRef, {
+                    logs: admin.firestore.FieldValue.arrayUnion({
+                        ...logEntry,
+                        data: mobLocationsDoc.data(), // points情報など全て
+                    }),
                 }, { merge: true });
             }
+            // ---------------------------------------------------------------------
+
+            // 6. mob_status への初回リアルタイム更新
+            const newMobStatusField = {
+                current_kill_time: killTime,
+                current_kill_memo: finalMemo,
+                current_reporter_uid: reporterUID,
+                prev_kill_time: existingMobStatus.current_kill_time || admin.firestore.Timestamp.fromMillis(0),
+                prev_kill_memo: existingMobStatus.current_kill_memo || '',
+                last_report_id: reportId,
+            };
+
+            // mob_status/{latestDocId} の Mob ID フィールドのみを更新
+            t.update(mobStatusRef, {
+                [mobStr]: newMobStatusField,
+            });
+
+            // 7. mob_locations の delete_after_timestamp と last_kill_time の設定
+            const expiryMs = LOCATION_EXPIRY_MS[rankId];
+            if (expiryMs) {
+                const deleteAfterTimestamp = killTime.toMillis() + expiryMs;
+                
+                t.set(mobLocationsRef, { 
+                    delete_after_timestamp: deleteAfterTimestamp,
+                    last_kill_time: killTime,
+                }, { merge: true });
+                console.log(`Set location expiry for ${mobStr} to ${new Date(deleteAfterTimestamp).toISOString()}`);
+            }
+
+            console.log(`[UPDATED] Mob ${mobStr} status updated with initial report ID ${reportId}.`);
         });
 
-        // Cloud TasksのキューイングとTTL設定
+        // 8. Cloud Tasks へのジョブ投入 (トランザクション外)
         const functions = getFunctions();
         const queue = functions.taskQueue(TASK_QUEUE_CONFIG.queue, DEFAULT_REGION);
 
-        const ttlMs = getTtlMs(rank);
-        const deleteAt = new Date(reportTime.getTime() + ttlMs);
-
-        await snap.ref.update({
-            delete_at_date: admin.firestore.Timestamp.fromDate(deleteAt),
-            is_averaged: false,
-        });
-
-        const scheduleTimeMs = reportTime.getTime() + AVG_WINDOW_HALF_MS;
+        const scheduleTimeMs = killTime.toMillis() + (AVERAGE_TASK_DELAY_SEC * 1000);
         const scheduleTime = new Date(scheduleTimeMs);
 
         await queue.enqueue({
-            data: { mobId, rank, initialReportTime: reportTime.getTime() },
+            mobId: mobStr,
+            initialReportTime: killTime.toMillis(),
+        }, {
             scheduleTime: scheduleTime,
         });
-        console.log(`Cloud Task queued for Mob ${mobId} (Report ID: ${snap.id}) at ${scheduleTime.toISOString()}`);
+
+        console.log(`Cloud Task queued for Mob ${mobStr} (Report ID: ${reportId}) at ${scheduleTime.toISOString()}`);
 
     } catch (error) {
         console.error(`[Mob ${mobId}] reportProcessor トランザクション失敗 (reports ID: ${snap.id})`, error);
@@ -224,133 +241,272 @@ exports.reportProcessor = onDocumentCreated({
     return null;
 });
 
-// ====================================================================
-// averageStatusCalculator: キューから呼び出され、平均討伐時間を算出
-// ====================================================================
-
 /**
- * ウィンドウ内の平均討伐時間を計算するCloud Taskエンドポイント。
- * @type {CloudFunction<{ mobId: string, rank: string, initialReportTime: number }>}
+ * 3.2 averageStatusCalculator: キューから呼び出され、平均討伐時間を算出
+ * トリガー: Cloud Tasks からのディスパッチ (v2)
  */
-exports.averageStatusCalculator = onTaskDispatched({
-    queue: TASK_QUEUE_CONFIG.queue,
-    region: DEFAULT_REGION
-}, async (request) => {
+exports.averageStatusCalculator = onTaskDispatched(TASK_QUEUE_CONFIG, async (request) => {
 
-    const { mobId, rank, initialReportTime } = request.data;
+    const { mobId, initialReportTime } = request.data;
     const centerTime = new Date(initialReportTime);
-    const mobStatusRef = db.collection(COLLECTIONS.MOB_STATUS).doc(getStatusDocId(mobId));
+    
+    const mobStr = String(mobId);
+    const { latestDocId } = getMobMetadata(mobStr);
 
-    const startTime = new Date(centerTime.getTime() - AVG_WINDOW_HALF_MS);
-    const endTime = new Date(centerTime.getTime() + AVG_WINDOW_HALF_MS);
+    const startTime = new Date(centerTime.getTime() - (AVERAGE_WINDOW_SEC * 1000));
+    const endTime = new Date(centerTime.getTime() + (AVERAGE_WINDOW_SEC * 1000));
 
-    // ウィンドウ内の未平均化報告をクエリ
-    const reportsQuerySnap = await db.collection(COLLECTIONS.REPORTS)
-        .where('mob_id', '==', parseInt(mobId, 10))
-        .where('is_averaged', '==', false)
-        .where('kill_time', '>=', admin.firestore.Timestamp.fromDate(startTime))
-        .where('kill_time', '<=', admin.firestore.Timestamp.fromDate(endTime))
-        .get();
+    try {
+        // ウィンドウ内の報告をクエリ
+        const reportsQuerySnap = await db.collection(COLLECTIONS.REPORTS)
+            .where('mob_id', '==', mobStr) // mob_idを文字列として扱う
+            .where('kill_time', '>=', admin.firestore.Timestamp.fromDate(startTime))
+            .where('kill_time', '<=', admin.firestore.Timestamp.fromDate(endTime))
+            .orderBy('kill_time', 'asc')
+            .get();
 
-    if (reportsQuerySnap.empty) {
-        console.log(`[Mob ${mobId}] このウィンドウの未平均化報告は見つかりませんでした。`);
-        return;
-    }
-
-    // 平均時間を計算
-    let totalTime = 0;
-    reportsQuerySnap.docs.forEach(doc => {
-        totalTime += doc.data().kill_time.toMillis();
-    });
-    const avgTimeMs = totalTime / reportsQuerySnap.size;
-    const avgTimestamp = admin.firestore.Timestamp.fromMillis(avgTimeMs);
-    const avgTime = avgTimestamp.toDate();
-
-    await db.runTransaction(async (t) => {
-        const rankStatusSnap = await t.get(mobStatusRef);
-        const rankStatusData = rankStatusSnap.data() || {};
-        const existingMobData = rankStatusSnap.data()[mobId] || {};
-
-        const currentLKT = existingMobData.last_kill_time || null;
-        const newPrevLKT = currentLKT;
-
-        // 過去時刻巻き戻し保護（PrevLKTに対する）
-        const prevLKTTime = existingMobData.prev_kill_time ? existingMobData.prev_kill_time.toDate() : new Date(0);
-        if (avgTime <= prevLKTTime) {
-             console.warn(`SKIP(AVG): 平均時刻 (${avgTime.toISOString()}) はPrevLKT (${prevLKTTime.toISOString()}) より古いです。`);
-             return;
+        if (reportsQuerySnap.empty) {
+            console.log(`[Mob ${mobStr}] このウィンドウの報告は見つかりませんでした。`);
+            return;
         }
 
-        // 平均化されたLKTでMobステータスを更新
-        const newMobData = {
-            ...existingMobData,
-            last_kill_time: avgTimestamp,
-            prev_kill_time: newPrevLKT,
-        };
-
-        t.update(mobStatusRef, {
-            [`${mobId}`]: newMobData
-        });
-
-        // 報告を平均化済みとしてマーク
+        // 平均時間を計算
+        let totalTime = 0;
         reportsQuerySnap.docs.forEach(doc => {
-            t.update(doc.ref, { is_averaged: true });
+            totalTime += doc.data().kill_time.toMillis();
         });
+        const avgTimeMs = totalTime / reportsQuerySnap.size;
+        const avgTimestamp = admin.firestore.Timestamp.fromMillis(avgTimeMs);
+        const avgTime = avgTimestamp.toDate();
 
-        console.log(`[Mob ${mobId}] 最終LKTを平均 ${avgTime.toISOString()} に設定。${reportsQuerySnap.size}件の報告を処理済み。`);
-    });
+        // 最新のメモとUIDを採用
+        const latestReport = reportsQuerySnap.docs[reportsQuerySnap.size - 1].data();
+        const latestReporterUid = latestReport.reporter_uid;
+        const reporterName = await getReporterName(latestReporterUid);
+        const finalMemo = `[${reporterName}] ${latestReport.memo}`;
+
+        await db.runTransaction(async (t) => {
+            const mobStatusRef = db.collection(COLLECTIONS.MOB_STATUS).doc(latestDocId);
+            const mobLocationsRef = db.collection(COLLECTIONS.MOB_LOCATIONS).doc(mobStr);
+
+            const mobStatusDoc = await t.get(mobStatusRef);
+            const existingMobStatus = mobStatusDoc.data()[mobStr] || {}; 
+            
+            const prevLKT = existingMobStatus.prev_kill_time || admin.firestore.Timestamp.fromMillis(0);
+            
+            if (avgTimeMs <= prevLKT.toMillis()) { 
+                console.warn(`[REJECTED(AVG)] Averaged time (${avgTime.toISOString()}) is older than or equal to prev_kill_time. Aborting.`);
+                return;
+            }
+
+            // Mobステータスを更新
+            const newMobData = {
+                ...existingMobStatus, // 既存データ（prev_kill_timeなど）を維持
+                current_kill_time: avgTimestamp,
+                current_kill_memo: finalMemo,
+                current_reporter_uid: latestReporterUid,
+            };
+
+            // mob_status/{latestDocId} の Mob ID フィールドのみを更新
+            t.update(mobStatusRef, {
+                [mobStr]: newMobData
+            });
+
+            // mob_locations の last_kill_time も平均値で更新
+            t.set(mobLocationsRef, { 
+                last_kill_time: avgTimestamp,
+            }, { merge: true });
+
+            console.log(`[Mob ${mobStr}] 最終LKTを平均 ${avgTime.toISOString()} に設定。${reportsQuerySnap.size}件の報告を処理済み。`);
+        });
+    } catch (error) {
+        console.error(`[Mob ${mobId}] averageStatusCalculator 処理失敗`, error);
+        throw error;
+    }
 });
 
-// ====================================================================
-// crushStatusUpdater: 湧き潰し座標の状態を更新
-// ====================================================================
+// --- 4. HTTPS Callable Functions -------------------------------------------
 
 /**
- * モブ位置の湧き潰しステータスを更新します。
- * @returns {Object} 成功メッセージ
+ * 4.1 updateCrushStatus: 湧き潰し座標のON/OFF時刻を更新
+ * (Sモブのみの更新を前提とするが、Mob IDからランクを判定し、全Mob IDをキーとするLocationsドキュメントを更新)
  */
-exports.crushStatusUpdater = onCall({ region: DEFAULT_REGION }, async (request) => {
-
-    if (!request.auth) {
+exports.updateCrushStatus = onCall({ region: DEFAULT_REGION }, async (data, context) => {
+    if (!context.auth) {
         throw new HttpsError('unauthenticated', '認証が必要です。');
     }
 
-    const data = request.data;
-    const { mob_id: mobId, point_id: pointId, type } = data;
-    const nowTimestamp = admin.firestore.Timestamp.now();
+    const { mob_id, point, action } = data;
+    const mobStr = String(mob_id);
+    const now = admin.firestore.Timestamp.now();
 
-    if (!mobId || !pointId || (type !== 'add' && type !== 'remove')) {
-        throw new HttpsError('invalid-argument', '必須データ（mob_id, point_id, type）が不足しています。');
+    if (action !== 'add' && action !== 'remove') {
+        throw new HttpsError('invalid-argument', 'Action must be "add" or "remove".');
     }
-
-    // Sランクのみの検証
-    if (getRankFromMobId(mobId) !== 'S') {
+    
+    // Sモブ以外を拒否する検証
+    if (getMobMetadata(mobStr).rankId !== '2') {
          throw new HttpsError('invalid-argument', '湧き潰しポイントの更新はSランクモブでのみ許可されています。');
     }
 
-    const mobLocationsRef = db.collection(COLLECTIONS.MOB_LOCATIONS).doc(mobId);
+    const mobLocationsRef = db.collection(COLLECTIONS.MOB_LOCATIONS).doc(mobStr);
+    const updateFieldKey = `points.${point.id}.${(action === 'add' ? 'crushed_at' : 'uncrushed_at')}`;
 
-    // ネストされたフィールドを更新するためにドット記法を使用（例: points.LM_101.crushed_at）
-    const updateFieldKey = `points.${pointId}.${(type === 'add' ? 'crushed_at' : 'uncrushed_at')}`;
-
-    await db.runTransaction(async (t) => {
-        const mobLocationsSnap = await t.get(mobLocationsRef);
-
-        if (!mobLocationsSnap.exists) {
-            const newPointData = {
-                points: {
-                    [pointId]: {
-                        [type === 'add' ? 'crushed_at' : 'uncrushed_at']: nowTimestamp
+    try {
+        await db.runTransaction(async (t) => {
+            const mobLocationsSnap = await t.get(mobLocationsRef);
+            
+            // 初回ポイント更新時: pointsマップが存在しない場合は新規作成
+            if (!mobLocationsSnap.exists) {
+                const newPointData = {
+                    points: {
+                        [point.id]: {
+                            id: point.id,
+                            [action === 'add' ? 'crushed_at' : 'uncrushed_at']: now
+                        }
                     }
+                };
+                t.set(mobLocationsRef, newPointData, { merge: true });
+            } else {
+                // 既存ドキュメント: ドット記法でポイントの時刻のみを更新
+                const update = {
+                    [updateFieldKey]: now,
+                };
+                
+                // 反対側の時刻フィールドを削除
+                if (action === 'add') {
+                     update[`points.${point.id}.uncrushed_at`] = admin.firestore.FieldValue.delete();
+                } else if (action === 'remove') {
+                     update[`points.${point.id}.crushed_at`] = admin.firestore.FieldValue.delete();
                 }
-            };
-            t.set(mobLocationsRef, newPointData, { merge: true });
-        } else {
-            t.update(mobLocationsRef, {
-                [updateFieldKey]: nowTimestamp
-            });
+
+                t.update(mobLocationsRef, update);
+            }
+        });
+
+        return { status: 'success', message: `Point ${point.id} crush status updated to ${action}.` };
+
+    } catch (error) {
+        console.error(`updateCrushStatus トランザクション失敗 (${mobStr})`, error);
+        throw new HttpsError('internal', 'Internal server error during status update.', error.message);
+    }
+});
+
+/**
+ * 4.2 resetCrushStatus: 湧き潰し座標のON/OFF時刻をリセット
+ */
+exports.resetCrushStatus = onCall({ region: DEFAULT_REGION }, async (data, context) => {
+    if (!context.auth) {
+        throw new HttpsError('unauthenticated', '認証が必要です。');
+    }
+    // TODO: 厳密には管理者UIDチェックが必要
+
+    const { mob_id } = data;
+    const mobStr = String(mob_id);
+    const mobLocationsRef = db.collection(COLLECTIONS.MOB_LOCATIONS).doc(mobStr);
+
+    try {
+        await db.runTransaction(async (t) => {
+            const doc = await t.get(mobLocationsRef);
+            if (!doc.exists || !doc.data().points) {
+                console.warn(`Mob Locations document ${mobStr} not found or no points to reset.`);
+                return;
+            }
+
+            const locationsData = doc.data();
+            let resetCount = 0;
+            const updates = {};
+            
+            // 各ポイントから crushed_at, uncrushed_at を削除
+            for (const key in locationsData.points) {
+                if (locationsData.points[key].crushed_at || locationsData.points[key].uncrushed_at) {
+                    updates[`points.${key}.crushed_at`] = admin.firestore.FieldValue.delete();
+                    updates[`points.${key}.uncrushed_at`] = admin.firestore.FieldValue.delete();
+                    resetCount++;
+                }
+            }
+            
+            if (resetCount > 0) {
+                 t.update(mobLocationsRef, updates);
+                 console.log(`Successfully reset ${resetCount} points for Mob ${mobStr}.`);
+            } else {
+                 console.log(`No points required reset for Mob ${mobStr}.`);
+            }
+        });
+
+        return { status: 'success', message: `Reset complete for ${mob_id}.` };
+    } catch (error) {
+        console.error(`resetCrushStatus トランザクション失敗 (${mobStr})`, error);
+        throw new HttpsError('internal', 'Internal server error during status reset.', error.message);
+    }
+});
+
+// --- 5. PubSub (Scheduled) Functions ---------------------------------------
+
+/**
+ * 5.1 cleanOldReports: 古い報告を削除 (7日前以前)
+ * PubSub は v1 構文でのみ提供されるため、v1を使用。
+ */
+const { pubsub } = require('firebase-functions/v1');
+
+exports.cleanOldReports = pubsub.schedule('0 9 * * *') // JST 9:00 (UTC 00:00)
+    .timeZone('Asia/Tokyo')
+    .onRun(async (context) => {
+        const sevenDaysAgo = admin.firestore.Timestamp.fromMillis(Date.now() - (7 * 24 * 60 * 60 * 1000));
+        const reportsRef = db.collection(COLLECTIONS.REPORTS);
+        
+        const snapshot = await reportsRef
+            .where('kill_time', '<', sevenDaysAgo)
+            .limit(500)
+            .get();
+
+        if (snapshot.empty) {
+            console.log('No old reports to clean.');
+            return null;
         }
+
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+        console.log(`Cleaned ${snapshot.size} old reports.`);
+
+        return null;
     });
 
-    return { success: true, message: `Point ${pointId} crush status updated to ${type}.` };
-});
+/**
+ * 5.2 cleanOldLocations: 古い mob_locations のTTL情報を削除 (delete_after_timestamp 期限切れ)
+ * PubSub は v1 構文でのみ提供されるため、v1を使用。
+ */
+exports.cleanOldLocations = pubsub.schedule('0 9 * * *') // JST 9:00 (UTC 00:00)
+    .timeZone('Asia/Tokyo')
+    .onRun(async (context) => {
+        const now = Date.now();
+        
+        const locationsRef = db.collection(COLLECTIONS.MOB_LOCATIONS);
+        const snapshot = await locationsRef
+            .where('delete_after_timestamp', '<', now)
+            .limit(500)
+            .get();
+
+        if (snapshot.empty) {
+            console.log('No expired mob_locations to clean.');
+            return null;
+        }
+
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => {
+            // フィールドを削除
+            batch.update(doc.ref, { 
+                delete_after_timestamp: admin.firestore.FieldValue.delete(),
+                last_kill_time: admin.firestore.FieldValue.delete(), 
+            });
+        });
+
+        await batch.commit();
+        console.log(`Cleaned delete_after_timestamp from ${snapshot.size} mob_locations documents.`);
+
+        return null;
+    });
