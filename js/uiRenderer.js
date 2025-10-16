@@ -8,35 +8,39 @@ let detailContainer = null;
 
 const formatTime = (totalSeconds) => {
     if (totalSeconds === null) return 'N/A';
+    
     const absTotalSeconds = Math.abs(totalSeconds);
+    
     const seconds = Math.floor(absTotalSeconds % 60);
     const minutes = Math.floor((absTotalSeconds / 60) % 60);
     const hours = Math.floor(absTotalSeconds / 3600);
+    
     return [hours, minutes, seconds]
-           .map(v => v < 10 ? '0' + v : v)
-           .join(':');
+        .map(v => v < 10 ? '0' + v : v)
+        .join(':');
 };
 
 export const initialize = (dataManager) => {
-    console.log("UIRenderer.initialize called");
-    _dataManager = dataManager;
-
-    // DOM要素をここで取得する
+    // DOM要素の取得をこのタイミング（DOM構築後）で行う
     listContainer = document.getElementById('mob-list-container');
     detailContainer = document.getElementById('detail-view-container');
-    console.log("listContainer:", listContainer);
-
-    // ロード中メッセージをクリア
+    
+    _dataManager = dataManager;
+    
+    // ロード中メッセージをクリア（listContainerがnullでなければ実行される）
     if (listContainer) {
         listContainer.innerHTML = '';
     }
-
+    
     _dataManager.addListener(_renderMobList); 
     _setupGlobalEvents();
 };
 
 const _renderMobList = (mobData) => { 
-    console.log("UI RENDER: Function started. Count:", Object.keys(mobData).length);
+    console.log("UI RENDER: Function started. Count:", Object.keys(mobData).length); 
+    
+    // listContainerはinitializeで取得されているため、ここではnullチェックは不要だが、
+    // 安全のため残しておく
     if (!listContainer) return;
     
     if (Object.keys(mobData).length === 0) {
@@ -50,8 +54,12 @@ const _renderMobList = (mobData) => {
     
     const mobArray = Object.values(mobData).sort((a, b) => {
         const rankOrder = { 'S': 1, 'A': 2, 'F': 3 };
-        if (rankOrder[a.rank] !== rankOrder[b.rank]) {
-            return rankOrder[a.rank] - rankOrder[b.rank];
+        
+        const rankA = rankOrder[a.rank] || 99;
+        const rankB = rankOrder[b.rank] || 99;
+        
+        if (rankA !== rankB) {
+            return rankA - rankB;
         }
         if (a.timerState === 'imminent' && b.timerState === 'imminent') {
              return a.timeRemainingSeconds - b.timeRemainingSeconds;
@@ -62,7 +70,6 @@ const _renderMobList = (mobData) => {
     mobArray.forEach(mob => {
         const card = _createMobCard(mob);
         listContainer.appendChild(card);
-        console.log("RENDER DEBUG: Card appended for:", mob.name);
     });
 };
 
@@ -103,6 +110,7 @@ const _createMobCard = (mob) => {
 };
 
 const _setupGlobalEvents = () => {
+    if (!listContainer) return; 
     listContainer.addEventListener('click', (e) => {
         const button = e.target.closest('.view-detail-btn');
         if (button) {
@@ -148,7 +156,7 @@ const _renderDetailView = (mobId) => {
             <h3>湧き潰しポイント (${mobData.rank === 'S' ? 'Sランク' : '対象外'})</h3>
             <div class="map-container" id="map-container-${mobId}">
                 ${mobData.mapImage ? `<img src="maps/${mobData.mapImage}"` : `<img src="maps/default.webp"`}
-                     alt="${mobData.area} マップ" class="hunt-map-image"> 
+                    alt="${mobData.area} マップ" class="hunt-map-image"> 
                 
                 <div class="point-overlay-container" id="point-overlay-${mobId}">
                 </div>
@@ -191,14 +199,13 @@ const _bindDetailEvents = (mobId) => {
             }
 
             try {
-                // dataManager.js側で reporterUID は不要になったため、引数から削除
-                const reportId = await _dataManager.submitHuntReport(mobId, memo); 
-                alert(`討伐を報告しました！ (ID: ${reportId.substring(0, 8)}...)`);
-                form.reset();
-                document.getElementById('report-form-status').innerHTML = `<p style="color:green;">報告成功!</p>`;
+                 const reportId = await _dataManager.submitHuntReport(mobId, memo); 
+                 alert(`討伐を報告しました！ (ID: ${reportId.substring(0, 8)}...)`);
+                 form.reset();
+                 document.getElementById('report-form-status').innerHTML = `<p style="color:green;">報告成功!</p>`;
             } catch (error) {
-                console.error("報告エラー:", error);
-                document.getElementById('report-form-status').innerHTML = `<p style="color:red;">報告に失敗しました。</p>`;
+                 console.error("報告エラー:", error);
+                 document.getElementById('report-form-status').innerHTML = `<p style="color:red;">報告に失敗しました。</p>`;
             }
         });
     }
