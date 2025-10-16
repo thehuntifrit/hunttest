@@ -78,8 +78,7 @@ const _createMobCard = (mob) => {
 
     card.innerHTML = `
         <h3>${mob.name} (${mob.rank})</h3>
-        <p>${mob.mapAreaName}</p>
-        <div class="timer-display ${timerClass}">
+        <p>${mob.area}</p> <div class="timer-display ${timerClass}">
             ${timerText}
         </div>
         <div class="memo-display">
@@ -118,8 +117,7 @@ const _renderDetailView = (mobId) => {
     _showDetailView();
 
     detailContainer.innerHTML = `
-        <h2>${mobData.name} (${mobData.mapAreaName}) 詳細</h2>
-        <button id="back-to-list">一覧に戻る</button>
+        <h2>${mobData.name} (${mobData.area}) 詳細</h2> <button id="back-to-list">一覧に戻る</button>
         
         <section id="report-form-section">
             <h3>討伐報告</h3>
@@ -136,10 +134,7 @@ const _renderDetailView = (mobId) => {
         <section id="crush-point-section">
             <h3>湧き潰しポイント (${mobData.rank === 'S' ? 'Sランク' : '対象外'})</h3>
             <div class="map-container" id="map-container-${mobId}">
-                <img src="maps/${mobData.mapImageFilename}" 
-                     alt="${mobData.mapAreaName} マップ" class="hunt-map-image">
-                
-                <div class="point-overlay-container" id="point-overlay-${mobId}">
+                <img src="maps/${mobData.mapImage}" alt="${mobData.area} マップ" class="hunt-map-image"> <div class="point-overlay-container" id="point-overlay-${mobId}">
                 </div>
             </div>
             
