@@ -15,20 +15,24 @@ const updateUIWithUID = (uid) => {
 
 export const initialize = () => {
     return new Promise((resolve) => {
-        onAuthStateChanged(auth, (user) => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            
             if (user) {
+                unsubscribe();
+                
+                console.log("AUTH DEBUG: ✅ User is signed in. UID:", user.uid);
                 currentReporterUID = user.uid;
                 updateUIWithUID(user.uid);
+                
                 resolve(user.uid);
+                
             } else {
                 signInAnonymously(auth)
-                    .then((userCredential) => {
-                        const user = userCredential.user;
-                        currentReporterUID = user.uid;
-                        updateUIWithUID(user.uid);
-                        resolve(user.uid);
+                    .then(() => {
+                        console.log("AUTH DEBUG: 🟡 Signed in anonymously. Waiting for next onAuthStateChanged.");
                     })
                     .catch((error) => {
+                        unsubscribe(); 
                         console.error("Anonymous sign-in failed:", error);
                         alert("認証に失敗しました。アプリケーションが正しく動作しない可能性があります。");
                         resolve(null);
