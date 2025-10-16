@@ -34,7 +34,7 @@ const main = async () => {
         DataManager.addErrorListener(handleAppError); 
 
         await DataManager.initialize(reporterUID);
-        
+        console.log("APP INIT: calling uiRenderer.initialize");
         UIRenderer.initialize(DataManager);
         
     } catch (error) {
