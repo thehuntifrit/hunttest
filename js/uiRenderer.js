@@ -3,18 +3,15 @@
  */
 
 let _dataManager = null;
-const listContainer = document.getElementById('mob-list-container');
-const detailContainer = document.getElementById('detail-view-container');
+let listContainer = null;
+let detailContainer = null;
 
 const formatTime = (totalSeconds) => {
     if (totalSeconds === null) return 'N/A';
-    
     const absTotalSeconds = Math.abs(totalSeconds);
-    
     const seconds = Math.floor(absTotalSeconds % 60);
     const minutes = Math.floor((absTotalSeconds / 60) % 60);
     const hours = Math.floor(absTotalSeconds / 3600);
-    
     return [hours, minutes, seconds]
            .map(v => v < 10 ? '0' + v : v)
            .join(':');
@@ -23,12 +20,17 @@ const formatTime = (totalSeconds) => {
 export const initialize = (dataManager) => {
     console.log("UIRenderer.initialize called");
     _dataManager = dataManager;
-    
+
+    // DOM要素をここで取得する
+    listContainer = document.getElementById('mob-list-container');
+    detailContainer = document.getElementById('detail-view-container');
+    console.log("listContainer:", listContainer);
+
     // ロード中メッセージをクリア
     if (listContainer) {
         listContainer.innerHTML = '';
     }
-    
+
     _dataManager.addListener(_renderMobList); 
     _setupGlobalEvents();
 };
