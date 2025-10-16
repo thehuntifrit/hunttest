@@ -1,5 +1,5 @@
 /**
- * dataManager.js - Firestoreデータの読み込みと更新、静的データの管理
+ * dataManager.js
  */
 
 import { MOB_DATA_JSON_PATH, DEFAULT_REPOP_SECONDS } from './config.js'; 
@@ -28,7 +28,6 @@ export const initialize = async (reporterUID) => {
     try {
         await _loadStaticData();
         
-        // 静的データロード後、即座にUIに初回通知
         _notifyListeners(); 
         
         _setupFirestoreListeners(); 
@@ -148,8 +147,6 @@ const _setupFirestoreListeners = () => {
     }, (error) => {
         console.error("FIRESTORE ERROR: 🔴 詳細コード:", error.code); 
         console.error("FIRESTORE ERROR: 🔴 メッセージ:", error.message);
-        console.error("FIRESTORE ERROR: 🔴 全体オブジェクト:", error);
-        
         _notifyErrorListeners(error); 
     });
 };
