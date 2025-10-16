@@ -14,8 +14,6 @@ let _isInitialized = false;
 let _unsubscribeFirestore = null; 
 let _currentReporterUID = null;
 
-// --- 初期化とリスナー管理 ---
-
 export const initialize = async (reporterUID) => {
     if (_isInitialized) {
         return;
@@ -29,6 +27,8 @@ export const initialize = async (reporterUID) => {
     
     try {
         await _loadStaticData();
+        
+        // 静的データロード後、即座にUIに初回通知
         _notifyListeners(); 
         
         _setupFirestoreListeners(); 
@@ -79,8 +79,6 @@ const _notifyErrorListeners = (error) => {
     _errorListeners.forEach(listener => listener(error));
 };
 
-// --- 静的データの処理 ---
-
 const _loadStaticData = async () => {
     try {
         const response = await fetch(MOB_DATA_JSON_PATH); 
@@ -115,8 +113,6 @@ const _loadStaticData = async () => {
     console.log("Static data loaded:", Object.keys(_globalMobData).length);
 };
 
-// --- 動的データの処理 (Firestore) ---
-
 const _setupFirestoreListeners = () => {
     if (_unsubscribeFirestore) {
         _unsubscribeFirestore();
@@ -150,7 +146,6 @@ const _setupFirestoreListeners = () => {
             _notifyListeners();
         }
     }, (error) => {
-        // 🚨 修正: ここで詳細エラーをログに出力します
         console.error("FIRESTORE ERROR: 🔴 詳細コード:", error.code); 
         console.error("FIRESTORE ERROR: 🔴 メッセージ:", error.message);
         console.error("FIRESTORE ERROR: 🔴 全体オブジェクト:", error);
@@ -199,8 +194,6 @@ const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
         timerState: timerState,
     };
 };
-
-// --- パブリックインターフェース (API) ---
 
 export const getGlobalMobData = () => {
     return JSON.parse(JSON.stringify(_globalMobData));
