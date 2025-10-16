@@ -1,5 +1,11 @@
 /**
  * dataManager.js - Firestoreデータの読み込みと更新、静的データの管理
+ * * 責務:
+ * 1. 静的データ (mob_data.json) のロードと格納
+ * 2. Firestore (mob_status) からのリアルタイム同期
+ * 3. 湧き時間タイマー状態 (imminent/spawned/expired) の計算
+ * 4. データの外部への安全な提供 (ディープコピーを使用)
+ * 5. 多重初期化防止、購読解除 (cleanup) 機能の提供
  */
 
 import { MOB_DATA_JSON_PATH, DEFAULT_REPOP_SECONDS } from './config.js'; 
@@ -15,17 +21,18 @@ let _unsubscribeFirestore = null;
 // --- 初期化とリスナー管理 ---
 
 export const initialize = async () => {
-    // 修正点: 初期化ガード
+    // 初期化ガード
     if (_isInitialized) {
         return;
     }
     
     try {
         await _loadStaticData();
-        _notifyListeners(); // 修正点3: 静的データをロードした直後に通知
+        _notifyListeners(); // 静的データをロードした直後に一度通知
         _setupFirestoreListeners(); 
         _isInitialized = true;
     } catch (error) {
+        // 呼び出し元でキャッチし、UIに表示できるようにするため、エラーを再スロー
         throw error;
     }
 };
@@ -34,12 +41,12 @@ export const initialize = async () => {
  * リスナーを登録し、解除関数を返す (重複登録防止機能付き)
  */
 export const addListener = (listener) => {
-    // 修正点: リスナーの重複登録を防止
+    // リスナーの重複登録を防止
     if (!_listeners.includes(listener)) {
         _listeners.push(listener);
     }
     
-    // 修正点: リスナーの解除関数を返す
+    // リスナーの解除関数を返す
     return () => { 
         _listeners = _listeners.filter(l => l !== listener); 
     };
@@ -49,17 +56,21 @@ export const addListener = (listener) => {
  * Firestore購読とすべてのリスナーを解除するクリーンアップ関数
  */
 export const cleanup = () => {
+    // 購読解除
     if (_unsubscribeFirestore) {
         _unsubscribeFirestore();
         _unsubscribeFirestore = null;
     }
+    // 内部状態のリセット
     _listeners = [];
     _globalMobData = {};
     _isInitialized = false;
 };
 
 const _notifyListeners = () => {
-    _listeners.forEach(listener => listener(_globalMobData));
+    // 修正点2: リスナーに渡すデータはディープコピーして、外部からの書き換えを防ぐ
+    const snapshot = JSON.parse(JSON.stringify(_globalMobData));
+    _listeners.forEach(listener => listener(snapshot));
 };
 
 // --- 静的データの処理 ---
@@ -68,13 +79,12 @@ const _loadStaticData = async () => {
     try {
         const response = await fetch(MOB_DATA_JSON_PATH); 
         
-        // 修正点: エラーハンドリングを詳細化
+        // エラーハンドリングを詳細化
         if (!response.ok) {
             throw new Error(`Failed to load mob_data.json from path: ${MOB_DATA_JSON_PATH}. Status: ${response.status}`);
         }
         
         const staticData = await response.json();
-        
         const mobConfigs = staticData.mobs || staticData;
         
         Object.keys(mobConfigs).forEach(id => {
@@ -100,9 +110,10 @@ const _loadStaticData = async () => {
 // --- 動的データの処理 (Firestore) ---
 
 const _setupFirestoreListeners = () => {
-    // 修正点2: 再購読前に古い購読を解除 (cleanupが呼ばれていない可能性があるため)
+    // 修正点3: 再初期化時に古い購読を確実に解除
     if (_unsubscribeFirestore) {
         _unsubscribeFirestore();
+        _unsubscribeFirestore = null; 
     }
     
     const q = collection(db, 'mob_status'); 
@@ -132,9 +143,14 @@ const _setupFirestoreListeners = () => {
 };
 
 const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
-    let killTimeSeconds = null;
+    // timeRemainingSeconds の意味:
+    // - initial: null
+    // - imminent: 最短リポップまでの残り秒数 (正の値)
+    // - spawned: 最長リポップまでの残り秒数 (正の値)
+    // - expired: 0 (湧き猶予期間終了)
 
-    // 修正点5: Timestampの型チェックを追加
+    let killTimeSeconds = null;
+    // 修正点5: Timestampの型チェック
     if (dynamicStatus.currentKillTime && typeof dynamicStatus.currentKillTime.toMillis === 'function') {
         killTimeSeconds = dynamicStatus.currentKillTime.toMillis() / 1000;
     }
@@ -157,7 +173,7 @@ const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
     } else if (nowSeconds >= nextMinSeconds && nowSeconds < nextMaxSeconds) {
         timerState = 'spawned';
         timeRemaining = nextMaxSeconds - nowSeconds; // 最長までの残り時間
-    } else { // nowSeconds >= nextMaxSeconds
+    } else { 
         // 修正点1: expired 状態の残り時間を 0 にする
         timerState = 'expired';
         timeRemaining = 0; 
@@ -177,8 +193,8 @@ const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
 // --- パブリックインターフェース (API) ---
 
 export const getGlobalMobData = () => {
-    // 修正点4: 外部からの直接変更を防ぐため、コピーを返す
-    return { ..._globalMobData };
+    // 修正点1: 外部からの直接変更を防ぐため、ディープコピーを返す
+    return JSON.parse(JSON.stringify(_globalMobData));
 };
 
 export const submitHuntReport = async (mobId, memo, reporterUID) => {
