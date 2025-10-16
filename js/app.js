@@ -1,5 +1,5 @@
 /**
- * app.js - アプリケーションのエントリーポイントと初期化
+ * app.js
  */
 
 import * as DataManager from './dataManager.js';
@@ -33,7 +33,6 @@ const main = async () => {
 
         DataManager.addErrorListener(handleAppError); 
 
-        // 認証済みUIDを渡してDataManagerを初期化
         await DataManager.initialize(reporterUID);
         
         UIRenderer.initialize(DataManager);
