@@ -13,6 +13,6 @@ export const firebaseConfig = {
 };
 
 // 🔥 修正点: 404 エラーを解消する正しい相対パス
-export const MOB_DATA_JSON_PATH = '../static/mob_data.json'; 
+export const MOB_DATA_JSON_PATH = '.../static/mob_data.json'; 
 // データ欠損時のフォールバック値など
 export const DEFAULT_REPOP_SECONDS = 21600; // 6時間 (データ検証用)
