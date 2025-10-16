@@ -1,26 +1,31 @@
 /**
- * firebaseConfig.js - Firebaseサービス設定とエクスポート
- * 責務: 初期化されたFirestoreとFunctionsのインスタンスを他のモジュールに提供
+ * firebaseConfig.js - Firebaseサービスの初期化
  */
+
 import { initializeApp } from 'firebase/app';
-import { getFirestore, Timestamp } from 'firebase/firestore'; // FieldValueを削除
-import { getFunctions } from 'firebase/functions';
+import { getFirestore, connectFirestoreEmulator, Timestamp as fsTimestamp } from 'firebase/firestore';
+import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'firebase/functions';
+import { getAuth, connectAuthEmulator, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 
 import { firebaseConfig } from './config.js';
 
-// 1. Firebaseアプリケーションの初期化
+// 1. Firebase アプリの初期化
 const app = initializeApp(firebaseConfig);
 
 // 2. サービスインスタンスの取得
 export const db = getFirestore(app);
+export const auth = getAuth(app);
+export const functions = getFunctions(app, "asia-northeast2"); // Cloud Functionsのリージョンを指定
 
-// Cloud Functionsのリージョンを指定 (必要に応じて変更)
-export const functions = getFunctions(app, 'asia-northeast2'); 
-
-// 3. Firestore SDKのオブジェクト全体のエクスポート 
+// 3. エクスポート用エイリアス
 export const firestore = {
-    // Timestampのみをエクスポート (FieldValueを削除)
-    Timestamp,
+    Timestamp: fsTimestamp
 };
 
-export { app };
+// --- エミュレータ接続 (ローカル開発用) ---
+// if (window.location.hostname === "localhost") {
+//     connectFirestoreEmulator(db, "127.0.0.1", 8080);
+//     connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+//     connectAuthEmulator(auth, "http://127.0.0.1:9099");
+//     console.log("Firebase Emulator Connected.");
+// }
