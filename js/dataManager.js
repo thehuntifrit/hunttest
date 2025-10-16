@@ -15,15 +15,16 @@ let _unsubscribeFirestore = null;
 // --- 初期化とリスナー管理 ---
 
 export const initialize = async () => {
+    // 修正点: 初期化ガード
     if (_isInitialized) {
         return;
     }
     
     try {
         await _loadStaticData();
+        _notifyListeners(); // 修正点3: 静的データをロードした直後に通知
         _setupFirestoreListeners(); 
         _isInitialized = true;
-        _notifyListeners(); 
     } catch (error) {
         throw error;
     }
@@ -33,10 +34,12 @@ export const initialize = async () => {
  * リスナーを登録し、解除関数を返す (重複登録防止機能付き)
  */
 export const addListener = (listener) => {
+    // 修正点: リスナーの重複登録を防止
     if (!_listeners.includes(listener)) {
         _listeners.push(listener);
     }
     
+    // 修正点: リスナーの解除関数を返す
     return () => { 
         _listeners = _listeners.filter(l => l !== listener); 
     };
@@ -65,6 +68,7 @@ const _loadStaticData = async () => {
     try {
         const response = await fetch(MOB_DATA_JSON_PATH); 
         
+        // 修正点: エラーハンドリングを詳細化
         if (!response.ok) {
             throw new Error(`Failed to load mob_data.json from path: ${MOB_DATA_JSON_PATH}. Status: ${response.status}`);
         }
@@ -96,6 +100,11 @@ const _loadStaticData = async () => {
 // --- 動的データの処理 (Firestore) ---
 
 const _setupFirestoreListeners = () => {
+    // 修正点2: 再購読前に古い購読を解除 (cleanupが呼ばれていない可能性があるため)
+    if (_unsubscribeFirestore) {
+        _unsubscribeFirestore();
+    }
+    
     const q = collection(db, 'mob_status'); 
     
     _unsubscribeFirestore = onSnapshot(q, (snapshot) => {
@@ -123,9 +132,12 @@ const _setupFirestoreListeners = () => {
 };
 
 const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
-    const killTimeSeconds = dynamicStatus.currentKillTime 
-                            ? dynamicStatus.currentKillTime.toMillis() / 1000 
-                            : null;
+    let killTimeSeconds = null;
+
+    // 修正点5: Timestampの型チェックを追加
+    if (dynamicStatus.currentKillTime && typeof dynamicStatus.currentKillTime.toMillis === 'function') {
+        killTimeSeconds = dynamicStatus.currentKillTime.toMillis() / 1000;
+    }
 
     const repopSeconds = staticMob.repopSeconds || DEFAULT_REPOP_SECONDS; 
     const maxRepopSeconds = staticMob.maxRepopSeconds || repopSeconds;
@@ -144,10 +156,11 @@ const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
         timeRemaining = nextMinSeconds - nowSeconds; 
     } else if (nowSeconds >= nextMinSeconds && nowSeconds < nextMaxSeconds) {
         timerState = 'spawned';
-        timeRemaining = nextMaxSeconds - nowSeconds; 
-    } else { 
+        timeRemaining = nextMaxSeconds - nowSeconds; // 最長までの残り時間
+    } else { // nowSeconds >= nextMaxSeconds
+        // 修正点1: expired 状態の残り時間を 0 にする
         timerState = 'expired';
-        timeRemaining = nextMaxSeconds - nowSeconds; 
+        timeRemaining = 0; 
     }
 
     return {
@@ -164,7 +177,8 @@ const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
 // --- パブリックインターフェース (API) ---
 
 export const getGlobalMobData = () => {
-    return _globalMobData;
+    // 修正点4: 外部からの直接変更を防ぐため、コピーを返す
+    return { ..._globalMobData };
 };
 
 export const submitHuntReport = async (mobId, memo, reporterUID) => {
