@@ -33,6 +33,7 @@ export const initialize = (dataManager) => {
 };
 
 const _renderMobList = (mobData) => { 
+    console.log("UI RENDER: Starting render. Mob Count:", Object.keys(mobData).length);
     if (!listContainer) return;
     
     if (Object.keys(mobData).length === 0) {
