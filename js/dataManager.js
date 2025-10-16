@@ -117,6 +117,7 @@ const _loadStaticData = async () => {
         _notifyErrorListeners(error); 
         throw error;
     }
+    console.log("Static data loaded:", Object.keys(_globalMobData).length);
 };
 
 // --- 動的データの処理 (Firestore) ---
