@@ -26,10 +26,8 @@ export const initialize = async () => {
         _setupFirestoreListeners(); 
         _isInitialized = true;
     } catch (error) {
-        // エラーをコンソールに出力し、エラーリスナーに通知
         console.error("Initialization Error:", error);
         _notifyErrorListeners(error); 
-        // 初期化失敗時、アプリケーションがクラッシュしないよう、エラーを再 throw はしない
     }
 };
 
@@ -212,7 +210,6 @@ const _calculateMobState = (staticMob, dynamicStatus, nowSeconds) => {
 
 export const getGlobalMobData = () => {
     // データ不変性を保証するため、ディープコピーを返す
-    // 備考: パフォーマンスが問題になった場合、structuredCloneへの切り替えを検討可能
     return JSON.parse(JSON.stringify(_globalMobData));
 };
 
