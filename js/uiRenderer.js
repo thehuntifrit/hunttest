@@ -22,6 +22,7 @@ const formatTime = (totalSeconds) => {
 
 export const initialize = (dataManager) => {
     _dataManager = dataManager;
+    // DataManagerから更新を受け取る
     _dataManager.addListener(_renderMobList); 
     _setupGlobalEvents();
 };
@@ -35,11 +36,13 @@ const _renderMobList = (mobData) => {
     }
     
     listContainer.innerHTML = '';
+    // リスト描画用の配列を作成 (ソート用)
     const mobArray = Object.values(mobData).sort((a, b) => {
         const rankOrder = { 'S': 1, 'A': 2, 'FATE': 3 };
         if (rankOrder[a.rank] !== rankOrder[b.rank]) {
             return rankOrder[a.rank] - rankOrder[b.rank];
         }
+        // imminent状態のものを優先的に、残り時間が短い順にソート
         if (a.timerState === 'imminent' && b.timerState === 'imminent') {
              return a.timeRemainingSeconds - b.timeRemainingSeconds;
         }
@@ -62,13 +65,14 @@ const _createMobCard = (mob) => {
     if (mob.currentKillTime === null) {
         timerText = '討伐報告待ち';
     } else if (timerClass === 'imminent') {
+        // timeRemainingSeconds: 最短までの残り時間（正の値）
         timerText = `湧きまで: ${formatTime(displayTime)}`;
     } else if (timerClass === 'spawned') {
-        const elapsedSeconds = Math.abs(displayTime);
-        timerText = `湧き期間中 (経過: ${formatTime(elapsedSeconds)})`;
+        // timeRemainingSeconds: 最長までの残り時間（正の値）
+        timerText = `湧き期間中 (残り: ${formatTime(displayTime)})`; 
     } else if (timerClass === 'expired') {
-        const overSeconds = Math.abs(displayTime);
-        timerText = `最大湧き時間超過 (超過: ${formatTime(overSeconds)})`;
+        // timeRemainingSeconds: 0
+        timerText = `最大湧き時間超過`; 
     } else {
         timerText = '計算不能';
     }
@@ -78,7 +82,8 @@ const _createMobCard = (mob) => {
 
     card.innerHTML = `
         <h3>${mob.name} (${mob.rank})</h3>
-        <p>${mob.area}</p> <div class="timer-display ${timerClass}">
+        <p>${mob.area}</p>
+        <div class="timer-display ${timerClass}">
             ${timerText}
         </div>
         <div class="memo-display">
@@ -90,7 +95,6 @@ const _createMobCard = (mob) => {
 };
 
 const _setupGlobalEvents = () => {
-    // Mobリストが表示されているセクションにイベントリスナーを追加
     listContainer.addEventListener('click', (e) => {
         const button = e.target.closest('.view-detail-btn');
         if (button) {
@@ -111,13 +115,15 @@ const _hideDetailView = () => {
 };
 
 const _renderDetailView = (mobId) => {
+    // getGlobalMobData()はディープコピーを返すため、安全
     const mobData = _dataManager.getGlobalMobData()[mobId];
     if (!detailContainer || !mobData) return;
     
     _showDetailView();
 
     detailContainer.innerHTML = `
-        <h2>${mobData.name} (${mobData.area}) 詳細</h2> <button id="back-to-list">一覧に戻る</button>
+        <h2>${mobData.name} (${mobData.area}) 詳細</h2> 
+        <button id="back-to-list">一覧に戻る</button>
         
         <section id="report-form-section">
             <h3>討伐報告</h3>
@@ -134,7 +140,10 @@ const _renderDetailView = (mobId) => {
         <section id="crush-point-section">
             <h3>湧き潰しポイント (${mobData.rank === 'S' ? 'Sランク' : '対象外'})</h3>
             <div class="map-container" id="map-container-${mobId}">
-                <img src="maps/${mobData.mapImage}" alt="${mobData.area} マップ" class="hunt-map-image"> <div class="point-overlay-container" id="point-overlay-${mobId}">
+                ${mobData.mapImage ? `<img src="maps/${mobData.mapImage}"` : `<img src="maps/default.webp"`}
+                     alt="${mobData.area} マップ" class="hunt-map-image"> 
+                
+                <div class="point-overlay-container" id="point-overlay-${mobId}">
                 </div>
             </div>
             
@@ -166,7 +175,8 @@ const _bindDetailEvents = (mobId) => {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const memo = document.getElementById('memo').value.trim();
-            const reporterUID = document.getElementById('reporter-uid-input').value;
+            const reporterUIDInput = document.getElementById('reporter-uid-input');
+            const reporterUID = reporterUIDInput ? reporterUIDInput.value : null;
             
             if (!reporterUID) {
                  alert('認証情報が見つかりません。匿名認証が完了しているか確認してください。');
