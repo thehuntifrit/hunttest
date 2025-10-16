@@ -22,29 +22,31 @@ const formatTime = (totalSeconds) => {
 
 export const initialize = (dataManager) => {
     _dataManager = dataManager;
-    // DataManagerから更新を受け取る
+    
+    // ロード中メッセージをクリア
+    if (listContainer) {
+        listContainer.innerHTML = '';
+    }
+    
     _dataManager.addListener(_renderMobList); 
     _setupGlobalEvents();
 };
 
 const _renderMobList = (mobData) => { 
-    console.log("Rendering Mob List...");
     if (!listContainer) return;
     
     if (Object.keys(mobData).length === 0) {
-        // 静的データロード失敗時や空の場合の表示
-        listContainer.innerHTML = '<p>データをロード中...</p>';
+        listContainer.innerHTML = '<p>Mobデータが設定されていません。</p>';
         return;
     }
     
     listContainer.innerHTML = '';
-    // リスト描画用の配列を作成 (ソート用)
+    
     const mobArray = Object.values(mobData).sort((a, b) => {
         const rankOrder = { 'S': 1, 'A': 2, 'F': 3 };
         if (rankOrder[a.rank] !== rankOrder[b.rank]) {
             return rankOrder[a.rank] - rankOrder[b.rank];
         }
-        // imminent状態のものを優先的に、残り時間が短い順にソート
         if (a.timerState === 'imminent' && b.timerState === 'imminent') {
              return a.timeRemainingSeconds - b.timeRemainingSeconds;
         }
@@ -182,7 +184,8 @@ const _bindDetailEvents = (mobId) => {
             }
 
             try {
-                const reportId = await _dataManager.submitHuntReport(mobId, memo, reporterUID);
+                // dataManager.js側で reporterUID は不要になったため、引数から削除
+                const reportId = await _dataManager.submitHuntReport(mobId, memo); 
                 alert(`討伐を報告しました！ (ID: ${reportId.substring(0, 8)}...)`);
                 form.reset();
                 document.getElementById('report-form-status').innerHTML = `<p style="color:green;">報告成功!</p>`;
@@ -221,7 +224,6 @@ const _renderCrushPoints = (mobData) => {
         pointElement.addEventListener('click', async () => {
             const action = isCrushed ? 'remove' : 'add';
             try {
-                // Cloud Functionsの呼び出し形式に合わせて、mobId, pointId(string), actionを渡す
                 await _dataManager.updateCrushStatus(mobData.id, point.id, action);
             } catch (error) {
                 console.error("湧き潰し状態の更新に失敗:", error);
