@@ -1,6 +1,7 @@
 /**
  * firebaseAuth.js - 匿名認証の管理
  */
+// 修正点: firebaseConfig.jsからエクスポートされた関数をインポート
 import { auth, signInAnonymously, onAuthStateChanged } from './firebaseConfig.js';
 
 let currentReporterUID = null;
