@@ -1,47 +1,89 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Hunt</title>
-    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 
-    <script type="importmap">
-    {
-        "imports": {
-            "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
-            "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
-            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js",
-            "firebase/functions": "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js" 
-        }
-    }
-    </script>
 </head>
-<body>
-    <header>
-        <h1>The Hunt</h1>
-        <p id="auth-status">認証状態: 認証中...</p>
-        <input type="hidden" id="reporter-uid-input" value="">
+
+<body class="bg-gray-900 text-white leading-relaxed">
+
+    <div id="status-message" class="text-center py-1 text-xs text-white bg-gray-800 z-40"></div>
+
+    <header id="main-header" class="fixed top-0 left-0 right-0 bg-gray-800 shadow-lg z-30 transition-all duration-300">
+        <div class="container mx-auto px-4 flex items-center justify-between h-16">
+            <h1 class="text-xl font-bold text-yellow-400 tracking-wide">The Hunt</h1>
+            <div id="rank-tabs" class="flex gap-2"></div>
+        </div>
+        <div id="area-filter-panel" class="flex flex-wrap gap-2 justify-end px-4 py-2 hidden"></div>
     </header>
 
-    <main>
-        <section id="mob-list-section">
-            <h2>モブ一覧</h2>
-            <div id="mob-list-container">
-                <p>データをロード中...</p>
-            </div>
-        </section>
+    <main class="container mx-auto px-4 pb-10 pt-20">
+        <div id="master-mob-container" class="hidden">
+        </div>
 
-        <section id="detail-section" style="display:none;">
-            <div id="detail-view-container">
-                </div>
-        </section>
+        <div id="column-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-breakpoint-md="768"
+            data-breakpoint-lg="1024">
+            <div id="column-1" class="flex flex-col gap-4"></div>
+            <div id="column-2" class="flex flex-col gap-4"></div>
+            <div id="column-3" class="flex flex-col gap-4"></div>
+        </div>
+            
     </main>
 
-    <footer style="margin-top: 20px; padding: 10px; border-top: 1px solid #ccc; text-align: center;">
-        <p>&copy; 2025 The Hunt. Data powered by community reports.</p>
-    </footer>
+    <div id="report-modal" class="fixed inset-0 hidden items-center justify-center p-4 z-50 bg-black bg-opacity-70">
+        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md border border-gray-600 text-white">
+            <h2 class="text-xl font-semibold mb-4 text-yellow-300">討伐報告</h2>
+            <p id="modal-mob-name" class="text-lg mb-4"></p>
+
+            <form id="report-form" data-mob-no="">
+                <div class="mb-4">
+                    <label for="report-datetime" class="block text-sm font-medium mb-1">討伐日時 (JST)</label>
+                    <input type="datetime-local" id="report-datetime" required
+                        class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white focus:ring-yellow-400 focus:border-yellow-400">
+                </div>
+                <div class="mb-4">
+                    <label for="report-memo" class="block text-sm font-medium mb-1">メモ (任意)</label>
+                    <textarea id="report-memo" rows="3"
+                        class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white focus:ring-yellow-400 focus:border-yellow-400"></textarea>
+                </div>
+
+                <div id="modal-status" class="text-sm text-center my-3 text-red-400"></div>
+
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancel-report"
+                        class="px-4 py-2 rounded bg-gray-600 hover:bg-gray-500 transition text-white">キャンセル</button>
+                    <button type="submit"
+                        class="px-4 py-2 rounded bg-green-600 hover:bg-green-500 transition font-semibold text-white">完了して送信</button>
+                </div>
+            </form>
+        </div>
+    </div>
     
-    <script type="module" src="js/app.js"></script>
+    <div id="crush-map-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+      <div class="relative">
+        <img id="crush-map-zoomed" src="" alt="拡大マップ" class="max-w-[90vw] max-h-[90vh] rounded shadow-lg">
+        <div id="crush-point-layer" class="absolute top-0 left-0 w-full h-full pointer-events-none"></div>
+      </div>
+    </div>
+    
+    <script type="module" src="./src/utils.js"></script>
+    <script type="module" src="./src/store.js"></script>
+    <script type="module" src="./src/firebase.js"></script>
+    <script type="module" src="./src/firestore.js"></script>
+    <script type="module" src="./src/cal.js"></script>
+    <script type="module" src="./src/uiRender.js"></script>
+    <script type="module" src="./src/modal.js"></script>
+    <script type="module" src="./src/filter.js"></script>
+    <script type="module" src="./src/dataManager.js"></script>
+    <script type="module" src="./src/uiEvents.js"></script>
+    <script type="module" src="./src/app.js"></script>
+
 </body>
+
 </html>
