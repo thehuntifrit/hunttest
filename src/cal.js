@@ -113,20 +113,6 @@ export function findNextSpawnTime(mob, now = new Date()) {
   return null;
 }
 
-// 前の天候を取得
-function getPrevWeather(date, weatherTable) {
-  const prev = new Date(date.getTime() - 1400 * 1000);
-  return getEorzeaWeather(prev, weatherTable);
-}
-
-// 特定天候が一定時間続いているかを判定
-function checkWeatherDuration(weathers, minutes, date, weatherTable) {
-  const target = new Date(date.getTime() - minutes * 60 * 1000);
-  const currentWeather = getEorzeaWeather(date, weatherTable);
-  const pastWeather = getEorzeaWeather(target, weatherTable);
-  return weathers.includes(currentWeather) && currentWeather === pastWeather;
-}
-
 function calculateRepop(mob) {
   const now = Date.now() / 1000;
   const lastKill = mob.last_kill_time || 0;
