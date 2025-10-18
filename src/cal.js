@@ -62,6 +62,42 @@ function checkMobSpawnCondition(mob, date, weatherTable, getPrevWeather, checkWe
   return true;
 }
 
+/**
+ * 次回条件成立時刻を探索する
+ * @param {Object} mob - JSONで定義されたモブ
+ * @param {Array} weatherTable - エリアごとの天候テーブル
+ * @param {Date} now - 基準時刻
+ * @returns {Date|null} 条件が揃うリアル時間
+ */
+function findNextSpawnTime(mob, weatherTable, now = new Date()) {
+  let date = new Date(now.getTime());
+  const limit = now.getTime() + 7 * 24 * 60 * 60 * 1000; // 最大7日先まで探索
+
+  while (date.getTime() < limit) {
+    if (checkMobSpawnCondition(mob, date, weatherTable, getPrevWeather, checkWeatherDuration)) {
+      return date;
+    }
+    // 効率化: 天候が変わるタイミングごとに進める（23分20秒 = 1400秒）
+    date = new Date(date.getTime() + 1400 * 1000);
+  }
+
+  return null;
+}
+
+// 前の天候を取得
+function getPrevWeather(date, weatherTable) {
+  const prev = new Date(date.getTime() - 1400 * 1000);
+  return getEorzeaWeather(prev, weatherTable);
+}
+
+// 特定天候が一定時間続いているかを判定
+function checkWeatherDuration(weathers, minutes, date, weatherTable) {
+  const target = new Date(date.getTime() - minutes * 60 * 1000);
+  const currentWeather = getEorzeaWeather(date, weatherTable);
+  const pastWeather = getEorzeaWeather(target, weatherTable);
+  return weathers.includes(currentWeather) && currentWeather === pastWeather;
+}
+
 function calculateRepop(mob) {
   const now = Date.now() / 1000;
   const lastKill = mob.last_kill_time || 0;
@@ -97,4 +133,4 @@ function calculateRepop(mob) {
   return { minRepop, maxRepop, elapsedPercent, timeRemaining, status, nextMinRepopDate };
 }
 
-export { calculateRepop, checkMobSpawnCondition };
+export { calculateRepop, checkMobSpawnCondition, findNextSpawnTime };
