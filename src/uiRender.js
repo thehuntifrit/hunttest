@@ -53,7 +53,7 @@ function createMobCard(mob) {
     const cardHeaderHTML = `
 <div class="p-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
   <!-- 上段：ランク・モブ名・報告ボタン -->
-  <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
+  <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-3">
     <!-- 左：ランク -->
     <span class="w-6 h-6 flex items-center justify-center rounded-full text-white text-xs font-bold ${rankConfig.bg}">
       ${rankLabel}
