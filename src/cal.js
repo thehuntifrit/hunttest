@@ -98,7 +98,7 @@ function checkMobSpawnCondition(mob, date) {
  * @param {Date} now - 基準時刻
  * @returns {Date|null} 条件が揃うリアル時間
  */
-export function findNextSpawnTime(mob, now = new Date()) {
+function findNextSpawnTime(mob, now = new Date()) {
   let date = new Date(now.getTime());
   const limit = now.getTime() + 7 * 24 * 60 * 60 * 1000; // 最大7日先まで探索
 
