@@ -173,4 +173,4 @@ function calculateRepop(mob) {
   return { minRepop, maxRepop, elapsedPercent, timeRemaining, status, nextMinRepopDate };
 }
 
-export { calculateRepop, checkMobSpawnCondition, findNextSpawnTime };
+export { calculateRepop, checkMobSpawnCondition, findNextSpawnTime, getEorzeaTime, getEorzeaMoonPhase, getEorzeaWeatherSeed, getEorzeaWeather };
