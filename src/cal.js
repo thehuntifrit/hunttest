@@ -136,11 +136,11 @@ function calculateRepop(mob) {
   } else if (now >= minRepop && now < maxRepop) {
     elapsedPercent = ((now - minRepop) / (maxRepop - minRepop)) * 100;
     elapsedPercent = Math.min(elapsedPercent, 100);
-    timeRemaining = `${elapsedPercent.toFixed(0)}% (${formatDuration(maxRepop - now)} Left)`;
+    timeRemaining = `${elapsedPercent.toFixed(0)}% (${formatDuration(maxRepop - now)})`;
     status = "PopWindow";
   } else {
     elapsedPercent = 100;
-    timeRemaining = `POP済み (+${formatDuration(now - maxRepop)} over)`;
+    timeRemaining = `100% (+${formatDuration(now - maxRepop)})`;
     status = "MaxOver";
   }
 
