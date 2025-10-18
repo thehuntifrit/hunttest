@@ -105,26 +105,32 @@
       "12011": {"rank": "S", "name":"クロック・ミテーヌ", "area": "中央ラノシア",
       "condition": "「ラノシアンソイルG3を」採掘 (抽選)//※ET 19:00～21:59",
       "repopSeconds": 234000, "maxRepopSeconds": 270000,
+      "timeRange": { "start": 19, "end": 22 },
       "mapImage": "",
-      "locations": [] 
+      "locations": []
     },
       "12021": {"rank": "S", "name":"ケロゲロス", "area": "低地ラノシア",
       "condition": "満月直前のET17:00にPOP地点を踏む//※以降は満月中のET 17:00～3:00",
       "repopSeconds": 180000, "maxRepopSeconds": 180000,
+      "moonPhase": "full",
+      "timeRange": { "start": 17, "end": 3 },
       "mapImage": "",
-      "locations": [] 
+      "locations": []
     },
       "12031": {"rank": "S", "name":"ガーロック", "area": "東ラノシア",
       "condition": "LT 3時間20分 (200分間) 雨が降らない",
       "repopSeconds": 151200, "maxRepopSeconds": 172800,
+      "weatherSeedRange": [[90, 94],[95, 99]],
+      "weatherDuration": { "minutes": 200 },
       "mapImage": "",
-      "locations": [] 
+      "locations": []
     },
       "12041": {"rank": "S", "name":"ボナコン", "area": "西ラノシア",
       "condition": "「ラノシアリーキ」を採集 (抽選)//※ET 8:00～10:59",
       "repopSeconds": 234000, "maxRepopSeconds": 270000,
+      "timeRange": { "start": 8, "end": 11 },
       "mapImage": "",
-      "locations": [] 
+      "locations": []
     },
       "12051": {"rank": "S", "name":"ナンディ", "area": "高地ラノシア",
       "condition": "ミニオンを出してPOP地点を踏む",
@@ -159,8 +165,10 @@
       "12071": {"rank": "S", "name":"レドロネット", "area": "中央森林",
       "condition": "LT 30分間、雨が降り続く",
       "repopSeconds": 151200, "maxRepopSeconds": 172800,
+      "weatherSeedRange": [5, 19], 
+      "weatherDuration": { "minutes": 30 },
       "mapImage": "",
-      "locations": [] 
+      "locations": []
     },
       "12081": {"rank": "S", "name":"ウルガル", "area": "東部森林",
       "condition": "傭兵 or 双蛇党リーヴを開始する (抽選)",
@@ -171,20 +179,25 @@
       "12091": {"rank": "S", "name":"マインドフレア", "area": "南部森林",
       "condition": "新月のET0:00以降の夜間にPOP地点を踏む//※以降は新月中のET 17:00～2:59",
       "repopSeconds": 180000, "maxRepopSeconds": 180000,
+      "moonPhase": "new",
+      "conditions": {"firstNight": { "timeRange": { "start": 0, "end": 3 } },"otherNights": { "timeRange": { "start": 17, "end": 3 } },
       "mapImage": "",
-      "locations": [] 
+      "locations": []
+    }
     },
       "12101": {"rank": "S", "name":"サウザンドキャスト・セダ", "area": "北部森林",
       "condition": "フォールゴウド秋瓜湖畔で「ジャッジレイ」を釣り上げる (抽選) //※ET 17:00～20:59 餌: フェザントフライ",
       "repopSeconds": 205200, "maxRepopSeconds": 230400,
+      "timeRange": { "start": 17, "end": 21 },
       "mapImage": "",
-      "locations": [] 
+      "locations": []
     },
       "12111": {"rank": "S", "name":"ゾーナ・シーカー", "area": "西ザナラーン",
       "condition": "ノフィカの井戸で銅鏡を釣り上げる(抽選)//※「晴れ or 快晴」 餌: バターワーム",
       "repopSeconds": 205200, "maxRepopSeconds": 230400,
+      "weatherSeedRange": [0, 59], 
       "mapImage": "",
-      "locations": [] 
+      "locations": []
     },
       "12121": {"rank": "S", "name":"ブロンテス", "area": "中央ザナラーン",
       "condition": "POP地点で食事を食べる",
@@ -370,8 +383,9 @@
       "22031": {"rank": "S", "name":"ガンダルヴァ", "area": "ドラヴァニア雲海",
       "condition": "「皇金鉱 (ET 2:00～3:59 / 14:00～15:59)」//「アストラルフラワー (ET 4:00～5:59 / 16:00～17:59)」を各50回採集",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
+      "timeRanges": [{ "start": 2, "end": 6 },{ "start": 14, "end": 18 }],
       "mapImage": "",
-      "locations": [] 
+      "locations": []
     },
       "22041": {"rank": "S", "name":"セーンムルウ", "area": "高地ドラヴァニア",
       "condition": "FATE「卵をめぐる竜の戦争」を5回連続でコンプリートする",
@@ -496,12 +510,14 @@
       "32041": {"rank": "S", "name":"オキナ", "area": "紅玉海",
       "condition": "「ユメミガイ」「カラナシユメミ」各100体討伐後、満月になる//※満月中に討伐数を満たすのも可",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
+      "moonPhase": "full",
       "mapImage": "",
-      "locations": [] 
+      "locations": []
     },
       "32051": {"rank": "S", "name":"ガンマ", "area": "ヤンサ",
       "condition": "ミニオン「ミニアレキサンダー」を出してPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
+      "timeRange": { "start": 17, "end": 8 },
       "mapImage": "Yanxia.webp",
       "locations": [
         {"id":"YX_101", "x": 68.2, "y": 25.6, "mob_ranks": ["S", "A", "B2"]},
@@ -825,6 +841,8 @@
       "52011": {"rank": "S", "name":"ブーフールー", "area": "ラヴィリンソス",
       "condition": "ミニオン「リトルトロル」を出してPOP地点を踏む//※ET 9:00～16:59 中の「晴れ or 快晴」",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
+      "weatherSeedRange": [0, 59], 
+      "timeRange": { "start": 9, "end": 17 },
       "mapImage": "Labyrinthos.webp",
       "locations": [
         {"id":"LT_101", "x": 38.0, "y": 20.2, "mob_ranks": ["S", "A", "B2"]},
@@ -1027,6 +1045,9 @@
       "62011": {"rank": "S", "name":"1️⃣厭忌のキーリーゲー", "area": "オルコ・パチャ",
       "condition": "新月のET 0:00～5:59 + 天候が「霧」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
+      "moonPhase": "new",
+      "weatherSeedRange": [70, 79], 
+      "timeRange": { "start": 0, "end": 6 },
       "mapImage": "Urqopacha.webp",
       "locations": [
         {"id":"UP_101", "x": 67.6, "y": 20.0, "mob_ranks": ["S", "A", "B2"]},
@@ -1044,6 +1065,9 @@
       "62012": {"rank": "S", "name":"2️⃣厭忌のキーリーゲー", "area": "オルコ・パチャ",
       "condition": "新月のET 0:00～5:59 + 天候が「霧」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
+      "moonPhase": "new",
+      "weatherSeedRange": [70, 79], 
+      "timeRange": { "start": 0, "end": 6 },
       "mapImage": "Urqopacha.webp",
       "locations": [
         {"id":"UP_201", "x": 67.6, "y": 20.0, "mob_ranks": ["S", "A", "B2"]},
@@ -1061,6 +1085,9 @@
       "62013": {"rank": "S", "name":"3️⃣厭忌のキーリーゲー", "area": "オルコ・パチャ",
       "condition": "新月のET 0:00～5:59 + 天候が「霧」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
+      "moonPhase": "new",
+      "weatherSeedRange": [70, 79], 
+      "timeRange": { "start": 0, "end": 6 },
       "mapImage": "Urqopacha.webp",
       "locations": [
         {"id":"UP_301", "x": 67.6, "y": 20.0, "mob_ranks": ["S", "A", "B2"]},
