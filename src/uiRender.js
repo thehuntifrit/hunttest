@@ -54,7 +54,7 @@ const cardHeaderHTML = `
       <button data-report-type="${rank === 'A' || rank === 'F' ? 'instant' : 'modal'}" data-mob-no="${mob.No}"
         class="w-8 h-8 flex items-center justify-center text-[12px] rounded bg-${rank === 'A' || rank === 'F' ? 'yellow' : 'green'}-500 
         hover:bg-${rank === 'A' || rank === 'F' ? 'yellow' : 'green'}-400 text-white 
-        font-semibold transition text-center leading-tight whitespace-pre-line">${rank === 'A' || rank === 'F' ? '即時\n報告' : '報告\nする'}</button>
+        font-semibold transition text-center leading-tight whitespace-pre-line">${rank === 'A' || rank === 'F' ? '即時<br>報告' : '報告<br>する'}</button>
     </div>
   </div>
 
@@ -62,14 +62,17 @@ const cardHeaderHTML = `
   <div class="progress-bar-wrapper h-6 rounded-full relative overflow-hidden transition-all duration-100 ease-linear">
     <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear"
          style="width: ${mob.repopInfo?.elapsedPercent || 0}%"></div>
-    <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold" style="line-height: 1;">${progressText}</div>
+    <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
+         style="line-height: 1;">
+      ${progressText}
+    </div>
   </div>
 </div>
 `;
 
 const expandablePanelHTML = isExpandable ? `
 <div class="expandable-panel ${isOpen ? 'open' : ''}">
-  <div class="px-1 py-0 text-sm space-y-1.5">
+  <div class="px-1 py-1 text-sm space-y-1.5">
     <div class="flex justify-between items-start flex-wrap">
       <div class="w-full text-right text-sm font-mono text-blue-300">次回: ${nextTimeDisplay}</div>
       <div class="w-full text-right text-xs text-gray-400 pt-1">前回: ${lastKillDisplay}</div>
@@ -78,7 +81,7 @@ const expandablePanelHTML = isExpandable ? `
       <div class="w-full text-gray-300 mb-2">${processText(mob.Condition)}</div>
     </div>
     ${mob.Map && rank === 'S' ? `
-    <div class="map-content py-0 flex justify-center relative"><img src="./maps/${mob.Map}" alt="${mob.Area} Map"
+    <div class="map-content py-0.5 flex justify-center relative"><img src="./maps/${mob.Map}" alt="${mob.Area} Map"
            class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
       <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
     </div>
@@ -241,44 +244,35 @@ document.addEventListener("click", e => {
     const mobData = getState().mobs.find(m => m.No === mobNo);
     if (!mobData || !mobData.spawn_points) return;
 
-zoomed.onload = () => {
-    // 元サイズ取得
-    const originalWidth = zoomed.naturalWidth;
-    const originalHeight = zoomed.naturalHeight;
+    zoomed.onload = () => {
+        const w = zoomed.width;
+        const h = zoomed.height;
+        layer.innerHTML = "";
 
-    // 拡大倍率
-    const scale = 1.5;
+        mobData.spawn_points.forEach(p => {
+            const x = (p.x / 100) * w;
+            const y = (p.y / 100) * h;
 
-    // 拡大表示
-    zoomed.width = originalWidth * scale;
-    zoomed.height = originalHeight * scale;
+            const dot = document.createElement("div");
+            dot.className = "spawn-point";
+            dot.style.left = `${x}px`;
+            dot.style.top = `${y}px`;
 
-    layer.innerHTML = "";
+            if (["S", "A"].includes(p.mob_ranks[0])) {
+                dot.classList.add("spawn-point-sa", "spawn-point-shadow-sa");
+            } else {
+                dot.classList.add("spawn-point-b-only");
+            }
 
-    mobData.spawn_points.forEach(p => {
-        const x = (p.x / 100) * zoomed.width;
-        const y = (p.y / 100) * zoomed.height;
+            if (mobData.spawn_cull_status?.[p.id]) {
+                dot.classList.add("spawn-point-culled", "culled-with-white-border");
+            }
 
-        const dot = document.createElement("div");
-        dot.className = "spawn-point";
-        dot.style.left = `${x}px`;
-        dot.style.top = `${y}px`;
+            if (p.is_last_one) {
+                dot.classList.add("spawn-point-lastone", "spawn-point-shadow-lastone");
+            }
 
-        if (["S", "A"].includes(p.mob_ranks[0])) {
-            dot.classList.add("spawn-point-sa", "spawn-point-shadow-sa");
-        } else {
-            dot.classList.add("spawn-point-b-only");
-        }
-
-        if (mobData.spawn_cull_status?.[p.id]) {
-            dot.classList.add("spawn-point-culled", "culled-with-white-border");
-        }
-
-        if (p.is_last_one) {
-            dot.classList.add("spawn-point-lastone", "spawn-point-shadow-lastone");
-        }
-
-        layer.appendChild(dot);
+            layer.appendChild(dot);
         });
     };
 });
