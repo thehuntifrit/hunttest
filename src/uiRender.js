@@ -62,17 +62,14 @@ const cardHeaderHTML = `
   <div class="progress-bar-wrapper h-6 rounded-full relative overflow-hidden transition-all duration-100 ease-linear">
     <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear"
          style="width: ${mob.repopInfo?.elapsedPercent || 0}%"></div>
-    <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
-         style="line-height: 1;">
-      ${progressText}
-    </div>
+    <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold" style="line-height: 1;">${progressText}</div>
   </div>
 </div>
 `;
 
 const expandablePanelHTML = isExpandable ? `
 <div class="expandable-panel ${isOpen ? 'open' : ''}">
-  <div class="px-2 py-1 text-sm space-y-1.5">
+  <div class="px-1 py-1 text-sm space-y-1.5">
     <div class="flex justify-between items-start flex-wrap">
       <div class="w-full text-right text-sm font-mono text-blue-300">次回: ${nextTimeDisplay}</div>
       <div class="w-full text-right text-xs text-gray-400 pt-1">前回: ${lastKillDisplay}</div>
@@ -80,7 +77,7 @@ const expandablePanelHTML = isExpandable ? `
       <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽出条件</div>
       <div class="w-full text-gray-300 mb-2">${processText(mob.Condition)}</div>
     </div>${mob.Map && rank === 'S' ? `
-    <div class="map-content py-1.5 flex justify-center relative"><img src="./maps/${mob.Map}" alt="${mob.Area} Map"
+    <div class="map-content py-0.5 flex justify-center relative"><img src="./maps/${mob.Map}" alt="${mob.Area} Map"
            class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
       <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
     </div>
