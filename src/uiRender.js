@@ -90,8 +90,7 @@ function createMobCard(mob) {
 <div class="expandable-panel ${isOpen ? 'open' : ''}">
   <div class="px-1 py-1 text-sm space-y-1.5">
     <div class="flex justify-between items-start flex-wrap">
-      <div class="w-full text-right text-sm font-mono text-blue-300">次回条件成立: ${nextConditionDisplay}</div>
-      <div class="w-full text-right text-sm font-mono text-green-300">次回リポップ最短: ${nextTimeDisplay}</div>
+      <div class="w-full text-right text-sm font-mono text-green-300">次回: ${nextTimeDisplay}</div>
       <div class="w-full text-right text-xs text-gray-400 pt-1">前回: ${lastKillDisplay}</div>
       <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: ${mob.last_kill_memo || 'なし'}</div>
       <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽出条件</div>
