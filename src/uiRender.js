@@ -5,6 +5,8 @@ import { drawSpawnPoint, processText, formatLastKillTime } from "./utils.js";
 import { RANK_COLORS, PROGRESS_CLASSES, FILTER_TO_DATA_RANK_MAP, DOM } from "./uiShared.js";
 import { updateFilterUI } from "./filter.js";
 
+import { findNextSpawnTime } from "./cal.js";
+
 function createMobCard(mob) {
     const rank = mob.Rank;
     const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
@@ -13,14 +15,30 @@ function createMobCard(mob) {
     const progressText = mob.repopInfo?.timeRemaining || "Calculating...";
     const lastKillDisplay = formatLastKillTime(mob.last_kill_time);
     const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
-    const nextTimeDisplay = mob.repopInfo?.nextMinRepopDate ? new Intl.DateTimeFormat('ja-JP', absFmt).format(mob.repopInfo.nextMinRepopDate) : '未確定';
-    const prevTimeDisplay = mob.last_kill_time > 0 ? new Intl.DateTimeFormat('ja-JP', absFmt).format(new Date(mob.last_kill_time * 1000)) : '未報告';
+
+    // リポップ計算による最小再出現時間
+    const nextTimeDisplay = mob.repopInfo?.nextMinRepopDate
+        ? new Intl.DateTimeFormat('ja-JP', absFmt).format(mob.repopInfo.nextMinRepopDate)
+        : '未確定';
+
+    // 天候シード方式による「次回条件成立時間」
+    const nextConditionTime = findNextSpawnTime(mob);
+    const nextConditionDisplay = nextConditionTime
+        ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionTime)
+        : '未確定';
+
+    const prevTimeDisplay = mob.last_kill_time > 0
+        ? new Intl.DateTimeFormat('ja-JP', absFmt).format(new Date(mob.last_kill_time * 1000))
+        : '未報告';
 
     const isExpandable = rank === "S";
     const { openMobCardNo } = getState();
     const isOpen = isExpandable && mob.No === openMobCardNo;
 
-    const isS_LastOne = rank === "S" && mob.spawn_points && mob.spawn_points.some(p => p.is_last_one && (p.mob_ranks.includes("S") || p.mob_ranks.includes("A")));
+    const isS_LastOne = rank === "S" && mob.spawn_points && mob.spawn_points.some(
+        p => p.is_last_one && (p.mob_ranks.includes("S") || p.mob_ranks.includes("A"))
+    );
+
     const spawnPointsHtml = (rank === "S" && mob.Map)
         ? (mob.spawn_points ?? []).map(point => drawSpawnPoint(
             point,
@@ -34,7 +52,7 @@ function createMobCard(mob) {
         )).join("")
         : "";
 
-const cardHeaderHTML = `
+    const cardHeaderHTML = `
 <div class="p-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
   <!-- 上段：ランク・モブ名・報告ボタン -->
   <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
@@ -49,7 +67,7 @@ const cardHeaderHTML = `
       <span class="text-xs text-gray-400 truncate">${mob.Area} (${mob.Expansion})</span>
     </div>
 
-    <!-- 右端：報告ボタン（即時報告と同じ構造） -->
+    <!-- 右端：報告ボタン -->
     <div class="flex-shrink-0 flex items-center justify-end">
       <button data-report-type="${rank === 'A' || rank === 'F' ? 'instant' : 'modal'}" data-mob-no="${mob.No}"
         class="w-8 h-8 flex items-center justify-center text-[12px] rounded bg-${rank === 'A' || rank === 'F' ? 'yellow' : 'green'}-500 
@@ -70,11 +88,12 @@ const cardHeaderHTML = `
 </div>
 `;
 
-const expandablePanelHTML = isExpandable ? `
+    const expandablePanelHTML = isExpandable ? `
 <div class="expandable-panel ${isOpen ? 'open' : ''}">
   <div class="px-1 py-1 text-sm space-y-1.5">
     <div class="flex justify-between items-start flex-wrap">
-      <div class="w-full text-right text-sm font-mono text-blue-300">次回: ${nextTimeDisplay}</div>
+      <div class="w-full text-right text-sm font-mono text-blue-300">次回条件成立: ${nextConditionDisplay}</div>
+      <div class="w-full text-right text-sm font-mono text-green-300">次回リポップ最短: ${nextTimeDisplay}</div>
       <div class="w-full text-right text-xs text-gray-400 pt-1">前回: ${lastKillDisplay}</div>
       <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: ${mob.last_kill_memo || 'なし'}</div>
       <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽出条件</div>
@@ -90,7 +109,7 @@ const expandablePanelHTML = isExpandable ? `
 </div>
 ` : '';
 
-return `
+    return `
 <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 transition duration-150"
      data-mob-no="${mob.No}" data-rank="${rank}">
   ${cardHeaderHTML}
