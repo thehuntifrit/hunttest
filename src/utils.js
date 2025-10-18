@@ -96,7 +96,7 @@ function displayStatus(message, type = "info") {
 }
 
 // エオルゼア時間 (Eorzea Time)
-export function getEorzeaTime(date = new Date()) {
+function getEorzeaTime(date = new Date()) {
   const unixSeconds = Math.floor(date.getTime() / 1000);
   // 1 ET秒 = 20.571428571 リアル秒
   const eorzeaTotalSeconds = Math.floor(unixSeconds * 20.571428571);
@@ -107,7 +107,7 @@ export function getEorzeaTime(date = new Date()) {
 }
 
 // 月齢 (Moon Phase)
-export function getEorzeaMoonPhase(date = new Date()) {
+function getEorzeaMoonPhase(date = new Date()) {
   const unixSeconds = Math.floor(date.getTime() / 1000);
   const eorzeaDays = Math.floor(unixSeconds * 20.571428571 / 86400);
   const phase = eorzeaDays % 32; // 0=新月, 16=満月
@@ -115,7 +115,7 @@ export function getEorzeaMoonPhase(date = new Date()) {
 }
 
 // 天候シード計算
-export function getEorzeaWeatherSeed(date = new Date()) {
+function getEorzeaWeatherSeed(date = new Date()) {
   const unixSeconds = Math.floor(date.getTime() / 1000);
   const bell = Math.floor(unixSeconds / 175) % 24; // ETの時刻
   const increment = (Math.floor(unixSeconds / 175 / 24) * 100) + bell;
@@ -125,7 +125,7 @@ export function getEorzeaWeatherSeed(date = new Date()) {
 }
 
 // 天候決定（エリアごとのテーブルを渡す）
-export function getEorzeaWeather(date = new Date(), weatherTable) {
+function getEorzeaWeather(date = new Date(), weatherTable) {
   const seed = getEorzeaWeatherSeed(date);
   let cumulative = 0;
   for (const entry of weatherTable) {
@@ -135,4 +135,4 @@ export function getEorzeaWeather(date = new Date(), weatherTable) {
   return "Unknown";
 }
 
-export { drawSpawnPoint, displayStatus, toJstAdjustedIsoString, formatDuration, formatLastKillTime, processText, debounce };
+export { drawSpawnPoint, displayStatus, toJstAdjustedIsoString, formatDuration, formatLastKillTime, processText, debounce, getEorzeaTime, getEorzeaMoonPhase, getEorzeaWeatherSeed, getEorzeaWeather };
