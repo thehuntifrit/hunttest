@@ -53,7 +53,7 @@ function createMobCard(mob) {
     const cardHeaderHTML = `
 <div class="p-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
   <!-- 上段：ランク・モブ名・報告ボタン -->
-  <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-3">
+  <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
     <!-- 左：ランク -->
     <span class="w-6 h-6 flex items-center justify-center rounded-full text-white text-xs font-bold ${rankConfig.bg}">
       ${rankLabel}
@@ -68,7 +68,7 @@ function createMobCard(mob) {
 <!-- 右端：報告ボタン -->
 <div class="flex-shrink-0 flex items-center justify-end">
   <button data-report-type="modal" data-mob-no="${mob.No}"
-    class="w-9 h-9 flex items-center justify-center text-[12px] rounded bg-green-700 
+    class="w-8 h-8 flex items-center justify-center text-[12px] rounded bg-green-700 
     hover:bg-green-600 text-white font-semibold transition text-center leading-tight whitespace-pre-line">
     報告<br>する
   </button>
