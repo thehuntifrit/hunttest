@@ -38,45 +38,39 @@ function createMobCard(mob) {
 <div class="p-1.5 space-y-1 bg-gray-800/70" data-toggle="card-header">
     <div class="flex justify-between items-start gap-2">
 
-        <div class="flex items-center gap-2">
-            <!-- ランクアイコン -->
-            <span
-                class="rank-icon ${rankConfig.bg} text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full shrink-0">
-                ${rankLabel}
-            </span>
+<div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
+  <!-- 左：ランク -->
+  <span class="w-6 h-6 flex items-center justify-center rounded-full text-white text-xs font-bold ${rankConfig.bg}">
+    ${rankLabel}
+  </span>
 
-            <!-- モブ名＋エリア名 -->
-            <div class="flex flex-col min-w-0">
-                <span class="mob-name text-lg font-bold text-outline truncate max-w-[70vw] sm:max-w-[60vw] md:max-w-[60vw] lg:max-w-[60vw] max-w-full">
-                    ${mob.Name}
-                </span>
-                <span class="text-xs text-gray-400 mt-0.5 truncate">
-                    ${mob.Area} (${mob.Expansion})
-                </span>
+  <!-- 中央：モブ名＋エリア名 -->
+  <div class="flex flex-col min-w-0">
+    <span class="text-sm font-bold truncate">${mob.Name}</span>
+    <span class="text-xs text-gray-400 truncate">${mob.Area} (${mob.Expansion})</span>
+  </div>
+
+<!-- 右端：報告ボタン（即時報告と同じ構造） -->
+<div class="flex-shrink-0 flex items-center justify-end">
+  <button
+    data-report-type="${rank === 'A' || rank === 'F' ? 'instant' : 'modal'}"
+    data-mob-no="${mob.No}"
+    class="w-12 h-12 flex items-center justify-center text-[10px] rounded bg-${rank === 'A' || rank === 'F' ? 'yellow' : 'green'}-500 hover:bg-${rank === 'A' || rank === 'F' ? 'yellow' : 'green'}-400 text-gray-900 font-semibold transition text-center leading-tight whitespace-pre-line"
+  >
+    ${rank === 'A' || rank === 'F' ? '即時\n報告' : '報告\nする'}
+  </button>
+</div>
+
+        <!-- プログレスバー -->
+        <div
+            class="progress-bar-wrapper h-6 rounded-full relative overflow-hidden transition-all duration-100 ease-linear">
+            <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear"
+                style="width: ${mob.repopInfo?.elapsedPercent || 0}%"></div>
+            <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
+                style="line-height: 1;">
+                ${progressText}
             </div>
         </div>
-
-        <!-- 右：報告ボタン -->
-        <div class="flex-shrink-0 flex flex-col space-y-1 items-end" style="min-width: 120px;">
-            ${rank === 'A' || rank === 'F'
-            ? `<button data-report-type="instant" data-mob-no="${mob.No}"
-                class="px-2 py-0.5 text-xs rounded bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-semibold transition">即時<br>報告</button>`
-            : `<button data-report-type="modal" data-mob-no="${mob.No}"
-                class="px-2 py-0.5 text-xs rounded bg-green-500 hover:bg-green-400 text-gray-900 font-semibold transition">報告<br>する</button>`
-            }
-        </div>
-    </div>
-
-    <!-- プログレスバー -->
-    <div class="progress-bar-wrapper h-4 rounded-full relative overflow-hidden transition-all duration-100 ease-linear">
-        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear"
-            style="width: ${mob.repopInfo?.elapsedPercent || 0}%"></div>
-        <div class="progress-text absolute inset-0 flex items-center justify-center text-xs font-semibold"
-            style="line-height: 1;">
-            ${progressText}
-        </div>
-    </div>
-</div>
 
 `;
 
