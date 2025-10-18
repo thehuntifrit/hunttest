@@ -1,25 +1,28 @@
 // utils.js
-function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne, lastKillTime, prevKillTime) {
+
+function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
   const culled = spawnCullStatus?.[point.id] === true;
+
+  // ランクに応じて色クラスを決定
+  let colorClass = "";
+  if (point.mob_ranks?.includes("B1")) colorClass = "color-b1";
+  else if (point.mob_ranks?.includes("B2")) colorClass = "color-b2";
+  if (isLastOne) colorClass = "color-lastone";
+
   const classes = [
     "spawn-point",
-    culled ? "culled" : "active",
-    isLastOne ? "last-one" : "",
-    isS_LastOne ? "s-last-one" : ""
+    culled ? "spawn-point-culled" : "spawn-point-sa",
+    colorClass
   ].join(" ");
-
-  const top = `${point.y}%`;
-  const left = `${point.x}%`;
 
   return `
     <div class="${classes}"
-         style="position:absolute; top:${top}; left:${left};"
+         style="position:absolute; top:${point.y}%; left:${point.x}%"
          data-location-id="${point.id}"
          data-mob-no="${mobNo}"
          data-rank="${rank}"
          data-is-interactive="true"
          data-is-culled="${culled}">
-      <span class="point-label">${point.label || ""}</span>
     </div>
   `;
 }
