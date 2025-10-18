@@ -32,7 +32,7 @@ function subscribeMobLocations(onUpdate) {
 
 // 討伐報告
 const submitReport = async (mobNo, timeISO, memo) => {
-  const state = getState(); // ← store.js の state を参照
+  const state = getState();
   const userId = state.userId;
   const mobs = state.mobs;
 
@@ -53,7 +53,10 @@ const submitReport = async (mobNo, timeISO, memo) => {
     return;
   }
 
-  DOMElements.modalStatus.textContent = "送信中...";
+  const modalStatusEl = document.querySelector("#modal-status");
+  if (modalStatusEl) {
+    modalStatusEl.textContent = "送信中...";
+  }
   displayStatus(`${mob.Name} 討伐時間報告中...`);
 
   try {
@@ -69,8 +72,9 @@ const submitReport = async (mobNo, timeISO, memo) => {
     displayStatus("報告が完了しました。データ反映を待っています。", "success");
   } catch (error) {
     console.error("レポート送信エラー:", error);
-    DOMElements.modalStatus.textContent =
-      "送信エラー: " + (error.message || "通信失敗");
+    if (modalStatusEl) {
+      modalStatusEl.textContent = "送信エラー: " + (error.message || "通信失敗");
+    }
     displayStatus(`LKT報告エラー: ${error.message || "通信失敗"}`, "error");
   }
 };
