@@ -1,6 +1,6 @@
 // utils.js
 
-const drawSpawnPoint = ( point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne => {
+function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
   const isCulled = spawnCullStatus?.[point.id] === true;
   const isS_A_Cullable = point.mob_ranks.some(r => r === "S" || r === "A");
   const isB_Only = point.mob_ranks.every(r => r.startsWith("B"));
@@ -44,7 +44,7 @@ const drawSpawnPoint = ( point, spawnCullStatus, mobNo, rank, isLastOne, isS_Las
          data-is-culled="${isCulled}">
     </div>
   `;
-};
+}
 
 function toJstAdjustedIsoString(date) {
   const offsetMs = date.getTimezoneOffset() * 60000;
