@@ -1,5 +1,45 @@
 // cal.js
-import { formatDuration, getEorzeaTime, getEorzeaMoonPhase, getEorzeaWeather } from "./utils.js";
+import { formatDuration } from "./utils.js";
+
+// エオルゼア時間 (Eorzea Time)
+function getEorzeaTime(date = new Date()) {
+  const unixSeconds = Math.floor(date.getTime() / 1000);
+  // 1 ET秒 = 20.571428571 リアル秒
+  const eorzeaTotalSeconds = Math.floor(unixSeconds * 20.571428571);
+  const eorzeaDaySeconds = eorzeaTotalSeconds % 86400; // 1日 = 86400秒
+  const hours = Math.floor(eorzeaDaySeconds / 3600);
+  const minutes = Math.floor((eorzeaDaySeconds % 3600) / 60);
+  return { hours, minutes };
+}
+
+// 月齢 (Moon Phase)
+function getEorzeaMoonPhase(date = new Date()) {
+  const unixSeconds = Math.floor(date.getTime() / 1000);
+  const eorzeaDays = Math.floor(unixSeconds * 20.571428571 / 86400);
+  const phase = eorzeaDays % 32; // 0=新月, 16=満月
+  return phase;
+}
+
+// 天候シード計算
+function getEorzeaWeatherSeed(date = new Date()) {
+  const unixSeconds = Math.floor(date.getTime() / 1000);
+  const bell = Math.floor(unixSeconds / 175) % 24; // ETの時刻
+  const increment = (Math.floor(unixSeconds / 175 / 24) * 100) + bell;
+  const step1 = (increment << 11) ^ increment;
+  const step2 = (step1 >>> 8) ^ step1;
+  return step2 % 100; // 0〜99 の値
+}
+
+// 天候決定（エリアごとのテーブルを渡す）
+function getEorzeaWeather(date = new Date(), weatherTable) {
+  const seed = getEorzeaWeatherSeed(date);
+  let cumulative = 0;
+  for (const entry of weatherTable) {
+    cumulative += entry.rate;
+    if (seed < cumulative) return entry.weather;
+  }
+  return "Unknown";
+}
 
 /**
  * モブの出現条件を判定する
