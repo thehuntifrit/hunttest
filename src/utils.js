@@ -1,31 +1,50 @@
 // utils.js
 
-function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
-  const culled = spawnCullStatus?.[point.id] === true;
+const drawSpawnPoint = ( point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne => {
+  const isCulled = spawnCullStatus?.[point.id] === true;
+  const isS_A_Cullable = point.mob_ranks.some(r => r === "S" || r === "A");
+  const isB_Only = point.mob_ranks.every(r => r.startsWith("B"));
 
-  // ランクに応じて色クラスを決定
+  let sizeClass = "";
   let colorClass = "";
-  if (point.mob_ranks?.includes("B1")) colorClass = "color-b1";
-  else if (point.mob_ranks?.includes("B2")) colorClass = "color-b2";
-  if (isLastOne) colorClass = "color-lastone";
+  let specialClass = "";
 
-  const classes = [
-    "spawn-point",
-    culled ? "spawn-point-culled" : "spawn-point-sa",
-    colorClass
-  ].join(" ");
+  if (isLastOne) {
+    // ラストワン
+    sizeClass = "spawn-point-lastone";
+    colorClass = "color-lastone";
+    specialClass = "spawn-point-shadow-lastone";
+  } else if (isS_A_Cullable) {
+    // S/A湧き潰し地点（B1/B2情報を持つ）
+    const rankB = point.mob_ranks.find(r => r.startsWith("B"));
+    colorClass = rankB === "B1" ? "color-b1" : "color-b2";
+    sizeClass = "spawn-point-sa";
+    specialClass = isCulled
+      ? "culled-with-white-border"
+      : "spawn-point-shadow-sa spawn-point-interactive";
+  } else if (isB_Only) {
+    // B専用ポイント
+    const rankB = point.mob_ranks[0];
+    sizeClass = "spawn-point-b-only";
+    if (isS_LastOne) {
+      // Sラストワン時は反転色
+      colorClass = "color-b-inverted";
+    } else {
+      colorClass = rankB === "B1" ? "color-b1-only" : "color-b2-only";
+    }
+    specialClass = "spawn-point-b-border";
+  }
 
   return `
-    <div class="${classes}"
-         style="position:absolute; top:${point.y}%; left:${point.x}%"
+    <div class="spawn-point ${sizeClass} ${colorClass} ${specialClass}"
+         style="left:${point.x}%; top:${point.y}%;"
          data-location-id="${point.id}"
          data-mob-no="${mobNo}"
          data-rank="${rank}"
-         data-is-interactive="true"
-         data-is-culled="${culled}">
+         data-is-culled="${isCulled}">
     </div>
   `;
-}
+};
 
 function toJstAdjustedIsoString(date) {
   const offsetMs = date.getTimezoneOffset() * 60000;
