@@ -8,8 +8,12 @@ function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_Last
     isS_LastOne ? "s-last-one" : ""
   ].join(" ");
 
+  const top = `${point.y}%`;
+  const left = `${point.x}%`;
+
   return `
     <div class="${classes}"
+         style="position:absolute; top:${top}; left:${left};"
          data-location-id="${point.id}"
          data-mob-no="${mobNo}"
          data-rank="${rank}"
@@ -50,7 +54,7 @@ function formatLastKillTime(timestamp) {
 
 function processText(text) {
   if (typeof text !== "string" || !text) return "";
-  return text.replace(/\/\/\//g, "<br>");
+  return text.replace(/\/\//g, "<br>");
 }
 
 function debounce(func, wait) {
