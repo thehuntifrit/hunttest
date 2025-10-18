@@ -208,6 +208,8 @@ function distributeCards() {
     });
 }
 
+import { calculateRepop, findNextSpawnTime } from "./cal.js";
+
 function updateProgressBars() {
     const state = getState();
     state.mobs = state.mobs.map(m => ({ ...m, repopInfo: calculateRepop(m) }));
@@ -217,14 +219,29 @@ function updateProgressBars() {
         const mob = state.mobs.find(m => m.No === mobNo);
         if (!mob?.repopInfo) return;
 
-        const { elapsedPercent, timeRemaining, status } = mob.repopInfo;
+        const { elapsedPercent, status, nextMinRepopDate } = mob.repopInfo;
         const bar = card.querySelector(".progress-bar-bg");
         const text = card.querySelector(".progress-text");
         const wrapper = bar?.parentElement;
         if (!bar || !text || !wrapper) return;
 
+        // --- 追加: 条件成立時間と比較 ---
+        const conditionTime = findNextSpawnTime(mob);
+        let displayTime = null;
+        if (nextMinRepopDate && conditionTime) {
+            displayTime = conditionTime > nextMinRepopDate ? conditionTime : nextMinRepopDate;
+        } else {
+            displayTime = nextMinRepopDate || conditionTime;
+        }
+
+        const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
+        const displayText = displayTime
+            ? new Intl.DateTimeFormat('ja-JP', absFmt).format(displayTime)
+            : "未確定";
+
+        // --- プログレスバー更新 ---
         bar.style.width = `${elapsedPercent}%`;
-        text.textContent = timeRemaining;
+        text.textContent = displayText;
 
         bar.classList.remove(PROGRESS_CLASSES.P0_60, PROGRESS_CLASSES.P60_80, PROGRESS_CLASSES.P80_100);
         text.classList.remove(PROGRESS_CLASSES.TEXT_NEXT, PROGRESS_CLASSES.TEXT_POP);
