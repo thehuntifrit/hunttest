@@ -41,18 +41,13 @@ function getEorzeaWeather(date = new Date(), weatherTable) {
   return "Unknown";
 }
 
-import { getEorzeaTime, getEorzeaMoonPhase, getEorzeaWeatherSeed, getEorzeaWeather } from "./cal.js";
-
 /**
- * モブの出現条件を判定する（天候シード対応版）
- * @param {Object} mob - JSONで定義されたモブ情報
+ * モブの出現条件を判定する（天候シード専用）
+ * @param {Object} mob - JSONで定義されたモブ
  * @param {Date} date - 判定対象のリアル時間
- * @param {Array} weatherTable - エリアごとの天候テーブル（旧weather対応用）
- * @param {Function} getPrevWeather - 前の天候を返す関数
- * @param {Function} checkWeatherDuration - 特定天候が継続しているかを判定する関数
  * @returns {Boolean} 条件を満たしているか
  */
-export function checkMobSpawnCondition(mob, date, weatherTable, getPrevWeather, checkWeatherDuration) {
+function checkMobSpawnCondition(mob, date) {
   const et = getEorzeaTime(date);          // { hours, minutes }
   const moon = getEorzeaMoonPhase(date);   // "new" / "full" / 数値など
   const seed = getEorzeaWeatherSeed(date); // 0〜99
@@ -60,23 +55,16 @@ export function checkMobSpawnCondition(mob, date, weatherTable, getPrevWeather, 
   // 月齢条件
   if (mob.moonPhase && mob.moonPhase !== moon) return false;
 
-  // 天候シード範囲条件（優先）
+  // 天候シード範囲（単一）
   if (mob.weatherSeedRange) {
     const [min, max] = mob.weatherSeedRange;
     if (seed < min || seed > max) return false;
   }
 
-  // 複数天候シード範囲対応
+  // 複数天候シード範囲（Fog または Rain など）
   if (mob.weatherSeedRanges) {
     const ok = mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max);
     if (!ok) return false;
-  }
-
-  // 従来の天候名条件（まだ残っているモブ用）
-  if (mob.weather || mob.weatherNot) {
-    const weather = getEorzeaWeather(date, weatherTable);
-    if (mob.weather && !mob.weather.includes(weather)) return false;
-    if (mob.weatherNot && mob.weatherNot.includes(weather)) return false;
   }
 
   // 時間帯条件
@@ -101,38 +89,21 @@ export function checkMobSpawnCondition(mob, date, weatherTable, getPrevWeather, 
     if (!ok) return false;
   }
 
-  // 天候継続時間条件
-  if (mob.weatherDuration) {
-    if (!checkWeatherDuration(mob.weather, mob.weatherDuration.minutes, date, weatherTable)) {
-      return false;
-    }
-  }
-
-  // 天候遷移条件
-  if (mob.weatherTransition) {
-    const prevWeather = getPrevWeather(date, weatherTable);
-    const currentWeather = getEorzeaWeather(date, weatherTable);
-    if (prevWeather !== mob.weatherTransition.previous || currentWeather !== mob.weatherTransition.current) {
-      return false;
-    }
-  }
-
   return true;
 }
 
 /**
- * 次回条件成立時刻を探索する
+ * 次回条件成立時刻を探索する（天候シード専用）
  * @param {Object} mob - JSONで定義されたモブ
- * @param {Array} weatherTable - エリアごとの天候テーブル
  * @param {Date} now - 基準時刻
  * @returns {Date|null} 条件が揃うリアル時間
  */
-function findNextSpawnTime(mob, weatherTable, now = new Date()) {
+export function findNextSpawnTime(mob, now = new Date()) {
   let date = new Date(now.getTime());
   const limit = now.getTime() + 7 * 24 * 60 * 60 * 1000; // 最大7日先まで探索
 
   while (date.getTime() < limit) {
-    if (checkMobSpawnCondition(mob, date, weatherTable, getPrevWeather, checkWeatherDuration)) {
+    if (checkMobSpawnCondition(mob, date)) {
       return date;
     }
     // 効率化: 天候が変わるタイミングごとに進める（23分20秒 = 1400秒）
