@@ -45,7 +45,7 @@ const cardHeaderHTML = `
 
     <!-- 中央：モブ名＋エリア名 -->
     <div class="flex flex-col min-w-0">
-      <span class="text-sm font-bold truncate">${mob.Name}</span>
+      <span class="text-base font-bold truncate">${mob.Name}</span>
       <span class="text-xs text-gray-400 truncate">${mob.Area} (${mob.Expansion})</span>
     </div>
 
