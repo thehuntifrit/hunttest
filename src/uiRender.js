@@ -208,8 +208,6 @@ function distributeCards() {
     });
 }
 
-import { calculateRepop, findNextSpawnTime } from "./cal.js";
-
 function updateProgressBars() {
     const state = getState();
     state.mobs = state.mobs.map(m => ({ ...m, repopInfo: calculateRepop(m) }));
