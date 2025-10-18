@@ -1,6 +1,7 @@
 // firestore.js
 import { db } from "./firebase.js";
 import { getState } from "./store.js";
+import { DOMElements } from "./modal.js";
 import { collection, addDoc, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 function subscribeMobStatusDocs(onUpdate) {
