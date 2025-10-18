@@ -5,8 +5,6 @@ import { drawSpawnPoint, processText, formatLastKillTime } from "./utils.js";
 import { RANK_COLORS, PROGRESS_CLASSES, FILTER_TO_DATA_RANK_MAP, DOM } from "./uiShared.js";
 import { updateFilterUI } from "./filter.js";
 
-import { findNextSpawnTime } from "./cal.js";
-
 function createMobCard(mob) {
     const rank = mob.Rank;
     const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
