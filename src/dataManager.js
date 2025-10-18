@@ -3,7 +3,7 @@ import { setUserId, getState, setBaseMobData, setMobs } from "./store.js";
 import { filterAndRender, updateProgressBars } from "./uiRender.js";
 import { subscribeMobStatusDocs, subscribeMobLocations } from "./firestore.js";
 import { initializeAuth } from "./firebase.js";
-import { displayStatus, formatDuration } from "./utils.js";
+import { displayStatus } from "./utils.js";
 
 const MOB_DATA_URL = "./mob_data.json";
 let progressInterval = null;
