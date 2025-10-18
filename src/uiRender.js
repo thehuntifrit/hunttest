@@ -51,26 +51,20 @@ function createMobCard(mob) {
 
     <!-- 右：報告ボタン（2行表示・右端固定） -->
     <div class="flex-shrink-0 flex items-center justify-end">
-      <button
-        data-report-type="${rank === 'A' || rank === 'F' ? 'instant' : 'modal'}"
-        data-mob-no="${mob.No}"
-        class="w-12 h-12 flex items-center justify-center text-xs rounded bg-${rank === 'A' || rank === 'F' ? 'yellow' : 'green'}-500 hover:bg-${rank === 'A' || rank === 'F' ? 'yellow' : 'green'}-400 text-gray-900 font-semibold transition text-center leading-tight"
-      >
-        ${rank === 'A' || rank === 'F' ? '即時<br>報告' : '報告<br>する'}
+      <button data-report-type="${rank === 'A' || rank === 'F' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" 
+      class="w-12 h-12 flex items-center justify-center text-xs rounded bg-${rank === 'A' || rank === 'F' ? 'yellow' : 'green'}-500 
+      hover:bg-${rank === 'A' || rank === 'F' ? 'yellow' : 'green'}-400 text-gray-900 font-semibold transition text-center leading-tight">
+      ${rank === 'A' || rank === 'F' ? '即時<br>報告' : '報告<br>する'}
       </button>
     </div>
-  </div>
 
   <!-- 下段：プログレスバー（横いっぱいに表示） -->
   <div class="h-4 rounded-full relative overflow-hidden bg-gray-600">
-    <div class="absolute left-0 top-0 h-full bg-green-500 transition-all duration-100 ease-linear"
-         style="width: ${mob.repopInfo?.elapsedPercent || 0}%"></div>
-    <div class="absolute inset-0 flex items-center justify-center text-[10px] font-semibold leading-none">
-      ${progressText}
+    <div class="absolute left-0 top-0 h-full bg-green-500 transition-all duration-100 ease-linear" style="width: ${mob.repopInfo?.elapsedPercent || 0}%"></div>
+    <div class="absolute inset-0 flex items-center justify-center text-[10px] font-semibold leading-none">${progressText}</div>
+      </div>
     </div>
-  </div>
 </div>
-
 `;
 
 const expandablePanelHTML = isExpandable ? `
