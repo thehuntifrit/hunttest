@@ -41,26 +41,43 @@ function getEorzeaWeather(date = new Date(), weatherTable) {
   return "Unknown";
 }
 
+import { getEorzeaTime, getEorzeaMoonPhase, getEorzeaWeatherSeed, getEorzeaWeather } from "./cal.js";
+
 /**
- * モブの出現条件を判定する
+ * モブの出現条件を判定する（天候シード対応版）
  * @param {Object} mob - JSONで定義されたモブ情報
  * @param {Date} date - 判定対象のリアル時間
- * @param {Array} weatherTable - エリアごとの天候テーブル
+ * @param {Array} weatherTable - エリアごとの天候テーブル（旧weather対応用）
  * @param {Function} getPrevWeather - 前の天候を返す関数
  * @param {Function} checkWeatherDuration - 特定天候が継続しているかを判定する関数
  * @returns {Boolean} 条件を満たしているか
  */
-function checkMobSpawnCondition(mob, date, weatherTable, getPrevWeather, checkWeatherDuration) {
+export function checkMobSpawnCondition(mob, date, weatherTable, getPrevWeather, checkWeatherDuration) {
   const et = getEorzeaTime(date);          // { hours, minutes }
   const moon = getEorzeaMoonPhase(date);   // "new" / "full" / 数値など
-  const weather = getEorzeaWeather(date, weatherTable);
+  const seed = getEorzeaWeatherSeed(date); // 0〜99
 
   // 月齢条件
   if (mob.moonPhase && mob.moonPhase !== moon) return false;
 
-  // 天候条件
-  if (mob.weather && !mob.weather.includes(weather)) return false;
-  if (mob.weatherNot && mob.weatherNot.includes(weather)) return false;
+  // 天候シード範囲条件（優先）
+  if (mob.weatherSeedRange) {
+    const [min, max] = mob.weatherSeedRange;
+    if (seed < min || seed > max) return false;
+  }
+
+  // 複数天候シード範囲対応
+  if (mob.weatherSeedRanges) {
+    const ok = mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max);
+    if (!ok) return false;
+  }
+
+  // 従来の天候名条件（まだ残っているモブ用）
+  if (mob.weather || mob.weatherNot) {
+    const weather = getEorzeaWeather(date, weatherTable);
+    if (mob.weather && !mob.weather.includes(weather)) return false;
+    if (mob.weatherNot && mob.weatherNot.includes(weather)) return false;
+  }
 
   // 時間帯条件
   if (mob.timeRange) {
@@ -74,7 +91,7 @@ function checkMobSpawnCondition(mob, date, weatherTable, getPrevWeather, checkWe
     }
   }
 
-  // 複数時間帯
+  // 複数時間帯条件
   if (mob.timeRanges) {
     const h = et.hours;
     const ok = mob.timeRanges.some(({ start, end }) => {
@@ -94,7 +111,8 @@ function checkMobSpawnCondition(mob, date, weatherTable, getPrevWeather, checkWe
   // 天候遷移条件
   if (mob.weatherTransition) {
     const prevWeather = getPrevWeather(date, weatherTable);
-    if (prevWeather !== mob.weatherTransition.previous || weather !== mob.weatherTransition.current) {
+    const currentWeather = getEorzeaWeather(date, weatherTable);
+    if (prevWeather !== mob.weatherTransition.previous || currentWeather !== mob.weatherTransition.current) {
       return false;
     }
   }
