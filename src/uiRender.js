@@ -208,6 +208,8 @@ function distributeCards() {
     });
 }
 
+import { calculateRepop, findNextSpawnTime } from "./cal.js";
+
 function updateProgressBars() {
     const state = getState();
     state.mobs = state.mobs.map(m => ({ ...m, repopInfo: calculateRepop(m) }));
@@ -217,13 +219,13 @@ function updateProgressBars() {
         const mob = state.mobs.find(m => m.No === mobNo);
         if (!mob?.repopInfo) return;
 
-        const { elapsedPercent, status, nextMinRepopDate } = mob.repopInfo;
+        const { elapsedPercent, status, nextMinRepopDate, maxRepop } = mob.repopInfo;
         const bar = card.querySelector(".progress-bar-bg");
         const text = card.querySelector(".progress-text");
         const wrapper = bar?.parentElement;
         if (!bar || !text || !wrapper) return;
 
-        // --- 追加: 条件成立時間と比較 ---
+        // --- 条件成立時間と比較 ---
         const conditionTime = findNextSpawnTime(mob);
         let displayTime = null;
         if (nextMinRepopDate && conditionTime) {
@@ -233,14 +235,24 @@ function updateProgressBars() {
         }
 
         const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
-        const displayText = displayTime
+        const nextTimeStr = displayTime
             ? new Intl.DateTimeFormat('ja-JP', absFmt).format(displayTime)
             : "未確定";
 
+        const remainingStr = maxRepop
+            ? `残り ${formatDuration(maxRepop - Date.now() / 1000)}`
+            : "";
+
         // --- プログレスバー更新 ---
         bar.style.width = `${elapsedPercent}%`;
-        text.textContent = displayText;
 
+        text.innerHTML = `
+          <span class="percent">${elapsedPercent.toFixed(0)}%</span>
+          <span class="next-time">次回 ${nextTimeStr}</span>
+          <span class="remaining">${remainingStr}</span>
+        `;
+
+        // --- 色・クラス制御 ---
         bar.classList.remove(PROGRESS_CLASSES.P0_60, PROGRESS_CLASSES.P60_80, PROGRESS_CLASSES.P80_100);
         text.classList.remove(PROGRESS_CLASSES.TEXT_NEXT, PROGRESS_CLASSES.TEXT_POP);
         wrapper.classList.remove(PROGRESS_CLASSES.MAX_OVER_BLINK);
@@ -259,59 +271,5 @@ function updateProgressBars() {
         }
     });
 }
-
-// 拡大表示イベント
-document.addEventListener("click", e => {
-    const img = e.target.closest(".mob-crush-map");
-    if (!img) return;
-
-    const modal = document.getElementById("crush-map-modal");
-    const zoomed = document.getElementById("crush-map-zoomed");
-    const layer = document.getElementById("crush-point-layer");
-
-    zoomed.src = img.src;
-    modal.classList.remove("hidden");
-
-    const mobNo = img.dataset.mobNo;
-    const mobData = getState().mobs.find(m => m.No === mobNo);
-    if (!mobData || !mobData.spawn_points) return;
-
-    zoomed.onload = () => {
-        const w = zoomed.width;
-        const h = zoomed.height;
-        layer.innerHTML = "";
-
-        mobData.spawn_points.forEach(p => {
-            const x = (p.x / 100) * w;
-            const y = (p.y / 100) * h;
-
-            const dot = document.createElement("div");
-            dot.className = "spawn-point";
-            dot.style.left = `${x}px`;
-            dot.style.top = `${y}px`;
-
-            if (["S", "A"].includes(p.mob_ranks[0])) {
-                dot.classList.add("spawn-point-sa", "spawn-point-shadow-sa");
-            } else {
-                dot.classList.add("spawn-point-b-only");
-            }
-
-            if (mobData.spawn_cull_status?.[p.id]) {
-                dot.classList.add("spawn-point-culled", "culled-with-white-border");
-            }
-
-            if (p.is_last_one) {
-                dot.classList.add("spawn-point-lastone", "spawn-point-shadow-lastone");
-            }
-
-            layer.appendChild(dot);
-        });
-    };
-});
-
-document.getElementById("crush-map-modal").addEventListener("click", () => {
-    document.getElementById("crush-map-modal").classList.add("hidden");
-    document.getElementById("crush-point-layer").innerHTML = "";
-});
 
 export { filterAndRender, distributeCards, updateProgressBars, createMobCard };
