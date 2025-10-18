@@ -16,7 +16,7 @@ function openReportModal(mobNo) {
   DOM.modalMobName.textContent = `対象: ${mob.Name} (${mob.Area})`;
   DOM.modalTimeInput.value = iso;
   DOM.modalMemoInput.value = mob.last_kill_memo || "";
-  DOM.modalMemoInput.placeholder = `LKTとして記録されます。例: ${mob.Area} (X:00.0, Y:00.0) // ログアウトします`;
+  DOM.modalMemoInput.placeholder = `任意`;
   DOM.modalStatus.textContent = "";
   DOM.reportModal.classList.remove("hidden");
   DOM.reportModal.classList.add("flex");
