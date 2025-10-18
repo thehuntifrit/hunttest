@@ -1,6 +1,6 @@
 // uiRender.js
 import { state, getState } from "./store.js";
-import { calculateRepop } from "./cal.js";
+import { calculateRepop, findNextSpawnTime } from "./cal.js";
 import { drawSpawnPoint, processText, formatLastKillTime } from "./utils.js";
 import { RANK_COLORS, PROGRESS_CLASSES, FILTER_TO_DATA_RANK_MAP, DOM } from "./uiShared.js";
 import { updateFilterUI } from "./filter.js";
