@@ -241,35 +241,44 @@ document.addEventListener("click", e => {
     const mobData = getState().mobs.find(m => m.No === mobNo);
     if (!mobData || !mobData.spawn_points) return;
 
-    zoomed.onload = () => {
-        const w = zoomed.width;
-        const h = zoomed.height;
-        layer.innerHTML = "";
+zoomed.onload = () => {
+    // 元サイズ取得
+    const originalWidth = zoomed.naturalWidth;
+    const originalHeight = zoomed.naturalHeight;
 
-        mobData.spawn_points.forEach(p => {
-            const x = (p.x / 100) * w;
-            const y = (p.y / 100) * h;
+    // 拡大倍率
+    const scale = 1.5;
 
-            const dot = document.createElement("div");
-            dot.className = "spawn-point";
-            dot.style.left = `${x}px`;
-            dot.style.top = `${y}px`;
+    // 拡大表示
+    zoomed.width = originalWidth * scale;
+    zoomed.height = originalHeight * scale;
 
-            if (["S", "A"].includes(p.mob_ranks[0])) {
-                dot.classList.add("spawn-point-sa", "spawn-point-shadow-sa");
-            } else {
-                dot.classList.add("spawn-point-b-only");
-            }
+    layer.innerHTML = "";
 
-            if (mobData.spawn_cull_status?.[p.id]) {
-                dot.classList.add("spawn-point-culled", "culled-with-white-border");
-            }
+    mobData.spawn_points.forEach(p => {
+        const x = (p.x / 100) * zoomed.width;
+        const y = (p.y / 100) * zoomed.height;
 
-            if (p.is_last_one) {
-                dot.classList.add("spawn-point-lastone", "spawn-point-shadow-lastone");
-            }
+        const dot = document.createElement("div");
+        dot.className = "spawn-point";
+        dot.style.left = `${x}px`;
+        dot.style.top = `${y}px`;
 
-            layer.appendChild(dot);
+        if (["S", "A"].includes(p.mob_ranks[0])) {
+            dot.classList.add("spawn-point-sa", "spawn-point-shadow-sa");
+        } else {
+            dot.classList.add("spawn-point-b-only");
+        }
+
+        if (mobData.spawn_cull_status?.[p.id]) {
+            dot.classList.add("spawn-point-culled", "culled-with-white-border");
+        }
+
+        if (p.is_last_one) {
+            dot.classList.add("spawn-point-lastone", "spawn-point-shadow-lastone");
+        }
+
+        layer.appendChild(dot);
         });
     };
 });
