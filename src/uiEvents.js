@@ -158,4 +158,17 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch(err => console.error("報告送信エラー:", err));
   });
 
+  // 湧き潰しボタンのクリック処理
+  DOM.mobList?.addEventListener("click", e => {
+    if (e.target.classList.contains("crush-toggle")) {
+      const mobNo = parseInt(e.target.dataset.mobNo, 10);
+      const locationId = e.target.dataset.locationId;
+      const isCurrentlyCulled = e.target.classList.contains("culled");
+
+      toggleCrushStatus(mobNo, locationId, isCurrentlyCulled)
+        .catch(err => console.error("湧き潰し更新エラー:", err));
+    }
+  });
+});
+
 export { attachEventListeners };
