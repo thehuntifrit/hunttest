@@ -6,13 +6,12 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
 
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDAYv5Qm0bfqbHhCLeNp6zjKMty2y7xIIY",
-  authDomain: "the-hunt-49493.firebaseapp.com",
-  projectId: "the-hunt-49493",
-  storageBucket: "the-hunt-49493.firebasestorage.app",
-  messagingSenderId: "465769826017",
-  appId: "1:465769826017:web:74ad7e62f3ab139cb359a0",
-  measurementId: "G-J1KGFE15XP"
+  apiKey: "AIzaSyBikwjGsjL_PVFhx3Vj-OeJCocKA_hQOgU",
+  authDomain: "the-hunt-ifrit.firebaseapp.com",
+  projectId: "the-hunt-ifrit",
+  storageBucket: "the-hunt-ifrit.firebasestorage.app",
+  messagingSenderId: "285578581189",
+  appId: "1:285578581189:web:4d9826ee3f988a7519ccac"
 };
 
 const app = initializeApp(FIREBASE_CONFIG);
