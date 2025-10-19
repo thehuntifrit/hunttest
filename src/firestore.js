@@ -1,9 +1,13 @@
-// firestore.js
-import { db } from "./firebase.js";
+// firestore.jsimport { db } from "./firebase.js";
 import { getState } from "./store.js";
 import { DOMElements, closeReportModal } from "./modal.js";
 import { displayStatus } from "./utils.js";
 import { collection, addDoc, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-functions.js";
+
+const functions = getFunctions();
+const callUpdateCrushStatus = httpsCallable(functions, 'crushStatusUpdater');
+const callRevertStatus = httpsCallable(functions, 'revertStatus');
 
 function subscribeMobStatusDocs(onUpdate) {
   const docIds = ["s_latest", "a_latest", "f_latest"];
@@ -120,4 +124,39 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
   }
 };
 
-export {submitReport, toggleCrushStatus, subscribeMobStatusDocs, subscribeMobLocations};
+// 巻き戻し
+const revertMobStatus = async (mobNo) => {
+    const state = getState();
+    const userId = state.userId;
+    const mobs = state.mobs;
+
+    if (!userId) {
+        displayStatus("認証が完了していません。ページをリロードしてください。", "error");
+        return;
+    }
+
+    const mob = mobs.find(m => m.No === mobNo);
+    if (!mob) return;
+
+    displayStatus(`${mob.Name} の状態を巻き戻し中...`, "warning");
+
+    try {
+        const result = await callRevertStatus({
+            mob_id: mobNo.toString(),
+        });
+        
+        if (result.data?.success) {
+            displayStatus(`${mob.Name} の状態を直前のログへ巻き戻しました。`, "success");
+        } else {
+            displayStatus(
+                `巻き戻し失敗: ${result.data?.message || "ログデータが見つからないか、巻き戻しに失敗しました。"}`,
+                "error"
+            );
+        }
+    } catch (error) {
+        console.error("巻き戻しエラー:", error);
+        displayStatus(`巻き戻しエラー: ${error.message}`, "error");
+    }
+};
+
+export {submitReport, toggleCrushStatus, subscribeMobStatusDocs, subscribeMobLocations, revertMobStatus};
