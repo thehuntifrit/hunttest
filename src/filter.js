@@ -1,4 +1,3 @@
-
 // filter.js
 import { state, getState, EXPANSION_MAP } from "./store.js";
 import { DOM, FILTER_TO_DATA_RANK_MAP } from "./uiShared.js";
