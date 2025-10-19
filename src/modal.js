@@ -6,12 +6,17 @@ import { db } from "./firebase.js";
 import { getState } from "./store.js";
 import { toJstAdjustedIsoString } from "./utils.js";
 
+function toLocalIsoString(date) {
+  const pad = n => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 // モーダルを開く
 function openReportModal(mobNo) {
   const mob = getState().mobs.find(m => m.No === mobNo);
   if (!mob) return;
 
-  const iso = toJstAdjustedIsoString(new Date());
+  const iso = toLocalIsoString(new Date()); // JST補正ではなくローカル時刻をそのまま
   DOM.reportForm.dataset.mobNo = String(mobNo);
   DOM.modalMobName.textContent = `対象: ${mob.Name} (${mob.Area})`;
   DOM.modalTimeInput.value = iso;
