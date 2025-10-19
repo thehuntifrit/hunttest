@@ -14,12 +14,7 @@ const PROGRESS_CLASSES = {
   MAX_OVER_BLINK: 'progress-max-over-blink'
 };
 
-const FILTER_TO_DATA_RANK_MAP = {
-  FATE: 'F',
-  ALL: 'ALL',
-  S: 'S',
-  A: 'A'
-};
+const FILTER_TO_DATA_RANK_MAP = { FATE: 'F', ALL: 'ALL', S: 'S', A: 'A'};
 
 const DOM = {
   masterContainer: document.getElementById('master-mob-container'),
