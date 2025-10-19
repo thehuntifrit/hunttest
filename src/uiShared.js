@@ -1,8 +1,8 @@
 // uiShared.js
 const RANK_COLORS = {
-  S: { bg: 'bg-red-600', text: 'text-red-600', hex: '#dc2626', label: 'S' },
-  A: { bg: 'bg-yellow-600', text: 'text-yellow-600', hex: '#ca8a04', label: 'A' },
-  F: { bg: 'bg-indigo-600', text: 'text-indigo-600', hex: '#4f46e5', label: 'F' },
+  S: {bg: 'bg-red-600', hover: 'hover:bg-red-700', text: 'text-red-600', hex: '#dc2626', label: 'S'},
+  A: {bg: 'bg-yellow-600', hover: 'hover:bg-yellow-700', text: 'text-yellow-600', hex: '#ca8a04', label: 'A'},
+  F: {bg: 'bg-indigo-600', hover: 'hover:bg-indigo-700', text: 'text-indigo-600', hex: '#4f46e5', label: 'F'},
 };
 
 const PROGRESS_CLASSES = {
