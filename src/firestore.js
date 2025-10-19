@@ -1,4 +1,5 @@
-// firestore.jsimport { db } from "./firebase.js";
+// firestore.js
+import { db } from "./firebase.js";
 import { getState } from "./store.js";
 import { DOMElements, closeReportModal } from "./modal.js";
 import { displayStatus } from "./utils.js";
