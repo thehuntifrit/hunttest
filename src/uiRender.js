@@ -55,7 +55,7 @@ function createMobCard(mob) {
   <!-- 上段：ランク・モブ名・報告ボタン -->
   <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
     <!-- 左：ランク -->
-    <span class="w-6 h-6 flex items-center justify-center rounded-full text-white text-xs font-bold ${rankConfig.bg} hover:${rankConfig.bg}-700">
+    <span class="w-6 h-6 flex items-center justify-center rounded-full text-white text-xs font-bold ${rankConfig.bg}">
       ${rankLabel}
     </span>
 
