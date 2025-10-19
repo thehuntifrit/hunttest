@@ -51,7 +51,7 @@ function createMobCard(mob) {
         : "";
 
     const cardHeaderHTML = `
-<div class="p-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
+<div class="p-2 space-y-1 bg-gray-800/70" data-toggle="card-header">
   <!-- 上段：ランク・モブ名・報告ボタン -->
   <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
     <!-- 左：ランク -->
@@ -68,8 +68,8 @@ function createMobCard(mob) {
     <!-- 右端：報告ボタン（即時報告と同じ構造） -->
     <div class="flex-shrink-0 flex items-center justify-end">
       <button data-report-type="${rank === 'A' || rank === 'F' ? 'instant' : 'modal'}" data-mob-no="${mob.No}"
-        class="w-8 h-8 flex items-center justify-center text-[12px] rounded bg-${rank === 'A' || rank === 'F' ? 'bg-green-700' : 'bg-green-700'}-500 
-        hover:bg-${rank === 'A' || rank === 'F' ? 'bg-green-700' : 'bg-green-700'}-400 text-white 
+        class="w-8 h-8 flex items-center justify-center text-[12px] rounded bg-${rank === 'A' || rank === 'F' ? 'green-700' : 'green-700'}-500 
+        hover:bg-${rank === 'A' || rank === 'F' ? 'green-700' : 'green-700'}-400 text-white 
         font-semibold transition text-center leading-tight whitespace-pre-line">${rank === 'A' || rank === 'F' ? '報告<br>する' : '報告<br>する'}</button>
     </div>
   </div>
@@ -88,7 +88,7 @@ function createMobCard(mob) {
 
     const expandablePanelHTML = isExpandable ? `
 <div class="expandable-panel ${isOpen ? 'open' : ''}">
-  <div class="px-1 py-1 text-sm space-y-1.5">
+  <div class="px-1 py-1 text-sm space-y-0.5">
     <div class="flex justify-between items-start flex-wrap">
       <div class="w-full text-right text-sm font-mono text-green-300">次回: ${nextTimeDisplay}</div>
       <div class="w-full text-right text-xs text-gray-400 pt-1">前回: ${lastKillDisplay}</div>
