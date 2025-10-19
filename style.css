@@ -120,7 +120,7 @@ opacity: 1;
     border-radius: 0.5rem;
 }
 .map-overlay {
-    pointer-events: none;
+    pointer-events: auto;
     z-index: 20;
 }
 .spawn-point {
