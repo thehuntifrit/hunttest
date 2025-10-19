@@ -1,10 +1,9 @@
 // modal.js
 import { DOM } from "./uiShared.js";
-import { displayStatus } from "./utils.js";
+import { displayStatus, toJstAdjustedIsoString } from "./utils.js";
 import { addDoc, collection } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 import { db } from "./firebase.js";
 import { getState } from "./store.js";
-import { toJstAdjustedIsoString } from "./utils.js";
 
 function toLocalIsoString(date) {
   const pad = n => String(n).padStart(2, "0");
