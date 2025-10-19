@@ -5,7 +5,7 @@ import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gsta
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-functions.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
 
-const FIREBASE_CONFIG = {
+const FIREBASE_CONFIG = {  
   apiKey: "AIzaSyBikwjGsjL_PVFhx3Vj-OeJCocKA_hQOgU",
   authDomain: "the-hunt-ifrit.firebaseapp.com",
   projectId: "the-hunt-ifrit",
