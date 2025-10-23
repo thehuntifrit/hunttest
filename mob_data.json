@@ -1,1195 +1,266 @@
-{
-  "mobs": {
-      "11011": {"rank": "A", "name":"醜男のヴォガージャ", "area": "中央ラノシア",
-      "condition": "",
-      "repopSeconds": 12600, "maxRepopSeconds": 16200,
-      "mapImage": "",
-      "locations": []
-    },
-      "11021": {"rank": "A", "name":"ウンクテヒ", "area": "低地ラノシア",
-      "condition": "",
-      "repopSeconds": 12600, "maxRepopSeconds": 16200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "11031": {"rank": "A", "name":"魔導ヘルズクロー", "area": "東ラノシア",
-      "condition": "",
-      "repopSeconds": 12600, "maxRepopSeconds": 16200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "11041": {"rank": "A", "name":"ナン", "area": "西ラノシア",
-      "condition": "",
-      "repopSeconds": 12600, "maxRepopSeconds": 16200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "11051": {"rank": "A", "name":"マーベリー", "area": "高地ラノシア",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 18000,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "11061": {"rank": "A", "name":"コンヌ", "area": "外地ラノシア",
-      "condition": "",
-      "repopSeconds": 12600, "maxRepopSeconds": 16200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "11071": {"rank": "A", "name":"ファルネウス", "area": "中央森林",
-      "condition": "",
-      "repopSeconds": 12600, "maxRepopSeconds": 16200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "11081": {"rank": "A", "name":"メルティゼリー", "area": "東部森林",
-      "condition": "",
-      "repopSeconds": 10800, "maxRepopSeconds": 14400,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "11091": {"rank": "A", "name":"ゲーデ", "area": "南部森林",
-      "condition": "",
-      "repopSeconds": 12600, "maxRepopSeconds": 16200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "11101": {"rank": "A", "name":"ギルタブ", "area": "北部森林",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 18000,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "11111": {"rank": "A", "name":"アレクトリオン", "area": "中央ザナラーン",
-      "condition": "",
-      "repopSeconds": 12600, "maxRepopSeconds": 16200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "11121": {"rank": "A", "name":"サボテンダー・バイラリーナ", "area": "西ザナラーン",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 18000,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "11131": {"rank": "A", "name":"マヘス", "area": "東ザナラーン",
-      "condition": "",
-      "repopSeconds": 10800, "maxRepopSeconds": 14400,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "11141": {"rank": "A", "name":"ザニゴ", "area": "南ザナラーン",
-      "condition": "",
-      "repopSeconds": 12600, "maxRepopSeconds": 16200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "11151": {"rank": "A", "name":"ファイナルフレイム", "area": "北ザナラーン",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 18000,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "11161": {"rank": "A", "name":"マラク", "area": "クルザス中央高地",
-      "condition": "",
-      "repopSeconds": 10800, "maxRepopSeconds": 14400,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "11171": {"rank": "A", "name":"クーレア", "area": "モードゥナ",
-      "condition": "",
-      "repopSeconds": 12600, "maxRepopSeconds": 16200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "12011": {"rank": "S", "name":"クロック・ミテーヌ", "area": "中央ラノシア",
-      "condition": "「ラノシアンソイルG3を」採掘 (抽選)//※ET 19:00～21:59",
-      "repopSeconds": 234000, "maxRepopSeconds": 270000,
-      "timeRange": { "start": 19, "end": 22 },
-      "mapImage": "",
-      "locations": []
-    },
-      "12021": {"rank": "S", "name":"ケロゲロス", "area": "低地ラノシア",
-      "condition": "満月直前のET17:00にPOP地点を踏む//※以降は満月中のET 17:00～3:00",
-      "repopSeconds": 180000, "maxRepopSeconds": 180000,
-      "moonPhase": 16,
-      "timeRange": { "start": 17, "end": 3 },
-      "mapImage": "",
-      "locations": []
-    },
-      "12031": {"rank": "S", "name":"ガーロック", "area": "東ラノシア",
-      "condition": "LT 3時間20分 (200分間) 雨が降らない",
-      "repopSeconds": 151200, "maxRepopSeconds": 172800,
-      "weatherSeedRange": [[90, 94],[95, 99]],
-      "weatherDuration": { "minutes": 200 },
-      "mapImage": "",
-      "locations": []
-    },
-      "12041": {"rank": "S", "name":"ボナコン", "area": "西ラノシア",
-      "condition": "「ラノシアリーキ」を採集 (抽選)//※ET 8:00～10:59",
-      "repopSeconds": 234000, "maxRepopSeconds": 270000,
-      "timeRange": { "start": 8, "end": 11 },
-      "mapImage": "",
-      "locations": []
-    },
-      "12051": {"rank": "S", "name":"ナンディ", "area": "高地ラノシア",
-      "condition": "ミニオンを出してPOP地点を踏む",
-      "repopSeconds": 169200, "maxRepopSeconds": 190800,
-      "mapImage": "Upper_La_Noscea.webp",
-      "locations": [
-        {"id":"UN_101", "x": 33.5, "y": 8.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_102", "x": 47.9, "y": 10.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_103", "x": 43.3, "y": 17.5, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_104", "x": 51.5, "y": 20.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_105", "x": 50.5, "y": 33.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_106", "x": 56.8, "y": 34.9, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_107", "x": 24.3, "y": 58.1, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_108", "x": 33.9, "y": 65.7, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_109", "x": 26.1, "y": 67.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_110", "x": 32.7, "y": 70.5, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_111", "x": 23.3, "y": 81.1, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_112", "x": 26.4, "y": 92.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_113", "x": 36.4, "y": 82.3, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_114", "x": 42.6, "y": 90.3, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_115", "x": 61.4, "y": 92.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_116", "x": 62.2, "y": 82.9, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UN_117", "x": 74.4, "y": 79.9, "mob_ranks": ["S", "A", "B1"]}
-      ]
-    },
-      "12061": {"rank": "S", "name":"チェルノボーグ", "area": "外地ラノシア",
-      "condition": "プレイヤーが戦闘不能になる (抽選)",
-      "repopSeconds": 234000, "maxRepopSeconds": 255600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "12071": {"rank": "S", "name":"レドロネット", "area": "中央森林",
-      "condition": "LT 30分間、雨が降り続く",
-      "repopSeconds": 151200, "maxRepopSeconds": 172800,
-      "weatherSeedRange": [5, 19], 
-      "weatherDuration": { "minutes": 30 },
-      "mapImage": "",
-      "locations": []
-    },
-      "12081": {"rank": "S", "name":"ウルガル", "area": "東部森林",
-      "condition": "傭兵 or 双蛇党リーヴを開始する (抽選)",
-      "repopSeconds": 241200, "maxRepopSeconds": 280800,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "12091": {"rank": "S", "name":"マインドフレア", "area": "南部森林",
-      "condition": "新月のET0:00以降の夜間にPOP地点を踏む//※以降は新月中のET 17:00～2:59",
-      "repopSeconds": 180000, "maxRepopSeconds": 180000,
-      "moonPhase": 0,
-      "conditions": {"firstNight": { "timeRange": { "start": 0, "end": 3 } },"otherNights": { "timeRange": { "start": 17, "end": 3 } },
-      "mapImage": "",
-      "locations": []
+/* CSSカスタムプロパティの定義 */
+:root {
+--bg-dark: #1a1a2e;
+--text-light: #e0e0e0;
+--header-height: 4rem;
+font-family: 'Inter', sans-serif;
+
+/* Repop進捗バーの色定義 */
+--progress-0-60: #d9ead4;
+--progress-60-80: #fff3ce;
+--progress-80-100: #fce5ce;
+
+/* テキスト色定義 */
+--text-next: #3e83c4; /* Blue */
+--text-pop: #3e83c4;
+
+/* スポーンポイントの色定義 */
+--color-b1: #3e83c4;
+--color-b2: #e16666;
+--color-lastone: #00ff3c; /* Bright Green */
+--color-b-inverted: #6b7280; /* Gray-500 (B反転) */
+--color-b-inverted-bg: #4b5563; /* Gray-700 (湧き潰し済み背景) */
+}
+
+body {
+background-color: var(--bg-dark);
+color: var(--text-light);
+min-height: 100vh;
+}
+
+/* 視認性のためのテキストアウトライン */
+.text-outline {
+text-shadow:
+-1px -1px 0 #000033,
+1px -1px 0 #000033,
+-1px 1px 0 #000033,
+1px 1px 0 #000033;
+}
+
+/* タブのアクティブ状態を強調 (JSがTailwindクラスで背景色を変更) */
+.tab-button {
+transition: background-color 0.2s, box-shadow 0.2s, border 0.2s;
+}
+.tab-button[data-rank][data-click-count="1"],
+.tab-button[data-rank][data-click-count="2"] {
+/* 選択中のランクを視覚的に強調 */
+box-shadow: 0 0 12px rgba(255, 255, 100, 0.6);
+border: 2px solid #FFD700;
+}
+
+/* モブカードの基本スタイル */
+.mob-card {
+transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+/* ランクアイコンのスタイル */
+.rank-icon {
+transition: transform 0.2s ease, box-shadow 0.2s ease;
+box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+}
+.rank-icon:hover {
+transform: scale(1.15);
+}
+
+/* --- 進捗バー関連のスタイル定義 --- */
+.progress-bar-wrapper {
+/* 進捗バーの背景と点滅アニメーションの親要素 */
+box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+background-color: rgba(0, 0, 0, 0.4);
+}
+.progress-bar-bg {
+height: 100%;
+transition: width 0.5s ease-out;
+}
+
+/* テキスト色クラス */
+.progress-pop-text {
+color: var(--text-pop);
+text-shadow: 0 0 4px rgba(0, 0, 0, 1.0);
+}
+
+/* 点滅アニメーション定義 */
+@keyframes max-over-blink {
+0%, 100% { box-shadow: 0 0 15px rgba(255, 100, 100, 0.9); }
+50% { box-shadow: 0 0 5px rgba(255, 100, 100, 0.2); }
+}
+
+/* 点滅クラス */
+.progress-max-over-blink {
+animation: max-over-blink 2s ease-in-out infinite;
+}
+
+/* --- 詳細パネルの折りたたみアニメーション --- */
+.expandable-panel {
+max-height: 0;
+overflow: hidden;
+
+padding-top: 0 !important;
+padding-bottom: 0 !important;
+}
+.expandable-panel.open {
+max-height: 2000px;
+padding-top: 0.5rem !important;
+padding-bottom: 0.5rem !important;
+}
+
+/* --- マップオーバーレイとスポーン点 --- */
+.map-content {
+    position: relative;
+    border-radius: 0.5rem;
+}
+.map-overlay {
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    z-index: 20;
+}
+.spawn-point {
+    position: absolute;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease, box-shadow 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
+    pointer-events: auto;
+    user-select: none;
+    cursor: default; 
+}
+
+#crush-map-modal {
+  cursor: zoom-out;
+}
+
+/* ただし、操作可能なポイントではポインターを表示する方が親切なため、以下のルールを優先*/
+.spawn-point-interactive,
+[data-is-interactive="true"] {
+    cursor: pointer;
+}
+
+/* インタラクティブなポイント (ホバー時の強調) - ダブルクリック仕様に変更に伴い、ホバーのスケールは維持 */
+.spawn-point[data-is-interactive="true"]:hover {
+    cursor: pointer;
+    transform: translate(-50%, -50%) scale(1.6);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.9);
+}
+
+/* 湧き潰し/ラストワンポイントの新しい濃い外枠/影 */
+.spawn-point-shadow-sa {
+    box-shadow: 0 0 4px 2px rgba(0, 0, 139, 0.9); 
+}
+.spawn-point-shadow-lastone {
+    /* ラストワン用 (緑系の色に対して濃い外枠/影) */
+    box-shadow: 0 0 4px 2px rgba(0, 128, 0, 0.9);
+}
+
+/* 1. S/A湧き潰し対象ポイント (未選択) - レスポンシブ化 */
+.spawn-point-sa {
+    /* スマホサイズ */
+    width: 12px;
+    height: 12px;
+    border: 2px solid #000000; /* 現在は黒枠 */
+}
+@media (min-width: 1024px) { /* PCサイズ (lg breakpoint) */
+    .spawn-point-sa {
+        width: 14px; /* PCでのサイズ拡大 */
+        height: 14px;
     }
-    },
-      "12101": {"rank": "S", "name":"サウザンドキャスト・セダ", "area": "北部森林",
-      "condition": "フォールゴウド秋瓜湖畔で「ジャッジレイ」を釣り上げる (抽選) //※ET 17:00～20:59 餌: フェザントフライ",
-      "repopSeconds": 205200, "maxRepopSeconds": 230400,
-      "timeRange": { "start": 17, "end": 21 },
-      "mapImage": "",
-      "locations": []
-    },
-      "12111": {"rank": "S", "name":"ゾーナ・シーカー", "area": "西ザナラーン",
-      "condition": "ノフィカの井戸で銅鏡を釣り上げる(抽選)//※「晴れ or 快晴」 餌: バターワーム",
-      "repopSeconds": 205200, "maxRepopSeconds": 230400,
-      "weatherSeedRange": [0, 59], 
-      "mapImage": "",
-      "locations": []
-    },
-      "12121": {"rank": "S", "name":"ブロンテス", "area": "中央ザナラーン",
-      "condition": "POP地点で食事を食べる",
-      "repopSeconds": 241200, "maxRepopSeconds": 277200,
-      "mapImage": "Central_Thanalan.webp",
-      "locations": [
-        {"id":"CT_101", "x": 56.4, "y": 92.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_102", "x": 52.0, "y": 77.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_103", "x": 57.1, "y": 81.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_104", "x": 64.8, "y": 72.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_105", "x": 44.4, "y": 57.8, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_106", "x": 37.4, "y": 55.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_107", "x": 39.4, "y": 49.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_108", "x": 38.0, "y": 41.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_109", "x": 28.8, "y": 47.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_110", "x": 48.6, "y": 37.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_111", "x": 28.0, "y": 32.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_112", "x": 34.4, "y": 29.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_113", "x": 35.4, "y": 25.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_114", "x": 29.2, "y": 20.8, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_115", "x": 28.2, "y": 5.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_116", "x": 35.0, "y": 10.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_117", "x": 49.2, "y": 10.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_118", "x": 48.6, "y": 17.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_119", "x": 45.4, "y": 22.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_120", "x": 63.2, "y": 26.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_121", "x": 71.0, "y": 27.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_122", "x": 77.8, "y": 38.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CT_123", "x": 69.2, "y": 39.8, "mob_ranks": ["S", "A", "B1"]}
-      ]
-    },
-      "12131": {"rank": "S", "name":"バルウール", "area": "東ザナラーン",
-      "condition": "傭兵 or 不滅隊リーヴを開始する (抽選)",
-      "repopSeconds": 241200, "maxRepopSeconds": 280800,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "12141": {"rank": "S", "name":"ヌニュヌウィ", "area": "南ザナラーン",
-      "condition": "エリア全域のFATEを1時間失敗させない",
-      "repopSeconds": 158400, "maxRepopSeconds": 194400,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "12151": {"rank": "S", "name":"ミニョーカオン", "area": "北ザナラーン",
-      "condition": "「アーススプライト」100体討伐",
-      "repopSeconds": 205200, "maxRepopSeconds": 226800,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "12161": {"rank": "S", "name":"サファト", "area": "クルザス中央高地",
-      "condition": "高所から落下してHPが1になる (抽選)",
-      "repopSeconds": 216000, "maxRepopSeconds": 302400,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "12171": {"rank": "S", "name":"アグリッパ", "area": "モードゥナ",
-      "condition": "モードゥナの宝の地図を開ける (抽選)//古ぼけた地図G5 / 隠された地図G1 / 謎めいた地図",
-      "repopSeconds": 216000, "maxRepopSeconds": 302400,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "13011": {"rank": "F", "name":"古の闘神「オーディン」", "area": "黒衣森全域",
-      "condition": "",
-      "repopSeconds": 86400, "maxRepopSeconds": 259200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "13021": {"rank": "F", "name":"手負いの魔獣「ベヒーモス」", "area": "クルザス中央高地",
-      "condition": "",
-      "repopSeconds": 86400, "maxRepopSeconds": 259200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "21011": {"rank": "A", "name":"ミルカ", "area": "クルザス西部高地",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "21021": {"rank": "A", "name":"リューバ", "area": "クルザス西部高地",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "21031": {"rank": "A", "name":"エンケドラス", "area": "アバラシア雲海",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "21041": {"rank": "A", "name":"シシウトゥル", "area": "アバラシア雲海",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "21051": {"rank": "A", "name":"ブネ", "area": "ドラヴァニア雲海",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "21061": {"rank": "A", "name":"アガトス", "area": "ドラヴァニア雲海",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "21071": {"rank": "A", "name":"パイルラスタ", "area": "高地ドラヴァニア",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "21081": {"rank": "A", "name":"ワイバーンロード", "area": "高地ドラヴァニア",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "21091": {"rank": "A", "name":"機兵のスリップキンクス", "area": "低地ドラヴァニア",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "21101": {"rank": "A", "name":"ストラス", "area": "低地ドラヴァニア",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "21111": {"rank": "A", "name":"キャムパクティ", "area": "アジス・ラー",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "21121": {"rank": "A", "name":"センチブロッサム", "area": "アジス・ラー",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "22011": {"rank": "S", "name":"カイザーベヒーモス", "area": "クルザス西部高地",
-      "POP Date": "ミニオン「ロイヤルベビーモス」を連れてPOP地点を踏む",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "Coerthas_Western_Highlands.webp",
-      "locations": [
-        {"id":"CW_101", "x": 55.6, "y": 74.2, "mob_ranks": ["B1"]},
-        {"id":"CW_102", "x": 52.4, "y": 63.4, "mob_ranks": ["B2"]},
-        {"id":"CW_103", "x": 40.0, "y": 70.8, "mob_ranks": ["B2"]},
-        {"id":"CW_104", "x": 35.4, "y": 66.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"CW_105", "x": 37.0, "y": 56.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"CW_106", "x": 48.8, "y": 46.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"CW_107", "x": 49.4, "y": 39.2, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"CW_108", "x": 39.0, "y": 40.8, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"CW_109", "x": 24.6, "y": 39.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"CW_110", "x": 19.0, "y": 29.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"CW_111", "x": 12.2, "y": 25.2, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"CW_112", "x": 33.2, "y": 28.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"CW_113", "x": 39.8, "y": 29.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"CW_114", "x": 62.6, "y": 14.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CW_115", "x": 79.4, "y": 19.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CW_116", "x": 81.8, "y": 27.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CW_117", "x": 66.4, "y": 28.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CW_118", "x": 55.8, "y": 27.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CW_119", "x": 60.8, "y": 34.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CW_120", "x": 73.0, "y": 38.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CW_121", "x": 77.6, "y": 45.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"CW_122", "x": 78.2, "y": 50.2, "mob_ranks": ["B1"]},
-        {"id":"CW_123", "x": 63.2, "y": 47.6, "mob_ranks": ["B1"]},
-        {"id":"CW_124", "x": 68.0, "y": 60.0, "mob_ranks": ["B1"]}
-      ]
-    },
-      "22021": {"rank": "S", "name":"極楽鳥", "area": "アバラシア雲海",
-      "condition": "Bモブ「スクオンク」の「チャープ」発動時 (抽選)",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "22031": {"rank": "S", "name":"ガンダルヴァ", "area": "ドラヴァニア雲海",
-      "condition": "「皇金鉱 (ET 2:00～3:59 / 14:00～15:59)」//「アストラルフラワー (ET 4:00～5:59 / 16:00～17:59)」を各50回採集",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "timeRanges": [{ "start": 2, "end": 6 },{ "start": 14, "end": 18 }],
-      "mapImage": "",
-      "locations": []
-    },
-      "22041": {"rank": "S", "name":"セーンムルウ", "area": "高地ドラヴァニア",
-      "condition": "FATE「卵をめぐる竜の戦争」を5回連続でコンプリートする",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "22051": {"rank": "S", "name":"ペイルライダー", "area": "低地ドラヴァニア",
-      "condition": "低地ドラの「宝の地図G7 (古ぼけた地図G7)」の宝箱を開ける (抽選)",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "22061": {"rank": "S", "name":"レウクロッタ", "area": "アジス・ラー",
-      "condition": "「メラシディアン・ヴィーヴル」「レッサーハイドラ」//「アラガン・キマイラ」各50体討伐",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "23011": {"rank": "F", "name":"幻影の女王「クァールレギナ」", "area": "高地ドラヴァニア",
-      "condition": "",
-      "repopSeconds": 86400, "maxRepopSeconds": 172800,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "23021": {"rank": "F", "name":"太古の脅威：ノクチルカ撃滅戦", "area": "アジス・ラー",
-      "condition": "",
-      "repopSeconds": 86400, "maxRepopSeconds": 172800,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "31011": {"rank": "A", "name":"オルクス", "area": "ギラバニア辺境地帯",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "31021": {"rank": "A", "name":"アール", "area": "ギラバニア辺境地帯",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "31031": {"rank": "A", "name":"バックスタイン", "area": "ギラバニア山岳地帯",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "31041": {"rank": "A", "name":"アクラブアメル", "area": "ギラバニア山岳地帯",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "31051": {"rank": "A", "name":"マヒシャ", "area": "ギラバニア湖畔地帯",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "31061": {"rank": "A", "name":"ルミナーレ", "area": "ギラバニア湖畔地帯",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "31071": {"rank": "A", "name":"船幽霊", "area": "紅玉海",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "31081": {"rank": "A", "name":"オニユメミ", "area": "紅玉海",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "31091": {"rank": "A", "name":"ガジャースラ", "area": "ヤンサ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "31101": {"rank": "A", "name":"アンガダ", "area": "ヤンサ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "31111": {"rank": "A", "name":"ギリメカラ", "area": "アジムステップ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "31121": {"rank": "A", "name":"ソム", "area": "アジムステップ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "32011": {"rank": "S", "name":"ウドンゲ", "area": "ギラバニア辺境地帯",
-      "condition": "「レーシー」「ディアッカ」各100体討伐",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "32021": {"rank": "S", "name":"ボーンクローラー", "area": "ギラバニア山岳地帯",
-      "condition": "チョコボポーターで南北境界線を通過//※アラガーナ⇔アラギリが最適",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "32031": {"rank": "S", "name":"ソルト・アンド・ライト", "area": "ギラバニア湖畔地帯",
-      "condition": "ギラバニア湖畔地帯でアイテムを50回捨てる",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "32041": {"rank": "S", "name":"オキナ", "area": "紅玉海",
-      "condition": "「ユメミガイ」「カラナシユメミ」各100体討伐後、満月になる//※満月中に討伐数を満たすのも可",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "moonPhase": 16,
-      "mapImage": "",
-      "locations": []
-    },
-      "32051": {"rank": "S", "name":"ガンマ", "area": "ヤンサ",
-      "condition": "ミニオン「ミニアレキサンダー」を出してPOP地点を踏む",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "timeRange": { "start": 17, "end": 8 },
-      "mapImage": "Yanxia.webp",
-      "locations": [
-        {"id":"YX_101", "x": 68.2, "y": 25.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"YX_102", "x": 63.8, "y": 22.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"YX_103", "x": 54.8, "y": 24.8, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"YX_104", "x": 50.4, "y": 20.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"YX_105", "x": 39.2, "y": 31.2, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"YX_106", "x": 26.8, "y": 73.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"YX_107", "x": 41.8, "y": 81.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"YX_108", "x": 42.6, "y": 23.4, "mob_ranks": ["B2"]},
-        {"id":"YX_109", "x": 42.6, "y": 37.6, "mob_ranks": ["B2"]},
-        {"id":"YX_110", "x": 76.8, "y": 42.8, "mob_ranks": ["B1"]},
-        {"id":"YX_111", "x": 57.6, "y": 50.6, "mob_ranks": ["B1"]},
-        {"id":"YX_112", "x": 79.8, "y": 62.2, "mob_ranks": ["B1"]},
-        {"id":"YX_113", "x": 70.2, "y": 83.8, "mob_ranks": ["B1"]},
-        {"id":"YX_114", "x": 54.6, "y": 64.0, "mob_ranks": ["B1"]}
-      ]
-    },
-      "32061": {"rank": "S", "name":"オルガナ", "area": "アジムステップ",
-      "condition": "F.A.T.E. 石人の英雄「ゲルゲイ・チョロー」をコンプリート後にPOP地点を踏む//※判定は該当F.A.T.E.が失敗するまで有効",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "The_Azim_Steppe.webp",
-      "locations": [
-        {"id":"AS_101", "x": 39.6, "y": 81.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AS_102", "x": 50.4, "y": 81.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AS_103", "x": 63.0, "y": 81.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AS_104", "x": 56.0, "y": 71.2, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AS_105", "x": 67.0, "y": 60.8, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AS_106", "x": 65.6, "y": 43.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AS_107", "x": 83.8, "y": 34.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AS_108", "x": 64.4, "y": 19.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AS_109", "x": 51.0, "y": 37.8, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AS_110", "x": 40.2, "y": 44.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AS_111", "x": 44.2, "y": 21.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AS_112", "x": 30.2, "y": 22.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AS_113", "x": 29.0, "y": 39.8, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AS_114", "x": 20.4, "y": 52.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AS_115", "x": 20.6, "y": 60.2, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AS_116", "x": 24.2, "y": 67.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AS_117", "x": 34.2, "y": 61.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AS_118", "x": 35.6, "y": 72.0, "mob_ranks": ["S", "A", "B2"]}
-      ]
-    },
-      "33011": {"rank": "F", "name":"九尾の妖狐「玉藻御前」", "area": "ヤンサ",
-      "condition": "",
-      "repopSeconds": 86400, "maxRepopSeconds": 172800,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "33021": {"rank": "F", "name":"伝説の雷馬「イクシオン」", "area": "ギラバニア湖畔地帯",
-      "condition": "",
-      "repopSeconds": 129600, "maxRepopSeconds": 259200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "41011": {"rank": "A", "name":"ナックラヴィー", "area": "レイクランド",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "41021": {"rank": "A", "name":"ナリーポン", "area": "レイクランド",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "41031": {"rank": "A", "name":"リルマーダー", "area": "コルシア島",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "41041": {"rank": "A", "name":"フラカン", "area": "コルシア島",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "41051": {"rank": "A", "name":"マリクテンダー", "area": "アム・アレーン",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "41061": {"rank": "A", "name":"シュガール", "area": "アム・アレーン",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "41071": {"rank": "A", "name":"1️⃣泥人", "area": "イル・メグ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "41081": {"rank": "A", "name":"1️⃣ポールディア", "area": "イル・メグ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "41072": {"rank": "A", "name":"2️⃣泥人", "area": "イル・メグ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "41082": {"rank": "A", "name":"2️⃣ポールディア", "area": "イル・メグ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "41091": {"rank": "A", "name":"スペイ", "area": "ラケティカ大森林",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "41101": {"rank": "A", "name":"グラスマン", "area": "ラケティカ大森林",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "41111": {"rank": "A", "name":"ルサルカ", "area": "テンペスト",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "41121": {"rank": "A", "name":"バール", "area": "テンペスト",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "42011": {"rank": "S", "name":"ティガー", "area": "レイクランド",
-      "condition": "「レイルの笹身」を捨てる",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "42021": {"rank": "S", "name":"フォーギヴン・ペダントリー", "area": "コルシア島",
-      "condition": "「ドワーフ綿花」を50回採集",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "42031": {"rank": "S", "name":"タルキア", "area": "アム・アレーン",
-      "condition": "青魔導士の「自爆」をPOP地点で使う//※プレイヤーが死亡時にPOP",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "Amh_Araeng.webp",
-      "locations": [
-        {"id":"AA_101", "x": 68.0, "y": 25.8, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AA_102", "x": 72.8, "y": 29.8, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AA_103", "x": 69.0, "y": 47.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AA_104", "x": 80.4, "y": 49.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AA_105", "x": 66.4, "y": 62.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AA_106", "x": 78.8, "y": 81.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AA_107", "x": 69.0, "y": 85.2, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AA_108", "x": 45.8, "y": 88.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"AA_109", "x": 38.2, "y": 75.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AA_110", "x": 43.4, "y": 58.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AA_111", "x": 37.0, "y": 57.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AA_112", "x": 25.8, "y": 45.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AA_113", "x": 44.2, "y": 36.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AA_114", "x": 37.0, "y": 22.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AA_115", "x": 21.4, "y": 25.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"AA_116", "x": 53.8, "y": 70.6, "mob_ranks": ["B2"]},
-        {"id":"AA_117", "x": 45.2, "y": 68.2, "mob_ranks": ["B1"]},
-        {"id":"AA_118", "x": 52.4, "y": 22.6, "mob_ranks": ["B1"]}
-      ]
-    },
-      "42041": {"rank": "S", "name":"1️⃣アグラオペ", "area": "イル・メグ",
-      "condition": "ミニオン「朱孔雀」を出してPOP地点を踏む",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "Il_Mheg.webp",
-      "locations": [
-        {"id":"IM_101", "x": 30.2, "y": 82.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_102", "x": 42.6, "y": 83.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_103", "x": 58.6, "y": 89.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_104", "x": 57.2, "y": 78.8, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_105", "x": 53.4, "y": 67.8, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_106", "x": 43.8, "y": 64.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_107", "x": 20.6, "y": 73.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_108", "x": 16.4, "y": 63.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_109", "x": 14.6, "y": 49.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_110", "x": 23.2, "y": 46.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_111", "x": 23.8, "y": 35.8, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_112", "x": 46.6, "y": 17.8, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"IM_113", "x": 60.4, "y": 13.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"IM_114", "x": 69.0, "y": 10.6, "mob_ranks": ["B1"]},
-        {"id":"IM_115", "x": 81.8, "y": 13.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"IM_116", "x": 75.8, "y": 29.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"IM_117", "x": 63.6, "y": 43.6, "mob_ranks": ["S", "A", "B1"]}
-      ]
-    },
-      "42042": {"rank": "S", "name":"2️⃣アグラオペ", "area": "イル・メグ",
-      "condition": "ミニオン「朱孔雀」を出してPOP地点を踏む",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "Il_Mheg.webp",
-      "locations": [
-        {"id":"IM_201", "x": 30.2, "y": 82.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_202", "x": 42.6, "y": 83.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_203", "x": 58.6, "y": 89.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_204", "x": 57.2, "y": 78.8, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_205", "x": 53.4, "y": 67.8, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_206", "x": 43.8, "y": 64.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_207", "x": 20.6, "y": 73.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_208", "x": 16.4, "y": 63.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_209", "x": 14.6, "y": 49.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_210", "x": 23.2, "y": 46.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_211", "x": 23.8, "y": 35.8, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"IM_212", "x": 46.6, "y": 17.8, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"IM_213", "x": 60.4, "y": 13.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"IM_214", "x": 69.0, "y": 10.6, "mob_ranks": ["B1"]},
-        {"id":"IM_215", "x": 81.8, "y": 13.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"IM_216", "x": 75.8, "y": 29.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"IM_217", "x": 63.6, "y": 43.6, "mob_ranks": ["S", "A", "B1"]}
-      ]
-    },
-      "42051": {"rank": "S", "name":"イシュタム", "area": "ラケティカ大森林",
-      "condition": "「クラックド・ロンカドール」「クラクド・ロンカソーン」//「クラックド・ロンカヴェッセル」各100体討伐",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "42061": {"rank": "S", "name":"グニット", "area": "テンペスト",
-      "condition": "クリオニッドにディープシーリーチを3匹捕食させ、最大化バフがついた//クリオニッドの「バッカルコーン」をプレイヤーが受ける (抽選)//※バリア有効。倒される必要なし",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "43011": {"rank": "F", "name":"激闘フォーミダブル：切り札起動", "area": "コルシア島",
-      "condition": "",
-      "repopSeconds": 86400, "maxRepopSeconds": 172800,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "43021": {"rank": "F", "name":"厄災のアルケオタニア：深海の討伐戦", "area": "テンペスト",
-      "condition": "",
-      "repopSeconds": 129600, "maxRepopSeconds": 259200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "51011": {"rank": "A", "name":"フルドラ", "area": "ラヴィリンソス",
-      "condition": "",
-      "repopSeconds": 21600, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "51021": {"rank": "A", "name":"ストーシー", "area": "ラヴィリンソス",
-      "condition": "",
-      "repopSeconds": 21600, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "51031": {"rank": "A", "name":"スグリーヴァ", "area": "サベネア島",
-      "condition": "",
-      "repopSeconds": 21600, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "51041": {"rank": "A", "name":"ユラン", "area": "サベネア島",
-      "condition": "",
-      "repopSeconds": 21600, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "51051": {"rank": "A", "name":"アイゲイロス", "area": "ガレマルド",
-      "condition": "",
-      "repopSeconds": 21600, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "51061": {"rank": "A", "name":"ミネルウァ", "area": "ガレマルド",
-      "condition": "",
-      "repopSeconds": 21600, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "51071": {"rank": "A", "name":"ムースプリンセス", "area": "嘆きの海",
-      "condition": "",
-      "repopSeconds": 21600, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "51081": {"rank": "A", "name":"ルナテンダー・クイーン", "area": "嘆きの海",
-      "condition": "",
-      "repopSeconds": 21600, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "51091": {"rank": "A", "name":"ペタロドゥス", "area": "エルピス",
-      "condition": "",
-      "repopSeconds": 21600, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "51101": {"rank": "A", "name":"グランガチ", "area": "エルピス",
-      "condition": "",
-      "repopSeconds": 21600, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "51111": {"rank": "A", "name":"アーチイータ", "area": "ウルティマ・トゥーレ",
-      "condition": "",
-      "repopSeconds": 21600, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "51121": {"rank": "A", "name":"ファン・アイル", "area": "ウルティマ・トゥーレ",
-      "condition": "",
-      "repopSeconds": 21600, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "52011": {"rank": "S", "name":"ブーフールー", "area": "ラヴィリンソス",
-      "condition": "ミニオン「リトルトロル」を出してPOP地点を踏む//※ET 9:00～16:59 中の「晴れ or 快晴」",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "weatherSeedRange": [0, 59], 
-      "timeRange": { "start": 9, "end": 17 },
-      "mapImage": "Labyrinthos.webp",
-      "locations": [
-        {"id":"LT_101", "x": 38.0, "y": 20.2, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"LT_102", "x": 71.2, "y": 16.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"LT_103", "x": 82.0, "y": 28.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"LT_104", "x": 77.0, "y": 61.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"LT_105", "x": 37.6, "y": 37.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"LT_106", "x": 22.0, "y": 44.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"LT_107", "x": 10.2, "y": 80.8, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"LT_108", "x": 26.2, "y": 84.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"LT_109", "x": 45.4, "y": 91.8, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"LT_110", "x": 62.0, "y": 58.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"LT_111", "x": 50.2, "y": 17.6, "mob_ranks": ["B2"]}
-      ]
-    },
-      "52021": {"rank": "S", "name":"スパティカ", "area": "サベネア島",
-      "condition": "「アシュヴァッタ」「ヴァジュララングラ」//「ピシャーチャ」各100体討伐",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "52031": {"rank": "S", "name":"アームストロング", "area": "ガレマルド",
-      "condition": "「リペアド・インペリアルショートローブ」//「リペアド・インペリアルポットヘルム」を装備して//POP地点で戦闘不能になる(自爆も可)",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "Garlemald.webp",
-      "locations": [
-        {"id":"GM_101", "x": 20.4, "y": 24.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"GM_102", "x": 26.6, "y": 27.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"GM_103", "x": 24.2, "y": 39.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"GM_104", "x": 35.2, "y": 45.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"GM_105", "x": 67.8, "y": 49.8, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"GM_106", "x": 79.4, "y": 50.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"GM_107", "x": 53.0, "y": 61.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"GM_108", "x": 65.2, "y": 80.8, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"GM_109", "x": 77.6, "y": 79.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"GM_110", "x": 63.4, "y": 15.6, "mob_ranks": ["B2"]}
-      ]
-    },
-      "52041": {"rank": "S", "name":"ルミネイター", "area": "嘆きの海",
-      "condition": "「シンカー」「ワンダラー」「ウィーパー」各100体討伐",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "52051": {"rank": "S", "name":"オピオネウス", "area": "エルピス",
-      "condition": "「エッグ・オブ・エルピス」を5個まとめて捨てる",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "52061": {"rank": "S", "name":"ナロー＝リフト", "area": "ウルティマ・トゥーレ",
-      "condition": "ミニオン「プチイーア」を出して10人同時にPOP地点を踏む",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "Ultima_Thule.webp",
-      "locations": [
-        {"id":"UT_101", "x": 28.6, "y": 22.2, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UT_102", "x": 43.4, "y": 20.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UT_103", "x": 67.4, "y": 26.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UT_104", "x": 16.4, "y": 47.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UT_105", "x": 25.6, "y": 51.2, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UT_106", "x": 36.0, "y": 61.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UT_107", "x": 39.2, "y": 73.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UT_108", "x": 33.0, "y": 86.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UT_109", "x": 48.2, "y": 81.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UT_110", "x": 34.8, "y": 77.6, "mob_ranks": ["B1"]}
-      ]
-    },
-      "53011": {"rank": "F", "name":"ムリガ信仰：偽りの神", "area": "サベネア島",
-      "condition": "",
-      "repopSeconds": 129600, "maxRepopSeconds": 259200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "53021": {"rank": "F", "name":"カイのメモリーより：侵略兵器の破壊", "area": "ウルティマ・トゥーレ",
-      "condition": "",
-      "repopSeconds": 129600, "maxRepopSeconds": 259200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61011": {"rank": "A", "name":"1️⃣クイーンホーク", "area": "オルコ・パチャ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61021": {"rank": "A", "name":"1️⃣ネチュキホ", "area": "オルコ・パチャ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61012": {"rank": "A", "name":"2️⃣クイーンホーク", "area": "オルコ・パチャ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61022": {"rank": "A", "name":"2️⃣ネチュキホ", "area": "オルコ・パチャ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61013": {"rank": "A", "name":"3️⃣クイーンホーク", "area": "オルコ・パチャ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61023": {"rank": "A", "name":"3️⃣ネチュキホ", "area": "オルコ・パチャ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61031": {"rank": "A", "name":"レイントリラー", "area": "コザマル・カ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61041": {"rank": "A", "name":"プクーチャ", "area": "コザマル・カ",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61051": {"rank": "A", "name":"幻煌鳥", "area": "ヤクテル樹海",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61061": {"rank": "A", "name":"ラシュイチャ", "area": "ヤクテル樹海",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61071": {"rank": "A", "name":"1️⃣エヘヘトーワポ", "area": "シャーローニ荒野",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61081": {"rank": "A", "name":"1️⃣ケヘニヘヤメウィ", "area": "シャーローニ荒野",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61072": {"rank": "A", "name":"2️⃣エヘヘトーワポ", "area": "シャーローニ荒野",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61082": {"rank": "A", "name":"2️⃣ケヘニヘヤメウィ", "area": "シャーローニ荒野",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61073": {"rank": "A", "name":"3️⃣エヘヘトーワポ", "area": "シャーローニ荒野",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61083": {"rank": "A", "name":"3️⃣ケヘニヘヤメウィ", "area": "シャーローニ荒野",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61091": {"rank": "A", "name":"ヘシュワラ", "area": "ヘリテージファウンド",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61101": {"rank": "A", "name":"ヴァリアポッド", "area": "ヘリテージファウンド",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61111": {"rank": "A", "name":"サリー・ザ・スイーパー", "area": "リビング・メモリー",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "61121": {"rank": "A", "name":"キャッツアイ", "area": "リビング・メモリー",
-      "condition": "",
-      "repopSeconds": 14400, "maxRepopSeconds": 21600,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "62011": {"rank": "S", "name":"1️⃣厭忌のキーリーゲー", "area": "オルコ・パチャ",
-      "condition": "新月のET 0:00～5:59 + 天候が「霧」の条件を満たした時にPOP地点を踏む",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "moonPhase": 0,
-      "weatherSeedRange": [70, 79], 
-      "timeRange": { "start": 0, "end": 6 },
-      "mapImage": "Urqopacha.webp",
-      "locations": [
-        {"id":"UP_101", "x": 67.6, "y": 20.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UP_102", "x": 43.0, "y": 31.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UP_103", "x": 24.2, "y": 17.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UP_104", "x": 66.2, "y": 52.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UP_105", "x": 49.2, "y": 47.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UP_106", "x": 37.2, "y": 56.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UP_107", "x": 16.4, "y": 60.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UP_108", "x": 80.6, "y": 43.8, "mob_ranks": ["B2"]},
-        {"id":"UP_109", "x": 49.8, "y": 38.0, "mob_ranks": ["B2"]},
-        {"id":"UP_110", "x": 46.2, "y": 54.8, "mob_ranks": ["B1"]}
-      ]
-    },
-      "62012": {"rank": "S", "name":"2️⃣厭忌のキーリーゲー", "area": "オルコ・パチャ",
-      "condition": "新月のET 0:00～5:59 + 天候が「霧」の条件を満たした時にPOP地点を踏む",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "moonPhase": 0,
-      "weatherSeedRange": [70, 79], 
-      "timeRange": { "start": 0, "end": 6 },
-      "mapImage": "Urqopacha.webp",
-      "locations": [
-        {"id":"UP_201", "x": 67.6, "y": 20.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UP_202", "x": 43.0, "y": 31.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UP_203", "x": 24.2, "y": 17.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UP_204", "x": 66.2, "y": 52.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UP_205", "x": 49.2, "y": 47.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UP_206", "x": 37.2, "y": 56.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UP_207", "x": 16.4, "y": 60.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UP_208", "x": 80.6, "y": 43.8, "mob_ranks": ["B2"]},
-        {"id":"UP_209", "x": 49.8, "y": 38.0, "mob_ranks": ["B2"]},
-        {"id":"UP_210", "x": 46.2, "y": 54.8, "mob_ranks": ["B1"]}
-      ]
-    },
-      "62013": {"rank": "S", "name":"3️⃣厭忌のキーリーゲー", "area": "オルコ・パチャ",
-      "condition": "新月のET 0:00～5:59 + 天候が「霧」の条件を満たした時にPOP地点を踏む",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "moonPhase": 0,
-      "weatherSeedRange": [70, 79], 
-      "timeRange": { "start": 0, "end": 6 },
-      "mapImage": "Urqopacha.webp",
-      "locations": [
-        {"id":"UP_301", "x": 67.6, "y": 20.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UP_302", "x": 43.0, "y": 31.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UP_303", "x": 24.2, "y": 17.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UP_304", "x": 66.2, "y": 52.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UP_305", "x": 49.2, "y": 47.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UP_306", "x": 37.2, "y": 56.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UP_307", "x": 16.4, "y": 60.2, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"UP_308", "x": 80.6, "y": 43.8, "mob_ranks": ["B2"]},
-        {"id":"UP_309", "x": 49.8, "y": 38.0, "mob_ranks": ["B2"]},
-        {"id":"UP_310", "x": 46.2, "y": 54.8, "mob_ranks": ["B1"]}
-      ]
-    },
-      "62021": {"rank": "S", "name":"イヌショキー", "area": "コザマル・カ",
-      "condition": "ミニオン「モルフォ」を出してPOP地点を踏む",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "Kozama'uka.webp",
-      "locations": [
-        {"id":"KK_101", "x": 19.4, "y": 16.2, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"KK_102", "x": 13.2, "y": 26.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"KK_103", "x": 37.4, "y": 40.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"KK_104", "x": 87.8, "y": 47.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"KK_105", "x": 9.2, "y": 68.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"KK_106", "x": 37.8, "y": 55.8, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"KK_107", "x": 45.8, "y": 68.4, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"KK_108", "x": 55.8, "y": 87.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"KK_109", "x": 69.2, "y": 35.8, "mob_ranks": ["B2"]},
-        {"id":"KK_110", "x": 84.4, "y": 86.0, "mob_ranks": ["B1"]}
-      ]
-    },
-      "62031": {"rank": "S", "name":"ネヨーゾテール", "area": "ヤクテル樹海",
-      "condition": "「魚粉」を50個まとめて捨てる",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "62041": {"rank": "S", "name":"1️⃣サンシェヤ", "area": "シャーローニ荒野",
-      "condition": "FATE 悪魔の種火「フレイムドリンカー」 を3回コンプリートする",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "62042": {"rank": "S", "name":"2️⃣サンシェヤ", "area": "シャーローニ荒野",
-      "condition": "FATE 悪魔の種火「フレイムドリンカー」 を3回コンプリートする",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "62043": {"rank": "S", "name":"3️⃣サンシェヤ", "area": "シャーローニ荒野",
-      "condition": "FATE 悪魔の種火「フレイムドリンカー」 を3回コンプリートする",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "62051": {"rank": "S", "name":"先駆けのアティカス", "area": "ヘリテージファウンド",
-      "condition": "「ロネークステーキHQ」を制作する",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "62061": {"rank": "S", "name": "ウェザーリポーター", "area": "リビング・メモリー",
-      "condition": "青魔道士の「猛吹雪」をPOP地点で使う",
-      "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "mapImage": "Living_Memory.webp",
-      "locations": [
-        {"id":"LM_101", "x": 9.6, "y": 28.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"LM_102", "x": 44.0, "y": 47.4, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"LM_103", "x": 27.8, "y": 65.0, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"LM_104", "x": 7.0, "y": 67.8, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"LM_105", "x": 27.0, "y": 90.0, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"LM_106", "x": 62.6, "y": 73.6, "mob_ranks": ["S", "A", "B1"]},
-        {"id":"LM_107", "x": 78.2, "y": 48.6, "mob_ranks": ["B2"]},
-        {"id":"LM_108", "x": 89.0, "y": 43.0, "mob_ranks": ["B2"]},
-        {"id":"LM_109", "x": 92.6, "y": 71.0, "mob_ranks": ["B1"]},
-        {"id":"LM_110", "x": 8.0, "y": 78.6, "mob_ranks": ["B1"]}
-      ]
-    },
-      "63011": {"rank": "F", "name":"1️⃣トクローネ：荒野の死闘", "area": "シャーローニ荒野",
-      "condition": "",
-      "repopSeconds": 129600, "maxRepopSeconds": 259200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "63012": {"rank": "F", "name":"2️⃣トクローネ：荒野の死闘", "area": "シャーローニ荒野",
-      "condition": "",
-      "repopSeconds": 129600, "maxRepopSeconds": 259200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "63013": {"rank": "F", "name":"3️⃣トクローネ：荒野の死闘", "area": "シャーローニ荒野",
-      "condition": "",
-      "repopSeconds": 129600, "maxRepopSeconds": 259200,
-      "mapImage": "",
-      "locations": [] 
-    },
-      "63021": {"rank": "F", "name":"マイカ・ザ・ムー：大団円", "area": "リビング・メモリー",
-      "condition": "",
-      "repopSeconds": 129600, "maxRepopSeconds": 259200,
-      "mapImage": "",
-      "locations": [] 
+}
+
+/* 湧き潰し済みポイント - 外枠白、未湧き潰し時と同サイズに修正 */
+.spawn-point-culled {
+    background-color: var(--color-b-inverted-bg);
+    border: 2px solid #000000; /* 白枠 (2pxに統一) */
+    opacity: 0.7;
+    box-shadow: none;
+    cursor: default;
+}
+.spawn-point-culled:hover {
+    transform: translate(-50%, -50%);
+    box-shadow: none;
+}
+/* 新しいクラス: 湧き潰し済の時に適用する白枠/サイズ固定クラス（drawSpawnPointで使用） */
+.culled-with-white-border {
+    border: 2px solid #ffffff;
+    box-shadow: none;
+    opacity: 0.7;
+}
+
+/* 2. Bランクのみポイント (非湧き潰し対象) - 視認性向上とレスポンシブ化 */
+.spawn-point-b-only {
+    /* スマホサイズ */
+    width: 10px;
+    height: 10px;
+    pointer-events: none !important;
+    opacity: 0.75; /* 透過を 0.8 -> 0.75 に少し下げる */
+    box-shadow: none;
+    border: 1px solid #ffffff; /* 白枠 2px を追加 */
+}
+@media (min-width: 1024px) { /* PCサイズ (lg breakpoint) */
+    .spawn-point-b-only {
+        width: 12px; /* PCでのサイズ拡大 */
+        height: 12px;
     }
-  },
-  "locationDef": []
+}
+
+/* 3. ラストワン強調ポイント - レスポンシブ化 */
+.spawn-point-lastone {
+    /* スマホサイズ */
+    width: 14px;
+    height: 14px;
+    border: 2px solid #008000;
+}
+@media (min-width: 1024px) { /* PCサイズ (lg breakpoint) */
+    .spawn-point-lastone {
+        width: 16px; /* PCでのサイズ拡大 */
+        height: 16px;
+    }
+}
+.spawn-point-lastone:hover {
+    transform: translate(-50%, -50%) scale(1.4);
+}
+
+/* --- 色クラス定義 --- */
+.color-b1 { background-color: var(--color-b1); }
+.color-b2 { background-color: var(--color-b2); }
+.color-lastone { background-color: var(--color-lastone); }
+.color-b1-only { background-color: var(--color-b1); }
+.color-b2-only { background-color: var(--color-b2); }
+
+/* [仕様 IV-5] B反転ロジック用 */
+.color-b-inverted {
+    background-color: var(--color-b-inverted);
+    opacity: 0.4;
+}
+
+/* モーダルの背景 */
+#report-modal {
+background-color: rgba(0, 0, 0, 0.9);
+z-index: 50;
+transition: opacity 0.3s;
+}
+
+/* カラム間の隙間とパディングを設定 (Tailwindを補完) */
+#column-container {
+padding: 0.5rem;
+}
+#column-1, #column-2, #column-3 {
+display: flex;
+flex-direction: column;
+gap: 0.5rem;
+}
+
+.maintenance-banner {
+  background: #222;
+  color: #fff;
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.maintenance-banner .server-up-time {
+  font-size: 0.9em;
+  color: #bbb; /* 薄暗いグレーで控えめに */
+  font-weight: normal;
+  margin-top: 4px;
 }
