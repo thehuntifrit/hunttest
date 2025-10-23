@@ -1,33 +1,42 @@
 // uiRender.js
-import { state, getState } from "./store.js";
-import { calculateRepop, findNextSpawnTime } from "./cal.js";
-import { drawSpawnPoint, processText, formatDuration, formatLastKillTime } from "./utils.js";
-import { RANK_COLORS, PROGRESS_CLASSES, FILTER_TO_DATA_RANK_MAP, DOM } from "./uiShared.js";
-import { updateFilterUI } from "./filter.js";
+
+import { calculateRepop, findNextSpawnTime, formatDuration, formatLastKillTime, debounce } from "./cal.js";
+import { drawSpawnPoint } from "./location.js";
+import { getState, setFilter, RANK_COLORS, PROGRESS_CLASSES, EXPANSION_MAP, FILTER_TO_DATA_RANK_MAP } from "./dataManager.js";
+ 
+const DOM = {
+    masterContainer: document.getElementById('master-mob-container'),
+    colContainer: document.getElementById('column-container'),
+    cols: [document.getElementById('column-1'), document.getElementById('column-2'), document.getElementById('column-3')],
+    rankTabs: document.getElementById('rank-tabs'),
+    areaFilterWrapper: document.getElementById('area-filter-wrapper'),
+    areaFilterPanel: document.getElementById('area-filter-panel'),
+    statusMessage: document.getElementById('status-message'),
+    reportModal: document.getElementById('report-modal'),
+    reportForm: document.getElementById('report-form'),
+    modalMobName: document.getElementById('modal-mob-name'),
+    modalStatus: document.getElementById('modal-status'),
+    modalTimeInput: document.getElementById('report-datetime'),
+    modalMemoInput: document.getElementById('report-memo')
+};
+
+function displayStatus(message, type = "info") {
+    const el = document.getElementById("status-message");
+    if (!el) return;
+    el.textContent = message;
+    el.className = `status ${type}`;
+    setTimeout(() => { el.textContent = ""; }, 5000);
+}
+
+function processText(text) {
+    if (typeof text !== "string" || !text) return "";
+    return text.replace(/\/\//g, "<br>");
+}
 
 function createMobCard(mob) {
     const rank = mob.Rank;
     const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
     const rankLabel = rankConfig.label || rank;
-
-    const progressText = mob.repopInfo?.timeRemaining || "Calculating...";
-    const lastKillDisplay = formatLastKillTime(mob.last_kill_time);
-    const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
-
-    // リポップ計算による最小再出現時間
-    const nextTimeDisplay = mob.repopInfo?.nextMinRepopDate
-        ? new Intl.DateTimeFormat('ja-JP', absFmt).format(mob.repopInfo.nextMinRepopDate)
-        : '未確定';
-
-    // 天候シード方式による「次回条件成立時間」
-    const nextConditionTime = findNextSpawnTime(mob);
-    const nextConditionDisplay = nextConditionTime
-        ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionTime)
-        : '未確定';
-
-    const prevTimeDisplay = mob.last_kill_time > 0
-        ? new Intl.DateTimeFormat('ja-JP', absFmt).format(new Date(mob.last_kill_time * 1000))
-        : '未報告';
 
     const isExpandable = rank === "S";
     const { openMobCardNo } = getState();
@@ -37,94 +46,89 @@ function createMobCard(mob) {
         p => p.is_last_one && (p.mob_ranks.includes("S") || p.mob_ranks.includes("A"))
     );
 
-    const spawnPointsHtml = (rank === "S" && mob.Map)
-        ? (mob.spawn_points ?? []).map(point => drawSpawnPoint(
-            point,
-            mob.spawn_cull_status,
-            mob.No,
-            mob.Rank,
-            point.is_last_one,
-            isS_LastOne,
-            mob.last_kill_time,
-            mob.prev_kill_time
-        )).join("")
-        : "";
+const spawnPointsHtml = (rank === "S" && mob.Map)
+    ? (mob.spawn_points ?? []).map(point => drawSpawnPoint(
+        point,
+        mob.spawn_cull_status,
+        mob.No,
+        point.mob_ranks.includes("B2") ? "B2"
+          : point.mob_ranks.includes("B1") ? "B1"
+          : point.mob_ranks[0],
+        point.is_last_one,
+        isS_LastOne,
+        mob.last_kill_time,
+        mob.prev_kill_time
+    )).join("")
+    : "";
+
 
     const cardHeaderHTML = `
 <div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
-  <!-- 上段：ランク・モブ名・報告ボタン -->
-  <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
-    <!-- 左：ランク -->
-    <span class="w-6 h-6 flex items-center justify-center rounded-full text-white text-xs font-bold ${rankConfig.bg}">
-      ${rankLabel}
-    </span>
+    <!-- 上段：ランク・モブ名・報告ボタン -->
+    <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
+        <!-- 左：ランク -->
+        <span
+            class="w-6 h-6 flex items-center justify-center rounded-full text-white text-xs font-bold ${rankConfig.bg}">
+            ${rankLabel}
+        </span>
 
-    <!-- 中央：モブ名＋エリア名 -->
-    <div class="flex flex-col min-w-0">
-      <span class="text-base font-bold truncate">${mob.Name}</span>
-      <span class="text-xs text-gray-400 truncate">${mob.Area} (${mob.Expansion})</span>
+        <!-- 中央：モブ名＋エリア名 -->
+        <div class="flex flex-col min-w-0">
+            <span class="text-base font-bold truncate">${mob.Name}</span>
+            <span class="text-xs text-gray-400 truncate">${mob.Area} (${mob.Expansion})</span>
+        </div>
+
+        <!-- 右端：報告ボタン（見た目は統一、動作だけ分岐） -->
+        <div class="flex-shrink-0 flex items-center justify-end">
+            <button data-report-type="${rank === 'A' || rank === 'F' ? 'instant' : 'modal'}" data-mob-no="${mob.No}"
+                class="w-8 h-8 flex items-center justify-center text-[12px] rounded bg-green-600 hover:bg-green-800 selected:bg-green-400 
+               text-white font-semibold transition text-center leading-tight whitespace-pre-line">報告<br>する</button>
+        </div>
     </div>
 
-    <!-- 右端：報告ボタン（即時報告と同じ構造） -->
-    <div class="flex-shrink-0 flex items-center justify-end">
-      <button data-report-type="${rank === 'A' || rank === 'F' ? 'instant' : 'modal'}" data-mob-no="${mob.No}"
-        class="w-8 h-8 flex items-center justify-center text-[12px] rounded bg-${rank === 'A' || rank === 'F' ? 'green' : 'green'}-600 
-        hover:bg-${rank === 'A' || rank === 'F' ? 'green' : 'green'}-800 selected:bg-${rank === 'A' || rank === 'F' ? 'red' : 'green'}-400 
-        text-white font-semibold transition text-center leading-tight whitespace-pre-line">${rank === 'A' || rank === 'F' ? '報告<br>する' : '報告<br>する'}</button>
+    <!-- 下段：プログレスバー（構造のみ） -->
+    <div class="progress-bar-wrapper h-6 rounded-full relative overflow-hidden transition-all duration-100 ease-linear">
+        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear"
+            style="width: 0%"></div>
+        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
+            style="line-height: 1;"></div>
     </div>
-  </div>
-
-  <!-- 下段：プログレスバー -->
-  <div class="progress-bar-wrapper h-6 rounded-full relative overflow-hidden transition-all duration-100 ease-linear">
-    <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear"
-         style="width: ${mob.repopInfo?.elapsedPercent || 0}%"></div>
-    <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
-         style="line-height: 1;">
-      ${progressText}
-    </div>
-  </div>
 </div>
 `;
 
     const expandablePanelHTML = isExpandable ? `
-<div class="expandable-panel ${isOpen ? 'open' : ''}">
-  <div class="px-2 py-1 text-sm space-y-0.5">
-    <div class="flex justify-between items-start flex-wrap">
-      <div class="w-full text-right text-sm font-mono text-green-300">次回: ${nextTimeDisplay}</div>
-      <div class="w-full text-right text-xs text-gray-400 pt-1">前回: ${lastKillDisplay}</div>
-      <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: ${mob.last_kill_memo || 'なし'}</div>
-      <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽出条件</div>
-      <div class="w-full text-gray-300 mb-2">${processText(mob.Condition)}</div>
+<div class="expandable-panel bg-gray-800/70 ${isOpen ? 'open' : ''}">
+    <div class="px-2 py-0 text-sm space-y-0.5">
+        <div class="flex justify-between items-start flex-wrap">
+            <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
+            <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: <span data-last-memo></span></div>
+            <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽出条件</div>
+            <div class="w-full text-gray-300 mb-2">${processText(mob.Condition)}</div>
+        </div>
+        ${mob.Map && rank === 'S' ? `
+        <div class="map-content py-0.5 flex justify-center relative">
+            <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
+            <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
+        </div>
+        ` : ''}
     </div>
-    ${mob.Map && rank === 'S' ? `
-    <div class="map-content py-0.5 flex justify-center relative"><img src="./maps/${mob.Map}" alt="${mob.Area} Map"
-           class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
-      <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
-    </div>
-    ` : ''}
-  </div>
 </div>
 ` : '';
-
+    
     return `
-<div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 transition duration-150"
-     data-mob-no="${mob.No}" data-rank="${rank}">
-  ${cardHeaderHTML}
-  ${expandablePanelHTML}
-</div>
-`;
+<div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 
+transition duration-150" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeaderHTML}${expandablePanelHTML}</div>
+    `;
 }
 
 function filterAndRender({ isInitialLoad = false } = {}) {
     const state = getState();
     const uiRank = state.filter.rank;
     const dataRank = FILTER_TO_DATA_RANK_MAP[uiRank] || uiRank;
-    const areaSets = state.filter.areaSets; // ランクごとのエリア選択を保持している想定
+    const areaSets = state.filter.areaSets;
 
     const filtered = state.mobs.filter(mob => {
-        // --- ALL の場合 ---
         if (dataRank === "ALL") {
-            // mob のランクに対応するエリアセットを取得
             const mobRank = mob.Rank.startsWith("B")
                 ? (mob.Rank.includes("A") ? "A" : "F") // B系はA/Fに寄せる
                 : mob.Rank;
@@ -135,15 +139,12 @@ function filterAndRender({ isInitialLoad = false } = {}) {
                 ? state.mobs.find(m => m.No === mob.related_mob_no)?.Expansion || mob.Expansion
                 : mob.Expansion;
 
-            // そのランクでエリア選択が無ければ表示対象
             if (!areaSetForRank || !(areaSetForRank instanceof Set) || areaSetForRank.size === 0) {
                 return true;
             }
-            // 選択されているエリアに含まれていれば表示
             return areaSetForRank.has(mobExpansion);
         }
 
-        // --- A/F/S 単独ランクの場合 ---
         if (dataRank === "A") {
             if (mob.Rank !== "A" && !mob.Rank.startsWith("B")) return false;
         } else if (dataRank === "F") {
@@ -161,24 +162,26 @@ function filterAndRender({ isInitialLoad = false } = {}) {
         return areaSet.has(mobExpansion);
     });
 
-    // ソート復活（表示の安定性のため、No昇順に統一。必要ならelapsedPercent優先へ切替可能）
     filtered.sort((a, b) => a.No - b.No);
 
-    // DOM構築（文字列→要素）＋平文問題の回避
     const frag = document.createDocumentFragment();
     filtered.forEach(mob => {
         const temp = document.createElement("div");
         temp.innerHTML = createMobCard(mob);
-        frag.appendChild(temp.firstElementChild);
+        const card = temp.firstElementChild;
+        frag.appendChild(card);
+
+        updateProgressText(card, mob);
+        updateProgressBar(card, mob);
+        updateExpandablePanel(card, mob);
     });
 
     DOM.masterContainer.innerHTML = "";
     DOM.masterContainer.appendChild(frag);
     distributeCards();
-    updateFilterUI(); // タブ強調/クリックカウントの反映
+    updateFilterUI();
 
     if (isInitialLoad) {
-        // 初期レンダリング後に進捗バーを一度更新
         updateProgressBars();
     }
 }
@@ -207,66 +210,256 @@ function distributeCards() {
     });
 }
 
+function updateProgressBar(card, mob) {
+    const bar = card.querySelector(".progress-bar-bg");
+    const wrapper = bar?.parentElement;
+    const text = card.querySelector(".progress-text");
+    if (!bar || !wrapper || !text) return;
+
+    const { elapsedPercent, status } = mob.repopInfo;
+
+    bar.style.transition = "width linear 60s";
+    bar.style.width = `${elapsedPercent}%`;
+
+    bar.classList.remove(PROGRESS_CLASSES.P0_60, PROGRESS_CLASSES.P60_80, PROGRESS_CLASSES.P80_100);
+    text.classList.remove(PROGRESS_CLASSES.TEXT_NEXT, PROGRESS_CLASSES.TEXT_POP);
+    wrapper.classList.remove(PROGRESS_CLASSES.MAX_OVER_BLINK);
+
+    if (status === "PopWindow") {
+        if (elapsedPercent <= 60) bar.classList.add(PROGRESS_CLASSES.P0_60);
+        else if (elapsedPercent <= 80) bar.classList.add(PROGRESS_CLASSES.P60_80);
+        else bar.classList.add(PROGRESS_CLASSES.P80_100);
+        text.classList.add(PROGRESS_CLASSES.TEXT_POP);
+    } else if (status === "MaxOver") {
+        bar.classList.add(PROGRESS_CLASSES.P80_100);
+        text.classList.add(PROGRESS_CLASSES.TEXT_POP);
+        wrapper.classList.add(PROGRESS_CLASSES.MAX_OVER_BLINK);
+    } else {
+        text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
+    }
+}
+
+function updateProgressText(card, mob) {
+    const text = card.querySelector(".progress-text");
+    if (!text) return;
+
+    const { elapsedPercent, nextMinRepopDate, maxRepop } = mob.repopInfo;
+    const conditionTime = findNextSpawnTime(mob);
+    const displayTime = (nextMinRepopDate && conditionTime)
+        ? (conditionTime > nextMinRepopDate ? conditionTime : nextMinRepopDate)
+        : (nextMinRepopDate || conditionTime);
+
+    const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
+    const nextTimeStr = displayTime
+        ? new Intl.DateTimeFormat('ja-JP', absFmt).format(displayTime)
+        : "未確定";
+
+    const remainingStr = maxRepop
+        ? `残り ${formatDuration(maxRepop - Date.now() / 1000)}`
+        : "";
+
+    text.innerHTML = `
+    <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
+      <div class="pl-3 text-left">in: ${nextTimeStr}</div>
+      <div class="pr-2 text-right">${remainingStr} ( ${elapsedPercent.toFixed(0)}% )</div>
+    </div>
+  `;
+}
+
+function updateExpandablePanel(card, mob) {
+    const elNext = card.querySelector("[data-next-time]");
+    const elLast = card.querySelector("[data-last-kill]");
+    const elMemo = card.querySelector("[data-last-memo]");
+    if (!elNext && !elLast && !elMemo) return;
+
+    const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
+
+    const nextMin = mob.repopInfo?.nextMinRepopDate;
+    const conditionTime = findNextSpawnTime(mob);
+    const displayTime = (nextMin && conditionTime)
+        ? (conditionTime > nextMin ? conditionTime : nextMin)
+        : (nextMin || conditionTime);
+
+    const nextStr = displayTime
+        ? new Intl.DateTimeFormat('ja-JP', absFmt).format(displayTime)
+        : "未確定";
+
+    const lastStr = formatLastKillTime(mob.last_kill_time);
+    const memoStr = mob.last_kill_memo || "なし";
+
+    if (elNext) elNext.textContent = `次回: ${nextStr}`;
+    if (elLast) elLast.textContent = `前回: ${lastStr}`;
+    if (elMemo) elMemo.textContent = memoStr;
+}
+
 function updateProgressBars() {
     const state = getState();
-    state.mobs = state.mobs.map(m => ({ ...m, repopInfo: calculateRepop(m) }));
-
-    document.querySelectorAll(".mob-card").forEach(card => {
-        const mobNo = parseInt(card.dataset.mobNo, 10);
-        const mob = state.mobs.find(m => m.No === mobNo);
-        if (!mob?.repopInfo) return;
-
-        const { elapsedPercent, status, nextMinRepopDate, maxRepop } = mob.repopInfo;
-        const bar = card.querySelector(".progress-bar-bg");
-        const text = card.querySelector(".progress-text");
-        const wrapper = bar?.parentElement;
-        if (!bar || !text || !wrapper) return;
-
-        // --- 条件成立時間と比較 ---
-        const conditionTime = findNextSpawnTime(mob);
-        let displayTime = null;
-        if (nextMinRepopDate && conditionTime) {
-            displayTime = conditionTime > nextMinRepopDate ? conditionTime : nextMinRepopDate;
-        } else {
-            displayTime = nextMinRepopDate || conditionTime;
-        }
-
-        const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
-        const nextTimeStr = displayTime
-            ? new Intl.DateTimeFormat('ja-JP', absFmt).format(displayTime)
-            : "未確定";
-
-        const remainingStr = maxRepop
-            ? `残り ${formatDuration(maxRepop - Date.now() / 1000)}`
-            : "";
-
-        // --- プログレスバー更新 ---
-        bar.style.width = `${elapsedPercent}%`;
-
-        text.innerHTML = `
-          <span class="percent">${elapsedPercent.toFixed(0)}%</span>
-          <span class="next-time">次回 ${nextTimeStr}</span>
-          <span class="remaining">${remainingStr}</span>
-        `;
-
-        // --- 色・クラス制御 ---
-        bar.classList.remove(PROGRESS_CLASSES.P0_60, PROGRESS_CLASSES.P60_80, PROGRESS_CLASSES.P80_100);
-        text.classList.remove(PROGRESS_CLASSES.TEXT_NEXT, PROGRESS_CLASSES.TEXT_POP);
-        wrapper.classList.remove(PROGRESS_CLASSES.MAX_OVER_BLINK);
-
-        if (status === "PopWindow") {
-            if (elapsedPercent <= 60) bar.classList.add(PROGRESS_CLASSES.P0_60);
-            else if (elapsedPercent <= 80) bar.classList.add(PROGRESS_CLASSES.P60_80);
-            else bar.classList.add(PROGRESS_CLASSES.P80_100);
-            text.classList.add(PROGRESS_CLASSES.TEXT_POP);
-        } else if (status === "MaxOver") {
-            bar.classList.add(PROGRESS_CLASSES.P80_100);
-            text.classList.add(PROGRESS_CLASSES.TEXT_POP);
-            wrapper.classList.add(PROGRESS_CLASSES.MAX_OVER_BLINK);
-        } else {
-            text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
+    state.mobs.forEach((mob) => {
+        const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
+        if (card) {
+            updateProgressText(card, mob);
+            updateProgressBar(card, mob);
         }
     });
 }
 
-export { filterAndRender, distributeCards, updateProgressBars, createMobCard };
+const renderRankTabs = () => {
+    const state = getState();
+    const rankList = ["ALL", "S", "A", "FATE"];
+    const container = document.getElementById("rank-tabs");
+    if (!container) return;
+    container.innerHTML = "";
+
+    container.className = "grid grid-cols-4 gap-2";
+
+    rankList.forEach(rank => {
+        const isSelected = state.filter.rank === rank;
+        const btn = document.createElement("button");
+        btn.dataset.rank = rank;
+        btn.textContent = rank;
+        btn.className = `tab-button px-4 py-1.5 text-sm rounded font-semibold text-white text-center transition ${isSelected ? "bg-green-500" : "bg-gray-500 hover:bg-gray-400"
+            }`;
+        container.appendChild(btn);
+    });
+};
+
+const renderAreaFilterPanel = () => {
+    const state = getState();
+    const uiRank = state.filter.rank;
+    const dataRank = FILTER_TO_DATA_RANK_MAP[uiRank] || uiRank;
+
+    const areas = state.mobs
+        .filter(m => (dataRank === "A" || dataRank === "F") ? (m.Rank === dataRank || m.Rank.startsWith("B")) : (m.Rank === dataRank))
+        .reduce((set, m) => {
+            const mobExpansion = m.Rank.startsWith("B")
+                ? state.mobs.find(x => x.No === m.related_mob_no)?.Expansion || m.Expansion
+                : m.Expansion;
+            if (mobExpansion) set.add(mobExpansion);
+            return set;
+        }, new Set());
+
+    const currentSet = state.filter.areaSets[uiRank] instanceof Set ? state.filter.areaSets[uiRank] : new Set();
+    const isAllSelected = areas.size > 0 && currentSet.size === areas.size;
+
+    const sortedAreas = Array.from(areas).sort((a, b) => {
+        const indexA = Object.values(EXPANSION_MAP).indexOf(a);
+        const indexB = Object.values(EXPANSION_MAP).indexOf(b);
+        return indexB - indexA;
+    });
+
+    // スマホ用：横いっぱい2列
+    const mobilePanel = document.getElementById("area-filter-panel-mobile");
+    mobilePanel.innerHTML = "";
+    mobilePanel.className = "grid grid-cols-2 gap-2";
+
+    const allBtnMobile = document.createElement("button");
+    allBtnMobile.textContent = isAllSelected ? "全解除" : "全選択";
+    allBtnMobile.className = `area-filter-btn py-1 text-xs rounded font-semibold text-white text-center transition w-full ${isAllSelected ? "bg-red-500" : "bg-gray-500 hover:bg-gray-400"}`;
+    allBtnMobile.dataset.area = "ALL";
+    mobilePanel.appendChild(allBtnMobile);
+
+    sortedAreas.forEach(area => {
+        const isSelected = currentSet.has(area);
+        const btn = document.createElement("button");
+        btn.textContent = area;
+        btn.className = `area-filter-btn py-1 text-xs rounded font-semibold text-white text-center transition w-full ${isSelected ? "bg-green-500" : "bg-gray-500 hover:bg-gray-400"}`;
+        btn.dataset.area = area;
+        mobilePanel.appendChild(btn);
+    });
+
+    // PC用：ランクボタン下に収まる2列（ボタン幅制限）
+    const desktopPanel = document.getElementById("area-filter-panel-desktop");
+    desktopPanel.innerHTML = "";
+    desktopPanel.className = "grid grid-cols-2 gap-2";
+
+    const allBtnDesktop = document.createElement("button");
+    allBtnDesktop.textContent = isAllSelected ? "全解除" : "全選択";
+    allBtnDesktop.className = `area-filter-btn py-1 text-xs rounded font-semibold text-white text-center transition w-full max-w-[8rem] ${isAllSelected ? "bg-red-500" : "bg-gray-500 hover:bg-gray-400"}`;
+    allBtnDesktop.dataset.area = "ALL";
+    desktopPanel.appendChild(allBtnDesktop);
+
+    const spacer = document.createElement("div");
+    spacer.className = "hidden lg:block";
+    desktopPanel.appendChild(spacer);
+
+    sortedAreas.forEach(area => {
+        const isSelected = currentSet.has(area);
+        const btn = document.createElement("button");
+        btn.textContent = area;
+        btn.className = `area-filter-btn py-1 text-xs rounded font-semibold text-white text-center transition w-full max-w-[8rem] ${isSelected ? "bg-green-500" : "bg-gray-500 hover:bg-gray-400"}`;
+        btn.dataset.area = area;
+        desktopPanel.appendChild(btn);
+    });
+};
+
+const sortAndRedistribute = debounce(() => filterAndRender(), 200);
+const areaPanel = document.getElementById("area-filter-panel");
+
+function toggleAreaFilterPanel(isDesktop) {
+    if (isDesktop) {
+        DOM.areaFilterPanelDesktop.classList.remove('hidden');
+        DOM.areaFilterPanelMobile.classList.add('hidden');
+        DOM.areaFilterWrapper.classList.remove('block');
+    } else {
+        DOM.areaFilterPanelDesktop.classList.add('hidden');
+
+        if (DOM.areaFilterPanelMobile.classList.contains('hidden')) {
+            DOM.areaFilterPanelMobile.classList.remove('hidden');
+        } else {
+            DOM.areaFilterPanelMobile.classList.add('hidden');
+        }
+
+        DOM.areaFilterWrapper.classList.add('block');
+    }
+}
+
+function updateFilterUI() {
+    const state = getState();
+    const currentRankKeyForColor = FILTER_TO_DATA_RANK_MAP[state.filter.rank] || state.filter.rank;
+    DOM.rankTabs.querySelectorAll(".tab-button").forEach(btn => {
+        btn.classList.remove("bg-blue-800", "bg-red-800", "bg-yellow-800", "bg-indigo-800", "bg-gray-500", "hover:bg-gray-400"); // renderRankTabsと競合するため色を初期化
+        btn.classList.add("bg-gray-500");
+        if (btn.dataset.rank !== state.filter.rank) {
+            btn.dataset.clickCount = "0";
+        }
+        if (btn.dataset.rank === state.filter.rank) {
+            btn.classList.remove("bg-gray-500");
+            const rank = btn.dataset.rank;
+            btn.classList.add(
+                rank === "ALL" ? "bg-blue-800"
+                    : currentRankKeyForColor === "S" ? "bg-red-800"
+                        : currentRankKeyForColor === "A" ? "bg-yellow-800"
+                            : currentRankKeyForColor === "F" ? "bg-indigo-800"
+                                : "bg-gray-800"
+            );
+        } else {
+            btn.classList.add("hover:bg-gray-400");
+        }
+    });
+}
+
+// 討伐報告受信ハンドラ
+function onKillReportReceived(mobId, kill_time) {
+    const mob = getState().mobs.find(m => m.No === mobId);
+    if (!mob) return;
+
+    mob.last_kill_time = Number(kill_time);
+    mob.repopInfo = calculateRepop(mob);
+
+    // 即時更新
+    const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
+    if (card) {
+        updateProgressText(card, mob);
+        updateProgressBar(card, mob);
+    }
+}
+
+// 定期ループ（60秒ごとに全カードを更新）
+setInterval(() => {
+    updateProgressBars();
+}, 60000);
+
+export {
+    filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, DOM,
+    renderAreaFilterPanel, renderRankTabs, sortAndRedistribute, toggleAreaFilterPanel, updateFilterUI, onKillReportReceived, updateProgressBars
+};
