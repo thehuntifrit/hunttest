@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 
@@ -20,10 +21,12 @@
             <h1 class="text-xl font-bold text-yellow-400 tracking-wide">The Hunt</h1>
             <div id="rank-tabs" class="flex gap-2"></div>
         </div>
-        <div id="area-filter-panel" class="flex flex-wrap gap-2 justify-end px-4 py-2 hidden"></div>
+        <div id="area-filter-panel-mobile" class="flex flex-wrap gap-2 px-4 py-2 hidden"></div>
+        <div id="area-filter-panel-desktop" class="flex flex-wrap gap-2 px-4 py-2 hidden"></div>
+
     </header>
 
-    <main class="container mx-auto px-2 sm:px-4 pb-10 pt-20">
+    <main class="container mx-auto px-2 py-2 sm:px-4 pb-10 pt-20">
         <div id="master-mob-container" class="hidden">
         </div>
 
@@ -63,17 +66,13 @@
             </form>
         </div>
     </div>
-        
-    <script type="module" src="./src/utils.js"></script>
-    <script type="module" src="./src/store.js"></script>
-    <script type="module" src="./src/firebase.js"></script>
-    <script type="module" src="./src/firestore.js"></script>
+    
     <script type="module" src="./src/cal.js"></script>
     <script type="module" src="./src/uiRender.js"></script>
+    <script type="module" src="./src/location.js"></script>
     <script type="module" src="./src/modal.js"></script>
-    <script type="module" src="./src/filter.js"></script>
+    <script type="module" src="./src/server.js"></script>
     <script type="module" src="./src/dataManager.js"></script>
-    <script type="module" src="./src/uiEvents.js"></script>
     <script type="module" src="./src/app.js"></script>
 
 </body>
