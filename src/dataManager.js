@@ -7,76 +7,76 @@ import { calculateRepop } from "./cal.js";
 const EXPANSION_MAP = { 1: "新生", 2: "蒼天", 3: "紅蓮", 4: "漆黒", 5: "暁月", 6: "黄金" };
 
 const state = {
-  userId: localStorage.getItem("user_uuid") || null,
-  baseMobData: [],
-  mobs: [],
-  filter: JSON.parse(localStorage.getItem("huntFilterState")) || {
-    rank: "ALL",
-    areaSets: {
-      S: new Set(),
-      A: new Set(),
-      F: new Set(),
-      ALL: new Set()
-    }
-  },
-  openMobCardNo: localStorage.getItem("openMobCardNo")
-    ? parseInt(localStorage.getItem("openMobCardNo"), 10)
-    : null
+  userId: localStorage.getItem("user_uuid") || null,
+  baseMobData: [],
+  mobs: [],
+  filter: JSON.parse(localStorage.getItem("huntFilterState")) || {
+    rank: "ALL",
+    areaSets: {
+      S: new Set(),
+      A: new Set(),
+      F: new Set(),
+      ALL: new Set()
+    }
+  },
+  openMobCardNo: localStorage.getItem("openMobCardNo")
+    ? parseInt(localStorage.getItem("openMobCardNo"), 10)
+    : null
 };
 
 for (const k in state.filter.areaSets) {
-  const v = state.filter.areaSets[k];
-  if (Array.isArray(v)) state.filter.areaSets[k] = new Set(v);
-  else if (!(v instanceof Set)) state.filter.areaSets[k] = new Set();
+  const v = state.filter.areaSets[k];
+  if (Array.isArray(v)) state.filter.areaSets[k] = new Set(v);
+  else if (!(v instanceof Set)) state.filter.areaSets[k] = new Set();
 }
 
 const getState = () => state;
 const getMobByNo = no => state.mobs.find(m => m.No === no);
 
 function setUserId(uid) {
-  state.userId = uid;
-  localStorage.setItem("user_uuid", uid);
+  state.userId = uid;
+  localStorage.setItem("user_uuid", uid);
 }
 
 function setBaseMobData(data) {
-  state.baseMobData = data;
+  state.baseMobData = data;
 }
 
 function setMobs(data) {
-  state.mobs = data;
+  state.mobs = data;
 }
 
 function setFilter(partial) {
-  state.filter = { ...state.filter, ...partial };
-  const serialized = {
-    ...state.filter,
-    areaSets: Object.keys(state.filter.areaSets).reduce((acc, key) => {
-      const v = state.filter.areaSets[key];
-      acc[key] = v instanceof Set ? Array.from(v) : v;
-      return acc;
-    }, {})
-  };
-  localStorage.setItem("huntFilterState", JSON.stringify(serialized));
+  state.filter = { ...state.filter, ...partial };
+  const serialized = {
+    ...state.filter,
+    areaSets: Object.keys(state.filter.areaSets).reduce((acc, key) => {
+      const v = state.filter.areaSets[key];
+      acc[key] = v instanceof Set ? Array.from(v) : v;
+      return acc;
+    }, {})
+  };
+  localStorage.setItem("huntFilterState", JSON.stringify(serialized));
 }
 
 function setOpenMobCardNo(no) {
-  state.openMobCardNo = no;
-  localStorage.setItem("openMobCardNo", no ?? "");
+  state.openMobCardNo = no;
+  localStorage.setItem("openMobCardNo", no ?? "");
 }
 
 const RANK_COLORS = {
-  S: {bg: 'bg-red-600', hover: 'hover:bg-red-700', text: 'text-red-600', hex: '#dc2626', label: 'S'},
-  A: {bg: 'bg-yellow-600', hover: 'hover:bg-yellow-700', text: 'text-yellow-600', hex: '#ca8a04', label: 'A'},
-  F: {bg: 'bg-indigo-600', hover: 'hover:bg-indigo-700', text: 'text-indigo-600', hex: '#4f46e5', label: 'F'},
+  S: {bg: 'bg-red-600', hover: 'hover:bg-red-700', text: 'text-red-600', hex: '#dc2626', label: 'S'},
+  A: {bg: 'bg-yellow-600', hover: 'hover:bg-yellow-700', text: 'text-yellow-600', hex: '#ca8a04', label: 'A'},
+  F: {bg: 'bg-indigo-600', hover: 'hover:bg-indigo-700', text: 'text-indigo-600', hex: '#4f46e5', label: 'F'},
 };
 
 const PROGRESS_CLASSES = {
-  P0_60: 'progress-p0-60',
-  P60_80: 'progress-p60-80',
-  P80_100: 'progress-p80-100',
-  TEXT_NEXT: 'progress-next-text',
-  TEXT_POP: 'progress-pop-text',
-  MAX_OVER_BLINK: 'progress-max-over-blink'
+  P0_60: 'progress-p0-60',
+  P60_80: 'progress-p60-80',
+  P80_100: 'progress-p80-100',
+  TEXT_NEXT: 'progress-next-text',
+  TEXT_POP: 'progress-pop-text',
+  MAX_OVER_BLINK: 'progress-max-over-blink'
 };
 
 const FILTER_TO_DATA_RANK_MAP = { FATE: 'F', ALL: 'ALL', S: 'S', A: 'A'};
@@ -86,9 +86,9 @@ let progressInterval = null;
 let unsubscribes = [];
 
 async function loadBaseMobData() {
-  const resp = await fetch(MOB_DATA_URL);
-  if (!resp.ok) throw new Error("Mob data failed to load.");
-  const data = await resp.json();
+  const resp = await fetch(MOB_DATA_URL);
+  if (!resp.ok) throw new Error("Mob data failed to load.");
+  const data = await resp.json();
 
 const baseMobData = Object.entries(data.mobs).map(([no, mob]) => ({
     No: parseInt(no, 10),
@@ -161,22 +161,22 @@ function startRealtime() {
     });
     unsubscribes.push(unsubStatus);
 
-  // Mob 出現位置購読
-  const unsubLoc = subscribeMobLocations(locationsMap => {
-    const current = getState().mobs;
-    const merged = current.map(m => {
-      const dyn = locationsMap[m.No];
-      if (m.Rank === "S" && dyn) {
-        return { ...m, spawn_cull_status: dyn.points || {} };
-      }
-      return m;
-    });
-    setMobs(merged);
-    filterAndRender();
-    displayStatus("湧き潰しデータ更新完了。", "success");
-  });
-  unsubscribes.push(unsubLoc);
+// Mob 出現位置購読 (メインロジック)
+const unsubLoc = subscribeMobLocations(locationsMap => {
+  const current = getState().mobs;
+  const merged = current.map(m => {
+  const dyn = locationsMap[m.No];
+    
+    let newMob = { ...m };
+    newMob.spawn_cull_status = (dyn && dyn.points) ? dyn.points : {};
+        return newMob;
+  });  
+  setMobs(merged);
+  filterAndRender();
+  displayStatus("湧き潰しデータ更新完了。", "success");
+});
+unsubscribes.push(unsubLoc);
 }
     
 export { state, EXPANSION_MAP, getState, getMobByNo, setUserId, setBaseMobData, setMobs, loadBaseMobData, 
-        setFilter, setOpenMobCardNo, RANK_COLORS, PROGRESS_CLASSES, FILTER_TO_DATA_RANK_MAP };
+        startRealtime, setFilter, setOpenMobCardNo, RANK_COLORS, PROGRESS_CLASSES, FILTER_TO_DATA_RANK_MAP };
