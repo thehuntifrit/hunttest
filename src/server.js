@@ -1,16 +1,15 @@
 // server.js
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, addDoc, doc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc, updateDoc, increment, FieldValue } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-functions.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
 
-import { getState, setFilter, setOpenMobCardNo, FILTER_TO_DATA_RANK_MAP } from "./dataManager.js"; 
+import { getState } from "./dataManager.js"; 
 import { closeReportModal } from "./modal.js";
 import { displayStatus } from "./uiRender.js";
 
-// 初期化と設定 (ユーザーが設定した定数を維持)
 const FIREBASE_CONFIG = {
     apiKey: "AIzaSyBikwjGsjL_PVFhx3Vj-OeJCocKA_hQOgU",
     authDomain: "the-hunt-ifrit.firebaseapp.com",
@@ -19,6 +18,7 @@ const FIREBASE_CONFIG = {
     messagingSenderId: "285578581189",
     appId: "1:285578581189:web:4d9826ee3f988a7519ccac"
 };
+import { serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 const app = initializeApp(FIREBASE_CONFIG);
 const db = getFirestore(app);
@@ -27,198 +27,214 @@ const functionsInstance = getFunctions(app, "asia-northeast1");
 const analytics = getAnalytics(app);
 
 const functions = functionsInstance;
-const callUpdateCrushStatus = httpsCallable(functions, 'crushStatusUpdater');
-const callRevertStatus = httpsCallable(functions, 'revertStatus');
-const callGetServerTime = httpsCallable(functions, 'getServerTime');
 
-// 認証 (修正: __initial_auth_tokenを考慮した認証フローに変更)
+// httpsCallable の初期化
+const callGetServerTime = httpsCallable(functions, 'getServerTime');
+const callRevertStatus = httpsCallable(functions, 'revertStatus'); // 巻き戻し機能用
+
+// 認証
 async function initializeAuth() {
-    try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            // カスタムトークンが存在する場合、それを使ってサインイン
-            const userCredential = await signInWithCustomToken(auth, __initial_auth_token);
-            return userCredential.user.uid;
-        } else {
-            // トークンが存在しない場合、匿名サインイン
-            const userCredential = await signInAnonymously(auth);
-            return userCredential.user.uid;
-        }
-    } catch (error) {
-        console.error("Firebase Auth Initialization Failed:", error);
-        displayStatus("認証に失敗しました。", "error");
-        return null;
-    }
+    return new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            unsubscribe(); 
+
+            if (user) {
+                resolve(user.uid);
+            } else {
+                signInAnonymously(auth)
+                    .then((credential) => {
+                        resolve(credential.user.uid);
+                    })
+                    .catch((error) => {
+                        console.error("匿名認証に失敗しました:", error);
+                        resolve(null); 
+                    });
+            }
+        });
+    });
 }
 
-// サーバーUTC取得 (修正: サーバー関数が返すフィールド名に合わせて修正)
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        console.log("UID:", user.uid);
+    } else {
+        console.log("まだ認証されていません");
+    }
+});
+
+// サーバーUTC取得
 async function getServerTimeUTC() {
-    const getServerTime = httpsCallable(functionsInstance, "getServerTime");
-    try {
-        const response = await getServerTime();
-        // サーバー側が返す 'serverTimeMs' を使用
-        if (response.data && response.data.serverTimeMs) {
-            return new Date(response.data.serverTimeMs); // UTC基準
-        }
-        throw new Error("サーバー時刻データが不正です。");
-    } catch (error) {
-        console.error("サーバー時刻取得エラー:", error);
-        throw error;
-    }
+    const getServerTime = httpsCallable(functionsInstance, "getServerTime");
+    try {
+        const response = await getServerTime();
+        
+        if (response.data && typeof response.data.serverTimeMs === 'number') {
+            return new Date(response.data.serverTimeMs);
+        } else {
+            console.error("サーバー時刻取得エラー: serverTimeMs が不正です。", response.data);
+            return new Date(); 
+        }
+    } catch (error) {
+        console.error("サーバー時刻取得のためのFunctions呼び出しに失敗しました:", error);
+        return new Date();
+    }
 }
 
 // データ購読
 function subscribeMobStatusDocs(onUpdate) {
-    const docIds = ["s_latest", "a_latest", "f_latest"];
-    const mobStatusDataMap = {};
-    const unsubs = docIds.map(id =>
-        onSnapshot(doc(db, "mob_status", id), snap => {
-            const data = snap.data();
-            if (data) mobStatusDataMap[id] = data;
-            onUpdate(mobStatusDataMap);
-        })
-    );
-    return () => unsubs.forEach(u => u());
+    const docIds = ["s_latest", "a_latest", "f_latest"];
+    const mobStatusDataMap = {};
+    const unsubs = docIds.map(id =>
+        onSnapshot(doc(db, "mob_status", id), snap => {
+            const data = snap.data();
+            if (data) mobStatusDataMap[id] = data;
+            onUpdate(mobStatusDataMap);
+        })
+    );
+    return () => unsubs.forEach(u => u());
 }
 
 function subscribeMobLocations(onUpdate) {
-    const unsub = onSnapshot(collection(db, "mob_locations"), snapshot => {
-        const map = {};
-        snapshot.forEach(docSnap => {
-            const mobNo = parseInt(docSnap.id, 10);
-            const data = docSnap.data();
-            map[mobNo] = { points: data.points || {} };
-        });
-        onUpdate(map);
-    });
-    return unsub;
+    const unsub = onSnapshot(collection(db, "mob_locations"), snapshot => {
+        const map = {};
+        snapshot.forEach(docSnap => {
+            const mobNo = parseInt(docSnap.id, 10);
+            const data = docSnap.data();
+            map[mobNo] = { points: data.points || {} };
+        });
+        onUpdate(map);
+    });
+    return unsub;
 }
 
-// 討伐報告
+// 討伐報告 (reportsコレクションへの直接書き込み)
 const submitReport = async (mobNo, timeISO, memo) => {
-    const state = getState();
-    const userId = state.userId;
-    const mobs = state.mobs;
+    const state = getState();
+    const userId = state.userId;
+    const mobs = state.mobs;
 
-    if (!userId) {
-        displayStatus("認証が完了していません。ページをリロードしてください。", "error");
-        return;
-    }
+    if (!userId) {
+        displayStatus("認証が完了していません。ページをリロードしてください。", "error");
+        return;
+    }
 
-    const mob = mobs.find(m => m.No === mobNo);
-    if (!mob) {
-        displayStatus("モブデータが見つかりません。", "error");
-        return;
-    }
+    const mob = mobs.find(m => m.No === mobNo);
+    if (!mob) {
+        displayStatus("モブデータが見つかりません。", "error");
+        return;
+    }
 
-    // 修正後の getServerTimeUTC を呼び出し
-    let killTimeDate;
-    try {
-        killTimeDate = await getServerTimeUTC();
-    } catch (e) {
-        // getServerTimeUTC 内でエラー処理済だが、念のため二重チェック
-        displayStatus(`サーバー時刻取得に失敗し、報告できませんでした。`, "error");
-        return;
-    }
+    const killTimeDate = await getServerTimeUTC();
 
-    const modalStatusEl = document.querySelector("#modal-status");
-    if (modalStatusEl) {
-        modalStatusEl.textContent = "送信中...";
-    }
-    displayStatus(`${mob.Name} 討伐時間報告中...`);
+    const modalStatusEl = document.querySelector("#modal-status");
+    if (modalStatusEl) {
+        modalStatusEl.textContent = "送信中...";
+    }
+    displayStatus(`${mob.Name} 討伐時間報告中...`);
 
-    try {
-        await addDoc(collection(db, "reports"), {
-            mob_id: mobNo.toString(),
-            kill_time: killTimeDate,
-            reporter_uid: userId,
-            memo: memo,
-            repop_seconds: mob.REPOP_s
-        });
+    try {
+        await addDoc(collection(db, "reports"), {
+            mob_id: mobNo.toString(),
+            kill_time: killTimeDate,
+            reporter_uid: userId,
+            memo: memo,
+            repop_seconds: mob.REPOP_s
+        });
 
-        closeReportModal();
-        displayStatus("報告が完了しました。データ反映を待っています。", "success");
-    } catch (error) {
-        console.error("レポート送信エラー:", error);
-        if (modalStatusEl) {
-            modalStatusEl.textContent = "送信エラー: " + (error.message || "通信失敗");
-        }
-        displayStatus(`LKT報告エラー: ${error.message || "通信失敗"}`, "error");
-    }
+        closeReportModal();
+        displayStatus("報告が完了しました。データ反映を待っています。", "success");
+    } catch (error) {
+        console.error("レポート送信エラー:", error);
+        if (modalStatusEl) {
+            modalStatusEl.textContent = "送信エラー: " + (error.message || "通信失敗");
+        }
+        displayStatus(`LKT報告エラー: ${error.message || "通信失敗"}`, "error");
+    }
 };
 
-// 湧き潰し報告 (toggleCrushStatus)
+// 湧き潰し報告
 const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
-    const state = getState();
-    const userId = state.userId;
-    const mobs = state.mobs;
+    const state = getState();
+    const userId = state.userId;
+    const mobs = state.mobs;
 
-    if (!userId) {
-        displayStatus("認証が完了していません。", "error");
-        return;
-    }
+    if (!userId) {
+        displayStatus("認証が完了していません。", "error");
+        return;
+    }
 
-    const action = isCurrentlyCulled ? "uncrush" : "crush";
-    const mob = mobs.find(m => m.No === mobNo);
-    if (!mob) return;
+    const action = isCurrentlyCulled ? "uncrush" : "crush";
+    const mob = mobs.find(m => m.No === mobNo);
+    if (!mob) return;
 
-    displayStatus(
-        `${mob.Name} (${locationId}) ${action === "crush" ? "湧き潰し" : "解除"}報告中...`
-    );
+    displayStatus(
+        `${mob.Name} (${locationId}) ${action === "crush" ? "湧き潰し" : "解除"}報告中...`
+    );
 
-    try {
-        const result = await callUpdateCrushStatus({
-            mob_id: mobNo.toString(),
-            point_id: locationId,
-            type: action === "crush" ? "add" : "remove",
-            userId: userId
-        });
+    // MOB_LOCATIONSドキュメントへの参照
+    const mobLocationsRef = doc(db, "mob_locations", mobNo.toString());
+    
+    const updateData = {};
+    const pointPath = `points.${locationId}`;
 
-        if (result.data?.success) {
-            displayStatus(`${mob.Name} の状態を更新しました。`, "success");
-        } else {
-            displayStatus(
-                `更新失敗: ${result.data?.message || "不明なエラー"}`,
-                "error"
-            );
-        }
-    } catch (error) {
-        displayStatus(`湧き潰し報告エラー: ${error.message}`, "error");
-    }
+    if (action === "crush") {
+        updateData[pointPath] = {
+            culled_at: serverTimestamp() // サーバー側での正確な時刻を設定
+        };
+    } else {
+        updateData[`${pointPath}.uncull_at`] = serverTimestamp();
+    }
+    
+    try {
+        if (action === "crush") {
+            await setDoc(mobLocationsRef, updateData, { merge: true });
+        } else {
+            await updateDoc(mobLocationsRef, updateData);
+        }
+
+        displayStatus(`${mob.Name} の状態を更新しました。`, "success");
+    } catch (error) {
+        console.error("湧き潰し報告エラー:", error);
+        displayStatus(`湧き潰し報告エラー: ${error.message}`, "error");
+    }
 };
 
-// 巻き戻し (revertMobStatus)
+// 巻き戻し (revertMobStatus) - httpsCallable方式へ修正
 const revertMobStatus = async (mobNo) => {
-    const state = getState();
-    const userId = state.userId;
-    const mobs = state.mobs;
+    const state = getState();
+    const userId = state.userId;
+    const mobs = state.mobs;
 
-    if (!userId) {
-        displayStatus("認証が完了していません。ページをリロードしてください。", "error");
-        return;
-    }
+    if (!userId) {
+        displayStatus("認証が完了していません。ページをリロードしてください。", "error");
+        return;
+    }
 
-    const mob = mobs.find(m => m.No === mobNo);
-    if (!mob) return;
+    const mob = mobs.find(m => m.No === mobNo);
+    if (!mob) return;
 
-    displayStatus(`${mob.Name} の状態を巻き戻し中...`, "warning");
+    displayStatus(`${mob.Name} の状態を巻き戻し中...`, "warning");
 
-    try {
-        const result = await callRevertStatus({
-            mob_id: mobNo.toString(),
-        });
+    const data = {
+        mob_id: mobNo.toString(),
+    };
 
-        if (result.data?.success) {
-            displayStatus(`${mob.Name} の状態を直前のログへ巻き戻しました。`, "success");
-        } else {
-            displayStatus(
-                `巻き戻し失敗: ${result.data?.message || "ログデータが見つからないか、巻き戻しに失敗しました。"}`,
-                "error"
-            );
-        }
-    } catch (error) {
-        console.error("巻き戻しエラー:", error);
-        displayStatus(`巻き戻しエラー: ${error.message}`, "error");
-    }
+    try {
+        const response = await callRevertStatus(data);
+        const result = response.data;
+
+        if (result?.success) {
+            displayStatus(`${mob.Name} の状態を直前のログへ巻き戻しました。`, "success");
+        } else {
+            displayStatus(
+                `巻き戻し失敗: ${result?.message || "ログデータが見つからないか、巻き戻しに失敗しました。"}`,
+                "error"
+            );
+        }
+    } catch (error) {
+        console.error("巻き戻しエラー:", error);
+        displayStatus(`巻き戻しエラー: ${error.message}`, "error");
+    }
 };
 
 export { initializeAuth, subscribeMobStatusDocs, subscribeMobLocations, submitReport, toggleCrushStatus, revertMobStatus, getServerTimeUTC };
