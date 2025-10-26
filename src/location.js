@@ -32,7 +32,11 @@ function updateCrushUI(mobNo, locationId, isCulled) {
 }
 
 function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
-  const isCulled = spawnCullStatus?.[point.id] === true;
+  const pointStatus = spawnCullStatus?.[point.id];
+  const culledTimeMs = pointStatus?.culled_at?.toMillis() || 0;
+  const uncullTimeMs = pointStatus?.uncull_at?.toMillis() || 0;
+  const isCulled = culledTimeMs > uncullTimeMs;
+
   const isS_A_Cullable = point.mob_ranks.some(r => r === "S" || r === "A");
   const isB_Only = point.mob_ranks.every(r => r.startsWith("B"));
 
