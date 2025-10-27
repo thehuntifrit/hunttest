@@ -2,11 +2,11 @@
 
 import { loadMaintenance } from "./app.js";
 
-function formatDuration(seconds) {
-    const totalMinutes = Math.floor(seconds / 60);
-    const h = Math.floor(totalMinutes / 60);
-    const m = totalMinutes % 60;
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+function formatDurationHM(seconds) {
+  if (seconds < 0) seconds = 0;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${String(h).padStart(2, "0")}h${String(m).padStart(2, "0")}m`;
 }
 
 function debounce(func, wait) {
@@ -231,5 +231,5 @@ function formatLastKillTime(timestamp) {
 
 export {
     calculateRepop, checkMobSpawnCondition, findNextSpawnTime, getEorzeaTime, getEorzeaMoonPhase,
-    getEorzeaWeatherSeed, getEorzeaWeather, getMoonPhaseLabel, formatDuration, debounce, toJstAdjustedIsoString, formatLastKillTime
+    getEorzeaWeatherSeed, getEorzeaWeather, getMoonPhaseLabel, formatDurationHM, debounce, toJstAdjustedIsoString, formatLastKillTime
 };
