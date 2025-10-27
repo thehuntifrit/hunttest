@@ -176,15 +176,50 @@ padding-bottom: 0.5rem !important;
 }
 
 /* --- サイズ系（状態別に統一） --- */
-.spawn-point-sa { width: 12px; height: 12px; border: 2px solid #000; }
-@media (min-width: 1024px) { .spawn-point-sa { width: 14px; height: 14px; } }
+.spawn-point-sa,
+.spawn-point-culled {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #000;
+  box-sizing: border-box;
+}
+@media (min-width: 1024px) {
+  .spawn-point-sa,
+  .spawn-point-culled {
+    width: 14px;
+    height: 14px;
+  }
+}
 
-.spawn-point-b-only { width: 10px; height: 10px; border: 1px solid #fff; opacity: 0.75; pointer-events: none !important; box-shadow: none; }
-@media (min-width: 1024px) { .spawn-point-b-only { width: 12px; height: 12px; } }
+.spawn-point-b-only {
+  width: 10px;
+  height: 10px;
+  border: 1px solid #fff; /* ここに統合 */
+  opacity: 0.75;
+  pointer-events: none !important;
+  box-shadow: none;
+}
+@media (min-width: 1024px) {
+  .spawn-point-b-only {
+    width: 12px;
+    height: 12px;
+  }
+}
 
-.spawn-point-lastone { width: 14px; height: 14px; border: 2px solid #008000; }
-@media (min-width: 1024px) { .spawn-point-lastone { width: 16px; height: 16px; } }
-.spawn-point-lastone:hover { transform: translate(-50%, -50%) scale(1.4); }
+.spawn-point-lastone { 
+  width: 14px; 
+  height: 14px; 
+  border: 2px 
+    solid #008000; }
+@media (min-width: 1024px) { 
+.spawn-point-lastone { 
+  width: 16px; 
+  height: 16px; 
+  }
+}
+.spawn-point-lastone:hover { 
+  transform: translate(-50%, -50%) scale(1.4); 
+}
 
 /* --- 色（fill） --- */
 .color-b1 { background-color: var(--color-b1); }
