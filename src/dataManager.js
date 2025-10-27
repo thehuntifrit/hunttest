@@ -1,261 +1,186 @@
-// filterUI.js
+// dataManager.js
 
-import { getState, FILTER_TO_DATA_RANK_MAP, setFilter } from "./dataManager.js";
-import { EXPANSION_MAP } from "./dataManager.js";
-import { filterAndRender } from "./uiRender.js";
+import { filterAndRender, displayStatus, updateProgressBars } from "./uiRender.js";
+import { subscribeMobStatusDocs, subscribeMobLocations } from "./server.js";
+import { calculateRepop } from "./cal.js";
 
-const DOM = {
-    rankTabs: document.getElementById('rank-tabs'),
-    areaFilterPanelMobile: document.getElementById('area-filter-panel-mobile'),
-    areaFilterPanelDesktop: document.getElementById('area-filter-panel-desktop')
+const EXPANSION_MAP = { 1: "新生", 2: "蒼天", 3: "紅蓮", 4: "漆黒", 5: "暁月", 6: "黄金" };
+
+const state = {
+    userId: localStorage.getItem("user_uuid") || null,
+    baseMobData: [],
+    mobs: [],
+    filter: JSON.parse(localStorage.getItem("huntFilterState")) || {
+        rank: "ALL",
+        areaSets: {
+            S: new Set(),
+            A: new Set(),
+            F: new Set(),
+            ALL: new Set()
+        }
+    },
+    openMobCardNo: localStorage.getItem("openMobCardNo")
+        ? parseInt(localStorage.getItem("openMobCardNo"), 10)
+        : null
 };
 
-const getAllAreas = () => {
-    return Array.from(new Set(Object.values(EXPANSION_MAP)));
-};
-
-const renderRankTabs = () => {
-    const state = getState();
-    const rankList = ["ALL", "S", "A", "FATE"];
-    const container = DOM.rankTabs;
-    if (!container) return;
-    container.innerHTML = "";
-    container.className = "grid grid-cols-4 gap-2";
-
-    const storedState = JSON.parse(localStorage.getItem('huntFilterState')) || {};
-
-    rankList.forEach(rank => {
-        const isSelected = state.filter.rank === rank;
-        const btn = document.createElement("button");
-        btn.dataset.rank = rank;
-        btn.textContent = rank;
-
-        btn.className = `tab-button px-2 py-1 text-sm rounded font-semibold text-white text-center transition ${isSelected ? "bg-green-500" : "bg-gray-500 hover:bg-gray-400"}`;
-
-        const clickCount = (rank === state.filter.rank) ? (storedState.clickCount || '1') : '1';
-        btn.dataset.clickCount = clickCount;
-
-        container.appendChild(btn);
-    });
-};
-
-const renderAreaFilterPanel = () => {
-    const state = getState();
-    const uiRank = state.filter.rank;
-
-    if (uiRank === 'ALL') return;
-
-    const targetRankKey = uiRank === 'FATE' ? 'F' : uiRank;
-    const areas = getAllAreas();
-
-    const currentSet = state.filter.areaSets[targetRankKey] instanceof Set ? state.filter.areaSets[targetRankKey] : new Set();
-    const isAllSelected = areas.length > 0 && currentSet.size === areas.length;
-
-    const sortedAreas = areas.sort((a, b) => {
-        const indexA = Object.values(EXPANSION_MAP).indexOf(a);
-        const indexB = Object.values(EXPANSION_MAP).indexOf(b);
-        return indexB - indexA;
-    });
-
-    const createButton = (area, isAll, isSelected) => {
-        const btn = document.createElement("button");
-        btn.textContent = area;
-
-        const btnClass = 'py-1 px-2 text-sm rounded font-semibold text-white text-center transition w-auto';
-
-        if (isAll) {
-            btn.className = `area-filter-btn ${btnClass} ${isAllSelected ? "bg-red-500" : "bg-gray-500 hover:bg-gray-400"}`;
-            btn.dataset.area = "ALL";
-        } else {
-            btn.className = `area-filter-btn ${btnClass} ${isSelected ? "bg-green-500" : "bg-gray-500 hover:bg-gray-400"}`;
-            btn.dataset.area = area;
-        }
-        return btn;
-    };
-
-    const createPanelContent = (isDesktop) => {
-        const panel = document.createDocumentFragment();
-
-        const allBtn = createButton(isAllSelected ? "全解除" : "全選択", true, false);
-        panel.appendChild(allBtn);
-
-        if (!isDesktop) {
-            const dummy = document.createElement("div");
-            dummy.className = "w-full";
-            panel.appendChild(dummy);
-        }
-
-        sortedAreas.forEach(area => {
-            const isSelected = currentSet.has(area);
-            panel.appendChild(createButton(area, false, isSelected));
-        });
-
-        return panel;
-    };
-
-    const mobilePanel = DOM.areaFilterPanelMobile?.querySelector('div');
-    const desktopPanel = DOM.areaFilterPanelDesktop?.querySelector('div');
-
-    if (mobilePanel) {
-        mobilePanel.innerHTML = "";
-        mobilePanel.appendChild(createPanelContent(false));
-    }
-
-    if (desktopPanel) {
-        desktopPanel.innerHTML = "";
-        desktopPanel.appendChild(createPanelContent(true));
-    }
-};
-
-const updateFilterUI = () => {
-    const state = getState();
-    const currentRankKeyForColor = FILTER_TO_DATA_RANK_MAP[state.filter.rank] || state.filter.rank;
-    const rankTabs = DOM.rankTabs;
-    if (!rankTabs) return;
-
-    const storedFilterState = JSON.parse(localStorage.getItem('huntFilterState')) || {};
-    const prevRank = storedFilterState.rank; 
-
-    rankTabs.querySelectorAll(".tab-button").forEach(btn => {
-        const btnRank = btn.dataset.rank;
-        const isCurrentRank = btnRank === state.filter.rank;
-
-        btn.classList.remove("bg-blue-800", "bg-red-800", "bg-yellow-800", "bg-indigo-800", "bg-gray-500", "hover:bg-gray-400", "bg-green-500");
-        
-        let clickCount = parseInt(btn.dataset.clickCount, 10) || 1;
-
-        if (isCurrentRank) {
-            
-            if (prevRank !== btnRank) {
-                clickCount = 1; 
-            } else {
-                if (clickCount === 1) {
-                    clickCount = 2; 
-                } else {
-                    clickCount = (clickCount === 2) ? 3 : 2; 
-                }
-            }
-            
-            btn.classList.remove("bg-gray-500", "hover:bg-gray-400");
-            btn.classList.add(
-                btnRank === "ALL" ? "bg-blue-800"
-                    : currentRankKeyForColor === "S" ? "bg-red-800"
-                        : currentRankKeyForColor === "A" ? "bg-yellow-800"
-                            : currentRankKeyForColor === "F" ? "bg-indigo-800"
-                                : "bg-gray-800"
-            );
-
-            const panels = [DOM.areaFilterPanelMobile, DOM.areaFilterPanelDesktop];
-            
-            if (btnRank === 'ALL' || clickCount !== 2) {
-                panels.forEach(p => p?.classList.add('hidden'));
-            } else if (clickCount === 2) {
-                renderAreaFilterPanel();
-                panels.forEach(p => p?.classList.remove('hidden'));
-            }
-
-            const newFilterState = { ...storedFilterState, rank: btnRank, clickCount: clickCount };
-            localStorage.setItem("huntFilterState", JSON.stringify(newFilterState));
-
-        } else {
-          
-            clickCount = 1; 
-            btn.classList.add("bg-gray-500", "hover:bg-gray-400");
-            
-            const panels = [DOM.areaFilterPanelMobile, DOM.areaFilterPanelDesktop];
-            panels.forEach(p => p?.classList.add('hidden'));
-        }
-
-        btn.dataset.clickCount = String(clickCount);
-    });
-};
-
-function handleAreaFilterClick(e) {
-    const btn = e.target.closest(".area-filter-btn");
-    if (!btn) return;
-
-    const state = getState();
-    const uiRank = state.filter.rank;
-    const targetRankKey = uiRank === 'FATE' ? 'F' : uiRank;
-    const allAreas = getAllAreas();
-
-    if (uiRank === 'ALL') return;
-
-    const currentSet = state.filter.areaSets[targetRankKey] instanceof Set ? state.filter.areaSets[targetRankKey] : new Set();
-    const nextAreaSets = { ...state.filter.areaSets };
-
-    if (btn.dataset.area === "ALL") {
-        if (currentSet.size === allAreas.length) {
-            nextAreaSets[targetRankKey] = new Set();
-        } else {
-            nextAreaSets[targetRankKey] = new Set(allAreas);
-        }
-    } else {
-        const area = btn.dataset.area;
-        const next = new Set(currentSet);
-        if (next.has(area)) next.delete(area);
-        else next.add(area);
-        nextAreaSets[targetRankKey] = next;
-    }
-
-    setFilter({
-        rank: uiRank,
-        areaSets: nextAreaSets
-    });
-
-    filterAndRender();
-    renderAreaFilterPanel();
+for (const k in state.filter.areaSets) {
+    const v = state.filter.areaSets[k];
+    if (Array.isArray(v)) state.filter.areaSets[k] = new Set(v);
+    else if (!(v instanceof Set)) state.filter.areaSets[k] = new Set();
 }
 
-function filterMobsByRankAndArea(mobs) {
-    const filter = getState().filter;
-    const uiRank = filter.rank;
-    const areaSets = filter.areaSets;
-    const allExpansions = getAllAreas().length;
+const getState = () => state;
+const getMobByNo = no => state.mobs.find(m => m.No === no);
 
-    const getMobRankKey = (rank) => {
-        if (rank === 'S' || rank === 'A') return rank;
-        if (rank === 'F') return 'F';
-        if (rank.startsWith('B')) return 'A'; 
-        return null;
-    };
-
-    return mobs.filter(m => {
-        const mobRank = m.Rank;
-        const mobExpansion = m.Expansion; 
-        const mobRankKey = getMobRankKey(mobRank);
-
-        if (!mobRankKey) return false;
-
-        const filterKey = mobRankKey; 
-
-        if (uiRank === 'ALL') {
-            if (filterKey !== 'S' && filterKey !== 'A' && filterKey !== 'F') return false; 
-            
-            const targetSet = areaSets[filterKey];
-
-            if (!(targetSet instanceof Set) || targetSet.size === 0) return true;
-            if (targetSet.size === allExpansions) return true;
-
-            return targetSet.has(mobExpansion);
-
-        } 
-        else {
-
-            const isRankMatch = (uiRank === 'S' && mobRank === 'S') ||
-                (uiRank === 'A' && (mobRank === 'A' || mobRank.startsWith('B'))) ||
-                (uiRank === 'FATE' && mobRank === 'F');
-
-            if (!isRankMatch) return false;
-
-            const targetSet = areaSets[filterKey];
-
-            if (!(targetSet instanceof Set) || targetSet.size === 0) return true;
-            if (targetSet.size === allExpansions) return true;
-
-            return targetSet.has(mobExpansion);
-        }
-    });
+function setUserId(uid) {
+    state.userId = uid;
+    localStorage.setItem("user_uuid", uid);
 }
 
-export { renderRankTabs, renderAreaFilterPanel, updateFilterUI, handleAreaFilterClick, filterMobsByRankAndArea };
+function setBaseMobData(data) {
+    state.baseMobData = data;
+}
+
+function setMobs(data) {
+    state.mobs = data;
+}
+
+function setFilter(partial) {
+    state.filter = { ...state.filter, ...partial };
+    const serialized = {
+        ...state.filter,
+        areaSets: Object.keys(state.filter.areaSets).reduce((acc, key) => {
+            const v = state.filter.areaSets[key];
+            acc[key] = v instanceof Set ? Array.from(v) : v;
+            return acc;
+        }, {})
+    };
+    localStorage.setItem("huntFilterState", JSON.stringify(serialized));
+}
+
+function setOpenMobCardNo(no) {
+    state.openMobCardNo = no;
+    localStorage.setItem("openMobCardNo", no ?? "");
+}
+
+const RANK_COLORS = {
+    S: { bg: 'bg-red-600', hover: 'hover:bg-red-700', text: 'text-red-600', hex: '#dc2626', label: 'S' },
+    A: { bg: 'bg-yellow-600', hover: 'hover:bg-yellow-700', text: 'text-yellow-600', hex: '#ca8a04', label: 'A' },
+    F: { bg: 'bg-indigo-600', hover: 'hover:bg-indigo-700', text: 'text-indigo-600', hex: '#4f46e5', label: 'F' },
+};
+
+const PROGRESS_CLASSES = {
+  P0_60: "progress-p0-60",
+  P60_80: "progress-p60-80",
+  P80_100: "progress-p80-100",
+  TEXT_NEXT: "text-next",
+  TEXT_POP: "text-pop",
+  MAX_OVER_BLINK: "max-over-blink"
+};
+
+const FILTER_TO_DATA_RANK_MAP = { FATE: 'F', ALL: 'ALL', S: 'S', A: 'A' };
+
+const MOB_DATA_URL = "./mob_data.json";
+const MAINTENANCE_URL = "./maintenance.json";
+let progressInterval = null;
+let unsubscribes = [];
+
+async function loadBaseMobData() {
+    const resp = await fetch(MOB_DATA_URL);
+    if (!resp.ok) throw new Error("Mob data failed to load.");
+    const data = await resp.json();
+
+    const baseMobData = Object.entries(data.mobs).map(([no, mob]) => ({
+        No: parseInt(no, 10),
+        Rank: mob.rank,
+        Name: mob.name,
+        Area: mob.area,
+        Condition: mob.condition,
+        Expansion: EXPANSION_MAP[Math.floor(no / 10000)] || "Unknown",
+
+        REPOP_s: mob.repopSeconds,
+        MAX_s: mob.maxRepopSeconds,
+
+        moonPhase: mob.moonPhase,
+        timeRange: mob.timeRange,
+        timeRanges: mob.timeRanges,
+        weatherSeedRange: mob.weatherSeedRange,
+        weatherSeedRanges: mob.weatherSeedRanges,
+
+        Map: mob.mapImage,
+        spawn_points: mob.locations,
+        last_kill_time: 0,
+        prev_kill_time: 0,
+        last_kill_memo: "",
+        spawn_cull_status: {},
+        related_mob_no: mob.rank.startsWith("B") ? mob.relatedMobNo : null,
+        repopInfo: calculateRepop({
+            REPOP_s: mob.repopSeconds,
+            MAX_s: mob.maxRepopSeconds,
+            last_kill_time: 0,
+        })
+    }));
+
+    setBaseMobData(baseMobData);
+    setMobs([...baseMobData]);
+    filterAndRender({ isInitialLoad: true });
+}
+
+function startRealtime() {
+    // 前回の購読を解除
+    unsubscribes.forEach(fn => fn && fn());
+    unsubscribes = [];
+
+    // Mob ステータス購読
+    const unsubStatus = subscribeMobStatusDocs(mobStatusDataMap => {
+        const current = getState().mobs;
+        const map = new Map();
+        Object.values(mobStatusDataMap).forEach(docData => {
+            Object.entries(docData).forEach(([mobId, mobData]) => {
+                const mobNo = parseInt(mobId, 10);
+                map.set(mobNo, {
+                    last_kill_time: mobData.last_kill_time?.seconds || 0,
+                    prev_kill_time: mobData.prev_kill_time?.seconds || 0,
+                    last_kill_memo: mobData.last_kill_memo || ""
+                });
+            });
+        });
+        const merged = current.map(m => {
+            const dyn = map.get(m.No);
+            if (dyn) {
+                const updatedMob = { ...m, ...dyn };
+                // LKT/PKT が更新された Mob に対して repopInfo を再計算
+                updatedMob.repopInfo = calculateRepop(updatedMob);
+                return updatedMob;
+            }
+            return m;
+        });
+        setMobs(merged);
+        filterAndRender();
+        updateProgressBars();
+        displayStatus("LKT/Memoデータ更新完了。", "success");
+    });
+    unsubscribes.push(unsubStatus);
+
+    // Mob 出現位置購読 (メインロジック)
+    const unsubLoc = subscribeMobLocations(locationsMap => {
+        const current = getState().mobs;
+        const merged = current.map(m => {
+            const dyn = locationsMap[m.No];
+
+            let newMob = { ...m };
+            newMob.spawn_cull_status = (dyn && dyn.points) ? dyn.points : {};
+            return newMob;
+        });
+        setMobs(merged);
+        filterAndRender();
+        displayStatus("湧き潰しデータ更新完了。", "success");
+    });
+    unsubscribes.push(unsubLoc);
+}
+
+export {
+    state, EXPANSION_MAP, getState, getMobByNo, setUserId, setBaseMobData, setMobs, loadBaseMobData,
+    startRealtime, setFilter, setOpenMobCardNo, RANK_COLORS, PROGRESS_CLASSES, FILTER_TO_DATA_RANK_MAP
+};
