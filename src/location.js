@@ -41,7 +41,7 @@ function isCulled(pointStatus) {
 
 function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
     const pointStatus = spawnCullStatus?.[point.id];
-    const isCulledFlag = isCulled(pointStatus);  // ← 共通関数を利用
+    const isCulledFlag = isCulled(pointStatus);  // ← 共通関数で判定
 
     const isS_A_Cullable = point.mob_ranks.some(r => r === "S" || r === "A");
     const isB_Only = point.mob_ranks.every(r => r.startsWith("B"));
@@ -56,17 +56,19 @@ function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_Last
         colorClass = "color-lastone";
         specialClass = "spawn-point-shadow-lastone spawn-point-interactive";
         dataIsInteractive = "true";
+
     } else if (isS_A_Cullable) {
         const rankB = point.mob_ranks.find(r => r.startsWith("B"));
         colorClass = rankB === "B1" ? "color-b1" : "color-b2";
         sizeClass = "spawn-point-sa";
+
         if (isCulledFlag) {
             specialClass = "culled-with-white-border spawn-point-culled";
-            dataIsInteractive = "false";
         } else {
-            specialClass = "spawn-point-shadow-sa spawn-point-interactive";
-            dataIsInteractive = "true";
+            specialClass = "spawn-point-shadow-sa";
         }
+        dataIsInteractive = "true";   // ← S/A は常にトグル可能
+
     } else if (isB_Only) {
         const rankB = point.mob_ranks[0];
         sizeClass = "spawn-point-b-only";
@@ -76,7 +78,7 @@ function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_Last
             colorClass = rankB === "B1" ? "color-b1-only" : "color-b2-only";
         }
         specialClass = "spawn-point-b-border";
-        dataIsInteractive = "false";
+        dataIsInteractive = "false";  // ← B1/B2 専用は対象外のまま
     }
 
     return `
@@ -85,7 +87,7 @@ function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_Last
          data-location-id="${point.id}"
          data-mob-no="${mobNo}"
          data-rank="${rank}"
-         data-is-culled="${isCulled}"
+         data-is-culled="${isCulledFlag}"
          data-is-interactive="${dataIsInteractive}"
          tabindex="0">
     </div>
