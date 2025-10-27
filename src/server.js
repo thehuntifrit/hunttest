@@ -102,7 +102,7 @@ function subscribeMobLocations(onUpdate) {
       const mobNo = parseInt(docSnap.id, 10);
       const data = docSnap.data();
       map[mobNo] = { points: data.points || {} };
-
+console.log(status)
       // 各地点の UI 更新
       Object.entries(data.points || {}).forEach(([locationId, status]) => {
         const isCulledFlag = isCulled(status);
