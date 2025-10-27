@@ -202,19 +202,21 @@ padding-bottom: 0.5rem !important;
 .spawn-point-shadow-sa { box-shadow: 0 0 4px 2px rgba(0, 0, 139, 0.9); }
 .spawn-point-shadow-lastone { box-shadow: 0 0 4px 2px rgba(0, 128, 0, 0.9); }
 
-/* --- 湧き潰し済み（強制的に内側グレー＋白枠で差別化） --- */
+/* 湧き潰し済みポイント */
 .spawn-point-culled {
-  border: 2px solid #ffffff !important; /* 白枠で固定 */
-  box-shadow: none !important;
-  opacity: 0.9; /* 視認性確保 */
   position: relative;
+  opacity: 0.9;
+  box-shadow: none;
 }
+
+/* 内側をグレーで塗りつぶし、外側は元の B1/B2 色を残す */
 .spawn-point-culled::after {
   content: "";
   position: absolute;
-  inset: 2px; /* 枠から少し内側 */
+  inset: 3px; /* 外側の色を残す幅（調整可） */
   border-radius: 50%;
   background-color: var(--color-b-inverted-bg); /* 内側グレー */
+  pointer-events: none;
 }
 
 /* B-only は湧き潰し済みと混同しないよう「枠1px＋薄い不透明度」を維持 */
