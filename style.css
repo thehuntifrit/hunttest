@@ -4,9 +4,9 @@
   --header-height: 4rem;
   font-family: 'Inter', sans-serif;
 
-  --progress-0-60: #3CB371;
-  --progress-60-80: #FF7F50;
-  --progress-80-100: #FF4500;
+  --progress-0-60: #4169E1;
+  --progress-60-80: #3CB371;
+  --progress-80-100: #FF6347;
 }
   
 /* 進捗バー色クラス */
