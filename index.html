@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 
@@ -9,49 +8,54 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-
 </head>
 
 <body class="bg-gray-900 text-white leading-relaxed">
 
-    <div id="status-message" class="text-center py-1 text-xs text-white bg-gray-800 z-40"></div>
-
-    <header id="main-header" class="fixed top-0 left-0 right-0 bg-gray-800 shadow-lg z-30 transition-all duration-300">
-        <div class="container mx-auto px-4 flex items-center justify-between h-16">
+    <header id="main-header" class="fixed top-0 left-0 right-0 bg-gray-800 shadow-lg z-50 transition-all duration-300">
+        <div id="status-message" class="text-center py-2 text-sm text-white bg-gray-800" role="status"
+            aria-live="polite"></div>
+        <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-12 sm:h-10">
             <h1 class="text-xl font-bold text-yellow-400 tracking-wide">The Hunt</h1>
-            <div id="rank-tabs" class="flex gap-2"></div>
+            <div id="rank-tabs" class="flex gap-1"></div>
         </div>
-        <div id="area-filter-panel-mobile" class="flex flex-wrap gap-2 px-4 py-2 hidden"></div>
-        <div id="area-filter-panel-desktop" class="flex flex-wrap gap-2 px-4 py-2 hidden"></div>
-
+        <div id="area-filter-panel-mobile"
+            class="max-w-6xl mx-auto flex flex-wrap justify-end px-4 py-2 block lg:hidden">
+            <div class="grid grid-cols-2 gap-2 w-full sm:w-auto"></div>
+        </div>
+        <div id="area-filter-panel-desktop"
+            class="max-w-6xl mx-auto flex flex-wrap justify-end px-4 py-2 hidden lg:flex">
+            <div class="flex flex-wrap gap-2"></div>
+        </div>
     </header>
 
-    <main class="container mx-auto px-2 py-2 sm:px-4 pb-10 pt-20">
+    <main class="mx-auto px-2 py-2 sm:px-4 pb-10 pt-20 sm:pt-24">
         <div id="master-mob-container" class="hidden">
         </div>
 
-        <div id="column-container" class="grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-2 lg:grid-cols-3" data-breakpoint-md="768" data-breakpoint-lg="1024">
+        <div id="column-container"
+            class="grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-2 lg:grid-cols-3 max-w-6xl mx-auto"
+            data-breakpoint-md="768" data-breakpoint-lg="1024">
             <div id="column-1" class="flex flex-col gap-2"></div>
             <div id="column-2" class="flex flex-col gap-2"></div>
             <div id="column-3" class="flex flex-col gap-2"></div>
         </div>
-            
     </main>
 
-    <div id="report-modal" class="fixed inset-0 hidden items-center justify-center p-4 z-50 bg-black bg-opacity-70">
+    <div id="report-modal" class="fixed inset-0 hidden items-center justify-center p-4 z-30 bg-black bg-opacity-10">
         <div class="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md border border-gray-600 text-white">
-            <h2 class="text-xl font-semibold mb-4 text-yellow-300">討伐報告</h2>
-            <p id="modal-mob-name" class="text-lg mb-4"></p>
+            <h2 class="text-xl font-semibold mb-0 text-yellow-300">討伐報告</h2>
+            <p id="modal-mob-name" class="text-base mb-3"></p>
 
             <form id="report-form" data-mob-no="">
-                <div class="mb-4">
+                <div class="mb-2">
                     <label for="report-datetime" class="block text-sm font-medium mb-1">討伐日時 (JST)</label>
-                    <input type="datetime-local" id="report-datetime" required
+                    <input type="datetime-local" id="report-datetime" name="kill-time" required
                         class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white focus:ring-yellow-400 focus:border-yellow-400">
                 </div>
                 <div class="mb-4">
-                    <label for="report-memo" class="block text-sm font-medium mb-1">メモ (任意)</label>
-                    <textarea id="report-memo" rows="3"
+                    <label for="report-memo" class="block text-sm font-medium mb-1">メモ</label>
+                    <textarea id="report-memo" name="kill-memo" rows="3"
                         class="w-full p-2 rounded bg-gray-700 border border-gray-600 text-white focus:ring-yellow-400 focus:border-yellow-400"></textarea>
                 </div>
 
@@ -66,9 +70,10 @@
             </form>
         </div>
     </div>
-    
+
     <script type="module" src="./src/cal.js"></script>
     <script type="module" src="./src/uiRender.js"></script>
+    <script type="module" src="./src/filterUI.js"></script>
     <script type="module" src="./src/location.js"></script>
     <script type="module" src="./src/modal.js"></script>
     <script type="module" src="./src/server.js"></script>
