@@ -218,12 +218,7 @@ function updateProgressText(card, mob) {
   const text = card.querySelector(".progress-text");
   if (!text) return;
 
-  const { elapsedPercent, nextMinRepopDate, minRepop, maxRepop, status } = mob.repopInfo;
-
-  const conditionTime = findNextSpawnTime(mob);
-  const displayTime = (nextMinRepopDate && conditionTime)
-    ? (conditionTime > nextMinRepopDate ? conditionTime : nextMinRepopDate)
-    : (nextMinRepopDate || conditionTime);
+  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status } = mob.repopInfo;
 
   const absFmt = {
     month: '2-digit',
@@ -233,19 +228,21 @@ function updateProgressText(card, mob) {
     timeZone: 'Asia/Tokyo'
   };
 
-  const nextTimeStr = displayTime
-    ? new Intl.DateTimeFormat('ja-JP', absFmt).format(displayTime)
+  const inTimeStr = nextMinRepopDate
+    ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextMinRepopDate)
+    : "未確定";
+
+  const nextTimeStr = nextConditionSpawnDate
+    ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate)
     : "未確定";
 
   let remainingStr = "";
-  if (status === "Maintenance") {
-    remainingStr = `Next ${formatDuration(minRepop - Date.now() / 1000)}`;
-  } else if (status === "Next") {
+  if (status === "Maintenance" || status === "Next") {
     remainingStr = `Next ${formatDuration(minRepop - Date.now() / 1000)}`;
   } else if (status === "PopWindow") {
     remainingStr = `残り ${formatDuration(maxRepop - Date.now() / 1000)}`;
   } else if (status === "MaxOver") {
-    remainingStr = `Over`;
+    remainingStr = `Over (100%)`;
   }
 
   text.innerHTML = `
