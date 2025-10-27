@@ -152,6 +152,8 @@ function calculateRepop(mob, maintenance) {
     const lastKill = mob.last_kill_time || 0;
     const repopSec = mob.REPOP_s;
     const maxSec = mob.MAX_s;
+console.log("maintenance:", maintenance);
+console.log("serverUp:", maintenance?.serverUp);
 
     // --- メンテ情報が無い場合は未確定を返す ---
     if (!maintenance || !maintenance.serverUp) {
@@ -225,6 +227,7 @@ function calculateRepop(mob, maintenance) {
         elapsedPercent = 100;
         timeRemaining = `Over (100%)`;
     }
+    
     // --- in 表記用（常に MINREPOP 基準） ---
     const nextMinRepopDate = new Date(minRepop * 1000);
     // --- Next 表記用（特殊条件がある場合のみ） ---
