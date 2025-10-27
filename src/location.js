@@ -7,15 +7,11 @@ import { getState, getMobByNo } from "./dataManager.js";
 function handleCrushToggle(e) {
   const point = e.target.closest(".spawn-point");
   if (!point) return false;
-  // ラストワンは操作不可
-  if (point.dataset.isLastone === "true" || point.classList.contains("spawn-point-lastone")) {
-    return false;
-  }
   if (point.dataset.isInteractive !== "true") return false;
 
   e.preventDefault();
   e.stopPropagation();
-    
+
   const card = e.target.closest(".mob-card");
   if (!card) return true;
 
@@ -31,24 +27,18 @@ function updateCrushUI(mobNo, locationId, isCulled) {
     `.spawn-point[data-mob-no="${mobNo}"][data-location-id="${locationId}"]`
   );
   if (!marker) return;
-  // ラストワンは湧き潰し不可（絶対に状態変更しない）
-  if (marker.dataset.isLastone === "true" || marker.classList.contains("spawn-point-lastone")) {
+
+  if (marker.dataset.isLastone === "true") {
+    // ラストワンは湧き潰し対象外
     marker.dataset.isCulled = "false";
     marker.classList.remove("spawn-point-culled");
     marker.title = "ラストワン（湧き潰し不可）";
     return;
   }
+
   marker.dataset.isCulled = isCulled.toString();
   marker.classList.toggle("spawn-point-culled", isCulled);
   marker.title = `湧き潰し: ${isCulled ? "済" : "未"}`;
-}
-
-function isCulled(pointStatus) {
-  const culledMs = pointStatus?.culled_at ? pointStatus.culled_at.toMillis() : 0;
-  const uncullMs = pointStatus?.uncull_at ? pointStatus.uncull_at.toMillis() : 0;
-
-  if (culledMs === 0 && uncullMs === 0) return false;
-  return culledMs > uncullMs;
 }
 
 function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
@@ -60,32 +50,30 @@ function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_Last
 
   let sizeClass = "";
   let colorClass = "";
-  let specialClass = "";
+  let extraClass = "";
   let dataIsInteractive = "false";
 
   if (isLastOne) {
-    // ラストワンは湧き潰し対象外（操作不可・常にエメラルドグリーン）
     sizeClass = "spawn-point-lastone";
     colorClass = "color-lastone";
-    specialClass = "spawn-point-shadow-lastone";
     dataIsInteractive = "false";
 
   } else if (isS_A_Cullable) {
     const rankB = point.mob_ranks.find(r => r.startsWith("B"));
     colorClass = rankB === "B1" ? "color-b1" : "color-b2";
     sizeClass = "spawn-point-sa";
-    specialClass = isCulledFlag ? "spawn-point-culled" : "spawn-point-shadow-sa";
+    if (isCulledFlag) extraClass = "spawn-point-culled";
     dataIsInteractive = "true";
 
   } else if (isB_Only) {
     const rankB = point.mob_ranks[0];
     sizeClass = "spawn-point-b-only";
-    colorClass = isS_LastOne ? "color-b-inverted" : (rankB === "B1" ? "color-b1-only" : "color-b2-only");
+    colorClass = rankB === "B1" ? "color-b1-only" : "color-b2-only";
     dataIsInteractive = "false";
   }
 
   return `
-    <div class="spawn-point ${sizeClass} ${colorClass} ${specialClass}"
+    <div class="spawn-point ${sizeClass} ${colorClass} ${extraClass}"
          style="left:${point.x}%; top:${point.y}%;"
          data-location-id="${point.id}"
          data-mob-no="${mobNo}"
