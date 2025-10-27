@@ -198,26 +198,43 @@ function distributeCards() {
 function updateProgressBar(card, mob) {
   const bar = card.querySelector(".progress-bar-bg");
   const wrapper = bar?.parentElement;
-  const text = card.querySelector(".progress-text");
-  if (!bar || !wrapper || !text) return;
+  const baseText = card.querySelector(".progress-text-base");
+  const overlayText = card.querySelector(".progress-text-overlay");
+  if (!bar || !wrapper || !baseText || !overlayText) return;
 
   const { elapsedPercent, status } = mob.repopInfo;
 
+  // バーの伸び率を更新
   bar.style.transition = "width linear 60s";
   bar.style.width = `${elapsedPercent}%`;
 
-  bar.classList.remove(PROGRESS_CLASSES.P0_60, PROGRESS_CLASSES.P60_80, PROGRESS_CLASSES.P80_100);
-  text.classList.remove(PROGRESS_CLASSES.TEXT_NEXT, PROGRESS_CLASSES.TEXT_POP);
+  // クラスリセット
+  bar.classList.remove(
+    PROGRESS_CLASSES.P0_60,
+    PROGRESS_CLASSES.P60_80,
+    PROGRESS_CLASSES.P80_100
+  );
   wrapper.classList.remove(PROGRESS_CLASSES.MAX_OVER_BLINK);
 
+  // 状態に応じて色クラスを付与
   if (status === "PopWindow") {
-    if (elapsedPercent <= 60) bar.classList.add(PROGRESS_CLASSES.P0_60); else if (elapsedPercent <= 80)
-      bar.classList.add(PROGRESS_CLASSES.P60_80); else bar.classList.add(PROGRESS_CLASSES.P80_100);
-    text.classList.add(PROGRESS_CLASSES.TEXT_POP);
+    if (elapsedPercent <= 60) {
+      bar.classList.add(PROGRESS_CLASSES.P0_60);
+    } else if (elapsedPercent <= 80) {
+      bar.classList.add(PROGRESS_CLASSES.P60_80);
+    } else {
+      bar.classList.add(PROGRESS_CLASSES.P80_100);
+    }
   } else if (status === "MaxOver") {
-    bar.classList.add(PROGRESS_CLASSES.P80_100); text.classList.add(PROGRESS_CLASSES.TEXT_POP);
+    bar.classList.add(PROGRESS_CLASSES.P80_100);
     wrapper.classList.add(PROGRESS_CLASSES.MAX_OVER_BLINK);
-  } else { text.classList.add(PROGRESS_CLASSES.TEXT_NEXT); }
+  }
+
+  // テキスト更新（ベースとオーバーレイ両方）
+  const percentText = `${Math.floor(elapsedPercent)}%`;
+  baseText.textContent = percentText;
+  overlayText.textContent = percentText;
+  overlayText.style.width = `${elapsedPercent}%`;
 }
 
 function updateProgressText(card, mob) {
