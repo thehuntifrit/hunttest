@@ -108,66 +108,53 @@ const renderAreaFilterPanel = () => {
 };
 
 const updateFilterUI = () => {
-    const state = getState();
-    const currentRankKeyForColor = FILTER_TO_DATA_RANK_MAP[state.filter.rank] || state.filter.rank;
-    const rankTabs = DOM.rankTabs;
-    if (!rankTabs) return;
+  const state = getState();
+  const rankTabs = DOM.rankTabs;
+  if (!rankTabs) return;
 
-    const storedFilterState = JSON.parse(localStorage.getItem('huntFilterState')) || {};
-    const prevRank = storedFilterState.rank;
+  const stored = JSON.parse(localStorage.getItem("huntFilterState")) || {};
+  const prevRank = stored.rank;
+  let clickStep = stored.clickStep || 1;
 
-    rankTabs.querySelectorAll(".tab-button").forEach(btn => {
-        const btnRank = btn.dataset.rank;
-        const isCurrentRank = btnRank === state.filter.rank;
+  rankTabs.querySelectorAll(".tab-button").forEach(btn => {
+    const btnRank = btn.dataset.rank;
+    const isCurrent = btnRank === state.filter.rank;
 
-        btn.classList.remove("bg-blue-800", "bg-red-800", "bg-yellow-800", "bg-indigo-800", "bg-gray-500", "hover:bg-gray-400", "bg-green-500");
+    btn.classList.remove("bg-blue-800", "bg-red-800", "bg-yellow-800", "bg-indigo-800", "bg-gray-500", "hover:bg-gray-400", "bg-green-500");
 
-        let clickCount = parseInt(btn.dataset.clickCount, 10) || 1;
-
-        if (isCurrentRank) {
-
-            if (prevRank !== btnRank) {
-                clickCount = 1;
-            } else {
-                if (clickCount === 1) {
-                    clickCount = 2;
-                } else {
-                    clickCount = (clickCount === 2) ? 3 : 2;
-                }
-            }
-
-            btn.classList.remove("bg-gray-500", "hover:bg-gray-400");
-            btn.classList.add(
-                btnRank === "ALL" ? "bg-blue-800"
-                    : currentRankKeyForColor === "S" ? "bg-red-800"
-                        : currentRankKeyForColor === "A" ? "bg-yellow-800"
-                            : currentRankKeyForColor === "F" ? "bg-indigo-800"
-                                : "bg-gray-800"
-            );
-
-            const panels = [DOM.areaFilterPanelMobile, DOM.areaFilterPanelDesktop];
-
-            if (btnRank === 'ALL' || clickCount !== 2) {
-                panels.forEach(p => p?.classList.add('hidden'));
-            } else if (clickCount === 2) {
-                renderAreaFilterPanel();
-                panels.forEach(p => p?.classList.remove('hidden'));
-            }
-
-            const newFilterState = { ...storedFilterState, rank: btnRank, clickCount: clickCount };
-            localStorage.setItem("huntFilterState", JSON.stringify(newFilterState));
-
-        } else {
-
-            clickCount = 1;
-            btn.classList.add("bg-gray-500", "hover:bg-gray-400");
-
-            const panels = [DOM.areaFilterPanelMobile, DOM.areaFilterPanelDesktop];
-            panels.forEach(p => p?.classList.add('hidden'));
-        }
-
-        btn.dataset.clickCount = String(clickCount);
-    });
+    if (isCurrent) {
+      // ランクが変わったらリセット
+      if (prevRank !== btnRank) {
+        clickStep = 1;
+      } else {
+        // 同じランクなら 2↔3 を繰り返す
+        if (clickStep === 1) clickStep = 2;
+        else if (clickStep === 2) clickStep = 3;
+        else clickStep = 2;
+      }
+      // 色付け
+      btn.classList.add(
+        btnRank === "ALL" ? "bg-blue-800"
+          : btnRank === "S" ? "bg-red-800"
+          : btnRank === "A" ? "bg-yellow-800"
+          : btnRank === "FATE" ? "bg-indigo-800"
+          : "bg-gray-800"
+      );
+      // エリアパネル制御
+      const panels = [DOM.areaFilterPanelMobile, DOM.areaFilterPanelDesktop];
+      if (btnRank === "ALL" || clickStep === 1 || clickStep === 3) {
+        panels.forEach(p => p?.classList.add("hidden"));
+      } else if (clickStep === 2) {
+        renderAreaFilterPanel();
+        panels.forEach(p => p?.classList.remove("hidden"));
+      }
+      // 状態保存
+      localStorage.setItem("huntFilterState", JSON.stringify({ rank: btnRank, clickStep }));
+    } else {
+      // 非選択タブはリセット
+      btn.classList.add("bg-gray-500", "hover:bg-gray-400");
+    }
+  });
 };
 
 function handleAreaFilterClick(e) {
