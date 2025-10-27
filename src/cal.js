@@ -153,15 +153,38 @@ function calculateRepop(mob, maintenance) {
     const repopSec = mob.REPOP_s;
     const maxSec = mob.MAX_s;
 
-    const serverUp = maintenance
-        ? new Date(maintenance.serverUp).getTime() / 1000
-        : 0;
+    // --- メンテ情報が無い場合は未確定を返す ---
+    if (!maintenance || !maintenance.serverUp) {
+        return {
+            minRepop: null,
+            maxRepop: null,
+            elapsedPercent: 0,
+            timeRemaining: "未確定",
+            status: "Unknown",
+            nextMinRepopDate: null,
+            nextConditionSpawnDate: null
+        };
+    }
+
+    const serverUpDate = new Date(maintenance.serverUp);
+    if (isNaN(serverUpDate)) {
+        return {
+            minRepop: null,
+            maxRepop: null,
+            elapsedPercent: 0,
+            timeRemaining: "未確定",
+            status: "Unknown",
+            nextMinRepopDate: null,
+            nextConditionSpawnDate: null
+        };
+    }
+
+    const serverUp = serverUpDate.getTime() / 1000;
 
     let minRepop = 0, maxRepop = 0;
     let elapsedPercent = 0;
     let timeRemaining = "Unknown";
     let status = "Unknown";
-
     // --- 初回（メンテ後 or 未報告） ---
     if (lastKill === 0 || lastKill < serverUp) {
         minRepop = serverUp + repopSec;
@@ -170,22 +193,22 @@ function calculateRepop(mob, maintenance) {
         if (now >= maxRepop) {
             status = "MaxOver";
             elapsedPercent = 100;
-            timeRemaining = `Over`;
+            timeRemaining = `Over (100%)`;
         } else if (now < minRepop) {
             status = "Maintenance";
-            timeRemaining = `Next: ${formatDuration(minRepop - now)}`;
+            timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
         } else {
             status = "PopWindow";
             elapsedPercent = ((now - minRepop) / (maxRepop - minRepop)) * 100;
             elapsedPercent = Math.min(elapsedPercent, 100);
-            timeRemaining = `残り ${formatDuration(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
+            timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
         }
     // --- Next（最短未到達） ---
     } else if (now < lastKill + repopSec) {
         minRepop = lastKill + repopSec;
         maxRepop = lastKill + maxSec;
         status = "Next";
-        timeRemaining = `Next: ${formatDuration(minRepop - now)}`;
+        timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
     // --- PopWindow（出現可能窓） ---
     } else if (now < lastKill + maxSec) {
         minRepop = lastKill + repopSec;
@@ -193,14 +216,14 @@ function calculateRepop(mob, maintenance) {
         status = "PopWindow";
         elapsedPercent = ((now - minRepop) / (maxRepop - minRepop)) * 100;
         elapsedPercent = Math.min(elapsedPercent, 100);
-        timeRemaining = `残り ${formatDuration(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
+        timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
     // --- MaxOver（最大超過） ---
     } else {
         minRepop = lastKill + repopSec;
         maxRepop = lastKill + maxSec;
         status = "MaxOver";
         elapsedPercent = 100;
-        timeRemaining = `Over`;
+        timeRemaining = `Over (100%)`;
     }
     // --- in 表記用（常に MINREPOP 基準） ---
     const nextMinRepopDate = new Date(minRepop * 1000);
