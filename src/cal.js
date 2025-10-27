@@ -2,6 +2,13 @@
 
 import { loadMaintenance } from "./app.js";
 
+function formatDuration(seconds) {
+    const totalMinutes = Math.floor(seconds / 60);
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 function formatDurationHM(seconds) {
   if (seconds < 0) seconds = 0;
   const h = Math.floor(seconds / 3600);
@@ -230,6 +237,6 @@ function formatLastKillTime(timestamp) {
 }
 
 export {
-    calculateRepop, checkMobSpawnCondition, findNextSpawnTime, getEorzeaTime, getEorzeaMoonPhase,
+    calculateRepop, checkMobSpawnCondition, findNextSpawnTime, getEorzeaTime, getEorzeaMoonPhase, formatDuration,
     getEorzeaWeatherSeed, getEorzeaWeather, getMoonPhaseLabel, formatDurationHM, debounce, toJstAdjustedIsoString, formatLastKillTime
 };
