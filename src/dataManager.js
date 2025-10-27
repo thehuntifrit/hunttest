@@ -82,15 +82,20 @@ const PROGRESS_CLASSES = {
 const FILTER_TO_DATA_RANK_MAP = { FATE: 'F', ALL: 'ALL', S: 'S', A: 'A' };
 
 const MOB_DATA_URL = "./mob_data.json";
-const MAINTENANCE_URL = "./maintenance.json";
 let progressInterval = null;
 let unsubscribes = [];
-let maintenance = null;
+const MAINTENANCE_URL = "./maintenance.json";
+let maintenanceCache = null;
 
 async function loadMaintenance() {
-  const res = await fetch("./maintenance.json");
-  const data = await res.json();
-  return data.maintenance;
+    const res = await fetch(MAINTENANCE_URL);
+    if (!res.ok) throw new Error("Maintenance data failed to load.");
+    const data = await res.json();
+    // 形を正規化してキャッシュ
+    maintenanceCache = (data && typeof data === "object" && "maintenance" in data)
+        ? data.maintenance
+        : data;
+    return maintenanceCache;
 }
 
 async function loadBaseMobData() {
