@@ -102,7 +102,7 @@ function createMobCard(mob) {
     </div>
 
     <!-- 下段：プログレスバー（構造のみ） -->
-    <div class="progress-bar-wrapper h-6 rounded-full relative overflow-hidden transition-all duration-100 ease-linear">
+    <div class="progress-bar-wrapper h-5 rounded-1g relative overflow-hidden transition-all duration-100 ease-linear">
         <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear"
             style="width: 0%"></div>
         <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
@@ -213,26 +213,31 @@ function updateProgressBar(card, mob) {
     wrapper.classList.add(PROGRESS_CLASSES.MAX_OVER_BLINK);
   } else { text.classList.add(PROGRESS_CLASSES.TEXT_NEXT); }
 }
-function updateProgressText(card, mob) {
-  const text = card.querySelector(".progress-text"); if (!text) return; const {
-    elapsedPercent, nextMinRepopDate, maxRepop } = mob.repopInfo; const conditionTime = findNextSpawnTime(mob); const
-      displayTime = (nextMinRepopDate && conditionTime) ? (conditionTime > nextMinRepopDate ? conditionTime :
-        nextMinRepopDate)
-        : (nextMinRepopDate || conditionTime);
 
+function updateProgressText(card, mob) {
+  const text = card.querySelector(".progress-text"); 
+  if (!text) return; 
+  const { elapsedPercent, nextMinRepopDate, maxRepop } = mob.repopInfo; 
+  const conditionTime = findNextSpawnTime(mob); 
+  const displayTime = (nextMinRepopDate && conditionTime) ? (conditionTime > nextMinRepopDate ? conditionTime : nextMinRepopDate) : (nextMinRepopDate || conditionTime);
   const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
   const nextTimeStr = displayTime
     ? new Intl.DateTimeFormat('ja-JP', absFmt).format(displayTime)
     : "未確定";
 
-  const remainingStr = maxRepop
-    ? `残り ${formatDuration(maxRepop - Date.now() / 1000)}`
-    : "";
+  let remainingStr = "";
+    if (status === "Next") {
+      remainingStr = `Next ${formatDuration(minRepop - Date.now() / 1000)}`;
+    } else if (status === "PopWindow") {
+      remainingStr = `残り ${formatDuration(maxRepop - Date.now() / 1000)}`;
+    } else if (status === "MaxOver") {
+      remainingStr = `00:00`;
+    }
 
   text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
-        <div class="pl-3 text-left">in ${nextTimeStr}</div>
-        <div class="pr-2 text-right">${remainingStr} ( ${elapsedPercent.toFixed(0)}% )</div>
+        <div class="pl-2 text-left">in ${nextTimeStr}</div>
+        <div class="pr-1 text-right">${remainingStr} ( ${elapsedPercent.toFixed(0)}% )</div>
     </div>
     `;
 }
@@ -258,7 +263,6 @@ function updateExpandablePanel(card, mob) {
   const lastStr = formatLastKillTime(mob.last_kill_time);
   const memoStr = mob.last_kill_memo || "なし";
 
-  if (elNext) elNext.textContent = `次回: ${nextStr}`;
   if (elLast) elLast.textContent = `前回: ${lastStr}`;
   if (elMemo) elMemo.textContent = memoStr;
 }
