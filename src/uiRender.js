@@ -102,40 +102,46 @@ function createMobCard(mob) {
     </div>
 
     <!-- 下段：プログレスバー（構造のみ） -->
-    <div class="progress-bar-wrapper h-5 rounded-1g relative overflow-hidden transition-all duration-100 ease-linear">
+    <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
         <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear"
             style="width: 0%"></div>
-        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
-            style="line-height: 1;"></div>
-    </div>
-</div>
-`;
 
-  const expandablePanelHTML = isExpandable ? `
-<div class="expandable-panel bg-gray-800/70 ${isOpen ? 'open' : ''}">
-    <div class="px-2 py-0 text-sm space-y-0.5">
-        <div class="flex justify-between items-start flex-wrap">
-            <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
-            <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: <span data-last-memo></span></div>
-            <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽選条件</div>
-            <div class="w-full text-gray-300 mb-2">${processText(mob.Condition)}</div>
+        <!-- テキストラッパー -->
+        <div class="progress-text-wrapper absolute inset-0 flex items-center justify-center text-sm font-semibold"
+            style="line-height: 1;">
+            <!-- ベース文字（未塗り部分用） -->
+            <span class="progress-text-base">0%</span>
+            <!-- オーバーレイ文字（塗られた部分用、幅をバー進捗に合わせる） -->
+            <span class="progress-text-overlay" style="width: 0%;">0%</span>
         </div>
-        ${mob.Map && rank === 'S' ? `
-        <div class="map-content py-0.5 flex justify-center relative">
-            <img src="./maps/${mob.Map}" alt="${mob.Area} Map"
-                class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
-            <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
-        </div>
-        ` : ''}
     </div>
-</div>
-` : '';
+    `;
 
-  return `
-<div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 
+    const expandablePanelHTML = isExpandable ? `
+    <div class="expandable-panel bg-gray-800/70 ${isOpen ? 'open' : ''}">
+        <div class="px-2 py-0 text-sm space-y-0.5">
+            <div class="flex justify-between items-start flex-wrap">
+                <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
+                <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: <span data-last-memo></span></div>
+                <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽選条件</div>
+                <div class="w-full text-gray-300 mb-2">${processText(mob.Condition)}</div>
+            </div>
+            ${mob.Map && rank === 'S' ? `
+            <div class="map-content py-0.5 flex justify-center relative">
+                <img src="./maps/${mob.Map}" alt="${mob.Area} Map"
+                    class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
+                <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
+            </div>
+            ` : ''}
+        </div>
+    </div>
+    ` : '';
+
+    return `
+    <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 
 transition duration-150" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeaderHTML}${expandablePanelHTML}</div>
-`;
-}
+    `;
+    }
 
 function filterAndRender({ isInitialLoad = false } = {}) {
     const state = getState();
