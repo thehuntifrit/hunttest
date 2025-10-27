@@ -6,7 +6,7 @@ import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gsta
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-functions.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
 
-import { getState } from "./dataManager.js"; 
+import { getState } from "./dataManager.js";
 import { closeReportModal } from "./modal.js";
 import { displayStatus } from "./uiRender.js";
 
@@ -36,7 +36,7 @@ const callRevertStatus = httpsCallable(functions, 'revertStatus'); // 巻き戻�
 async function initializeAuth() {
     return new Promise((resolve) => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
-            unsubscribe(); 
+            unsubscribe();
 
             if (user) {
                 resolve(user.uid);
@@ -47,7 +47,7 @@ async function initializeAuth() {
                     })
                     .catch((error) => {
                         console.error("匿名認証に失敗しました:", error);
-                        resolve(null); 
+                        resolve(null);
                     });
             }
         });
@@ -67,12 +67,12 @@ async function getServerTimeUTC() {
     const getServerTime = httpsCallable(functionsInstance, "getServerTime");
     try {
         const response = await getServerTime();
-        
+
         if (response.data && typeof response.data.serverTimeMs === 'number') {
             return new Date(response.data.serverTimeMs);
         } else {
             console.error("サーバー時刻取得エラー: serverTimeMs が不正です。", response.data);
-            return new Date(); 
+            return new Date();
         }
     } catch (error) {
         console.error("サーバー時刻取得のためのFunctions呼び出しに失敗しました:", error);
@@ -173,7 +173,7 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
 
     // MOB_LOCATIONSドキュメントへの参照
     const mobLocationsRef = doc(db, "mob_locations", mobNo.toString());
-    
+
     const updateData = {};
     const pointPath = `points.${locationId}`;
 
@@ -184,7 +184,7 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
     } else {
         updateData[`${pointPath}.uncull_at`] = serverTimestamp();
     }
-    
+
     try {
         if (action === "crush") {
             await setDoc(mobLocationsRef, updateData, { merge: true });
