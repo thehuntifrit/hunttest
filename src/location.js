@@ -33,9 +33,23 @@ function updateCrushUI(mobNo, locationId, isCulled) {
 
 function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
     const pointStatus = spawnCullStatus?.[point.id];
-    const culledTimeMs = pointStatus?.culled_at?.toMillis() || 0;
-    const uncullTimeMs = pointStatus?.uncull_at?.toMillis() || 0;
-    const isCulled = culledTimeMs > uncullTimeMs;
+    const culledTimeMs = pointStatus?.culled_at ? pointStatus.culled_at.toMillis() : null;
+    const uncullTimeMs = pointStatus?.uncull_at ? pointStatus.uncull_at.toMillis() : null;
+
+    let isCulled = false;
+        if (culledTimeMs && !uncullTimeMs) {
+        // 済みだけある → 湧き潰し済み
+          isCulled = true;
+        } else if (!culledTimeMs && uncullTimeMs) {
+        // 解除だけある → 未湧き潰し
+          isCulled = false;
+        } else if (culledTimeMs && uncullTimeMs) {
+        // 両方ある → 新しい方を採用
+          isCulled = culledTimeMs > uncullTimeMs;
+        } else {
+        // どちらも無い → 未湧き潰し
+          isCulled = false;
+    }
 
     const isS_A_Cullable = point.mob_ranks.some(r => r === "S" || r === "A");
     const isB_Only = point.mob_ranks.every(r => r.startsWith("B"));
