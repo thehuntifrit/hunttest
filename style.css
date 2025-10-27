@@ -5,9 +5,9 @@
   font-family: 'Inter', sans-serif;
 
   /* Repop進捗バーの色定義 */
-  --progress-0-60: #99ff99;   /* 緑系 */
-  --progress-60-80: #FFD700;  /* 黄系 */
-  --progress-80-100: #E7672B; /* 赤系 */
+  --progress-0-60: #d9ead4;   /* 緑系 */
+  --progress-60-80: #fff3ce;  /* 黄系 */
+  --progress-80-100: #fce5ce; /* 赤系 */
 
   /* テキスト色定義 */
   --text-next: #e0e0e0;
