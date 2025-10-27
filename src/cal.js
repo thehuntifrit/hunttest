@@ -170,7 +170,7 @@ function calculateRepop(mob, maintenance) {
         status = "Next";
 
     // --- PopWindow（出現可能窓） ---
-    } else if (now >= lastKill + repopSec && now < lastKill + maxSec) {
+    } else if (now < lastKill + maxSec) {
         minRepop = lastKill + repopSec;
         maxRepop = lastKill + maxSec;
         elapsedPercent = ((now - minRepop) / (maxRepop - minRepop)) * 100;
@@ -194,13 +194,14 @@ function calculateRepop(mob, maintenance) {
         const searchStart = new Date(minRepop * 1000);
         nextMinRepopDate = findNextSpawnTime(mob, searchStart);
     } else {
-        // 特殊条件なし → 単純に minRepop を次回時間とする
-        if (minRepop > now) {
+        // 特殊条件なし → 常に「次の repop サイクル」を算出
+        if (lastKill === 0 || lastKill < serverUp) {
+            // メンテ後初回
             nextMinRepopDate = new Date(minRepop * 1000);
         } else {
-            // 既に PopWindow/MaxOver に入っている場合は「次のサイクルの minRepop」
-            const nextCycle = minRepop + repopSec;
-            nextMinRepopDate = new Date(nextCycle * 1000);
+            // 通常討伐後
+            const cycles = Math.max(1, Math.ceil((now - lastKill) / repopSec));
+            nextMinRepopDate = new Date((lastKill + repopSec * cycles) * 1000);
         }
     }
 
