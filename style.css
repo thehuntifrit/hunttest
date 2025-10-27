@@ -6,7 +6,7 @@
 
   --progress-0-60: #3CB371;
   --progress-60-80: #FF7F50;
-  --progress-80-100: #CD5C5C;
+  --progress-80-100: #B22222;
 }
   
 /* 進捗バー色クラス */
@@ -81,7 +81,6 @@ transform: scale(1.15);
   font-weight: 600;
   line-height: 1;
   color: #fff;
-  mix-blend-mode: difference;
   pointer-events: none;
 }
 
