@@ -245,7 +245,7 @@ function updateProgressText(card, mob) {
   } else if (status === "PopWindow") {
     remainingStr = `残り ${formatDuration(maxRepop - Date.now() / 1000)}`;
   } else if (status === "MaxOver") {
-    remainingStr = `00:00`;
+    remainingStr = `Over`;
   }
 
   text.innerHTML = `
