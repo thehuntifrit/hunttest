@@ -162,7 +162,7 @@ function calculateRepop(mob, maintenance) {
         minRepop = serverUp + repopSec * 0.6;
         maxRepop = serverUp + maxSec * 0.6;
         timeRemaining = `Next: ${formatDuration(minRepop - now)}`;
-        status = "Next";
+        status = "Maintenance";
 
         // --- Next（最短未到達） ---
     } else if (now < lastKill + repopSec) {
