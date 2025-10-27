@@ -230,6 +230,7 @@ exports.reportProcessor = onDocumentCreated({
 
     // --- 7. ログ追記 (新しいサイクル開始時のみ更新前の状態をログに記録) ---
     try {
+        // existingDataToLog は isNewCycle=true で、かつ REPOP 判定をクリアした更新前のデータ
         if (existingDataToLog && Object.keys(existingDataToLog).length > 0) {
             const logId = `${mobId}_${existingDataToLog.last_kill_time ? existingDataToLog.last_kill_time.toMillis() : '0'}_${admin.firestore.Timestamp.now().toMillis()}`;
 
