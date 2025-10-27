@@ -31,19 +31,17 @@ function updateCrushUI(mobNo, locationId, isCulled) {
     }
 }
 
-function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
-  const pointStatus = spawnCullStatus?.[point.id];
-  const culledTimeMs = pointStatus?.culled_at ? pointStatus.culled_at.toMillis() : 0;
-  const uncullTimeMs = pointStatus?.uncull_at ? pointStatus.uncull_at.toMillis() : 0;
+function isCulled(pointStatus) {
+  const culledMs = pointStatus?.culled_at ? pointStatus.culled_at.toMillis() : 0;
+  const uncullMs = pointStatus?.uncull_at ? pointStatus.uncull_at.toMillis() : 0;
 
-  let isCulled = false;
-  if (culledTimeMs === 0 && uncullTimeMs === 0) {
-    isCulled = false;
-  } else if (culledTimeMs > uncullTimeMs) {
-    isCulled = true;
-  } else if (uncullTimeMs > culledTimeMs) {
-    isCulled = false;
-  }
+  if (culledMs === 0 && uncullMs === 0) return false;
+  return culledMs > uncullMs;
+}
+
+function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
+    const pointStatus = spawnCullStatus?.[point.id];
+    const isCulledFlag = isCulled(pointStatus);  // ← 共通関数を利用
 
     const isS_A_Cullable = point.mob_ranks.some(r => r === "S" || r === "A");
     const isB_Only = point.mob_ranks.every(r => r.startsWith("B"));
@@ -62,7 +60,7 @@ function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_Last
         const rankB = point.mob_ranks.find(r => r.startsWith("B"));
         colorClass = rankB === "B1" ? "color-b1" : "color-b2";
         sizeClass = "spawn-point-sa";
-        if (isCulled) {
+        if (isCulledFlag) {
             specialClass = "culled-with-white-border spawn-point-culled";
             dataIsInteractive = "false";
         } else {
@@ -104,4 +102,4 @@ function attachLocationEvents() {
     });
 }
 
-export { drawSpawnPoint, handleCrushToggle, updateCrushUI, attachLocationEvents };
+export { isCulled, drawSpawnPoint, handleCrushToggle, updateCrushUI, attachLocationEvents };
