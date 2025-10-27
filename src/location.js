@@ -31,13 +31,19 @@ function updateCrushUI(mobNo, locationId, isCulled) {
   if (marker.dataset.isLastone === "true") {
     // ラストワンは湧き潰し対象外
     marker.dataset.isCulled = "false";
-    marker.classList.remove("spawn-point-culled");
     marker.title = "ラストワン（湧き潰し不可）";
     return;
   }
 
+  const rank = marker.dataset.rank;
+  if (isCulled) {
+    marker.classList.remove("color-b1", "color-b2");
+    marker.classList.add(rank === "B1" ? "color-b1-culled" : "color-b2-culled");
+  } else {
+    marker.classList.remove("color-b1-culled", "color-b2-culled");
+    marker.classList.add(rank === "B1" ? "color-b1" : "color-b2");
+  }
   marker.dataset.isCulled = isCulled.toString();
-  marker.classList.toggle("spawn-point-culled", isCulled);
   marker.title = `湧き潰し: ${isCulled ? "済" : "未"}`;
 }
 
@@ -48,32 +54,31 @@ function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_Last
   const isS_A_Cullable = point.mob_ranks.some(r => r === "S" || r === "A");
   const isB_Only = point.mob_ranks.every(r => r.startsWith("B"));
 
-  let sizeClass = "";
   let colorClass = "";
-  let extraClass = "";
   let dataIsInteractive = "false";
 
   if (isLastOne) {
-    sizeClass = "spawn-point-lastone";
+    // ラストワンは固定色・非インタラクティブ
     colorClass = "color-lastone";
     dataIsInteractive = "false";
 
   } else if (isS_A_Cullable) {
     const rankB = point.mob_ranks.find(r => r.startsWith("B"));
-    colorClass = rankB === "B1" ? "color-b1" : "color-b2";
-    sizeClass = "spawn-point-sa";
-    if (isCulledFlag) extraClass = "spawn-point-culled";
+    if (isCulledFlag) {
+      colorClass = rankB === "B1" ? "color-b1-culled" : "color-b2-culled";
+    } else {
+      colorClass = rankB === "B1" ? "color-b1" : "color-b2";
+    }
     dataIsInteractive = "true";
 
   } else if (isB_Only) {
     const rankB = point.mob_ranks[0];
-    sizeClass = "spawn-point-b-only";
     colorClass = rankB === "B1" ? "color-b1-only" : "color-b2-only";
     dataIsInteractive = "false";
   }
 
   return `
-    <div class="spawn-point ${sizeClass} ${colorClass} ${extraClass}"
+    <div class="spawn-point ${colorClass}"
          style="left:${point.x}%; top:${point.y}%;"
          data-location-id="${point.id}"
          data-mob-no="${mobNo}"
