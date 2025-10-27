@@ -103,16 +103,10 @@ function createMobCard(mob) {
 
     <!-- 下段：プログレスバー（構造のみ） -->
     <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
-        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear"
-            style="width: 0%"></div>
-
-        <!-- テキストラッパー -->
-        <div class="progress-text-wrapper absolute inset-0 flex items-center justify-center text-sm font-semibold"
-            style="line-height: 1;">
-            <!-- ベース文字（未塗り部分用） -->
-            <span class="progress-text-base">0%</span>
-            <!-- オーバーレイ文字（塗られた部分用、幅をバー進捗に合わせる） -->
-            <span class="progress-text-overlay" style="width: 0%;">0%</span>
+        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear" style="width: 0%"></div>
+        <div class="progress-text-wrapper absolute inset-0 flex items-center justify-center text-sm font-semibold" style="line-height: 1;">
+            <span class="progress-text-base"></span>
+            <span class="progress-text-overlay" style="width: 0%;"></span>
         </div>
     </div>
     `;
