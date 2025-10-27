@@ -122,7 +122,6 @@ function checkMobSpawnCondition(mob, date) {
         });
         if (!ok) return false;
     }
-
     return true;
 }
 
@@ -137,7 +136,6 @@ function findNextSpawnTime(mob, now = new Date()) {
         }
         date = new Date(date.getTime() + REAL_SECONDS_STEP * 1000);
     }
-
     return null;
 }
 
@@ -157,21 +155,21 @@ function calculateRepop(mob, maintenance) {
     let timeRemaining = "Unknown";
     let status = "Unknown";
 
-        // --- 初回（メンテ後） ---
-    if (lastKill < serverUp) {
-        minRepop = serverUp + repopSec * 0.6;
-        maxRepop = serverUp + maxSec * 0.6;
+    // --- 初回（メンテ後 or 未報告） ---
+    if (lastKill === 0 || lastKill < serverUp) {
+        minRepop = serverUp + repopSec;
+        maxRepop = serverUp + maxSec;
         timeRemaining = `Next: ${formatDuration(minRepop - now)}`;
         status = "Maintenance";
 
-        // --- Next（最短未到達） ---
+    // --- Next（最短未到達） ---
     } else if (now < lastKill + repopSec) {
         minRepop = lastKill + repopSec;
         maxRepop = lastKill + maxSec;
         timeRemaining = `Next: ${formatDuration(minRepop - now)}`;
         status = "Next";
 
-        // --- PopWindow（出現可能窓） ---
+    // --- PopWindow（出現可能窓） ---
     } else if (now >= lastKill + repopSec && now < lastKill + maxSec) {
         minRepop = lastKill + repopSec;
         maxRepop = lastKill + maxSec;
@@ -180,21 +178,30 @@ function calculateRepop(mob, maintenance) {
         timeRemaining = `残り ${formatDuration(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
         status = "PopWindow";
 
-        // --- MaxOver（最大超過） ---
+    // --- MaxOver（最大超過） ---
     } else {
         minRepop = lastKill + repopSec;
         maxRepop = lastKill + maxSec;
         elapsedPercent = 100;
-        timeRemaining = `Over (100%)`; // 常に固定
+        timeRemaining = `Over (100%)`;
         status = "MaxOver";
     }
 
+    // --- 次回出現可能時刻の決定 ---
     let nextMinRepopDate = null;
     if (mob.moonPhase || mob.timeRange || mob.weatherSeedRange || mob.weatherSeedRanges) {
+        // 特殊条件あり → 条件を満たす次の時間を探索
         const searchStart = new Date(minRepop * 1000);
         nextMinRepopDate = findNextSpawnTime(mob, searchStart);
-    } else if (minRepop > now) {
-        nextMinRepopDate = new Date(minRepop * 1000);
+    } else {
+        // 特殊条件なし → 単純に minRepop を次回時間とする
+        if (minRepop > now) {
+            nextMinRepopDate = new Date(minRepop * 1000);
+        } else {
+            // 既に PopWindow/MaxOver に入っている場合は「次のサイクルの minRepop」
+            const nextCycle = minRepop + repopSec;
+            nextMinRepopDate = new Date(nextCycle * 1000);
+        }
     }
 
     return {
