@@ -102,7 +102,7 @@ function createMobCard(mob) {
     </div>
 
     <!-- 下段：プログレスバー（構造のみ） -->
-    <div class="progress-bar-wrapper h-6 rounded-full relative overflow-hidden transition-all duration-100 ease-linear">
+    <div class="progress-bar-wrapper h-5 rounded-1g relative overflow-hidden transition-all duration-100 ease-linear">
         <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear"
             style="width: 0%"></div>
         <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
@@ -264,8 +264,8 @@ function updateProgressText(card, mob) {
 
   text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
-        <div class="pl-3 text-left">in ${nextTimeStr}</div>
-        <div class="pr-2 text-right">${remainingStr} (${elapsedPercent.toFixed(0)}%)</div>
+        <div class="pl-2 text-left">in ${nextTimeStr}</div>
+        <div class="pr-1 text-right">${remainingStr} (${elapsedPercent.toFixed(0)}%)</div>
     </div>
   `;
 }
