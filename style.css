@@ -1,20 +1,40 @@
-/* CSSカスタムプロパティの定義 */
 :root {
---bg-dark: #1a1a2e;
---text-light: #e0e0e0;
---header-height: 4rem;
-font-family: 'Inter', sans-serif;
+  --bg-dark: #1a1a2e;
+  --text-light: #3e83c4;
+  --header-height: 4rem;
+  font-family: 'Inter', sans-serif;
 
-/* Repop進捗バーの色定義 */
---progress-0-60: #d9ead4;
---progress-60-80: #fff3ce;
---progress-80-100: #fce5ce;
+  /* Repop進捗バーの色定義 */
+  --progress-0-60: #99ff99;   /* 緑系 */
+  --progress-60-80: #FFD700;  /* 黄系 */
+  --progress-80-100: #E7672B; /* 赤系 */
 
-/* テキスト色定義 */
---text-next: #3e83c4; /* Blue */
---text-pop: #3e83c4;
+  /* テキスト色定義 */
+  --text-next: #e0e0e0;
+  --text-pop: #e0e0e0;
+}
+
+/* 進捗バー色クラス */
+.progress-p0-60 {
+  background-color: var(--progress-0-60);
+}
+.progress-p60-80 {
+  background-color: var(--progress-60-80);
+}
+.progress-p80-100 {
+  background-color: var(--progress-80-100);
+}
+
+/* テキスト色クラス */
+.text-next {
+  color: var(--text-next);
+}
+.text-pop {
+  color: var(--text-pop);
+}
 
 /* スポーンポイントの色定義 */
+:root {
 --color-b1: #3e83c4;
 --color-b2: #e16666;
 --color-lastone: #00ff3c; /* Bright Green */
@@ -37,20 +57,9 @@ text-shadow:
 1px 1px 0 #000033;
 }
 
-/* タブのアクティブ状態を強調 (JSがTailwindクラスで背景色を変更) */
-.tab-button {
-transition: background-color 0.2s, box-shadow 0.2s, border 0.2s;
-}
-.tab-button[data-rank][data-click-count="1"],
-.tab-button[data-rank][data-click-count="2"] {
-/* 選択中のランクを視覚的に強調 */
-box-shadow: 0 0 12px rgba(255, 255, 100, 0.6);
-border: 2px solid #FFD700;
-}
-
-/* モブカードの基本スタイル */
-.mob-card {
-transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+#status-message {
+  min-height: 1rem; /* 常に2remの高さを確保 */
+  line-height: 1rem; /* テキストを中央寄せ */
 }
 
 /* ランクアイコンのスタイル */
@@ -64,7 +73,6 @@ transform: scale(1.15);
 
 /* --- 進捗バー関連のスタイル定義 --- */
 .progress-bar-wrapper {
-/* 進捗バーの背景と点滅アニメーションの親要素 */
 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 background-color: rgba(0, 0, 0, 0.4);
 }
@@ -233,18 +241,8 @@ padding-bottom: 0.5rem !important;
 /* モーダルの背景 */
 #report-modal {
 background-color: rgba(0, 0, 0, 0.9);
-z-index: 50;
-transition: opacity 0.3s;
-}
-
-/* カラム間の隙間とパディングを設定 (Tailwindを補完) */
-#column-container {
-padding: 0.5rem;
-}
-#column-1, #column-2, #column-3 {
-display: flex;
-flex-direction: column;
-gap: 0.5rem;
+z-index: 40;
+transition: opacity 0.5s;
 }
 
 .maintenance-banner {
@@ -263,4 +261,26 @@ gap: 0.5rem;
   color: #bbb; /* 薄暗いグレーで控えめに */
   font-weight: normal;
   margin-top: 4px;
+}
+
+/* --- ステータスメッセージ表示用クラスの追加 --- */
+.bg-green-600 { 
+    background-color: #059669;
+}
+.bg-red-600 {
+    background-color: #dc2626;
+}
+.bg-blue-600 {
+    background-color: #2563eb;
+}
+.text-center {
+    text-align: center;
+}
+.py-1 {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+.text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
 }
