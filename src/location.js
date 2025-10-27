@@ -22,31 +22,6 @@ function handleCrushToggle(e) {
   return true;
 }
 
-function updateCrushUI(mobNo, locationId, isCulled) {
-  const marker = document.querySelector(
-    `.spawn-point[data-mob-no="${mobNo}"][data-location-id="${locationId}"]`
-  );
-  if (!marker) return;
-
-  if (marker.dataset.isLastone === "true") {
-    // ラストワンは湧き潰し対象外
-    marker.dataset.isCulled = "false";
-    marker.title = "ラストワン（湧き潰し不可）";
-    return;
-  }
-
-  const rank = marker.dataset.rank;
-  if (isCulled) {
-    marker.classList.remove("color-b1", "color-b2");
-    marker.classList.add(rank === "B1" ? "color-b1-culled" : "color-b2-culled");
-  } else {
-    marker.classList.remove("color-b1-culled", "color-b2-culled");
-    marker.classList.add(rank === "B1" ? "color-b1" : "color-b2");
-  }
-  marker.dataset.isCulled = isCulled.toString();
-  marker.title = `湧き潰し: ${isCulled ? "済" : "未"}`;
-}
-
 function isCulled(pointStatus) {
   const culledMs = pointStatus?.culled_at ? pointStatus.culled_at.toMillis() : 0;
   const uncullMs = pointStatus?.uncull_at ? pointStatus.uncull_at.toMillis() : 0;
@@ -97,6 +72,31 @@ function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_Last
          tabindex="0">
     </div>
   `;
+}
+
+function updateCrushUI(mobNo, locationId, isCulled) {
+  const marker = document.querySelector(
+    `.spawn-point[data-mob-no="${mobNo}"][data-location-id="${locationId}"]`
+  );
+  if (!marker) return;
+
+  if (marker.dataset.isLastone === "true") {
+    // ラストワンは湧き潰し対象外
+    marker.dataset.isCulled = "false";
+    marker.title = "ラストワン（湧き潰し不可）";
+    return;
+  }
+
+  const rank = marker.dataset.rank;
+  if (isCulled) {
+    marker.classList.remove("color-b1", "color-b2");
+    marker.classList.add(rank === "B1" ? "color-b1-culled" : "color-b2-culled");
+  } else {
+    marker.classList.remove("color-b1-culled", "color-b2-culled");
+    marker.classList.add(rank === "B1" ? "color-b1" : "color-b2");
+  }
+  marker.dataset.isCulled = isCulled.toString();
+  marker.title = `湧き潰し: ${isCulled ? "済" : "未"}`;
 }
 
 function attachLocationEvents() {
