@@ -192,25 +192,21 @@ function distributeCards() {
 function updateProgressBar(card, mob) {
   const bar = card.querySelector(".progress-bar-bg");
   const wrapper = bar?.parentElement;
-  const baseText = card.querySelector(".progress-text-base");
-  const overlayText = card.querySelector(".progress-text-overlay");
-  if (!bar || !wrapper || !baseText || !overlayText) return;
+  const text = card.querySelector(".progress-text");
+  if (!bar || !wrapper || !text) return;
 
   const { elapsedPercent, status } = mob.repopInfo;
 
-  // バーの伸び率を更新
+  // 進捗バーの幅
   bar.style.transition = "width linear 60s";
   bar.style.width = `${elapsedPercent}%`;
 
-  // クラスリセット
-  bar.classList.remove(
-    PROGRESS_CLASSES.P0_60,
-    PROGRESS_CLASSES.P60_80,
-    PROGRESS_CLASSES.P80_100
-  );
+  // クラスリセット（既存仕様維持）
+  bar.classList.remove(PROGRESS_CLASSES.P0_60, PROGRESS_CLASSES.P60_80, PROGRESS_CLASSES.P80_100);
+  text.classList.remove(PROGRESS_CLASSES.TEXT_NEXT, PROGRESS_CLASSES.TEXT_POP);
   wrapper.classList.remove(PROGRESS_CLASSES.MAX_OVER_BLINK);
 
-  // 状態に応じて色クラスを付与
+  // バー色クラス（既存仕様維持）
   if (status === "PopWindow") {
     if (elapsedPercent <= 60) {
       bar.classList.add(PROGRESS_CLASSES.P0_60);
@@ -219,10 +215,34 @@ function updateProgressBar(card, mob) {
     } else {
       bar.classList.add(PROGRESS_CLASSES.P80_100);
     }
+    text.classList.add(PROGRESS_CLASSES.TEXT_POP);
   } else if (status === "MaxOver") {
     bar.classList.add(PROGRESS_CLASSES.P80_100);
+    text.classList.add(PROGRESS_CLASSES.TEXT_POP);
     wrapper.classList.add(PROGRESS_CLASSES.MAX_OVER_BLINK);
+  } else {
+    text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
   }
+  // 進捗テキスト（二重表示化：既存 .progress-text の中で完結）
+  const percentText = `${Math.floor(elapsedPercent)}%`;
+
+  // 必要な子要素を初期化（既存構造は残し、なければ追加）
+  let baseSpan = text.querySelector(".text-base");
+  let overlaySpan = text.querySelector(".text-overlay");
+  if (!baseSpan || !overlaySpan) {
+    text.innerHTML = `
+      <span class="text-base">${percentText}</span>
+      <span class="text-overlay" style="width: 0%;">${percentText}</span>
+    `;
+    baseSpan = text.querySelector(".text-base");
+    overlaySpan = text.querySelector(".text-overlay");
+  } else {
+    baseSpan.textContent = percentText;
+    overlaySpan.textContent = percentText;
+  }
+  // 塗られた部分だけ文字色を変えるため、オーバーレイの幅をバーに合わせる
+  overlaySpan.style.width = `${elapsedPercent}%`;
+}
 
   const percentText = `${Math.floor(elapsedPercent)}%`;
   baseText.textContent = percentText;
