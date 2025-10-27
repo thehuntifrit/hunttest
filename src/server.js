@@ -178,26 +178,19 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
         `${mob.Name} (${locationId}) ${action === "crush" ? "湧き潰し" : "解除"}報告中...`
     );
 
-    // MOB_LOCATIONSドキュメントへの参照
     const mobLocationsRef = doc(db, "mob_locations", mobNo.toString());
 
     const updateData = {};
-    const pointPath = `points.${locationId}`;
+    const pointPath = `points.${locationId.toString()}`;
 
     if (action === "crush") {
-        updateData[pointPath] = {
-            culled_at: serverTimestamp() // サーバー側での正確な時刻を設定
-        };
+        updateData[`${pointPath}.culled_at`] = serverTimestamp();
     } else {
         updateData[`${pointPath}.uncull_at`] = serverTimestamp();
     }
 
     try {
-        if (action === "crush") {
-            await setDoc(mobLocationsRef, updateData, { merge: true });
-        } else {
-            await updateDoc(mobLocationsRef, updateData);
-        }
+        await updateDoc(mobLocationsRef, updateData);
 
         displayStatus(`${mob.Name} の状態を更新しました。`, "success");
     } catch (error) {
