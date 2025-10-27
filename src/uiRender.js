@@ -238,7 +238,7 @@ function updateProgressText(card, mob) {
     : "未確定";
 
   let remainingStr = "";
-  if (status === "maintenance") {
+  if (status === "Maintenance") {
     remainingStr = `Next ${formatDuration(minRepop - Date.now() / 1000)}`;
   } else if (status === "Next") {
     remainingStr = `Next ${formatDuration(minRepop - Date.now() / 1000)}`;
