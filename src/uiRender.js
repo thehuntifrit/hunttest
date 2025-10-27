@@ -219,6 +219,7 @@ function updateProgressText(card, mob) {
   if (!text) return;
 
   const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status } = mob.repopInfo;
+
   const absFmt = {
     month: '2-digit',
     day: '2-digit',
@@ -235,20 +236,24 @@ function updateProgressText(card, mob) {
     ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate)
     : null;
 
-  let remainingStr = "";
+  let rightStr = "";
+  const nowSec = Date.now() / 1000;
   if (status === "Maintenance" || status === "Next") {
-    remainingStr = `Next ${formatDurationHM(minRepop - Date.now() / 1000)}`;
+    rightStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
   } else if (status === "PopWindow") {
-    remainingStr = `残り ${formatDurationHM(maxRepop - Date.now() / 1000)}`;
+    rightStr = `残り ${formatDurationHM(maxRepop - nowSec)}`;
   } else if (status === "MaxOver") {
-    remainingStr = `Over (100%)`;
+    rightStr = `Over (100%)`;
+  } else {
+    rightStr = `未確定`;
   }
 
   text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
         <div class="pl-2 text-left">
-          in ${inTimeStr}${nextTimeStr ? ` (${nextTimeStr})` : ""}</div>
-        <div class="pr-1 text-right">${remainingStr} (${elapsedPercent.toFixed(0)}%)</div>
+          in ${inTimeStr}${nextTimeStr ? ` (${nextTimeStr})` : ""}
+        </div>
+        <div class="pr-1 text-right">${rightStr}${status !== "MaxOver" && status !== "Unknown" ? ` (${elapsedPercent.toFixed(0)}%)` : ""}</div>
     </div>
   `;
 }
