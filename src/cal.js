@@ -163,7 +163,7 @@ function calculateRepop(mob, maintenance) {
         if (now >= maxRepop) {
             status = "MaxOver";
             elapsedPercent = 100;
-            timeRemaining = `Over (100%)`;
+            timeRemaining = `Over`;
         } else if (now < minRepop) {
             status = "Maintenance";
             timeRemaining = `Next: ${formatDuration(minRepop - now)}`;
@@ -193,7 +193,7 @@ function calculateRepop(mob, maintenance) {
         maxRepop = lastKill + maxSec;
         status = "MaxOver";
         elapsedPercent = 100;
-        timeRemaining = `Over (100%)`;
+        timeRemaining = `Over`;
     }
     // --- in 表記用（常に MINREPOP 基準） ---
     const nextMinRepopDate = new Date(minRepop * 1000);
