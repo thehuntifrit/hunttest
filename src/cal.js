@@ -185,7 +185,7 @@ function calculateRepop(mob, maintenance) {
         minRepop = lastKill + repopSec;
         maxRepop = lastKill + maxSec;
         elapsedPercent = 100;
-        timeRemaining = `00:00 (100%)`; // 常に固定
+        timeRemaining = `Over (100%)`; // 常に固定
         status = "MaxOver";
     }
 
