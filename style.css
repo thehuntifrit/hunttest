@@ -1,32 +1,8 @@
-:root {
-  --bg-dark: #1a1a2e;
-  --text-light: #3e83c4;
-  --header-height: 4rem;
-  font-family: 'Inter', sans-serif;
-
-  --progress-0-60: #4169E1;
-  --progress-60-80: #3CB371;
-  --progress-80-100: #FF6347;
-}
-  
-/* 進捗バー色クラス */
-.progress-p0-60 {
-  background-color: var(--progress-0-60);
-}
-.progress-p60-80 {
-  background-color: var(--progress-60-80);
-}
-.progress-p80-100 {
-  background-color: var(--progress-80-100);
-}
-
-/* スポーンポイントの色定義 */
-:root {
---color-b1: #3e83c4;
---color-b2: #e16666;
---color-lastone: #00ff3c; /* Bright Green */
---color-b-inverted: #6b7280; /* Gray-500 (B反転) */
---color-b-inverted-bg: #4b5563; /* Gray-700 (湧き潰し済み背景) */
+/* モーダルの背景 */
+#report-modal {
+background-color: rgba(0, 0, 0, 0.9);
+z-index: 40;
+transition: opacity 0.5s;
 }
 
 body {
@@ -40,6 +16,46 @@ min-height: 100vh;
   line-height: 1rem; /* テキストを中央寄せ */
 }
 
+.maintenance-banner {
+  background: #222;
+  color: #fff;
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.maintenance-banner .server-up-time {
+  font-size: 0.9em;
+  color: #bbb; /* 薄暗いグレーで控えめに */
+  font-weight: normal;
+  margin-top: 4px;
+}
+
+/* --- ステータスメッセージ表示用クラスの追加 --- */
+.bg-green-600 { 
+    background-color: #059669;
+}
+.bg-red-600 {
+    background-color: #dc2626;
+}
+.bg-blue-600 {
+    background-color: #2563eb;
+}
+.text-center {
+    text-align: center;
+}
+.py-1 {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+.text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+}
+
 /* ランクアイコンのスタイル */
 .rank-icon {
 transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -50,6 +66,27 @@ transform: scale(1.15);
 }
 
 /* --- 進捗バー関連のスタイル定義 --- */
+:root {
+  --bg-dark: #1a1a2e;
+  --text-light: #3e83c4;
+  --header-height: 4rem;
+  font-family: 'Inter', sans-serif;
+
+  --progress-0-60: #4169E1;
+  --progress-60-80: #3CB371;
+  --progress-80-100: #FF6347;
+}
+
+.progress-p0-60 {
+  background-color: var(--progress-0-60);
+}
+.progress-p60-80 {
+  background-color: var(--progress-60-80);
+}
+.progress-p80-100 {
+  background-color: var(--progress-80-100);
+}
+
 .progress-bar-wrapper {
   position: relative; /* テキストを重ねるために relative 指定 */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
@@ -62,7 +99,6 @@ transform: scale(1.15);
   transition: width 60s ease-out;
 }
 
-/* テキストラッパー */
 .progress-text-wrapper {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -109,175 +145,88 @@ padding-top: 0.5rem !important;
 padding-bottom: 0.5rem !important;
 }
 
-/* --- マップオーバーレイとスポーン点 --- */
-.map-content {
-    position: relative;
-    border-radius: 0.5rem;
+/* --- 色定義 --- */
+:root {
+  --color-b1: #3e83c4;
+  --color-b2: #e16666;
+  --color-lastone: #00ff3c;
+  --color-b-inverted: #6b7280;
+  --color-b-inverted-bg: #4b5563;
 }
-.map-overlay {
-    position: absolute;
-    top: 0; right: 0; bottom: 0; left: 0;
-    z-index: 20;
-}
+
+/* --- ベース --- */
 .spawn-point {
-    position: absolute;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: transform 0.1s ease, box-shadow 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
-    pointer-events: auto;
-    user-select: none;
-    cursor: default; 
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: transform 0.1s ease, box-shadow 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
+  pointer-events: auto;
+  user-select: none;
+  cursor: default;
 }
 
-#crush-map-modal {
-  cursor: zoom-out;
-}
-
-/* ただし、操作可能なポイントではポインターを表示する方が親切なため、以下のルールを優先*/
+/* インタラクティブ */
 .spawn-point-interactive,
 [data-is-interactive="true"] {
-    cursor: pointer;
+  cursor: pointer;
 }
-
-/* インタラクティブなポイント (ホバー時の強調) - ダブルクリック仕様に変更に伴い、ホバーのスケールは維持 */
 .spawn-point[data-is-interactive="true"]:hover {
-    cursor: pointer;
-    transform: translate(-50%, -50%) scale(1.6);
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.9);
+  transform: translate(-50%, -50%) scale(1.6);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.9);
 }
 
-/* 湧き潰し/ラストワンポイントの新しい濃い外枠/影 */
-.spawn-point-shadow-sa {
-    box-shadow: 0 0 4px 2px rgba(0, 0, 139, 0.9); 
-}
-.spawn-point-shadow-lastone {
-    /* ラストワン用 (緑系の色に対して濃い外枠/影) */
-    box-shadow: 0 0 4px 2px rgba(0, 128, 0, 0.9);
-}
+/* --- サイズ系（状態別に統一） --- */
+.spawn-point-sa { width: 12px; height: 12px; border: 2px solid #000; }
+@media (min-width: 1024px) { .spawn-point-sa { width: 14px; height: 14px; } }
 
-/* 1. S/A湧き潰し対象ポイント (未選択) - レスポンシブ化 */
-.spawn-point-sa {
-    /* スマホサイズ */
-    width: 12px;
-    height: 12px;
-    border: 2px solid #000000; /* 現在は黒枠 */
-}
-@media (min-width: 1024px) { /* PCサイズ (lg breakpoint) */
-    .spawn-point-sa {
-        width: 14px; /* PCでのサイズ拡大 */
-        height: 14px;
-    }
-}
+.spawn-point-b-only { width: 10px; height: 10px; border: 1px solid #fff; opacity: 0.75; pointer-events: none !important; box-shadow: none; }
+@media (min-width: 1024px) { .spawn-point-b-only { width: 12px; height: 12px; } }
 
-/* 湧き潰し済みポイント - 外枠白、未湧き潰し時と同サイズに修正 */
-.spawn-point-culled {
-    background-color: var(--color-b-inverted-bg);
-    border: 2px solid #000000; /* 白枠 (2pxに統一) */
-    opacity: 0.7;
-    box-shadow: none;
-    cursor: default;
-}
-.spawn-point-culled:hover {
-    transform: translate(-50%, -50%);
-    box-shadow: none;
-}
-/* 新しいクラス: 湧き潰し済の時に適用する白枠/サイズ固定クラス（drawSpawnPointで使用） */
-.culled-with-white-border {
-    border: 2px solid #ffffff;
-    box-shadow: none;
-    opacity: 0.7;
-}
+.spawn-point-lastone { width: 14px; height: 14px; border: 2px solid #008000; }
+@media (min-width: 1024px) { .spawn-point-lastone { width: 16px; height: 16px; } }
+.spawn-point-lastone:hover { transform: translate(-50%, -50%) scale(1.4); }
 
-/* 2. Bランクのみポイント (非湧き潰し対象) - 視認性向上とレスポンシブ化 */
-.spawn-point-b-only {
-    /* スマホサイズ */
-    width: 10px;
-    height: 10px;
-    pointer-events: none !important;
-    opacity: 0.75; /* 透過を 0.8 -> 0.75 に少し下げる */
-    box-shadow: none;
-    border: 1px solid #ffffff; /* 白枠 2px を追加 */
-}
-@media (min-width: 1024px) { /* PCサイズ (lg breakpoint) */
-    .spawn-point-b-only {
-        width: 12px; /* PCでのサイズ拡大 */
-        height: 12px;
-    }
-}
-
-/* 3. ラストワン強調ポイント - レスポンシブ化 */
-.spawn-point-lastone {
-    /* スマホサイズ */
-    width: 14px;
-    height: 14px;
-    border: 2px solid #008000;
-}
-@media (min-width: 1024px) { /* PCサイズ (lg breakpoint) */
-    .spawn-point-lastone {
-        width: 16px; /* PCでのサイズ拡大 */
-        height: 16px;
-    }
-}
-.spawn-point-lastone:hover {
-    transform: translate(-50%, -50%) scale(1.4);
-}
-
-/* --- 色クラス定義 --- */
+/* --- 色（fill） --- */
 .color-b1 { background-color: var(--color-b1); }
 .color-b2 { background-color: var(--color-b2); }
 .color-lastone { background-color: var(--color-lastone); }
+
+/* B-only 用の色（fill） */
 .color-b1-only { background-color: var(--color-b1); }
 .color-b2-only { background-color: var(--color-b2); }
 
-/* [仕様 IV-5] B反転ロジック用 */
-.color-b-inverted {
-    background-color: var(--color-b-inverted);
-    opacity: 0.4;
+/* B反転（lastone 用の反転色） */
+.color-b-inverted { background-color: var(--color-b-inverted); opacity: 0.4; }
+
+/* --- シャドウ（視認性補助） --- */
+.spawn-point-shadow-sa { box-shadow: 0 0 4px 2px rgba(0, 0, 139, 0.9); }
+.spawn-point-shadow-lastone { box-shadow: 0 0 4px 2px rgba(0, 128, 0, 0.9); }
+
+/* --- 湧き潰し済み（強制的に内側グレー＋白枠で差別化） --- */
+.spawn-point-culled {
+  border: 2px solid #ffffff !important; /* 白枠で固定 */
+  box-shadow: none !important;
+  opacity: 0.9; /* 視認性確保 */
+  position: relative;
+}
+.spawn-point-culled::after {
+  content: "";
+  position: absolute;
+  inset: 2px; /* 枠から少し内側 */
+  border-radius: 50%;
+  background-color: var(--color-b-inverted-bg); /* 内側グレー */
 }
 
-/* モーダルの背景 */
-#report-modal {
-background-color: rgba(0, 0, 0, 0.9);
-z-index: 40;
-transition: opacity 0.5s;
-}
+/* B-only は湧き潰し済みと混同しないよう「枠1px＋薄い不透明度」を維持 */
+.spawn-point-b-border { border: 1px solid #ffffff; }
 
-.maintenance-banner {
-  background: #222;
-  color: #fff;
-  padding: 10px;
-  text-align: center;
-  font-weight: bold;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-}
+/* ラストワンは常に反転色＋専用影を最優先（湧き潰し見た目を上書きしない） */
+.spawn-point-lastone.color-b-inverted { background-color: var(--color-b-inverted) !important; opacity: 0.4 !important; }
+.spawn-point-lastone { box-shadow: 0 0 4px 2px rgba(0, 128, 0, 0.9) !important; }
 
-.maintenance-banner .server-up-time {
-  font-size: 0.9em;
-  color: #bbb; /* 薄暗いグレーで控えめに */
-  font-weight: normal;
-  margin-top: 4px;
+/* MaxOver の点滅（既存流用） */
+@keyframes max-over-blink {
+  0%, 100% { box-shadow: 0 0 15px rgba(255, 100, 100, 0.9); }
+  50% { box-shadow: 0 0 5px rgba(255, 100, 100, 0.2); }
 }
-
-/* --- ステータスメッセージ表示用クラスの追加 --- */
-.bg-green-600 { 
-    background-color: #059669;
-}
-.bg-red-600 {
-    background-color: #dc2626;
-}
-.bg-blue-600 {
-    background-color: #2563eb;
-}
-.text-center {
-    text-align: center;
-}
-.py-1 {
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-}
-.text-xs {
-    font-size: 0.75rem;
-    line-height: 1rem;
-}
+.progress-max-over-blink { animation: max-over-blink 2s ease-in-out infinite; }
