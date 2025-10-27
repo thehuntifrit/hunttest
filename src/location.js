@@ -101,4 +101,4 @@ function attachLocationEvents() {
     });
 }
 
-export { isCulled, drawSpawnPoint, handleCrushToggle, updateCrushUI, attachLocationEvents };
+export { drawSpawnPoint, handleCrushToggle, updateCrushUI, attachLocationEvents };
