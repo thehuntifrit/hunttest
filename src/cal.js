@@ -10,10 +10,10 @@ function formatDuration(seconds) {
 }
 
 function formatDurationHM(seconds) {
-  if (seconds < 0) seconds = 0;
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return `${String(h).padStart(2, "0")}h${String(m).padStart(2, "0")}m`;
+    if (seconds < 0) seconds = 0;
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return `${String(h).padStart(2, "0")}h${String(m).padStart(2, "0")}m`;
 }
 
 function debounce(func, wait) {
@@ -64,7 +64,6 @@ function getMoonPhaseLabel(phase) {
 
 function getEorzeaWeatherSeed(date = new Date()) {
     const unixSeconds = Math.floor(date.getTime() / 1000);
-
     const eorzeanHours = Math.floor(unixSeconds / 175);
     const eorzeanDays = Math.floor(eorzeanHours / 24);
 
@@ -152,18 +151,11 @@ function calculateRepop(mob, maintenance) {
     const lastKill = mob.last_kill_time || 0;
     const repopSec = mob.REPOP_s;
     const maxSec = mob.MAX_s;
-
-    // --- maintenance 形の正規化（{maintenance:{...}} / {...} / undefined すべて受ける） ---
+    // --- maintenance 正規化 ---
     let maint = maintenance;
     if (maint && typeof maint === "object" && "maintenance" in maint && maint.maintenance) {
         maint = maint.maintenance;
     }
-
-    // ログ（必要なら残す）
-    console.log("maintenance(normalized):", maint);
-    console.log("serverUp(normalized):", maint?.serverUp);
-
-    // --- メンテ情報が無い/不正なら未確定 ---
     if (!maint || !maint.serverUp) {
         return {
             minRepop: null,
@@ -175,7 +167,6 @@ function calculateRepop(mob, maintenance) {
             nextConditionSpawnDate: null
         };
     }
-
     const serverUpDate = new Date(maint.serverUp);
     if (isNaN(serverUpDate)) {
         return {
@@ -188,14 +179,12 @@ function calculateRepop(mob, maintenance) {
             nextConditionSpawnDate: null
         };
     }
-
     const serverUp = serverUpDate.getTime() / 1000;
 
     let minRepop = 0, maxRepop = 0;
     let elapsedPercent = 0;
     let timeRemaining = "Unknown";
     let status = "Unknown";
-
     // --- 初回（メンテ後 or 未報告） ---
     if (lastKill === 0 || lastKill < serverUp) {
         minRepop = serverUp + repopSec;
@@ -214,15 +203,13 @@ function calculateRepop(mob, maintenance) {
             elapsedPercent = Math.min(elapsedPercent, 100);
             timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
         }
-
-    // --- Next（最短未到達） ---
+        // --- Next（最短未到達） ---
     } else if (now < lastKill + repopSec) {
         minRepop = lastKill + repopSec;
         maxRepop = lastKill + maxSec;
         status = "Next";
         timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
-
-    // --- PopWindow（出現可能窓） ---
+        // --- PopWindow（出現可能窓） ---
     } else if (now < lastKill + maxSec) {
         minRepop = lastKill + repopSec;
         maxRepop = lastKill + maxSec;
@@ -230,8 +217,7 @@ function calculateRepop(mob, maintenance) {
         elapsedPercent = ((now - minRepop) / (maxRepop - minRepop)) * 100;
         elapsedPercent = Math.min(elapsedPercent, 100);
         timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
-
-    // --- MaxOver（最大超過） ---
+        // --- MaxOver（最大超過） ---
     } else {
         minRepop = lastKill + repopSec;
         maxRepop = lastKill + maxSec;
@@ -239,17 +225,14 @@ function calculateRepop(mob, maintenance) {
         elapsedPercent = 100;
         timeRemaining = `Over (100%)`;
     }
-
-    // --- in 表記用 ---
+    // --- in 表記用（常に MINREPOP 基準） ---
     const nextMinRepopDate = new Date(minRepop * 1000);
-
-    // --- Next 表記用（特殊条件がある場合のみ） ---
+    // --- Next 表記用（特殊条件がある場合は常に探す） ---
     let nextConditionSpawnDate = null;
     if (mob.moonPhase || mob.timeRange || mob.weatherSeedRange || mob.weatherSeedRanges) {
         const searchStart = new Date(minRepop * 1000);
         nextConditionSpawnDate = findNextSpawnTime(mob, searchStart);
     }
-
     return {
         minRepop,
         maxRepop,
