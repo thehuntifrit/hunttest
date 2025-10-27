@@ -108,8 +108,8 @@ transform: scale(1.15);
   justify-content: center;
   font-weight: 600;
   line-height: 1;
-  color: #fff; /* ベース色は白 */
-  mix-blend-mode: difference; /* 背景と反転して表示 */
+  color: #fff; /* ベースは白 */
+  mix-blend-mode: difference; /* 背景と反転 */
   pointer-events: none;
 }
 
