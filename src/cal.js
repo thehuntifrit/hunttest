@@ -159,34 +159,43 @@ function calculateRepop(mob, maintenance) {
     if (lastKill === 0 || lastKill < serverUp) {
         minRepop = serverUp + repopSec;
         maxRepop = serverUp + maxSec;
-        timeRemaining = `Next: ${formatDuration(minRepop - now)}`;
-        status = "Maintenance";
 
+        if (now >= maxRepop) {
+            // メンテ後初回でも最大時間を超えたら MaxOver
+            status = "MaxOver";
+            elapsedPercent = 100;
+            timeRemaining = `Over (100%)`;
+        } else if (now < minRepop) {
+            status = "Maintenance";
+            timeRemaining = `Next: ${formatDuration(minRepop - now)}`;
+        } else {
+            status = "PopWindow";
+            elapsedPercent = ((now - minRepop) / (maxRepop - minRepop)) * 100;
+            elapsedPercent = Math.min(elapsedPercent, 100);
+            timeRemaining = `残り ${formatDuration(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
+        }
     // --- Next（最短未到達） ---
     } else if (now < lastKill + repopSec) {
         minRepop = lastKill + repopSec;
         maxRepop = lastKill + maxSec;
-        timeRemaining = `Next: ${formatDuration(minRepop - now)}`;
         status = "Next";
-
+        timeRemaining = `Next: ${formatDuration(minRepop - now)}`;
     // --- PopWindow（出現可能窓） ---
     } else if (now < lastKill + maxSec) {
         minRepop = lastKill + repopSec;
         maxRepop = lastKill + maxSec;
+        status = "PopWindow";
         elapsedPercent = ((now - minRepop) / (maxRepop - minRepop)) * 100;
         elapsedPercent = Math.min(elapsedPercent, 100);
         timeRemaining = `残り ${formatDuration(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
-        status = "PopWindow";
-
     // --- MaxOver（最大超過） ---
     } else {
         minRepop = lastKill + repopSec;
         maxRepop = lastKill + maxSec;
+        status = "MaxOver";
         elapsedPercent = 100;
         timeRemaining = `Over (100%)`;
-        status = "MaxOver";
     }
-
     // --- 次回出現可能時刻の決定 ---
     let nextMinRepopDate = null;
     if (mob.moonPhase || mob.timeRange || mob.weatherSeedRange || mob.weatherSeedRanges) {
@@ -204,7 +213,6 @@ function calculateRepop(mob, maintenance) {
             nextMinRepopDate = new Date((lastKill + repopSec * cycles) * 1000);
         }
     }
-
     return {
         minRepop,
         maxRepop,
