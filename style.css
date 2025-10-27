@@ -100,17 +100,17 @@ transform: scale(1.15);
   text-shadow: 0 0 4px rgba(0, 0, 0, 1.0);
 }
 
-/* 塗られた部分用の文字色（バーに重ねる） */
-.progress-text-overlay {
+.progress-text {
   position: absolute;
-  top: 0; left: 0; bottom: 0;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #000; /* バー上では黒文字 */
-  white-space: nowrap;
-  overflow: hidden;
-  text-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  line-height: 1;
+  color: #fff; /* ベース色は白 */
+  mix-blend-mode: difference; /* 背景と反転して表示 */
+  pointer-events: none;
 }
 
 /* テキスト色クラス */
