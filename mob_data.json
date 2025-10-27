@@ -112,7 +112,7 @@
       "12021": {"rank": "S", "name":"ケロゲロス", "area": "低地ラノシア",
       "condition": "満月直前のET17:00にPOP地点を踏む//※以降は満月中のET 17:00～3:00",
       "repopSeconds": 180000, "maxRepopSeconds": 180000,
-      "moonPhase": 16,
+      "moonPhase": "満月",
       "timeRange": { "start": 17, "end": 3 },
       "mapImage": "",
       "locations": []
@@ -179,7 +179,7 @@
       "12091": {"rank": "S", "name":"マインドフレア", "area": "南部森林",
       "condition": "新月のET0:00以降の夜間にPOP地点を踏む//※以降は新月中のET 17:00～2:59",
       "repopSeconds": 180000, "maxRepopSeconds": 180000,
-      "moonPhase": 0,
+      "moonPhase": "新月",
       "conditions": {"firstNight": { "timeRange": { "start": 0, "end": 3 } },"otherNights": { "timeRange": { "start": 17, "end": 3 } },
       "mapImage": "",
       "locations": []
@@ -344,7 +344,7 @@
       "locations": [] 
     },
       "22011": {"rank": "S", "name":"カイザーベヒーモス", "area": "クルザス西部高地",
-      "POP Date": "ミニオン「ロイヤルベビーモス」を連れてPOP地点を踏む",
+      "condition": "ミニオン「ロイヤルベビーモス」を連れてPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "Coerthas_Western_Highlands.webp",
       "locations": [
@@ -510,7 +510,7 @@
       "32041": {"rank": "S", "name":"オキナ", "area": "紅玉海",
       "condition": "「ユメミガイ」「カラナシユメミ」各100体討伐後、満月になる//※満月中に討伐数を満たすのも可",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "moonPhase": 16,
+      "moonPhase": "満月",
       "mapImage": "",
       "locations": []
     },
@@ -1045,7 +1045,7 @@
       "62011": {"rank": "S", "name":"1️⃣厭忌のキーリーゲー", "area": "オルコ・パチャ",
       "condition": "新月のET 0:00～5:59 + 天候が「霧」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "moonPhase": 0,
+      "moonPhase": "新月",
       "weatherSeedRange": [70, 79], 
       "timeRange": { "start": 0, "end": 6 },
       "mapImage": "Urqopacha.webp",
@@ -1065,7 +1065,7 @@
       "62012": {"rank": "S", "name":"2️⃣厭忌のキーリーゲー", "area": "オルコ・パチャ",
       "condition": "新月のET 0:00～5:59 + 天候が「霧」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "moonPhase": 0,
+      "moonPhase": "新月",
       "weatherSeedRange": [70, 79], 
       "timeRange": { "start": 0, "end": 6 },
       "mapImage": "Urqopacha.webp",
@@ -1085,7 +1085,7 @@
       "62013": {"rank": "S", "name":"3️⃣厭忌のキーリーゲー", "area": "オルコ・パチャ",
       "condition": "新月のET 0:00～5:59 + 天候が「霧」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
-      "moonPhase": 0,
+      "moonPhase": "新月",
       "weatherSeedRange": [70, 79], 
       "timeRange": { "start": 0, "end": 6 },
       "mapImage": "Urqopacha.webp",
