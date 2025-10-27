@@ -52,27 +52,27 @@ function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_Last
   let dataIsInteractive = "false";
 
   if (isLastOne) {
-    // ラストワンは常に緑色＋操作禁止、湧き潰し済みの見た目は適用しない
+    // ラストワンは湧き潰し対象外
     sizeClass = "spawn-point-lastone";
-    colorClass = "color-b-inverted";
+    colorClass = "color-lastone"; // エメラルドグリーン
     specialClass = "spawn-point-shadow-lastone";
-    dataIsInteractive = "false"; // ← 操作不可（湧き潰し対象外）
+    dataIsInteractive = "false"; // 操作不可
 
   } else if (isS_A_Cullable) {
-    // S/A は通常の湧き潰し対象
+    // S/A は湧き潰し対象
     const rankB = point.mob_ranks.find(r => r.startsWith("B"));
     colorClass = rankB === "B1" ? "color-b1" : "color-b2";
     sizeClass = "spawn-point-sa";
 
+    // 湧き潰し済みなら culled クラスを付与
     specialClass = isCulledFlag ? "spawn-point-culled" : "spawn-point-shadow-sa";
     dataIsInteractive = "true";
 
   } else if (isB_Only) {
-    // B-only は対象外・非インタラクティブ
+    // B-only は非インタラクティブ
     const rankB = point.mob_ranks[0];
     sizeClass = "spawn-point-b-only";
     colorClass = (isS_LastOne) ? "color-b-inverted" : (rankB === "B1" ? "color-b1-only" : "color-b2-only");
-    specialClass = "spawn-point-b-border";
     dataIsInteractive = "false";
   }
 
