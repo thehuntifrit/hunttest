@@ -88,10 +88,9 @@ let unsubscribes = [];
 let maintenance = null;
 
 async function loadMaintenance() {
-    const resp = await fetch(MAINTENANCE_URL);
-    if (!resp.ok) throw new Error("Maintenance data failed to load.");
-    maintenance = await resp.json();
-    return maintenance;
+  const res = await fetch("./maintenance.json");
+  const data = await res.json();
+  return data.maintenance;
 }
 
 async function loadBaseMobData() {
