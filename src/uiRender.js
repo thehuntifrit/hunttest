@@ -234,7 +234,7 @@ function updateProgressText(card, mob) {
 
   const nextTimeStr = nextConditionSpawnDate
     ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate)
-    : "未確定";
+    : null;
 
   let remainingStr = "";
   if (status === "Maintenance" || status === "Next") {
