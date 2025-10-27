@@ -73,12 +73,44 @@ transform: scale(1.15);
 
 /* --- 進捗バー関連のスタイル定義 --- */
 .progress-bar-wrapper {
-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-background-color: rgba(0, 0, 0, 0.4);
+  position: relative; /* テキストを重ねるために relative 指定 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  background-color: rgba(0, 0, 0, 0.4);
+  overflow: hidden;
 }
+
 .progress-bar-bg {
-height: 100%;
-transition: width 0.5s ease-out;
+  height: 100%;
+  transition: width 0.5s ease-out;
+}
+
+/* テキストラッパー */
+.progress-text-wrapper {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* ベースの文字色（未塗り部分用） */
+.progress-text-base {
+  color: var(--text-pop);
+  text-shadow: 0 0 4px rgba(0, 0, 0, 1.0);
+}
+
+/* 塗られた部分用の文字色（バーに重ねる） */
+.progress-text-overlay {
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000; /* バー上では黒文字 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
 }
 
 /* テキスト色クラス */
