@@ -161,7 +161,6 @@ function calculateRepop(mob, maintenance) {
         maxRepop = serverUp + maxSec;
 
         if (now >= maxRepop) {
-            // メンテ後初回でも最大時間を超えたら MaxOver
             status = "MaxOver";
             elapsedPercent = 100;
             timeRemaining = `Over (100%)`;
@@ -174,6 +173,7 @@ function calculateRepop(mob, maintenance) {
             elapsedPercent = Math.min(elapsedPercent, 100);
             timeRemaining = `残り ${formatDuration(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
         }
+
     // --- Next（最短未到達） ---
     } else if (now < lastKill + repopSec) {
         minRepop = lastKill + repopSec;
@@ -196,22 +196,13 @@ function calculateRepop(mob, maintenance) {
         elapsedPercent = 100;
         timeRemaining = `Over (100%)`;
     }
-    // --- 次回出現可能時刻の決定 ---
-    let nextMinRepopDate = null;
+    // --- in 表記用（常に MINREPOP 基準） ---
+    const nextMinRepopDate = new Date(minRepop * 1000);
+    // --- Next 表記用（特殊条件がある場合のみ） ---
+    let nextConditionSpawnDate = null;
     if (mob.moonPhase || mob.timeRange || mob.weatherSeedRange || mob.weatherSeedRanges) {
-        // 特殊条件あり → 条件を満たす次の時間を探索
         const searchStart = new Date(minRepop * 1000);
-        nextMinRepopDate = findNextSpawnTime(mob, searchStart);
-    } else {
-        // 特殊条件なし → 常に「次の repop サイクル」を算出
-        if (lastKill === 0 || lastKill < serverUp) {
-            // メンテ後初回
-            nextMinRepopDate = new Date(minRepop * 1000);
-        } else {
-            // 通常討伐後
-            const cycles = Math.max(1, Math.ceil((now - lastKill) / repopSec));
-            nextMinRepopDate = new Date((lastKill + repopSec * cycles) * 1000);
-        }
+        nextConditionSpawnDate = findNextSpawnTime(mob, searchStart);
     }
     return {
         minRepop,
@@ -219,7 +210,8 @@ function calculateRepop(mob, maintenance) {
         elapsedPercent,
         timeRemaining,
         status,
-        nextMinRepopDate
+        nextMinRepopDate,
+        nextConditionSpawnDate
     };
 }
 
