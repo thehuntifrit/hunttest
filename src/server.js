@@ -105,7 +105,7 @@ function subscribeMobLocations(onUpdate) {
 
       // 各地点の UI 更新
       Object.entries(data.points || {}).forEach(([locationId, status]) => {
-        const isCulledFlag = isCulled(status.culled_at, status.uncull_at);
+        const isCulledFlag = isCulled(status);
         updateCrushUI(mobNo, locationId, isCulledFlag);
       });
     });
