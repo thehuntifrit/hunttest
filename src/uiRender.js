@@ -244,12 +244,6 @@ function updateProgressBar(card, mob) {
   overlaySpan.style.width = `${elapsedPercent}%`;
 }
 
-  const percentText = `${Math.floor(elapsedPercent)}%`;
-  baseText.textContent = percentText;
-  overlayText.textContent = percentText;
-  overlayText.style.width = `${elapsedPercent}%`;
-}
-
 function updateProgressText(card, mob) {
   const text = card.querySelector(".progress-text");
   if (!text) return;
