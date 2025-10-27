@@ -150,7 +150,7 @@ function calculateRepop(mob, maintenance) {
         ? new Date(maintenance.serverUp).getTime() / 1000
         : 0;
 
-    let minRepop, maxRepop;
+    let minRepop = 0, maxRepop = 0;
     let elapsedPercent = 0;
     let timeRemaining = "Unknown";
     let status = "Unknown";
@@ -173,7 +173,6 @@ function calculateRepop(mob, maintenance) {
             elapsedPercent = Math.min(elapsedPercent, 100);
             timeRemaining = `残り ${formatDuration(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
         }
-
     // --- Next（最短未到達） ---
     } else if (now < lastKill + repopSec) {
         minRepop = lastKill + repopSec;
