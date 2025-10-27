@@ -47,6 +47,14 @@ function updateCrushUI(mobNo, locationId, isCulled) {
   marker.title = `湧き潰し: ${isCulled ? "済" : "未"}`;
 }
 
+function isCulled(pointStatus) {
+  const culledMs = pointStatus?.culled_at ? pointStatus.culled_at.toMillis() : 0;
+  const uncullMs = pointStatus?.uncull_at ? pointStatus.uncull_at.toMillis() : 0;
+
+  if (culledMs === 0 && uncullMs === 0) return false;
+  return culledMs > uncullMs;
+}
+
 function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
   const pointStatus = spawnCullStatus?.[point.id];
   const isCulledFlag = isCulled(pointStatus);
@@ -101,4 +109,4 @@ function attachLocationEvents() {
     });
 }
 
-export { drawSpawnPoint, handleCrushToggle, updateCrushUI, attachLocationEvents };
+export { isCulled, drawSpawnPoint, handleCrushToggle, updateCrushUI, attachLocationEvents };
