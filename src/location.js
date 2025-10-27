@@ -40,48 +40,43 @@ function isCulled(pointStatus) {
 }
 
 function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
-    const pointStatus = spawnCullStatus?.[point.id];
-    const isCulledFlag = isCulled(pointStatus);  // ← 共通関数で判定
+  const pointStatus = spawnCullStatus?.[point.id];
+  const isCulledFlag = isCulled(pointStatus);
 
-    const isS_A_Cullable = point.mob_ranks.some(r => r === "S" || r === "A");
-    const isB_Only = point.mob_ranks.every(r => r.startsWith("B"));
+  const isS_A_Cullable = point.mob_ranks.some(r => r === "S" || r === "A");
+  const isB_Only = point.mob_ranks.every(r => r.startsWith("B"));
 
-    let sizeClass = "";
-    let colorClass = "";
-    let specialClass = "";
-    let dataIsInteractive = "false";
+  let sizeClass = "";
+  let colorClass = "";
+  let specialClass = "";
+  let dataIsInteractive = "false";
 
-    if (isLastOne) {
-        sizeClass = "spawn-point-lastone";
-        colorClass = "color-lastone";
-        specialClass = "spawn-point-shadow-lastone spawn-point-interactive";
-        dataIsInteractive = "true";
+  if (isLastOne) {
+    // ラストワンは常に緑色＋操作禁止、湧き潰し済みの見た目は適用しない
+    sizeClass = "spawn-point-lastone";
+    colorClass = "color-b-inverted";
+    specialClass = "spawn-point-shadow-lastone";
+    dataIsInteractive = "false"; // ← 操作不可（湧き潰し対象外）
 
-    } else if (isS_A_Cullable) {
-        const rankB = point.mob_ranks.find(r => r.startsWith("B"));
-        colorClass = rankB === "B1" ? "color-b1" : "color-b2";
-        sizeClass = "spawn-point-sa";
+  } else if (isS_A_Cullable) {
+    // S/A は通常の湧き潰し対象
+    const rankB = point.mob_ranks.find(r => r.startsWith("B"));
+    colorClass = rankB === "B1" ? "color-b1" : "color-b2";
+    sizeClass = "spawn-point-sa";
 
-        if (isCulledFlag) {
-            specialClass = "culled-with-white-border spawn-point-culled";
-        } else {
-            specialClass = "spawn-point-shadow-sa";
-        }
-        dataIsInteractive = "true";   // ← S/A は常にトグル可能
+    specialClass = isCulledFlag ? "spawn-point-culled" : "spawn-point-shadow-sa";
+    dataIsInteractive = "true";
 
-    } else if (isB_Only) {
-        const rankB = point.mob_ranks[0];
-        sizeClass = "spawn-point-b-only";
-        if (isS_LastOne) {
-            colorClass = "color-b-inverted";
-        } else {
-            colorClass = rankB === "B1" ? "color-b1-only" : "color-b2-only";
-        }
-        specialClass = "spawn-point-b-border";
-        dataIsInteractive = "false";  // ← B1/B2 専用は対象外のまま
-    }
+  } else if (isB_Only) {
+    // B-only は対象外・非インタラクティブ
+    const rankB = point.mob_ranks[0];
+    sizeClass = "spawn-point-b-only";
+    colorClass = (isS_LastOne) ? "color-b-inverted" : (rankB === "B1" ? "color-b1-only" : "color-b2-only");
+    specialClass = "spawn-point-b-border";
+    dataIsInteractive = "false";
+  }
 
-    return `
+  return `
     <div class="spawn-point ${sizeClass} ${colorClass} ${specialClass}"
          style="left:${point.x}%; top:${point.y}%;"
          data-location-id="${point.id}"
