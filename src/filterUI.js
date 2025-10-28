@@ -32,7 +32,17 @@ const renderRankTabs = () => {
         btn.className =
             `tab-button px-2 py-1 text-sm rounded font-semibold text-white text-center transition ` +
             (isSelected ? "bg-green-500" : "bg-gray-500 hover:bg-gray-400");
-
+        btn.addEventListener("click", () => {
+            const currentState = getState();
+            // rank を更新（areaSets は保持）
+            setFilter({
+                rank,
+                areaSets: currentState.filter.areaSets
+            });
+            // フィルタ適用とUI更新
+            filterAndRender();
+            updateFilterUI();
+        });
         container.appendChild(btn);
     });
 };
