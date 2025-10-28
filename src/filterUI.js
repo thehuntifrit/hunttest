@@ -148,10 +148,10 @@ const updateFilterUI = () => {
 
             btn.classList.add(
                 btnRank === "ALL" ? "bg-blue-800"
-                : btnRank === "S" ? "bg-red-800"
-                : btnRank === "A" ? "bg-yellow-800"
-                : btnRank === "FATE" ? "bg-indigo-800"
-                : "bg-gray-800"
+                    : btnRank === "S" ? "bg-red-800"
+                        : btnRank === "A" ? "bg-yellow-800"
+                            : btnRank === "FATE" ? "bg-indigo-800"
+                                : "bg-gray-800"
             );
 
             const panels = [DOM.areaFilterPanelMobile, DOM.areaFilterPanelDesktop];
@@ -164,8 +164,10 @@ const updateFilterUI = () => {
                     DOM.areaFilterPanelDesktop?.classList.add("hidden");
                 } else {
                     DOM.areaFilterPanelDesktop?.classList.remove("hidden");
+                    DOM.areaFilterPanelDesktop?.classList.add("flex"); // ← 明示的に付与
                     DOM.areaFilterPanelMobile?.classList.add("hidden");
                 }
+
             }
 
             localStorage.setItem("huntUIState", JSON.stringify({
