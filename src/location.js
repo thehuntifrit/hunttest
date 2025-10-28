@@ -79,18 +79,18 @@ function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_Last
     dataIsInteractive = "false";
   }
 
-  return `
-    <div class="spawn-point ${colorClass}"
-         style="left:${point.x}%; top:${point.y}%;"
-         data-location-id="${point.id}"
-         data-mob-no="${mobNo}"
-         data-rank="${rank}"
-         data-is-culled="${isCulledFlag}"
-         data-is-lastone="${isLastOne ? "true" : "false"}"
-         data-is-interactive="${dataIsInteractive}"
-         tabindex="0">
-    </div>
-  `;
+  return `
+    <div class="spawn-point ${colorClass}"
+         style="left:${point.x}%; top:${point.y}%;"
+         data-location-id="${point.id}"
+         data-mob-no="${mobNo}"
+         data-rank="${rank}"
+         data-is-culled="${isCulledFlag}"
+         data-is-lastone="${isLastOne ? "true" : "false"}"
+         data-is-interactive="${dataIsInteractive}"
+         tabindex="0">
+    </div>
+  `;
 }
 
 function updateCrushUI(mobNo, locationId, isCulled) {
