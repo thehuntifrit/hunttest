@@ -154,7 +154,7 @@ const submitReport = async (mobNo, timeISO, memo) => {
         if (modalStatusEl) {
             modalStatusEl.textContent = "送信エラー: " + (error.message || "通信失敗");
         }
-        displayStatus(`LKT報告エラー: ${error.message || "通信失敗"}`, "error");
+        displayStatus(`討伐報告エラー: ${error.message || "通信失敗"}`, "error");
     }
 };
 
