@@ -151,14 +151,16 @@ const updateFilterUI = () => {
                 else if (clickStep === 2) clickStep = 3;
                 else clickStep = 2;
             }
+
             // --- 色付け ---
             btn.classList.add(
-            btnRank === "ALL" ? "bg-blue-800"
-            : btnRank === "S" ? "bg-red-800"
-            : btnRank === "A" ? "bg-yellow-800"
-            : btnRank === "FATE" ? "bg-indigo-800"
-            : "bg-gray-800"
+                btnRank === "ALL" ? "bg-blue-800"
+                : btnRank === "S" ? "bg-red-800"
+                : btnRank === "A" ? "bg-yellow-800"
+                : btnRank === "FATE" ? "bg-indigo-800"
+                : "bg-gray-800"
             );
+
             // --- エリアパネル制御 ---
             const panels = [DOM.areaFilterPanelMobile, DOM.areaFilterPanelDesktop];
             if (btnRank === "ALL" || clickStep === 1 || clickStep === 3) {
@@ -227,7 +229,8 @@ function handleAreaFilterClick(e) {
     filterAndRender();
     // パネルの内容は再生成（現ランクの選択状況を反映）
     renderAreaFilterPanel();
-    // ここでは updateFilterUI は呼ばない（二重進行を避ける）
+    // --- UI状態を保存・反映 ---
+    updateFilterUI();
 }
 
 function filterMobsByRankAndArea(mobs) {
