@@ -120,7 +120,7 @@
       "12031": {"rank": "S", "name":"ガーロック", "area": "東ラノシア",
       "condition": "LT 3時間20分 (200分間) 雨が降らない",
       "repopSeconds": 151200, "maxRepopSeconds": 172800,
-      "weatherSeedRange": [[90, 94],[95, 99]],
+      "weatherSeedRange": [0, 89],
       "weatherDuration": { "minutes": 200 },
       "mapImage": "",
       "locations": []
