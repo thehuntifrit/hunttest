@@ -74,16 +74,38 @@ exports.reportProcessor = onDocumentCreated({
     const reportRef = snap.ref;
     const reportData = snap.data();
 
+    // 🚨【修正箇所１】新規ドキュメントに is_averaged: false を確実に設定する
+    // is_averaged が存在しないドキュメントを where クエリが除外する問題を回避するため
+    if (reportData.is_averaged === undefined) {
+        try {
+            // is_processed も合わせて初期化
+            await reportRef.update({ is_averaged: false, is_processed: false });
+            logger.info(`INIT_FLAG: Mob ${reportData.mob_id || 'Unknown'} のレポートに処理フラグを設定しました。`);
+        } catch (e) {
+            logger.error(`FLAG_UPDATE_FAILED: レポートの初期フラグ設定中にエラーが発生しました: ${e.message}`, e);
+            return null; // 処理続行不可
+        }
+    }
+
+    // フラグが設定されたことを期待して、最新のデータを再取得
+    const updatedSnap = await reportRef.get();
+    const updatedReportData = updatedSnap.data();
+
+    if (updatedReportData.is_processed === true) {
+        logger.info(`SKIP: Mob ${updatedReportData.mob_id} のレポートは既に処理済みです。`);
+        return null;
+    }
+
     const {
         mob_id: mobId,
         kill_time: reportTimeData,
-        reporter_uid: reporterUID,
-        memo: reportMemo,
         repop_seconds: repopSeconds
-    } = reportData;
+    } = updatedReportData; // 👈 データを updatedReportData に変更
 
     if (!mobId || !reportTimeData || !repopSeconds) {
         logger.error('SKIP: 必須データが不足。');
+        // 必須データがない場合、報告自体を処理済みにマーク
+        await reportRef.update({ is_processed: true, skip_reason: 'Missing required data' });
         return null;
     }
 
@@ -93,6 +115,7 @@ exports.reportProcessor = onDocumentCreated({
 
     if (!rank || !statusDocId) {
         logger.error(`SKIP: 無効なMob ID (${mobId})。`);
+        await reportRef.update({ is_processed: true, skip_reason: 'Invalid Mob ID' });
         return null;
     }
 
@@ -100,7 +123,7 @@ exports.reportProcessor = onDocumentCreated({
 
     let transactionResult = false;
     let existingDataToLog = null;
-    let finalUpdateField = {}; // トランザクション外部でログ記録のために使用するフィールド
+    let finalUpdateField = {};
 
     try {
         transactionResult = await db.runTransaction(async (t) => {
@@ -112,10 +135,10 @@ exports.reportProcessor = onDocumentCreated({
             const currentLKT = existingMobData.last_kill_time || null;
             const currentPrevLKT = existingMobData.prev_kill_time || null;
             const reportWindowEndTime = existingMobData.report_window_end_time ?
-                existingMobData.report_window_end_time.toDate() : null; // 連続報告受付終了時刻
+                existingMobData.report_window_end_time.toDate() : null;
 
             let isNewCycle = true;
-            let finalReportWindowEndTime = existingMobData.report_window_end_time || null; // 最終的に書き込む report_window_end_time
+            let finalReportWindowEndTime = existingMobData.report_window_end_time || null;
 
             // --- 1. 連続報告の判定ロジック ---
             if (reportWindowEndTime) {
@@ -125,31 +148,31 @@ exports.reportProcessor = onDocumentCreated({
             }
 
             // --- 2. 新しい Mob 討伐サイクル開始時の妥当性判定 (isNewCycle = true の場合のみ) ---
-            if (isNewCycle) {
-                if (currentPrevLKT) {
-                    const prevLKTTime = currentPrevLKT.toDate();
+            if (isNewCycle && currentPrevLKT) {
+                const prevLKTTime = currentPrevLKT.toDate();
 
-                    // (A) 前々回時刻以前の報告はスキップ
-                    if (reportTime <= prevLKTTime) {
-                        logger.warn(`SKIP: Mob ${mobId} の報告(${reportTime.toISOString()})は前々回討伐時刻以下です。`);
-                        return false;
-                    }
-
-                    // (B) REPOP-5分よりも早すぎる報告はスキップ (新しいサイクルの厳密な判定)
-                    const minAllowedTimeSec = prevLKTTime.getTime() / 1000 + repopSeconds - FIVE_MINUTES_IN_SECONDS;
-                    const minAllowedTime = new Date(minAllowedTimeSec * 1000);
-
-                    if (reportTime < minAllowedTime) {
-                        logger.warn(`SKIP: Mob ${mobId} の報告はREPOP-5分よりも早すぎます。`);
-                        return false;
-                    }
+                // (A) 前々回時刻以前の報告はスキップ
+                if (reportTime <= prevLKTTime) {
+                    logger.warn(`SKIP_VALIDATION: Mob ${mobId} の報告(${reportTime.toISOString()})は前々回討伐時刻以下です。`);
+                    t.update(reportRef, { is_processed: true, skip_reason: 'Time too old' });
+                    return false;
                 }
 
-                // --- 3. ログ記録の準備 (新しいサイクル開始が認められた場合) ---
-                // REPOP判定をクリアした場合のみ、更新前のデータをログ記録用として保持
+                // (B) REPOP-5分よりも早すぎる報告はスキップ
+                const minAllowedTimeSec = prevLKTTime.getTime() / 1000 + repopSeconds - FIVE_MINUTES_IN_SECONDS;
+                const minAllowedTime = new Date(minAllowedTimeSec * 1000);
+
+                if (reportTime < minAllowedTime) {
+                    logger.warn(`SKIP_VALIDATION: Mob ${mobId} の報告はREPOP-5分よりも早すぎます。`);
+                    t.update(reportRef, { is_processed: true, skip_reason: 'Time too early' });
+                    return false;
+                }
+            }
+
+            // --- 3. ログ記録の準備 (新しいサイクル開始が認められた場合) ---
+            if (isNewCycle) {
                 existingDataToLog = {
                     mob_id: mobId,
-                    // ログに記録する時刻はトランザクション外で付与される
                     last_kill_time: currentLKT || null,
                     prev_kill_time: currentPrevLKT || null,
                     last_kill_memo: existingMobData.last_kill_memo || '',
@@ -163,12 +186,15 @@ exports.reportProcessor = onDocumentCreated({
             const reportsQuery = db.collection(COLLECTIONS.REPORTS)
                 .where('mob_id', '==', mobId)
                 .where('is_averaged', '==', false)
-                .orderBy('kill_time', 'asc');
+                .orderBy('kill_time', 'asc')
+                .orderBy(admin.firestore.FieldPath.documentId(), 'asc'); // 👈 【修正箇所２】インデックスエラー回避のため
 
             const reportsSnap = await t.get(reportsQuery);
 
             if (reportsSnap.empty) {
                 logger.warn(`AVG_SKIP_IMMEDIATE: Mob ${mobId} の平均化対象報告なし。`);
+                // 平均化対象がない場合、トリガーとなったレポートを処理済みにマークして終了
+                t.update(reportRef, { is_processed: true, skip_reason: 'No reports found for averaging' });
                 return true;
             }
 
@@ -191,31 +217,42 @@ exports.reportProcessor = onDocumentCreated({
             const finalAvgTimestamp = admin.firestore.Timestamp.fromMillis(Math.round(finalAvgTimeMs));
             const finalMemo = memos.join(' / ');
 
-            // 4. report_window_end_time の確定 (初回報告 + 5分で固定)
+            // 4. report_window_end_time の確定
             if (isNewCycle) {
                 const firstReportTimeMs = reportsSnap.docs[0].data().kill_time.toMillis();
                 const newWindowEndTimeMs = firstReportTimeMs + FIVE_MINUTES_IN_SECONDS * 1000;
                 finalReportWindowEndTime = admin.firestore.Timestamp.fromMillis(newWindowEndTimeMs);
+            } else {
+                finalReportWindowEndTime = existingMobData.report_window_end_time;
+            }
 
-                // 5. Mob Status の最終確定更新
-                finalUpdateField = {
-                    prev_kill_time: currentLKT || null,
-                    prev_kill_memo: existingMobData.last_kill_memo || '',
-                    last_kill_time: finalAvgTimestamp, // 計算された平均時刻で更新
-                    last_kill_memo: finalMemo,
-                    report_window_end_time: finalReportWindowEndTime, // 固定された期間終了時刻を設定
-                    is_averaged: true
-                };
+            // 5. Mob Status の最終確定更新 (初回作成の場合は新規ドキュメント/フィールドが作成される)
+            finalUpdateField = {
+                prev_kill_time: isNewCycle ? (currentLKT || null) : existingMobData.prev_kill_time,
+                prev_kill_memo: isNewCycle ? (existingMobData.last_kill_memo || '') : existingMobData.prev_kill_memo,
 
-                t.set(rankStatusRef, { [`${mobId}`]: finalUpdateField }, { merge: true });
+                last_kill_time: finalAvgTimestamp,
+                last_kill_memo: finalMemo,
+                report_window_end_time: finalReportWindowEndTime,
+                is_averaged: true
+            };
 
-                // 6. 平均化に使用したすべての報告のフラグを更新
-                reportsToUpdate.forEach(ref => {
-                    t.update(ref, { is_averaged: true, is_processed: true });
-                });
+            t.set(rankStatusRef, { [`${mobId}`]: finalUpdateField }, { merge: true });
 
-                return true;
+            // 6. 平均化に使用したすべての報告のフラグを更新
+            reportsToUpdate.forEach(ref => {
+                t.update(ref, { is_averaged: true, is_processed: true });
             });
+
+            // ログ記録のために finalUpdateField を更新
+            finalUpdateField = {
+                ...finalUpdateField,
+                last_kill_time: finalAvgTimestamp,
+                report_window_end_time: finalReportWindowEndTime
+            };
+
+            return true;
+        });
 
     } catch (e) {
         logger.error(`FATAL_TRANSACTION_FAILURE: Mob ${mobId} のトランザクション失敗: ${e.message}`, e);
@@ -230,9 +267,9 @@ exports.reportProcessor = onDocumentCreated({
 
     // --- 7. ログ追記 (新しいサイクル開始時のみ更新前の状態をログに記録) ---
     try {
-        // existingDataToLog は isNewCycle=true で、かつ REPOP 判定をクリアした更新前のデータ
         if (existingDataToLog && Object.keys(existingDataToLog).length > 0) {
-            const logId = `${mobId}_${existingDataToLog.last_kill_time ? existingDataToLog.last_kill_time.toMillis() : '0'}_${admin.firestore.Timestamp.now().toMillis()}`;
+            const logTimeMs = existingDataToLog.last_kill_time ? existingDataToLog.last_kill_time.toMillis() : '0';
+            const logId = `${mobId}_${logTimeMs}_${admin.firestore.Timestamp.now().toMillis()}`;
 
             await db.collection(COLLECTIONS.MOB_STATUS_LOGS).doc(logId).set(existingDataToLog);
             logger.info(`LOG_SUCCESS: Mob ${mobId} の更新前ステータスをログに記録しました。`);
