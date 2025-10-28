@@ -1,7 +1,7 @@
 // uiRender.js
 
 import { calculateRepop, findNextSpawnTime, formatDuration, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime } from "./cal.js";
-import { drawSpawnPoint, isCulled } from "./location.js";
+import { drawSpawnPoint, isCulled } from "./location.js"; 
 import { getState, RANK_COLORS, PROGRESS_CLASSES, FILTER_TO_DATA_RANK_MAP } from "./dataManager.js";
 import { renderRankTabs, renderAreaFilterPanel, updateFilterUI, filterMobsByRankAndArea } from "./filterUI.js";
 
@@ -67,10 +67,20 @@ function createMobCard(mob) {
     const { openMobCardNo } = getState();
     const isOpen = isExpandable && mob.No === openMobCardNo;
 
-    const isS_LastOne = rank === "S" && mob.spawn_points && mob.spawn_points.some(
-        p => p.is_last_one && (p.mob_ranks.includes("S") || p.mob_ranks.includes("A"))
-    );
+    let isLastOne = false;
+    let validSpawnPoints = [];
 
+    if (mob.Map && mob.spawn_points) {
+        // 湧き潰しされていない（有効な）スポーン地点をフィルタリングしてカウント
+        validSpawnPoints = (mob.spawn_points ?? []).filter(point => {
+            const pointStatus = mob.spawn_cull_status?.[point.id];
+            // 修正された isCulled 関数を使用
+            return !isCulled(pointStatus, mob.No); 
+        });
+        isLastOne = validSpawnPoints.length === 1;
+    }
+    const isS_LastOne = rank === "S" && isLastOne; 
+    
     const spawnPointsHtml = (rank === "S" && mob.Map)
         ? (mob.spawn_points ?? []).map(point => drawSpawnPoint(
             point,
@@ -79,7 +89,7 @@ function createMobCard(mob) {
             point.mob_ranks.includes("B2") ? "B2"
                 : point.mob_ranks.includes("B1") ? "B1"
                     : point.mob_ranks[0],
-            point.is_last_one,
+            isLastOne && point.id === validSpawnPoints[0]?.id, 
             isS_LastOne,
             mob.last_kill_time,
             mob.prev_kill_time
@@ -87,23 +97,18 @@ function createMobCard(mob) {
         : "";
 
 
-    const cardHeaderHTML = `
-<div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
-    <!-- 上段：ランク・モブ名・報告ボタン -->
+    const cardHeaderHTML = `<div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
     <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
-        <!-- 左：ランク -->
         <span
             class="w-6 h-6 flex items-center justify-center rounded-full text-white text-xs font-bold ${rankConfig.bg}">
             ${rankLabel}
         </span>
 
-        <!-- 中央：モブ名＋エリア名 -->
         <div class="flex flex-col min-w-0">
             <span class="text-base font-bold truncate">${mob.Name}</span>
             <span class="text-xs text-gray-400 truncate">${mob.Area} (${mob.Expansion})</span>
         </div>
 
-        <!-- 右端：報告ボタン（見た目は統一、動作だけ分岐） -->
         <div class="flex-shrink-0 flex items-center justify-end">
             <button data-report-type="${rank === 'A' || rank === 'F' ? 'instant' : 'modal'}" data-mob-no="${mob.No}"
                 class="w-8 h-8 flex items-center justify-center text-[12px] rounded bg-green-600 hover:bg-green-800 selected:bg-green-400 
@@ -111,7 +116,6 @@ function createMobCard(mob) {
         </div>
     </div>
 
-    <!-- 下段：プログレスバー（構造のみ） -->
     <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
         <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear"
             style="width: 0%"></div>
@@ -254,8 +258,7 @@ function updateProgressText(card, mob) {
         rightStr = `未確定`;
     }
     // 左側に in と Next の両方を置き、Next は初期非表示
-    text.innerHTML = `
-    <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
+    text.innerHTML = `<div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
         <div class="pl-2 text-left toggle-container">
           <span class="label-in">in ${inTimeStr}</span>
           <span class="label-next" style="display:none;">${nextTimeStr ? `Next ${nextTimeStr}` : ""}</span>
@@ -273,7 +276,6 @@ function updateProgressText(card, mob) {
         toggleContainer.dataset.toggleStarted = "true";
     }
 }
-// in と Next を3秒ごとに交互表示
 function startToggleInNext(container) {
     const inLabel = container.querySelector(".label-in");
     const nextLabel = container.querySelector(".label-next");
@@ -290,7 +292,7 @@ function startToggleInNext(container) {
             nextLabel.style.display = "none";
         }
         showingIn = !showingIn;
-    }, 5000); // 3秒ごとに切り替え
+    }, 5000);
 }
 
 function updateExpandablePanel(card, mob) {
