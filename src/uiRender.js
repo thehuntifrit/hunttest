@@ -158,7 +158,6 @@ function filterAndRender({ isInitialLoad = false } = {}) {
     DOM.masterContainer.innerHTML = "";
     DOM.masterContainer.appendChild(frag);
     distributeCards();
-    updateFilterUI();
 
     if (isInitialLoad) {
         updateProgressBars();
