@@ -12,35 +12,40 @@
 
 <body class="bg-gray-900 text-white leading-relaxed">
 
-    <header id="main-header" class="fixed top-0 left-0 right-0 bg-gray-800 shadow-lg z-50 transition-all duration-300">
-        <div id="status-message" class="text-center py-2 text-sm text-white bg-gray-800" role="status"
-            aria-live="polite"></div>
+<header id="main-header"
+  class="fixed top-0 left-0 right-0 bg-gray-800 shadow-lg z-50 transition-all duration-300">
 
-        <!-- ヘッダーのメイン行：左右に分割、縦中央揃え -->
-        <div class="max-w-6xl mx-auto px-4 flex items-center justify-between py-2 sm:py-3 lg:py-4">
-            <!-- 左：タイトル＋ET（タイトル横の意図維持のためETはここでは表示しない） -->
-            <h1 class="text-2xl font-bold text-yellow-400 tracking-wide leading-tight flex items-baseline">The<br>Hunt</h1>
-            <!-- 右：ET（上・右揃え）＋ランクタブ（下・右揃え）を1ブロックで縦中央配置 -->
-            <div class="flex flex-col items-end justify-center gap-1">
-                <!-- ET を上・右揃え -->
-                <span id="eorzea-time" class="text-sm text-gray-300"></span>
-                <!-- ランクタブを下・右揃え（横並び） -->
-                <div id="rank-tabs" class="flex justify-end gap-1"></div>
-            </div>
-        </div>
+  <!-- ステータスメッセージ -->
+  <div id="status-message"
+       class="text-center py-2 text-sm text-white bg-gray-800"
+       role="status" aria-live="polite"></div>
 
-        <!-- エリアパネル（スマホ） -->
-        <div id="area-filter-panel-mobile"
-            class="max-w-6xl mx-auto flex flex-wrap justify-end px-4 py-2 block lg:hidden">
-            <div class="grid grid-cols-2 gap-2 w-full sm:w-auto"></div>
-        </div>
-        <!-- エリアパネル（デスクトップ） -->
-        <div id="area-filter-panel-desktop" class="max-w-6xl mx-auto flex flex-wrap justify-end px-4 py-2 hidden">
-            <div class="flex flex-wrap gap-2 justify-end w-full"></div>
-        </div>
-    </header>
+  <!-- 帯部分（タイトル＋ET＋ランクタブ） -->
+  <div class="max-w-6xl mx-auto px-4 flex items-center justify-between min-h-14 sm:min-h-16">
+    <!-- 左：タイトル -->
+    <h1 class="text-2xl font-bold text-yellow-400 tracking-wide leading-tight flex items-baseline">
+      The<br>Hunt
+    </h1>
+    <!-- 右：ET（上）＋ランクタブ（下） -->
+    <div class="flex flex-col items-end justify-center gap-1">
+      <span id="eorzea-time" class="text-sm text-gray-300"></span>
+      <div id="rank-tabs" class="flex justify-end gap-1"></div>
+    </div>
+  </div>
 
-    <main class="mx-auto px-2 py-2 sm:px-4 pb-10 pt-24 sm:pt-24">
+  <!-- エリアパネル（スマホ） -->
+  <div id="area-filter-panel-mobile"
+       class="max-w-6xl mx-auto flex flex-wrap justify-end px-4 py-2 block lg:hidden">
+    <div class="grid grid-cols-2 gap-2 w-full sm:w-auto"></div>
+  </div>
+  <!-- エリアパネル（デスクトップ） -->
+  <div id="area-filter-panel-desktop"
+       class="max-w-6xl mx-auto flex flex-wrap justify-end px-4 py-2 hidden">
+    <div class="flex flex-wrap gap-2 justify-end w-full"></div>
+  </div>
+</header>
+
+    <main class="mx-auto px-2 py-2 sm:px-4 pb-10 pt-32 sm:pt-24">
         <div id="master-mob-container" class="hidden"></div>
         <div id="column-container"
             class="grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-2 lg:grid-cols-3 max-w-6xl mx-auto"
