@@ -32,17 +32,18 @@ const renderRankTabs = () => {
         btn.className =
             `tab-button px-2 py-1 text-sm rounded font-semibold text-white text-center transition ` +
             (isSelected ? "bg-green-500" : "bg-gray-500 hover:bg-gray-400");
+
+        // --- クリックイベント ---
         btn.addEventListener("click", () => {
             const currentState = getState();
-            // rank を更新（areaSets は保持）
             setFilter({
                 rank,
                 areaSets: currentState.filter.areaSets
             });
-            // フィルタ適用とUI更新
             filterAndRender();
             updateFilterUI();
         });
+
         container.appendChild(btn);
     });
 };
@@ -50,7 +51,6 @@ const renderRankTabs = () => {
 const renderAreaFilterPanel = () => {
     const state = getState();
     const uiRank = state.filter.rank;
-    // ALL の場合はエリアパネルを生成しない（S/A/FATEのみ）
     if (uiRank === 'ALL') return;
 
     const targetRankKey = uiRank === 'FATE' ? 'F' : uiRank;
@@ -72,7 +72,6 @@ const renderAreaFilterPanel = () => {
     const createButton = (area, isAll, isSelected) => {
         const btn = document.createElement("button");
         btn.textContent = area;
-
         const btnClass = 'py-1 px-2 text-sm rounded font-semibold text-white text-center transition w-auto';
 
         if (isAll) {
@@ -87,7 +86,6 @@ const renderAreaFilterPanel = () => {
 
     const createPanelContent = (isDesktop) => {
         const panel = document.createDocumentFragment();
-
         const allBtn = createButton(isAllSelected ? "全解除" : "全選択", true, false);
         panel.appendChild(allBtn);
 
@@ -112,7 +110,6 @@ const renderAreaFilterPanel = () => {
         mobilePanel.innerHTML = "";
         mobilePanel.appendChild(createPanelContent(false));
     }
-
     if (desktopPanel) {
         desktopPanel.innerHTML = "";
         desktopPanel.appendChild(createPanelContent(true));
@@ -124,7 +121,7 @@ const updateFilterUI = () => {
     const rankTabs = DOM.rankTabs;
     if (!rankTabs) return;
 
-    const stored = JSON.parse(localStorage.getItem("huntFilterState")) || {};
+    const stored = JSON.parse(localStorage.getItem("huntUIState")) || {};
     const prevRank = stored.rank;
     let clickStep = stored.clickStep || 1;
 
@@ -140,19 +137,16 @@ const updateFilterUI = () => {
         );
 
         if (isCurrent) {
-            // --- clickStep 制御 ---
             if (btnRank === "ALL") {
-                clickStep = 1; // ALLは常に1固定
+                clickStep = 1;
             } else if (!prevRank || prevRank !== btnRank) {
-                clickStep = 1; // 初回 or ランク切替時は必ず1
+                clickStep = 1;
             } else {
-                // 同じランクを再クリックした場合のみ進行
                 if (clickStep === 1) clickStep = 2;
                 else if (clickStep === 2) clickStep = 3;
                 else clickStep = 2;
             }
 
-            // --- 色付け ---
             btn.classList.add(
                 btnRank === "ALL" ? "bg-blue-800"
                 : btnRank === "S" ? "bg-red-800"
@@ -161,7 +155,6 @@ const updateFilterUI = () => {
                 : "bg-gray-800"
             );
 
-            // --- エリアパネル制御 ---
             const panels = [DOM.areaFilterPanelMobile, DOM.areaFilterPanelDesktop];
             if (btnRank === "ALL" || clickStep === 1 || clickStep === 3) {
                 panels.forEach(p => p?.classList.add("hidden"));
@@ -175,13 +168,12 @@ const updateFilterUI = () => {
                     DOM.areaFilterPanelMobile?.classList.add("hidden");
                 }
             }
-            // --- 状態保存 ---
-            localStorage.setItem("huntFilterState", JSON.stringify({
+
+            localStorage.setItem("huntUIState", JSON.stringify({
                 rank: btnRank,
                 clickStep
             }));
         } else {
-            // 非選択タブ
             btn.classList.add("bg-gray-500", "hover:bg-gray-400");
         }
     });
@@ -196,7 +188,6 @@ function handleAreaFilterClick(e) {
     const targetRankKey = uiRank === 'FATE' ? 'F' : uiRank;
     const allAreas = getAllAreas();
 
-    // ALL はエリアパネルを表示しないため、クリックも無視
     if (uiRank === 'ALL') return;
 
     const currentSet =
@@ -225,11 +216,8 @@ function handleAreaFilterClick(e) {
         areaSets: nextAreaSets
     });
 
-    // フィルタを適用して再描画
     filterAndRender();
-    // パネルの内容は再生成（現ランクの選択状況を反映）
     renderAreaFilterPanel();
-    // --- UI状態を保存・反映 ---
     updateFilterUI();
 }
 
