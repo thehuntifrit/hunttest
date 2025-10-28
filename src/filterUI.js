@@ -216,17 +216,17 @@ function filterMobsByRankAndArea(mobs) {
 
         const filterKey = mobRankKey;
 
-        if (uiRank === 'ALL') {
-            if (filterKey !== 'S' && filterKey !== 'A' && filterKey !== 'F') return false;
+if (uiRank === 'ALL') {
+  if (filterKey !== 'S' && filterKey !== 'A' && filterKey !== 'F') return false;
 
-            const targetSet = areaSets[filterKey];
+  const targetSet = areaSets?.[filterKey] instanceof Set ? areaSets[filterKey] : new Set();
 
-            if (!(targetSet instanceof Set) || targetSet.size === 0) return true;
-            if (targetSet.size === allExpansions) return true;
+  if (targetSet.size === 0) return true;
+  if (targetSet.size === allExpansions) return true;
 
-            return targetSet.has(mobExpansion);
+  return targetSet.has(mobExpansion);
+}
 
-        }
         else {
 
             const isRankMatch = (uiRank === 'S' && mobRank === 'S') ||
@@ -235,12 +235,13 @@ function filterMobsByRankAndArea(mobs) {
 
             if (!isRankMatch) return false;
 
-            const targetSet = areaSets[filterKey];
+const targetSet = areaSets?.[filterKey] instanceof Set ? areaSets[filterKey] : new Set();
 
-            if (!(targetSet instanceof Set) || targetSet.size === 0) return true;
-            if (targetSet.size === allExpansions) return true;
+if (targetSet.size === 0) return true;
+if (targetSet.size === allExpansions) return true;
 
-            return targetSet.has(mobExpansion);
+return targetSet.has(mobExpansion);
+
         }
     });
 }
