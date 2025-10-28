@@ -22,12 +22,22 @@ function handleCrushToggle(e) {
   return true;
 }
 
-function isCulled(pointStatus) {
+function isCulled(pointStatus, mobNo) {
   const culledMs = pointStatus?.culled_at ? pointStatus.culled_at.toMillis() : 0;
   const uncullMs = pointStatus?.uncull_at ? pointStatus.uncull_at.toMillis() : 0;
 
   if (culledMs === 0 && uncullMs === 0) return false;
-  return culledMs > uncullMs;
+  let culled = culledMs > uncullMs;
+
+  if (culled && mobNo) {
+    const mob = getMobByNo(mobNo);
+    const lastKill = mob?.last_kill_time ? mob.last_kill_time * 1000 : 0;
+    if (lastKill > culledMs) {
+      // 討伐の方が新しい → 見かけ上リセット
+      culled = false;
+    }
+  }
+  return culled;
 }
 
 function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
