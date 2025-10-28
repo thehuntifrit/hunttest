@@ -31,7 +31,15 @@ function isCulled(pointStatus, mobNo) {
 
   if (culled && mobNo) {
     const mob = getMobByNo(mobNo);
-    const lastKill = mob?.last_kill_time ? mob.last_kill_time.toMillis() : 0; 
+    
+    let lastKill = 0;
+    if (mob?.last_kill_time) {
+      if (typeof mob.last_kill_time.toMillis === 'function') {
+        lastKill = mob.last_kill_time.toMillis();
+      } else if (typeof mob.last_kill_time === 'number') {
+        lastKill = mob.last_kill_time * 1000;
+      }
+    }
     
     if (lastKill > culledMs) {
       // 討伐の方が新しい → 見かけ上リセット
