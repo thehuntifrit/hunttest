@@ -130,7 +130,19 @@ const submitReport = async (mobNo, timeISO, memo) => {
         return;
     }
 
-    const killTimeDate = await getServerTimeUTC();
+    // サーバー基準時刻を取得
+    const serverNow = await getServerTimeUTC();
+
+    // モーダル入力があれば優先して反映
+    let killTimeDate = serverNow;
+    if (timeISO) {
+        const modalDate = new Date(timeISO);
+        if (!isNaN(modalDate)) {
+            // 差分を計算してサーバー時刻に適用
+            const diffMs = modalDate.getTime() - serverNow.getTime();
+            killTimeDate = new Date(serverNow.getTime() + diffMs);
+        }
+    }
 
     const modalStatusEl = document.querySelector("#modal-status");
     if (modalStatusEl) {
