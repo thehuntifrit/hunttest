@@ -259,7 +259,17 @@ function formatLastKillTime(timestamp) {
     return new Intl.DateTimeFormat("ja-JP", options).format(date);
 }
 
+function updateEorzeaTime() {
+    const et = getEorzeaTime();
+    const el = document.getElementById("eorzea-time");
+    if (el) {
+        el.textContent = `ET ${et.hours}:${et.minutes}`;
+    }
+}
+updateEorzeaTime();
+setInterval(updateEorzeaTime, 3000);
+
 export {
-    calculateRepop, checkMobSpawnCondition, findNextSpawnTime, getEorzeaTime, getEorzeaMoonPhase, formatDuration,
+    calculateRepop, checkMobSpawnCondition, findNextSpawnTime, getEorzeaTime, getEorzeaMoonPhase, formatDuration, updateEorzeaTime, 
     getEorzeaWeatherSeed, getEorzeaWeather, getMoonPhaseLabel, formatDurationHM, debounce, toJstAdjustedIsoString, formatLastKillTime
 };
