@@ -130,24 +130,20 @@ const submitReport = async (mobNo, timeISO, memo) => {
         return;
     }
 
-    // サーバー基準時刻を取得
-    const serverNow = await getServerTimeUTC();
-
-    // モーダル入力があれば優先して反映
-    let killTimeDate = serverNow;
+    // モーダル入力を優先、未入力や不正ならサーバー時刻を fallback
+    let killTimeDate;
     if (timeISO) {
         const modalDate = new Date(timeISO);
         if (!isNaN(modalDate)) {
-            // 差分を計算してサーバー時刻に適用
-            const diffMs = modalDate.getTime() - serverNow.getTime();
-            killTimeDate = new Date(serverNow.getTime() + diffMs);
+            killTimeDate = modalDate; // ← モーダル値をそのまま採用
         }
+    }
+    if (!killTimeDate) {
+        killTimeDate = await getServerTimeUTC(); // fallback
     }
 
     const modalStatusEl = document.querySelector("#modal-status");
-    if (modalStatusEl) {
-        modalStatusEl.textContent = "送信中...";
-    }
+    if (modalStatusEl) modalStatusEl.textContent = "送信中...";
     displayStatus(`${mob.Name} 討伐時間報告中...`);
 
     try {
@@ -163,12 +159,26 @@ const submitReport = async (mobNo, timeISO, memo) => {
         displayStatus("報告が完了しました。データ反映を待っています。", "success");
     } catch (error) {
         console.error("レポート送信エラー:", error);
-        if (modalStatusEl) {
-            modalStatusEl.textContent = "送信エラー: " + (error.message || "通信失敗");
-        }
+        if (modalStatusEl) modalStatusEl.textContent = "送信エラー: " + (error.message || "通信失敗");
         displayStatus(`討伐報告エラー: ${error.message || "通信失敗"}`, "error");
     }
 };
+
+// フォーム送信イベントをserver側で拾う
+document.addEventListener("DOMContentLoaded", () => {
+    const reportForm = document.getElementById("report-form");
+    if (reportForm) {
+        reportForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+
+            const mobNo = Number(reportForm.dataset.mobNo);
+            const timeISO = document.getElementById("report-datetime").value;
+            const memo = document.getElementById("report-memo").value;
+
+            submitReport(mobNo, timeISO, memo);
+        });
+    }
+});
 
 // 湧き潰し報告
 const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
