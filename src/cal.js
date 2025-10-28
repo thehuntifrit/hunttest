@@ -133,17 +133,35 @@ function checkMobSpawnCondition(mob, date) {
 
 function findNextSpawnTime(mob, now = new Date()) {
     let date = new Date(now.getTime());
-    const limit = now.getTime() + 7 * 24 * 60 * 60 * 1000;
-    const REAL_SECONDS_STEP = 60;
+    const limit = now.getTime() + 7 * 24 * 60 * 60 * 1000; // 1週間先まで探索
+    const REAL_SECONDS_STEP = 60; // 1分刻みで探索
 
     while (date.getTime() < limit) {
         if (checkMobSpawnCondition(mob, date)) {
-            return date;
+            // --- 連続時間チェック ---
+            const durationMin = mob.weatherDuration?.minutes || 0;
+            if (durationMin > 0) {
+                let ok = true;
+                let checkDate = new Date(date.getTime());
+                for (let i = 0; i < durationMin; i++) {
+                    checkDate = new Date(checkDate.getTime() + 60 * 1000);
+                    if (!checkMobSpawnCondition(mob, checkDate)) {
+                        ok = false;
+                        break;
+                    }
+                }
+                if (ok) {
+                    return date; // 連続成立した開始時刻を返す
+                }
+            } else {
+                return date; // 単発条件なら即成立
+            }
         }
         date = new Date(date.getTime() + REAL_SECONDS_STEP * 1000);
     }
     return null;
 }
+
 
 // repop計算
 function calculateRepop(mob, maintenance) {
