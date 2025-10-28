@@ -97,18 +97,23 @@ function createMobCard(mob) {
         : "";
 
 
-    const cardHeaderHTML = `<div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
+    const cardHeaderHTML = `
+<div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
+    <!-- 上段：ランク・モブ名・報告ボタン -->
     <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
+        <!-- 左：ランク -->
         <span
             class="w-6 h-6 flex items-center justify-center rounded-full text-white text-xs font-bold ${rankConfig.bg}">
             ${rankLabel}
         </span>
 
+        <!-- 中央：モブ名＋エリア名 -->
         <div class="flex flex-col min-w-0">
             <span class="text-base font-bold truncate">${mob.Name}</span>
             <span class="text-xs text-gray-400 truncate">${mob.Area} (${mob.Expansion})</span>
         </div>
 
+        <!-- 右端：報告ボタン（見た目は統一、動作だけ分岐） -->
         <div class="flex-shrink-0 flex items-center justify-end">
             <button data-report-type="${rank === 'A' || rank === 'F' ? 'instant' : 'modal'}" data-mob-no="${mob.No}"
                 class="w-8 h-8 flex items-center justify-center text-[12px] rounded bg-green-600 hover:bg-green-800 selected:bg-green-400 
@@ -116,6 +121,7 @@ function createMobCard(mob) {
         </div>
     </div>
 
+    <!-- 下段：プログレスバー（構造のみ） -->
     <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
         <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear"
             style="width: 0%"></div>
@@ -258,7 +264,8 @@ function updateProgressText(card, mob) {
         rightStr = `未確定`;
     }
     // 左側に in と Next の両方を置き、Next は初期非表示
-    text.innerHTML = `<div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
+    text.innerHTML = `
+    <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
         <div class="pl-2 text-left toggle-container">
           <span class="label-in">in ${inTimeStr}</span>
           <span class="label-next" style="display:none;">${nextTimeStr ? `Next ${nextTimeStr}` : ""}</span>
