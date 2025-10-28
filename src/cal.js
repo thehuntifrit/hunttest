@@ -162,7 +162,6 @@ function findNextSpawnTime(mob, now = new Date()) {
     return null;
 }
 
-
 // repop計算
 function calculateRepop(mob, maintenance) {
     const now = Date.now() / 1000;
