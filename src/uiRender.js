@@ -71,14 +71,14 @@ function createMobCard(mob) {
     let validSpawnPoints = [];
 
     if (mob.Map && mob.spawn_points) {
-        // 湧き潰しされていない（有効な）スポーン地点をフィルタリングしてカウント
         validSpawnPoints = (mob.spawn_points ?? []).filter(point => {
             const pointStatus = mob.spawn_cull_status?.[point.id];
-            // 修正された isCulled 関数を使用
+            // isCulled には mob.No が必要
             return !isCulled(pointStatus, mob.No); 
         });
         isLastOne = validSpawnPoints.length === 1;
     }
+
     const isS_LastOne = rank === "S" && isLastOne; 
     
     const spawnPointsHtml = (rank === "S" && mob.Map)
@@ -89,13 +89,13 @@ function createMobCard(mob) {
             point.mob_ranks.includes("B2") ? "B2"
                 : point.mob_ranks.includes("B1") ? "B1"
                     : point.mob_ranks[0],
+            // isLastOne のフラグを渡す
             isLastOne && point.id === validSpawnPoints[0]?.id, 
             isS_LastOne,
             mob.last_kill_time,
             mob.prev_kill_time
         )).join("")
         : "";
-
 
     const cardHeaderHTML = `
 <div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
