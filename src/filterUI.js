@@ -110,68 +110,69 @@ const renderAreaFilterPanel = () => {
 };
 
 const updateFilterUI = () => {
-    const state = getState();
-    const rankTabs = DOM.rankTabs;
-    if (!rankTabs) return;
+  const state = getState();
+  const rankTabs = DOM.rankTabs;
+  if (!rankTabs) return;
 
-    const stored = JSON.parse(localStorage.getItem("huntFilterState")) || {};
-    const prevRank = stored.rank;
-    let clickStep = stored.clickStep || 1;
+  const stored = JSON.parse(localStorage.getItem("huntFilterState")) || {};
+  const prevRank = stored.rank;
+  let clickStep = stored.clickStep || 1;
 
-    const isMobile = window.matchMedia("(max-width: 1023px)").matches;
+  const isMobile = window.matchMedia("(max-width: 1023px)").matches;
 
-    rankTabs.querySelectorAll(".tab-button").forEach(btn => {
-        const btnRank = btn.dataset.rank;
-        const isCurrent = btnRank === state.filter.rank;
+  rankTabs.querySelectorAll(".tab-button").forEach(btn => {
+    const btnRank = btn.dataset.rank;
+    const isCurrent = btnRank === state.filter.rank;
 
-        btn.classList.remove(
-            "bg-blue-800", "bg-red-800", "bg-yellow-800", "bg-indigo-800",
-            "bg-gray-500", "hover:bg-gray-400", "bg-green-500", "bg-gray-800"
-        );
+    btn.classList.remove(
+      "bg-blue-800", "bg-red-800", "bg-yellow-800", "bg-indigo-800",
+      "bg-gray-500", "hover:bg-gray-400", "bg-green-500", "bg-gray-800"
+    );
 
-        if (isCurrent) {
-            // ALL は常に clickStep=1 固定（エリアパネルは開かない）
-            if (btnRank === "ALL") {
-                clickStep = 1;
-            } else {
-                // 初回、またはランク切替時は必ず 1 にリセット
-                if (!prevRank || prevRank !== btnRank) {
-                    clickStep = 1;
-                } else {
-                    // 同ランク再クリック時のみ 2↔3 を繰り返す
-                    if (clickStep === 1) clickStep = 2;
-                    else if (clickStep === 2) clickStep = 3;
-                    else clickStep = 2;
-                }
-            }
-
-            btn.classList.add(
-                btnRank === "ALL" ? "bg-blue-800"
-                    : btnRank === "S" ? "bg-red-800"
-                        : btnRank === "A" ? "bg-yellow-800"
-                            : btnRank === "FATE" ? "bg-indigo-800"
-                                : "bg-gray-800"
-            );
-
-            // エリアパネル制御（画面幅で片方のみ表示）
-            const panels = [DOM.areaFilterPanelMobile, DOM.areaFilterPanelDesktop];
-            if (btnRank === "ALL" || clickStep === 1 || clickStep === 3) {
-                panels.forEach(p => p?.classList.add("hidden"));
-            } else if (clickStep === 2) {
-                renderAreaFilterPanel();
-                if (isMobile) {
-                    DOM.areaFilterPanelMobile?.classList.remove("hidden");
-                    DOM.areaFilterPanelDesktop?.classList.add("hidden");
-                } else {
-                    DOM.areaFilterPanelDesktop?.classList.remove("hidden");
-                    DOM.areaFilterPanelMobile?.classList.add("hidden");
-                }
-            }
-            localStorage.setItem("huntFilterState", JSON.stringify({ rank: btnRank, clickStep }));
+    if (isCurrent) {
+      // --- clickStep 制御 ---
+      if (btnRank === "ALL") {
+        clickStep = 1; // ALLは常に1固定
+      } else if (!prevRank || prevRank !== btnRank) {
+        clickStep = 1; // 初回 or ランク切替時は必ず1
+      } else {
+        // 同じランクを再クリックした場合のみ進行
+        if (clickStep === 1) clickStep = 2;
+        else if (clickStep === 2) clickStep = 3;
+        else clickStep = 2;
+      }
+      // --- 色付け ---
+      btn.classList.add(
+        btnRank === "ALL" ? "bg-blue-800"
+          : btnRank === "S" ? "bg-red-800"
+          : btnRank === "A" ? "bg-yellow-800"
+          : btnRank === "FATE" ? "bg-indigo-800"
+          : "bg-gray-800"
+      );
+      // --- エリアパネル制御 ---
+      const panels = [DOM.areaFilterPanelMobile, DOM.areaFilterPanelDesktop];
+      if (btnRank === "ALL" || clickStep === 1 || clickStep === 3) {
+        panels.forEach(p => p?.classList.add("hidden"));
+      } else if (clickStep === 2) {
+        renderAreaFilterPanel();
+        if (isMobile) {
+          DOM.areaFilterPanelMobile?.classList.remove("hidden");
+          DOM.areaFilterPanelDesktop?.classList.add("hidden");
         } else {
-            btn.classList.add("bg-gray-500", "hover:bg-gray-400");
+          DOM.areaFilterPanelDesktop?.classList.remove("hidden");
+          DOM.areaFilterPanelMobile?.classList.add("hidden");
         }
-    });
+      }
+      // --- 状態保存 ---
+      localStorage.setItem("huntFilterState", JSON.stringify({
+        rank: btnRank,
+        clickStep
+      }));
+    } else {
+      // 非選択タブ
+      btn.classList.add("bg-gray-500", "hover:bg-gray-400");
+    }
+  });
 };
 
 function handleAreaFilterClick(e) {
