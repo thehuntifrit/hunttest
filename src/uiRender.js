@@ -280,7 +280,7 @@ function startToggleInNext(container) {
             nextLabel.style.display = "none";
         }
         showingIn = !showingIn;
-    }, 3000); // 3秒ごとに切り替え
+    }, 5000); // 3秒ごとに切り替え
 }
 
 function updateExpandablePanel(card, mob) {
