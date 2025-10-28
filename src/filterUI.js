@@ -218,7 +218,6 @@ function handleAreaFilterClick(e) {
 
     filterAndRender();
     renderAreaFilterPanel();
-    updateFilterUI();
 }
 
 function filterMobsByRankAndArea(mobs) {
