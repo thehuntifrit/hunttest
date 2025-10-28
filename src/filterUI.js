@@ -120,14 +120,17 @@ const updateFilterUI = () => {
     const btnRank = btn.dataset.rank;
     const isCurrent = btnRank === state.filter.rank;
 
-    btn.classList.remove("bg-blue-800", "bg-red-800", "bg-yellow-800", "bg-indigo-800", "bg-gray-500", "hover:bg-gray-400", "bg-green-500");
+    btn.classList.remove(
+      "bg-blue-800", "bg-red-800", "bg-yellow-800", "bg-indigo-800",
+      "bg-gray-500", "hover:bg-gray-400", "bg-green-500"
+    );
 
     if (isCurrent) {
-      // ランクが変わったらリセット
-      if (prevRank !== btnRank) {
+      // ランクが変わった、または初回クリック時は必ず 1 にリセット
+      if (!prevRank || prevRank !== btnRank) {
         clickStep = 1;
       } else {
-        // 同じランクなら 2↔3 を繰り返す
+        // 同じランクを再クリックした場合のみ 2↔3 を繰り返す
         if (clickStep === 1) clickStep = 2;
         else if (clickStep === 2) clickStep = 3;
         else clickStep = 2;
