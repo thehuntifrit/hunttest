@@ -1,7 +1,6 @@
 // filterUI.js
 
-import { getState, FILTER_TO_DATA_RANK_MAP, setFilter } from "./dataManager.js";
-import { EXPANSION_MAP } from "./dataManager.js";
+import { getState, EXPANSION_MAP, FILTER_TO_DATA_RANK_MAP, setFilter } from "./dataManager.js";
 import { filterAndRender } from "./uiRender.js";
 
 const DOM = {
