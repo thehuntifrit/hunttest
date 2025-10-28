@@ -1,6 +1,6 @@
 // uiRender.js
 
-import { calculateRepop, findNextSpawnTime, formatDuration, formatDurationHM, formatLastKillTime, debounce } from "./cal.js";
+import { calculateRepop, findNextSpawnTime, formatDuration, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime } from "./cal.js";
 import { drawSpawnPoint } from "./location.js";
 import { getState, RANK_COLORS, PROGRESS_CLASSES, FILTER_TO_DATA_RANK_MAP } from "./dataManager.js";
 import { renderRankTabs, renderAreaFilterPanel, updateFilterUI, filterMobsByRankAndArea } from "./filterUI.js";
@@ -20,6 +20,16 @@ const DOM = {
     modalTimeInput: document.getElementById('report-datetime'),
     modalMemoInput: document.getElementById('report-memo'),
 };
+
+function updateEorzeaTime() {
+    const et = getEorzeaTime();
+    const el = document.getElementById("eorzea-time");
+    if (el) {
+        el.textContent = `ET ${et.hours}:${et.minutes}`;
+    }
+}
+updateEorzeaTime();
+setInterval(updateEorzeaTime, 3000);
 
 function displayStatus(message, type = "info") {
     const el = document.getElementById("status-message");
