@@ -108,56 +108,66 @@ const renderAreaFilterPanel = () => {
 };
 
 const updateFilterUI = () => {
-  const state = getState();
-  const rankTabs = DOM.rankTabs;
-  if (!rankTabs) return;
+    const state = getState();
+    const rankTabs = DOM.rankTabs;
+    if (!rankTabs) return;
 
-  const stored = JSON.parse(localStorage.getItem("huntFilterState")) || {};
-  const prevRank = stored.rank;
-  let clickStep = stored.clickStep || 1;
+    const stored = JSON.parse(localStorage.getItem("huntFilterState")) || {};
+    const prevRank = stored.rank;
+    let clickStep = stored.clickStep || 1;
 
-  rankTabs.querySelectorAll(".tab-button").forEach(btn => {
-    const btnRank = btn.dataset.rank;
-    const isCurrent = btnRank === state.filter.rank;
+    rankTabs.querySelectorAll(".tab-button").forEach(btn => {
+        const btnRank = btn.dataset.rank;
+        const isCurrent = btnRank === state.filter.rank;
 
-    btn.classList.remove(
-      "bg-blue-800", "bg-red-800", "bg-yellow-800", "bg-indigo-800",
-      "bg-gray-500", "hover:bg-gray-400", "bg-green-500"
-    );
+        btn.classList.remove(
+            "bg-blue-800", "bg-red-800", "bg-yellow-800", "bg-indigo-800",
+            "bg-gray-500", "hover:bg-gray-400", "bg-green-500"
+        );
 
-    if (isCurrent) {
-      // ランクが変わった、または初回クリック時は必ず 1 にリセット
-      if (!prevRank || prevRank !== btnRank) {
-        clickStep = 1;
-      } else {
-        // 同じランクを再クリックした場合のみ 2↔3 を繰り返す
-        if (clickStep === 1) clickStep = 2;
-        else if (clickStep === 2) clickStep = 3;
-        else clickStep = 2;
-      }
-      // 色付け
-      btn.classList.add(
-        btnRank === "ALL" ? "bg-blue-800"
-          : btnRank === "S" ? "bg-red-800"
-          : btnRank === "A" ? "bg-yellow-800"
-          : btnRank === "FATE" ? "bg-indigo-800"
-          : "bg-gray-800"
-      );
-      // エリアパネル制御
-      const panels = [DOM.areaFilterPanelMobile, DOM.areaFilterPanelDesktop];
-      if (btnRank === "ALL" || clickStep === 1 || clickStep === 3) {
-        panels.forEach(p => p?.classList.add("hidden"));
-      } else if (clickStep === 2) {
-        renderAreaFilterPanel();
-        panels.forEach(p => p?.classList.remove("hidden"));
-      }
-      // 状態保存
-      localStorage.setItem("huntFilterState", JSON.stringify({ rank: btnRank, clickStep }));
-    } else {
-      // 非選択タブはリセット
-      btn.classList.add("bg-gray-500", "hover:bg-gray-400");
-    }
-  });
+        if (isCurrent) {
+            // ランクが変わった、または初回クリック時は必ず 1 にリセット
+            if (!prevRank || prevRank !== btnRank) {
+                clickStep = 1;
+            } else {
+                // 同じランクを再クリックした場合のみ 2↔3 を繰り返す
+                if (clickStep === 1) clickStep = 2;
+                else if (clickStep === 2) clickStep = 3;
+                else clickStep = 2;
+            }
+            // 色付け
+            btn.classList.add(
+                btnRank === "ALL" ? "bg-blue-800"
+                    : btnRank === "S" ? "bg-red-800"
+                        : btnRank === "A" ? "bg-yellow-800"
+                            : btnRank === "FATE" ? "bg-indigo-800"
+                                : "bg-gray-800"
+            );
+            // エリアパネル制御
+            const panels = [DOM.areaFilterPanelMobile, DOM.areaFilterPanelDesktop];
+            // 画面幅を判定
+            const isMobile = window.matchMedia("(max-width: 1023px)").matches;
+            if (btnRank === "ALL" || clickStep === 1 || clickStep === 3) {
+                // どちらも閉じる
+                panels.forEach(p => p?.classList.add("hidden"));
+            } else if (clickStep === 2) {
+                renderAreaFilterPanel();
+                if (isMobile) {
+                    DOM.areaFilterPanelMobile?.classList.remove("hidden");
+                    DOM.areaFilterPanelDesktop?.classList.add("hidden");
+                } else {
+                    DOM.areaFilterPanelDesktop?.classList.remove("hidden");
+                    DOM.areaFilterPanelMobile?.classList.add("hidden");
+                }
+            }
+
+            // 状態保存
+            localStorage.setItem("huntFilterState", JSON.stringify({ rank: btnRank, clickStep }));
+        } else {
+            // 非選択タブはリセット
+            btn.classList.add("bg-gray-500", "hover:bg-gray-400");
+        }
+    });
 };
 
 function handleAreaFilterClick(e) {
@@ -219,16 +229,16 @@ function filterMobsByRankAndArea(mobs) {
 
         const filterKey = mobRankKey;
 
-if (uiRank === 'ALL') {
-  if (filterKey !== 'S' && filterKey !== 'A' && filterKey !== 'F') return false;
+        if (uiRank === 'ALL') {
+            if (filterKey !== 'S' && filterKey !== 'A' && filterKey !== 'F') return false;
 
-  const targetSet = areaSets?.[filterKey] instanceof Set ? areaSets[filterKey] : new Set();
+            const targetSet = areaSets?.[filterKey] instanceof Set ? areaSets[filterKey] : new Set();
 
-  if (targetSet.size === 0) return true;
-  if (targetSet.size === allExpansions) return true;
+            if (targetSet.size === 0) return true;
+            if (targetSet.size === allExpansions) return true;
 
-  return targetSet.has(mobExpansion);
-}
+            return targetSet.has(mobExpansion);
+        }
 
         else {
 
@@ -238,12 +248,12 @@ if (uiRank === 'ALL') {
 
             if (!isRankMatch) return false;
 
-const targetSet = areaSets?.[filterKey] instanceof Set ? areaSets[filterKey] : new Set();
+            const targetSet = areaSets?.[filterKey] instanceof Set ? areaSets[filterKey] : new Set();
 
-if (targetSet.size === 0) return true;
-if (targetSet.size === allExpansions) return true;
+            if (targetSet.size === 0) return true;
+            if (targetSet.size === allExpansions) return true;
 
-return targetSet.has(mobExpansion);
+            return targetSet.has(mobExpansion);
 
         }
     });
