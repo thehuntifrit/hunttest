@@ -72,8 +72,8 @@ transform: scale(1.15);
   --header-height: 4rem;
   font-family: 'Inter', sans-serif;
 
-  --progress-0-60: #4169E1;
-  --progress-60-80: #3CB371;
+  --progress-0-60: #3CB371;
+  --progress-60-80: #F8B400;
   --progress-80-100: #FF6347;
 }
 
