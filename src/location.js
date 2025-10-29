@@ -2,7 +2,7 @@
 
 import { DOM } from "./uiRender.js";
 import { toggleCrushStatus } from "./server.js";
-import { getState, getMobByNo } from "./dataManager.js";
+import { getState, getMobByNo } from "./dataManager.js"; // getMobByNo は isCulled で使用しないため残すか検討
 
 function handleCrushToggle(e) {
     const point = e.target.closest(".spawn-point");
@@ -22,40 +22,60 @@ function handleCrushToggle(e) {
     return true;
 }
 
-function isCulled(pointStatus, mobNo) {
+/**
+ * 湧き潰し状態を判定する関数
+ * @param {object} pointStatus - Mob Locationsから取得した特定の地点の状態 ({ culled_at: Timestamp, uncull_at: Timestamp })
+ * @param {Timestamp|null} mobLastKillTime - Mob Locationsドキュメント内のlast_kill_time (Timestampオブジェクト)
+ * @returns {boolean} 湧き潰し中であれば true
+ */
+function isCulled(pointStatus, mobLastKillTime) { // ★ 引数を mobNo から mobLastKillTime に変更
+    // 湧き潰し/解除時刻をミリ秒で取得。ない場合は0。
     const culledMs = pointStatus?.culled_at ? pointStatus.culled_at.toMillis() : 0;
     const uncullMs = pointStatus?.uncull_at ? pointStatus.uncull_at.toMillis() : 0;
+    
+    // Mobの確定時刻(リセット基準)をミリ秒で取得。ない場合は0。
+    const lastKillMs = mobLastKillTime && typeof mobLastKillTime.toMillis === 'function' 
+                       ? mobLastKillTime.toMillis() : 0; // ★ lastKillTimeを引数から取得
 
+    // データがない場合は湧き潰しではない
     if (culledMs === 0 && uncullMs === 0) return false;
-    let culled = culledMs > uncullMs;
+    
+    // --- 判定ロジック ---
+    
+    // 1. 各操作がLKTより新しいかを確認 (リセット判定)
+    const isCulledValid = culledMs > lastKillMs;
+    const isUnculledValid = uncullMs > lastKillMs;
 
-    if (culled && mobNo) {
-        const mob = getMobByNo(mobNo);
-
-        let lastKill = 0;
-        if (mob?.last_kill_time) {
-            if (typeof mob.last_kill_time.toMillis === 'function') {
-                lastKill = mob.last_kill_time.toMillis();
-            } else if (typeof mob.last_kill_time === 'number') {
-                lastKill = mob.last_kill_time * 1000;
-            }
-        }
-
-        if (lastKill > culledMs) {
-            // 討伐の方が新しい → 見かけ上リセット
-            culled = false;
-        }
+    // 2. 有効な操作同士で比較
+    if (isCulledValid && (!isUnculledValid || culledMs > uncullMs)) {
+        // CULL操作がLKTより新しく、かつ、UNCULL操作が無効/LKTより古い/またはCULLより古い
+        return true; // 湧き潰し中 (ON)
     }
-    return culled;
+
+    // 3. 有効な操作同士で比較
+    if (isUnculledValid && (!isCulledValid || uncullMs > culledMs)) {
+        // UNCULL操作がLKTより新しく、かつ、CULL操作が無効/LKTより古い/またはUNCULLより古い
+        return false; // 湧いている状態 (OFF)
+    }
+    
+    // 4. その他のケース (両方古い=リセットされている)
+    return false; // 湧き潰しではない (OFF)
 }
 
 function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
     const pointStatus = spawnCullStatus?.[point.id];
-    const isCulledFlag = isCulled(pointStatus, mobNo);
+    // ★ Mob Locationsから取得したLKTを、spawnCullStatusに追加されている前提で取得
+    // subscribeMobLocations関数で mobLocationsDataMap[mobNo] に last_kill_time が格納されていると仮定
+    const state = getState();
+    const mobLocationsData = state.mobLocations[mobNo]; 
+    const mobLastKillTime = mobLocationsData?.last_kill_time || null; 
+    
+    const isCulledFlag = isCulled(pointStatus, mobLastKillTime); // ★ LKTを渡すように変更
 
     const isS_A_Cullable = point.mob_ranks.some(r => r === "S" || r === "A");
-    const isB_Only = point.mob_ranks.every(r => r.startsWith("B"));
-
+// ... (中略、UI描画ロジックは変更なし) ...
+    
+    // UI描画ロジックは変更なし
     let colorClass = "";
     let dataIsInteractive = "false";
 
@@ -81,14 +101,14 @@ function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_Last
 
     return `
     <div class="spawn-point ${colorClass}"
-         style="left:${point.x}%; top:${point.y}%;"
-         data-location-id="${point.id}"
-         data-mob-no="${mobNo}"
-         data-rank="${rank}"
-         data-is-culled="${isCulledFlag}"
-         data-is-lastone="${isLastOne ? "true" : "false"}"
-         data-is-interactive="${dataIsInteractive}"
-         tabindex="0">
+          style="left:${point.x}%; top:${point.y}%;"
+          data-location-id="${point.id}"
+          data-mob-no="${mobNo}"
+          data-rank="${rank}"
+          data-is-culled="${isCulledFlag}"
+          data-is-lastone="${isLastOne ? "true" : "false"}"
+          data-is-interactive="${dataIsInteractive}"
+          tabindex="0">
     </div>
   `;
 }
