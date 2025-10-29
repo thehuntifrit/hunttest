@@ -1,3 +1,4 @@
+
 // cal.js
 
 import { loadMaintenance } from "./app.js";
@@ -186,6 +187,9 @@ function findNextSpawnTime(mob, startDate) {
                     : mob.weatherSeedRanges
                         ? mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max)
                         : false;
+            console.log(
+                `[cycle] ${new Date(tSec * 1000).toISOString()} ET=${getEorzeaTime(new Date(tSec * 1000)).hours}:00 seed=${seed} weather=${mapSeedToWeather(seed)} consecutive=${consecutive}`
+            );
 
             if (inRange) {
                 if (consecutive === 0) conditionStartSec = tSec;
@@ -241,7 +245,7 @@ function calculateRepop(mob, maintenance) {
         minRepop = serverUp + repopSec;
         maxRepop = serverUp + maxSec;
         if (now >= maxRepop) {
-            status = "MaxOver"; elapsedPercent = 100; timeRemaining = `Over (100%)`;
+            status = "MaxOver"; elapsedPercent = 100; timeRemaining = `Time Over (100%)`;
         } else if (now < minRepop) {
             status = "Maintenance"; timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
         } else {
@@ -262,7 +266,7 @@ function calculateRepop(mob, maintenance) {
     } else {
         minRepop = lastKill + repopSec;
         maxRepop = lastKill + maxSec;
-        status = "MaxOver"; elapsedPercent = 100; timeRemaining = `Over (100%)`;
+        status = "MaxOver"; elapsedPercent = 100; timeRemaining = `Time Over (100%)`;
     }
 
     const nextMinRepopDate = new Date(minRepop * 1000);
