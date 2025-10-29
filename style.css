@@ -145,7 +145,18 @@ padding-bottom: 0.5rem !important;
   --color-b1: #3e83c4;
   --color-b2: #e16666;
   --color-lastone: #50C878; /* Emerald Green */
-  --color-culled: #4b5563;  /* 湧き潰し済みの内側グレー */
+  --color-culled: #889ab3;  /* 湧き潰し済みの内側グレー */
+}
+.color-b1:hover,
+.color-b1:focus,
+.color-b2:hover,
+.color-b2:focus,
+.color-b1-culled:hover,
+.color-b1-culled:focus,
+.color-b2-culled:hover,
+.color-b2-culled:focus {cursor: pointer; 
+  transform: translate(-50%, -50%) scale(1.3); z-index: 10; 
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.9);
 }
 /* --- ベース --- */
 .spawn-point {
@@ -166,5 +177,5 @@ padding-bottom: 0.5rem !important;
 /* --- ラストワン --- */
 .color-lastone { background-color: var(--color-lastone); border: 2px solid #008000; }
 /* --- B-only --- */
-.color-b1-only { background-color: var(--color-b1); border: 1px solid #fff; opacity: 0.75; }
-.color-b2-only { background-color: var(--color-b2); border: 1px solid #fff; opacity: 0.75; }
+.color-b1-only { background-color: var(--color-b1); border: 1px solid #fff; width: 12px; height: 12px; opacity: 0.75; }
+.color-b2-only { background-color: var(--color-b2); border: 1px solid #fff; width: 12px; height: 12px; opacity: 0.75; }
