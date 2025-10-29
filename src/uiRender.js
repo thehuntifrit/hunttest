@@ -116,7 +116,7 @@ function createMobCard(mob) {
         <!-- 右端：報告ボタン（見た目は統一、動作だけ分岐） -->
         <div class="flex-shrink-0 flex items-center justify-end">
             <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}"
-                class="w-8 h-8 flex items-center justify-center text-[12px] rounded bg-green-600 hover:bg-green-800 selected:bg-green-400 
+                class="w-8 h-8 flex items-center justify-center text-[12px] rounded bg-green-600 hover:bg-green-800 selected:bg-rose-950 
                text-white font-semibold transition text-center leading-tight whitespace-pre-line">報告<br>する</button>
         </div>
     </div>
@@ -259,19 +259,19 @@ function updateProgressText(card, mob) {
     } else if (status === "PopWindow") {
         rightStr = `残り ${formatDurationHM(maxRepop - nowSec)}`;
     } else if (status === "MaxOver") {
-        rightStr = `Over (100%)`;
+        rightStr = `Time Over (100%)`;
     } else {
         rightStr = `未確定`;
     }
     // 左側に in と Next の両方を置き、Next は初期非表示
     text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
-        <div class="pl-2 text-left toggle-container">
+        <div class="pl-2 text-left">
+          ${rightStr}${status !== "MaxOver" && status !== "Unknown" ? ` (${elapsedPercent.toFixed(0)}%)` : ""}
+        </div>
+        <div class="pr-1 text-right toggle-container">
           <span class="label-in">in ${inTimeStr}</span>
           <span class="label-next" style="display:none;">${nextTimeStr ? `Next ${nextTimeStr}` : ""}</span>
-        </div>
-        <div class="pr-1 text-right">
-          ${rightStr}${status !== "MaxOver" && status !== "Unknown" ? ` (${elapsedPercent.toFixed(0)}%)` : ""}
         </div>
     </div>
   `;
