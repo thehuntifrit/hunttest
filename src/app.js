@@ -115,6 +115,7 @@ function attachCardEvents() {
         const mobNo = parseInt(card.dataset.mobNo, 10);
         const rank = card.dataset.rank;
 
+        // 討伐報告ボタンの処理 (変更なし)
         const reportBtn = e.target.closest("button[data-report-type]");
         if (reportBtn) {
             e.stopPropagation();
@@ -128,16 +129,7 @@ function attachCardEvents() {
             return;
         }
 
-        const point = e.target.closest(".spawn-point");
-        if (point && point.dataset.isInteractive === "true") {
-            e.preventDefault();
-            e.stopPropagation();
-            const locationId = point.dataset.locationId;
-            const isCurrentlyCulled = point.dataset.isCulled === "true";
-            toggleCrushStatus(mobNo, locationId, isCurrentlyCulled);
-            return;
-        }
-
+        // カードヘッダーの開閉処理 (変更なし)
         if (e.target.closest("[data-toggle='card-header']")) {
             if (rank === "S") {
                 const panel = card.querySelector(".expandable-panel");
