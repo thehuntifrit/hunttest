@@ -1,216 +1,341 @@
+// cal.js
 
+import { loadMaintenance } from "./app.js";
 
-// app.js
+function formatDuration(seconds) {
+    const totalMinutes = Math.floor(seconds / 60);
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
 
-import { getState, setFilter, loadBaseMobData, setOpenMobCardNo, FILTER_TO_DATA_RANK_MAP, setUserId, startRealtime } from "./dataManager.js";
-import { openReportModal, closeReportModal, initModal } from "./modal.js";
-import { attachLocationEvents } from "./location.js";
-import { submitReport, toggleCrushStatus, initializeAuth } from "./server.js";
-import { debounce, toJstAdjustedIsoString, } from "./cal.js";
-import { DOM, filterAndRender, sortAndRedistribute } from "./uiRender.js";
-import { renderRankTabs, renderAreaFilterPanel, updateFilterUI, handleAreaFilterClick } from "./filterUI.js";
+function formatDurationHM(seconds) {
+    if (seconds < 0) seconds = 0;
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return `${String(h).padStart(2, "0")}h${String(m).padStart(2, "0")}m`;
+}
 
-async function loadMaintenance() {
-    try {
-        const res = await fetch('./maintenance.json', { cache: 'no-store' });
-        if (!res.ok) return null;
-        const data = await res.json();
+function debounce(func, wait) {
+    let timeout;
+    return function executed(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), wait);
+    };
+}
 
-        const start = new Date(data.maintenance.start);
-        const end = new Date(data.maintenance.end);
-        const serverUp = new Date(data.maintenance.serverUp);
-        const now = new Date();
+function toJstAdjustedIsoString(date) {
+    const options = {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Asia/Tokyo'
+    };
 
-        const showFrom = new Date(start.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const showUntil = new Date(end.getTime() + 4 * 24 * 60 * 60 * 1000);
+    const parts = new Intl.DateTimeFormat('ja-JP', options).formatToParts(date);
 
-        if (now >= showFrom && now <= showUntil) {
-            renderStatusBar(start, end, serverUp);
-        } else {
-            clearStatusBar();
-        }
+    const year = parts.find(p => p.type === 'year').value;
+    const month = parts.find(p => p.type === 'month').value;
+    const day = parts.find(p => p.type === 'day').value;
+    const hour = parts.find(p => p.type === 'hour').value;
+    const minute = parts.find(p => p.type === 'minute').value;
 
-        if (now >= start && now < serverUp) {
-            updateMobCards();
-        }
+    return `${year}-${month}-${day}T${hour}:${minute}`;
+}
 
-        // 計算用に返す値
-        return {
-            start,
-            end,
-            serverUp,
-            serverUpSec: serverUp.getTime() / 1000
-        };
+function getEorzeaTime(date = new Date()) {
+    let unixMs = date.getTime();
+    const REAL_MS_PER_ET_HOUR = 175 * 1000;
+    const ET_HOURS_PER_DAY = 24;
 
-    } catch (err) {
-        console.error('maintenance.json 読み込み失敗:', err);
+    const eorzeaTotalHours = Math.floor(unixMs / REAL_MS_PER_ET_HOUR);
+    const hours = eorzeaTotalHours % ET_HOURS_PER_DAY;
+
+    const remainingMs = unixMs % REAL_MS_PER_ET_HOUR;
+    const REAL_MS_PER_ET_MINUTE = REAL_MS_PER_ET_HOUR / 60;
+    const minutes = Math.floor(remainingMs / REAL_MS_PER_ET_MINUTE);
+
+    return {
+        hours: hours.toString().padStart(2, "0"),
+        minutes: minutes.toString().padStart(2, "0")
+    };
+}
+
+function getEorzeaMoonPhase(date = new Date()) {
+    const unixSeconds = date.getTime() / 1000;
+    const EORZEA_SPEED_RATIO = 20.57142857142857;
+    const eorzeaTotalDays = (unixSeconds * EORZEA_SPEED_RATIO) / 86400;
+    return (eorzeaTotalDays % 32) + 1;
+}
+
+function getMoonPhaseLabel(phase) {
+    if (phase >= 32.5 || phase < 4.5) return "新月";
+    if (phase >= 16.5 && phase < 20.5) return "満月";
+    return null;
+}
+
+function getEorzeaWeatherSeed(date = new Date()) {
+    const unixSeconds = Math.floor(date.getTime() / 1000);
+    const eorzeanHours = Math.floor(unixSeconds / 175);
+    const eorzeanDays = Math.floor(eorzeanHours / 24);
+
+    let timeChunk = (eorzeanHours % 24) - (eorzeanHours % 8);
+    timeChunk = (timeChunk + 8) % 24;
+
+    const seed = eorzeanDays * 100 + timeChunk;
+
+    const step1 = (seed << 11) ^ seed;
+    const step2 = ((step1 >>> 8) ^ step1) >>> 0;
+
+    return step2 % 100; // 0〜99
+}
+
+function getEorzeaWeather(date = new Date(), weatherTable) {
+    const seed = getEorzeaWeatherSeed(date);
+    let cumulative = 0;
+    for (const entry of weatherTable) {
+        cumulative += entry.rate;
+        if (seed < cumulative) return entry.weather;
+    }
+    return "Unknown";
+}
+
+// サイクル境界に揃える（FFXIV天候は1400秒周期）
+const WEATHER_CYCLE_SEC = 23 * 60 + 20; // 1400秒
+
+function alignToCycleBoundary(tSec) {
+    const r = tSec % WEATHER_CYCLE_SEC;
+    return r === 0 ? tSec : (tSec - r + WEATHER_CYCLE_SEC);
+}
+
+// 時間帯条件チェック
+function checkTimeRange(timeRange, timestamp) {
+    const et = getEorzeaTime(new Date(timestamp * 1000));
+    const h = Number(et.hours);
+    const { start, end } = timeRange;
+
+    if (start < end) {
+        return h >= start && h < end;
+    } else {
+        return h >= start || h < end; // 日付跨ぎ
+    }
+}
+
+// 総合条件チェック
+function checkMobSpawnCondition(mob, date) {
+    const et = getEorzeaTime(date);
+    const moon = getEorzeaMoonPhase(date);
+    const seed = getEorzeaWeatherSeed(date);
+
+    if (mob.moonPhase) {
+        const currentLabel = getMoonPhaseLabel(moon);
+        if (currentLabel !== mob.moonPhase) return false;
+    }
+
+    if (mob.weatherSeedRange) {
+        const [min, max] = mob.weatherSeedRange;
+        if (seed < min || seed > max) return false;
+    }
+
+    if (mob.weatherSeedRanges) {
+        const ok = mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max);
+        if (!ok) return false;
+    }
+
+    if (mob.timeRange && !checkTimeRange(mob.timeRange, date.getTime() / 1000)) return false;
+
+    if (mob.timeRanges) {
+        const h = Number(et.hours);
+        const ok = mob.timeRanges.some(({ start, end }) => {
+            if (start < end) return h >= start && h < end;
+            return h >= start || h < end;
+        });
+        if (!ok) return false;
+    }
+
+    return true;
+}
+
+// 次の条件成立時刻を探索
+function findNextSpawnTime(mob, startDate) {
+    if (!startDate || !(startDate instanceof Date) || isNaN(startDate.getTime())) {
         return null;
     }
-}
 
+    let tSec = Math.floor(startDate.getTime() / 1000);
+    tSec = alignToCycleBoundary(tSec);
 
-function renderStatusBar(start, end, serverUp) {
-    const el = document.getElementById('status-message');
-    if (!el) return;
-    el.innerHTML = `
-    <div class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3">
-      <div class="font-semibold">メンテナンス予定: ${formatDate(start)} ～ ${formatDate(end)}</div>
-      <div class="text-gray-300">サーバー起動: ${formatDate(serverUp)}</div>
-    </div>
-  `;
-    el.classList.remove('hidden');
-}
+    // --- 継続条件あり ---
+    if (mob.weatherDuration?.minutes) {
+        const requiredMinutes = mob.weatherDuration.minutes;
+        const requiredCycles = Math.ceil((requiredMinutes * 60) / WEATHER_CYCLE_SEC);
 
-function clearStatusBar() {
-    const el = document.getElementById('status-message');
-    if (!el) return;
-    el.innerHTML = '';
-}
+        let consecutive = 0;
+        let conditionStartSec = null;
 
-function updateMobCards() {
-    document.querySelectorAll('.mob-card').forEach(card => {
-        card.classList.add('mob-card-disabled');
-    });
-}
+        for (let end = tSec + 14 * 24 * 3600; tSec < end; tSec += WEATHER_CYCLE_SEC) {
+            const date = new Date(tSec * 1000);
+            const seed = getEorzeaWeatherSeed(date);
 
-function formatDate(date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    const h = String(date.getHours()).padStart(2, '0');
-    const min = String(date.getMinutes()).padStart(2, '0');
-    return `${y}/${m}/${d} ${h}:${min}`;
-}
+            const inRange =
+                mob.weatherSeedRange
+                    ? (seed >= mob.weatherSeedRange[0] && seed <= mob.weatherSeedRange[1])
+                    : mob.weatherSeedRanges
+                        ? mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max)
+                        : false;
 
-function attachFilterEvents() {
-    const tabs = document.getElementById("rank-tabs");
-    if (!tabs) return;
-
-    tabs.addEventListener("click", (e) => {
-        const btn = e.target.closest(".tab-button");
-        if (!btn) return;
-
-        const newRank = btn.dataset.rank.toUpperCase();
-        const state = getState();
-
-        const nextAreaSets = { ...state.filter.areaSets };
-        if (!(nextAreaSets[newRank] instanceof Set)) {
-            nextAreaSets[newRank] = new Set();
-        }
-
-        setFilter({
-            rank: newRank,
-            areaSets: nextAreaSets
-        });
-        filterAndRender();
-    });
-
-    document.getElementById("area-filter-panel-mobile")?.addEventListener("click", handleAreaFilterClick);
-    document.getElementById("area-filter-panel-desktop")?.addEventListener("click", handleAreaFilterClick);
-
-}
-
-function attachCardEvents() {
-    DOM.colContainer.addEventListener("click", e => {
-        const card = e.target.closest(".mob-card");
-        if (!card) return;
-        const mobNo = parseInt(card.dataset.mobNo, 10);
-        const rank = card.dataset.rank;
-
-        const reportBtn = e.target.closest("button[data-report-type]");
-        if (reportBtn) {
-            e.stopPropagation();
-            const type = reportBtn.dataset.reportType;
-            if (type === "modal") {
-                openReportModal(mobNo);
-            } else if (type === "instant") {
-                const iso = toJstAdjustedIsoString(new Date());
-                submitReport(mobNo, iso, `${rank}ランク即時報告`);
+            if (inRange) {
+                if (consecutive === 0) conditionStartSec = tSec;
+                consecutive++;
+                if (consecutive >= requiredCycles) {
+                    const popSec = conditionStartSec + requiredMinutes * 60;
+                    return new Date(popSec * 1000);
+                }
+            } else {
+                consecutive = 0;
+                conditionStartSec = null;
             }
-            return;
         }
+        return null;
+    }
 
-        const point = e.target.closest(".spawn-point");
-        if (point && point.dataset.isInteractive === "true") {
-            e.preventDefault();
-            e.stopPropagation();
-            const locationId = point.dataset.locationId;
-            const isCurrentlyCulled = point.dataset.isCulled === "true";
-            toggleCrushStatus(mobNo, locationId, isCurrentlyCulled);
-            return;
+    // --- 瞬間条件 ---
+    for (let end = tSec + 14 * 24 * 3600; tSec < end; tSec += WEATHER_CYCLE_SEC) {
+        const date = new Date(tSec * 1000);
+        if (checkMobSpawnCondition(mob, date)) {
+            return date;
         }
+    }
 
-        if (e.target.closest("[data-toggle='card-header']")) {
-            if (rank === "S") {
-                const panel = card.querySelector(".expandable-panel");
-                if (panel) {
-                    if (!panel.classList.contains("open")) {
-                        document.querySelectorAll(".expandable-panel.open").forEach(p => {
-                            if (p.closest(".mob-card") !== card) p.classList.remove("open");
-                        });
-                        panel.classList.add("open");
-                        setOpenMobCardNo(mobNo);
-                    } else {
-                        panel.classList.remove("open");
-                        setOpenMobCardNo(null);
-                    }
+    return null;
+}
+
+// repop計算
+function calculateRepop(mob, maintenance) {
+    const now = Date.now() / 1000;
+    const lastKill = mob.last_kill_time || 0;
+    const repopSec = mob.REPOP_s;
+    const maxSec = mob.MAX_s;
+
+    // --- maintenance 正規化 ---
+    let maint = maintenance;
+    if (maint && typeof maint === "object" && "maintenance" in maint && maint.maintenance) {
+        maint = maint.maintenance;
+    }
+    if (!maint || !maint.serverUp) return baseResult("Unknown");
+
+    const serverUpDate = new Date(maint.serverUp);
+    if (isNaN(serverUpDate.getTime())) return baseResult("Unknown");
+
+    const serverUp = serverUpDate.getTime() / 1000;
+
+    let minRepop = 0, maxRepop = 0;
+    let elapsedPercent = 0;
+    let timeRemaining = "Unknown";
+    let status = "Unknown";
+
+    if (lastKill === 0 || lastKill < serverUp) {
+        minRepop = serverUp + repopSec;
+        maxRepop = serverUp + maxSec;
+        if (now >= maxRepop) {
+            status = "MaxOver"; elapsedPercent = 100; timeRemaining = `Over (100%)`;
+        } else if (now < minRepop) {
+            status = "Maintenance"; timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
+        } else {
+            status = "PopWindow";
+            elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
+            timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
+        }
+    } else if (now < lastKill + repopSec) {
+        minRepop = lastKill + repopSec;
+        maxRepop = lastKill + maxSec;
+        status = "Next"; timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
+    } else if (now < lastKill + maxSec) {
+        minRepop = lastKill + repopSec;
+        maxRepop = lastKill + maxSec;
+        status = "PopWindow";
+        elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
+        timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
+    } else {
+        minRepop = lastKill + repopSec;
+        maxRepop = lastKill + maxSec;
+        status = "MaxOver"; elapsedPercent = 100; timeRemaining = `Over (100%)`;
+    }
+
+    const nextMinRepopDate = new Date(minRepop * 1000);
+
+    // --- 条件探索 ---
+    let nextConditionSpawnDate = null;
+    const hasCondition = !!mob.moonPhase || !!mob.timeRange || !!mob.weatherSeedRange || !!mob.weatherSeedRanges;
+
+    if (hasCondition) {
+        if (mob.weatherDuration?.minutes) {
+            const durationMin = mob.weatherDuration.minutes;
+            const lookBackSeconds = (durationMin + 30) * 60;
+            const refSec = Math.max(now, minRepop);
+            const scanStartSec = Math.max(refSec - lookBackSeconds, serverUp);
+            const alignedScanStartSec = alignToCycleBoundary(scanStartSec);
+            const searchStart = new Date(alignedScanStartSec * 1000);
+
+            const found = findNextSpawnTime(mob, searchStart);
+            if (found) {
+                const foundSec = found.getTime() / 1000;
+                if (foundSec < minRepop) {
+                    const retry = findNextSpawnTime(mob, new Date(alignToCycleBoundary(minRepop) * 1000));
+                    nextConditionSpawnDate = retry || null;
+                } else {
+                    nextConditionSpawnDate = found;
                 }
             }
+        } else {
+            const baseSec = Math.max(minRepop, now, serverUp);
+            const alignedBase = alignToCycleBoundary(baseSec);
+            nextConditionSpawnDate = findNextSpawnTime(mob, new Date(alignedBase * 1000));
         }
-    });
-}
+    }
 
-function attachWindowResizeEvents() {
-    window.addEventListener("resize", debounce(() => sortAndRedistribute(), 200));
-}
+    return {
+        minRepop,
+        maxRepop,
+        elapsedPercent,
+        timeRemaining,
+        status,
+        nextMinRepopDate,
+        nextConditionSpawnDate
+    };
 
-async function handleReportSubmit(e) {
-    e.preventDefault();
-
-    const form = e.target;
-    const mobNo = parseInt(form.dataset.mobNo, 10);
-    const timeISO = form.elements["kill-time"].value;
-    const memo = form.elements["kill-memo"].value;
-
-    await submitReport(mobNo, timeISO, memo);
-}
-
-function attachEventListeners() {
-    renderRankTabs();
-    attachFilterEvents();
-    attachCardEvents();
-    attachWindowResizeEvents();
-    attachLocationEvents();
-
-    if (DOM.reportForm) {
-        DOM.reportForm.addEventListener("submit", handleReportSubmit);
+    function baseResult(status) {
+        return {
+            minRepop: null,
+            maxRepop: null,
+            elapsedPercent: 0,
+            timeRemaining: "未確定",
+            status,
+            nextMinRepopDate: null,
+            nextConditionSpawnDate: null
+        };
     }
 }
 
-async function initializeAuthenticationAndRealtime() {
-    try {
-        const userId = await initializeAuth();
-        setUserId(userId);
-        startRealtime();
-        console.log("App: 認証とリアルタイム購読を開始しました。");
-    } catch (error) {
-        console.error("App: 認証処理中にエラーが発生しました。", error);
-        setUserId(null);
+function formatLastKillTime(timestamp) {
+    if (timestamp === 0) return "未報告";
+    const killTimeMs = timestamp * 1000;
+    const nowMs = Date.now();
+    const diffSeconds = Math.floor((nowMs - killTimeMs) / 1000);
+    if (diffSeconds < 3600) {
+        if (diffSeconds < 60) return `Just now`;
+        const minutes = Math.floor(diffSeconds / 60);
+        return `${minutes}m ago`;
     }
+    const options = { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" };
+    const date = new Date(killTimeMs);
+    return new Intl.DateTimeFormat("ja-JP", options).format(date);
 }
 
-
-document.addEventListener('DOMContentLoaded', () => {
-    initializeAuthenticationAndRealtime();
-    attachEventListeners?.();
-    loadBaseMobData?.();
-    initModal?.();
-    loadMaintenance();
-
-    const currentRank = JSON.parse(localStorage.getItem('huntFilterState'))?.rank || 'ALL';
-    DOM?.rankTabs?.querySelectorAll('.tab-button').forEach(btn => {
-        btn.dataset.clickCount = btn.dataset.rank === currentRank ? '1' : '0';
-    });
-});
-
-export { attachEventListeners, updateMobCards, loadMaintenance };
+export {
+    calculateRepop, checkMobSpawnCondition, findNextSpawnTime, getEorzeaTime, getEorzeaMoonPhase, formatDuration,
+    getEorzeaWeatherSeed, getEorzeaWeather, getMoonPhaseLabel, formatDurationHM, debounce, toJstAdjustedIsoString, formatLastKillTime
+};
