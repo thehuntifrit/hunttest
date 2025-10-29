@@ -1,4 +1,4 @@
-// server.js
+// server.js (修正版)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc, updateDoc, increment, FieldValue } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
@@ -9,15 +9,15 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase
 import { getState } from "./dataManager.js";
 import { closeReportModal } from "./modal.js";
 import { displayStatus } from "./uiRender.js";
-import { isCulled, updateCrushUI } from "./location.js";
+import { isCulled, updateCrushUI } from "./location.js"; // isCulled 関数はLKTを受け取るようにlocation.js側も修正済みを想定
 
 const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyBikwjGsjL_PVFhx3Vj-OeJCocKA_hQOgU",
-    authDomain: "the-hunt-ifrit.firebaseapp.com",
-    projectId: "the-hunt-ifrit",
-    storageBucket: "the-hunt-ifrit.firebasestorage.app",
-    messagingSenderId: "285578581189",
-    appId: "1:285578581189:web:4d9826ee3f988a7519ccac"
+    apiKey: "AIzaSyBikwjGsjL_PVFhx3Vj-OeJCocKA_hQOgU",
+    authDomain: "the-hunt-ifrit.firebaseapp.com",
+    projectId: "the-hunt-ifrit",
+    storageBucket: "the-hunt-ifrit.firebasestorage.app",
+    messagingSenderId: "285578581189",
+    appId: "1:285578581189:web:4d9826ee3f988a7519ccac"
 };
 import { serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
@@ -29,11 +29,12 @@ const analytics = getAnalytics(app);
 
 const functions = functionsInstance;
 
-// httpsCallable の初期化
-const callGetServerTime = httpsCallable(functions, 'getServerTime');
-const callRevertStatus = httpsCallable(functions, 'revertStatus'); // 巻き戻し機能用
+// ★ HTTPS Callable の初期化: V1関数名に統一し、湧き潰し関数を追加
+const callGetServerTime = httpsCallable(functions, 'getServerTimeV1'); // ★ 関数名変更
+const callRevertStatus = httpsCallable(functions, 'revertStatusV1');   // ★ 関数名変更
+const callMobCullUpdater = httpsCallable(functions, 'mobCullUpdaterV1'); // ★ 新規追加
 
-// 認証
+// 認証 (変更なし)
 async function initializeAuth() {
     return new Promise((resolve) => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -65,9 +66,9 @@ onAuthStateChanged(auth, (user) => {
 
 // サーバーUTC取得
 async function getServerTimeUTC() {
-    const getServerTime = httpsCallable(functionsInstance, "getServerTime");
+    // const getServerTime = httpsCallable(functionsInstance, "getServerTime"); // 削除
     try {
-        const response = await getServerTime();
+        const response = await callGetServerTime(); // ★ 定義済みの V1 関数を呼び出し
 
         if (response.data && typeof response.data.serverTimeMs === 'number') {
             return new Date(response.data.serverTimeMs);
@@ -81,7 +82,7 @@ async function getServerTimeUTC() {
     }
 }
 
-// データ購読
+// データ購読 (Mob Status) (変更なし)
 function subscribeMobStatusDocs(onUpdate) {
     const docIds = ["s_latest", "a_latest", "f_latest"];
     const mobStatusDataMap = {};
@@ -95,16 +96,24 @@ function subscribeMobStatusDocs(onUpdate) {
     return () => unsubs.forEach(u => u());
 }
 
+// ★ データ購読 (Mob Locations) - LKTの取得と isCulled への引き渡しを修正
 function subscribeMobLocations(onUpdate) {
     const unsub = onSnapshot(collection(db, "mob_locations"), snapshot => {
         const map = {};
         snapshot.forEach(docSnap => {
             const mobNo = parseInt(docSnap.id, 10);
             const data = docSnap.data();
-            map[mobNo] = { points: data.points || {} };
+            
+            // Mob Locations ドキュメント内の確定時刻を取得 (巻き戻し連動値)
+            const mobLastKillTime = data.last_kill_time || null; // Timestampオブジェクト
+            
+            // ★ mapにlast_kill_timeを格納 (location.jsのdrawSpawnPointで使用)
+            map[mobNo] = { points: data.points || {}, last_kill_time: mobLastKillTime }; 
+            
             // 各地点の UI 更新
             Object.entries(data.points || {}).forEach(([locationId, status]) => {
-                const isCulledFlag = isCulled(status);
+                // isCulled に Mob Locations ドキュメントの LKT を渡す
+                const isCulledFlag = isCulled(status, mobLastKillTime); 
                 updateCrushUI(mobNo, locationId, isCulledFlag);
             });
         });
@@ -113,7 +122,7 @@ function subscribeMobLocations(onUpdate) {
     return unsub;
 }
 
-// 討伐報告 (reportsコレクションへの直接書き込み)
+// 討伐報告 (reportsコレクションへの直接書き込み) (変更なし)
 const submitReport = async (mobNo, timeISO, memo) => {
     const state = getState();
     const userId = state.userId;
@@ -164,7 +173,7 @@ const submitReport = async (mobNo, timeISO, memo) => {
     }
 };
 
-// フォーム送信イベントをserver側で拾う
+// フォーム送信イベント (変更なし)
 document.addEventListener("DOMContentLoaded", () => {
     const reportForm = document.getElementById("report-form");
     if (reportForm) {
@@ -180,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// 湧き潰し報告
+// ★ 湧き潰し報告を Callable に変更
 const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
     const state = getState();
     const userId = state.userId;
@@ -191,36 +200,42 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
         return;
     }
 
-    const action = isCurrentlyCulled ? "uncrush" : "crush";
+    // サーバー関数に合わせてアクション名を大文字に
+    const action = isCurrentlyCulled ? "UNCULL" : "CULL"; 
     const mob = mobs.find(m => m.No === mobNo);
     if (!mob) return;
 
     displayStatus(
-        `${mob.Name} (${locationId}) ${action === "crush" ? "湧き潰し" : "解除"}報告中...`
+        `${mob.Name} (${locationId}) ${action === "CULL" ? "湧き潰し" : "解除"}報告中...`
     );
 
-    const mobLocationsRef = doc(db, "mob_locations", mobNo.toString());
-
-    const updateData = {};
-    const pointPath = `points.${locationId.toString()}`;
-
-    if (action === "crush") {
-        updateData[`${pointPath}.culled_at`] = serverTimestamp();
-    } else {
-        updateData[`${pointPath}.uncull_at`] = serverTimestamp();
-    }
+    // サーバー側が期待するデータ構造
+    const data = {
+        mob_id: mobNo.toString(),
+        location_id: locationId.toString(),
+        action: action,
+        report_time: new Date().toISOString(), // クライアント時刻をISO形式で送付
+    };
 
     try {
-        await updateDoc(mobLocationsRef, updateData);
+        // await updateDoc(mobLocationsRef, updateData); // Firestore直接更新を削除
+        
+        const response = await callMobCullUpdater(data); // ★ Callable 関数呼び出しに切り替え
+        const result = response.data;
+        
+        if (result?.success) {
+            displayStatus(`${mob.Name} の状態を更新しました。`, "success");
+        } else {
+             displayStatus(`湧き潰し報告エラー: ${result?.error || "通信失敗"}`, "error");
+        }
 
-        displayStatus(`${mob.Name} の状態を更新しました。`, "success");
     } catch (error) {
         console.error("湧き潰し報告エラー:", error);
         displayStatus(`湧き潰し報告エラー: ${error.message}`, "error");
     }
 };
 
-// 巻き戻し (revertMobStatus) - httpsCallable方式へ修正
+// 巻き戻し (revertMobStatus) - Callable 方式に修正済み (関数名とペイロードを最終調整)
 const revertMobStatus = async (mobNo) => {
     const state = getState();
     const userId = state.userId;
@@ -238,17 +253,18 @@ const revertMobStatus = async (mobNo) => {
 
     const data = {
         mob_id: mobNo.toString(),
+        target_report_index: 'prev', // 確定履歴への巻き戻しを明示
     };
 
     try {
-        const response = await callRevertStatus(data);
+        const response = await callRevertStatus(data); // ★ 定義済みの V1 Callable を使用
         const result = response.data;
 
         if (result?.success) {
-            displayStatus(`${mob.Name} の状態を直前のログへ巻き戻しました。`, "success");
+            displayStatus(`${mob.Name} の状態と湧き潰し時刻を直前の記録に巻き戻しました。`, "success");
         } else {
             displayStatus(
-                `巻き戻し失敗: ${result?.message || "ログデータが見つからないか、巻き戻しに失敗しました。"}`,
+                `巻き戻し失敗: ${result?.error || "ログデータが見つからないか、巻き戻しに失敗しました。"}`,
                 "error"
             );
         }
