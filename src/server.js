@@ -12,12 +12,12 @@ import { displayStatus } from "./uiRender.js";
 import { isCulled, updateCrushUI } from "./location.js"; // isCulled 関数はLKTを受け取るようにlocation.js側も修正済みを想定
 
 const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyBikwjGsjL_PVFhx3Vj-OeJCocKA_hQOgU",
-    authDomain: "the-hunt-ifrit.firebaseapp.com",
-    projectId: "the-hunt-ifrit",
-    storageBucket: "the-hunt-ifrit.firebasestorage.app",
-    messagingSenderId: "285578581189",
-    appId: "1:285578581189:web:4d9826ee3f988a7519ccac"
+  apiKey: "AIzaSyBikwjGsjL_PVFhx3Vj-OeJCocKA_hQOgU",
+  authDomain: "the-hunt-ifrit.firebaseapp.com",
+  projectId: "the-hunt-ifrit",
+  storageBucket: "the-hunt-ifrit.firebasestorage.app",
+  messagingSenderId: "285578581189",
+  appId: "1:285578581189:web:4d9826ee3f988a7519ccac"
 };
 import { serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
