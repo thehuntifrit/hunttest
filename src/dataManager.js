@@ -180,8 +180,9 @@ function startRealtime() {
         });
         unsubscribes.push(unsubStatus);
 
-        const unsubLoc = subscribeMobLocations(locationsMap => {
+const unsubLoc = subscribeMobLocations(locationsMap => {
             const current = getState().mobs;
+            
             state.mobLocations = locationsMap; 
             
             const merged = current.map(m => {
@@ -190,12 +191,10 @@ function startRealtime() {
                 newMob.spawn_cull_status = (dyn && dyn.points) ? dyn.points : {};
                 return newMob;
             });
-            
             setMobs(merged);
             filterAndRender();
             displayStatus("湧き潰しデータ更新完了。", "success");
         });
-        unsubscribes.push(unsubLoc);
         unsubscribes.push(unsubLoc);
     })().catch(err => {
         console.error("Failed to init realtime with maintenance:", err);
