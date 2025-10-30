@@ -4,7 +4,7 @@ import { getState, setFilter, loadBaseMobData, setOpenMobCardNo, FILTER_TO_DATA_
 import { openReportModal, closeReportModal, initModal } from "./modal.js";
 import { attachLocationEvents } from "./location.js";
 import { submitReport, toggleCrushStatus, initializeAuth } from "./server.js";
-import { debounce, toJstAdjustedIsoString, } from "./cal.js";
+import { debounce } from "./cal.js";
 import { DOM, filterAndRender, sortAndRedistribute } from "./uiRender.js";
 import { renderRankTabs, renderAreaFilterPanel, updateFilterUI, handleAreaFilterClick } from "./filterUI.js";
 
