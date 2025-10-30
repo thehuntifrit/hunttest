@@ -25,9 +25,9 @@ function handleCrushToggle(e) {
     const locationId = point.dataset.locationId;
     const isCurrentlyCulled = point.dataset.isCulled === "true";
     
-    console.log(`Cull action detected for Mob: ${mobNo}, Location: ${locationId}, Action: ${isCurrentlyCulled ? 'UNCULL' : 'CULL'}`);
-
-    toggleCrushStatus(mobNo, locationId, isCurrentlyCulled);
+    console.log(`Cull action detected for Mob: ${mobNo}, Location: ${locationId}, Action: ${nextCulled ? "CULL" : "UNCULL"}`);
+    toggleCrushStatus(mobNo, locationId, nextCulled);
+    updateCrushUI(mobNo, locationId, nextCulled); // UI即時反映
 }
 
 function isCulled(pointStatus, mobNo) {
