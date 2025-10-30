@@ -5,6 +5,9 @@ import { toggleCrushStatus } from "./server.js";
 import { getState, getMobByNo } from "./dataManager.js"; // getMobByNo は isCulled で使用しないため残すか検討
 
 function handleCrushToggle(e) {
+    // ★ 最初にログを出力
+    console.log("handleCrushToggle called", e.target); 
+    
     const point = e.target.closest(".spawn-point");
     if (!point) return false;
     if (point.dataset.isInteractive !== "true") return false;
@@ -13,14 +16,10 @@ function handleCrushToggle(e) {
     e.stopPropagation();
 
     const card = e.target.closest(".mob-card");
-    if (!card) return true;
-
-    const mobNo = parseInt(card.dataset.mobNo, 10);
-    const locationId = point.dataset.locationId;
-    const isCurrentlyCulled = point.dataset.isCulled === "true";
-    toggleCrushStatus(mobNo, locationId, isCurrentlyCulled);
-    return true;
-}
+    if (!card) {
+        console.error("Mob card not found for spawn point click."); 
+        return true; // trueを返して、イベント伝播をここで停止させる
+    }
 
 function isCulled(pointStatus, mobLastKillTime) {
     const culledMs = pointStatus?.culled_at ? pointStatus.culled_at.toMillis() : 0;
