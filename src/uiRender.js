@@ -180,11 +180,11 @@ function filterAndRender({ isInitialLoad = false } = {}) {
     DOM.masterContainer.innerHTML = "";
     DOM.masterContainer.appendChild(frag);
     distributeCards();
-
+    attachLocationEvents();
+    
     if (isInitialLoad) {
         updateProgressBars();
     }
-    attachLocationEvents();
 }
 
 function distributeCards() {
