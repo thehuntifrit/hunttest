@@ -92,6 +92,18 @@ function subscribeMobStatusDocs(onUpdate) {
     return () => unsubs.forEach(u => u());
 }
 
+function normalizePoints(data) {
+    const result = {};
+    for (const [key, value] of Object.entries(data)) {
+        if (key.startsWith("points.")) {
+            const [, locId, field] = key.split(".");
+            if (!result[locId]) result[locId] = {};
+            result[locId][field] = value;
+        }
+    }
+    return result;
+}
+
 // データ購読 (Mob Locations)
 function subscribeMobLocations(onUpdate) {
     const unsub = onSnapshot(collection(db, "mob_locations"), snapshot => {
@@ -99,8 +111,9 @@ function subscribeMobLocations(onUpdate) {
         snapshot.forEach(docSnap => {
             const mobNo = parseInt(docSnap.id, 10);
             const data = docSnap.data();
-            console.log("mobNo", mobNo, "data", data);
-            map[mobNo] = data.points || {}; 
+            const normalized = normalizePoints(data);
+
+            map[mobNo] = normalized;
         });
         onUpdate(map);
     });
