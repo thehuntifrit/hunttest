@@ -180,8 +180,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// ★ 湧き潰し報告を Callable に変更
-const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
+// 湧き潰し報告
+const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
     const state = getState();
     const userId = state.userId;
     const mobs = state.mobs;
@@ -190,18 +190,16 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
         displayStatus("認証が完了していません。", "error");
         return;
     }
-    const action = isCurrentlyCulled ? "UNCULL" : "CULL"; 
+    const action = nextCulled ? "CULL" : "UNCULL"; 
     const mob = mobs.find(m => m.No === mobNo);
     if (!mob) return;
 
     displayStatus(
-        `${mob.Name} (${locationId}) ${action === "CULL" ? "湧き潰し" : "解除"}報告中...`,
-        "warning" // warningなど、処理中のステータスを表示
-    );
-    
+        `${mob.Name} (${locationId}) ${nextCulled ? "湧き潰し" : "解除"}報告中...`,
+        "warning" // 処理中のステータスを表示
+    );    
     // report_time にクライアント時刻を使用
     const reportTimeDate = new Date();
-    
     // サーバー側が期待するデータ構造
     const data = {
         mob_id: mobNo.toString(),
@@ -217,10 +215,12 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
         
         if (result?.success) {
             displayStatus(`${mob.Name} の状態を更新しました。`, "success");
+            // 成功時にUIを即時更新
+            updateCrushUI(mobNo, locationId, nextCulled);
         } else {
-             const errorMessage = result?.error || "Functions内部でエラーが発生しました。";
-             console.error("湧き潰し報告エラー (Functions内部):", errorMessage);
-             displayStatus(`湧き潰し報告エラー: ${errorMessage}`, "error");
+            const errorMessage = result?.error || "Functions内部でエラーが発生しました。";
+            console.error("湧き潰し報告エラー (Functions内部):", errorMessage);
+            displayStatus(`湧き潰し報告エラー: ${errorMessage}`, "error");
         }
 
     } catch (error) {
