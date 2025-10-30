@@ -82,7 +82,7 @@ async function getServerTimeUTC() {
     }
 }
 
-// データ購読 (Mob Status) (変更なし)
+// データ購読 (Mob Status)
 function subscribeMobStatusDocs(onUpdate) {
     const docIds = ["s_latest", "a_latest", "f_latest"];
     const mobStatusDataMap = {};
@@ -96,20 +96,17 @@ function subscribeMobStatusDocs(onUpdate) {
     return () => unsubs.forEach(u => u());
 }
 
-// ★ データ購読 (Mob Locations) - LKTの取得と isCulled への引き渡しを修正
+// ★ データ購読 (Mob Locations)
 function subscribeMobLocations(onUpdate) {
     const unsub = onSnapshot(collection(db, "mob_locations"), snapshot => {
-        const map = {};
+        const map = {}; // ★ 常に空オブジェクトで初期化される
         snapshot.forEach(docSnap => {
             const mobNo = parseInt(docSnap.id, 10);
             const data = docSnap.data();
             
-            // Mob Locations ドキュメント内の確定時刻を取得 (巻き戻し連動値)
-            const mobLastKillTime = data.last_kill_time || null; // Timestampオブジェクト
+            const mobLastKillTime = data.last_kill_time || null; 
             
-            // ★ mapにlast_kill_timeを格納 (location.jsのdrawSpawnPointで使用)
-            map[mobNo] = { points: data.points || {}, last_kill_time: mobLastKillTime }; 
-            
+            map[mobNo] = { points: data.points || {}, last_kill_time: mobLastKillTime };
             // 各地点の UI 更新
             Object.entries(data.points || {}).forEach(([locationId, status]) => {
                 // isCulled に Mob Locations ドキュメントの LKT を渡す
@@ -138,13 +135,12 @@ const submitReport = async (mobNo, timeISO, memo) => {
         displayStatus("モブデータが見つかりません。", "error");
         return;
     }
-
     // モーダル入力を優先、未入力や不正ならサーバー時刻を fallback
     let killTimeDate;
     if (timeISO) {
         const modalDate = new Date(timeISO);
         if (!isNaN(modalDate)) {
-            killTimeDate = modalDate; // ← モーダル値をそのまま採用
+            killTimeDate = modalDate;
         }
     }
     if (!killTimeDate) {
@@ -199,7 +195,6 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
         displayStatus("認証が完了していません。", "error");
         return;
     }
-
     // サーバー関数に合わせてアクション名を大文字に
     const action = isCurrentlyCulled ? "UNCULL" : "CULL"; 
     const mob = mobs.find(m => m.No === mobNo);
@@ -208,19 +203,17 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
     displayStatus(
         `${mob.Name} (${locationId}) ${action === "CULL" ? "湧き潰し" : "解除"}報告中...`
     );
-
     // サーバー側が期待するデータ構造
     const data = {
         mob_id: mobNo.toString(),
         location_id: locationId.toString(),
         action: action,
-        report_time: new Date().toISOString(), // クライアント時刻をISO形式で送付
+        report_time: new Date().toISOString(),
     };
 
     try {
-        // await updateDoc(mobLocationsRef, updateData); // Firestore直接更新を削除
         
-        const response = await callMobCullUpdater(data); // ★ Callable 関数呼び出しに切り替え
+        const response = await callMobCullUpdater(data);
         const result = response.data;
         
         if (result?.success) {
