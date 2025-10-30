@@ -9,27 +9,27 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase
 import { getState } from "./dataManager.js";
 import { closeReportModal } from "./modal.js";
 import { displayStatus } from "./uiRender.js";
-import { isCulled, updateCrushUI } from "./location.js"; 
+import { isCulled, updateCrushUI } from "./location.js";
 
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBikwjGsjL_PVFhx3Vj-OeJCocKA_hQOgU",
-  authDomain: "the-hunt-ifrit.firebaseapp.com",
-  projectId: "the-hunt-ifrit",
-  storageBucket: "the-hunt-ifrit.firebasestorage.app",
-  messagingSenderId: "285578581189",
-  appId: "1:285578581189:web:4d9826ee3f988a7519ccac"
+    apiKey: "AIzaSyBikwjGsjL_PVFhx3Vj-OeJCocKA_hQOgU",
+    authDomain: "the-hunt-ifrit.firebaseapp.com",
+    projectId: "the-hunt-ifrit",
+    storageBucket: "the-hunt-ifrit.firebasestorage.app",
+    messagingSenderId: "285578581189",
+    appId: "1:285578581189:web:4d9826ee3f988a7519ccac"
 };
 
 const app = initializeApp(FIREBASE_CONFIG);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const DEFAULT_FUNCTIONS_REGION = "us-central1"; 
+const DEFAULT_FUNCTIONS_REGION = "us-central1";
 const functionsInstance = getFunctions(app, DEFAULT_FUNCTIONS_REGION);
 const analytics = getAnalytics(app);
 
-const callGetServerTime = httpsCallable(functionsInstance, 'getServerTimeV1'); 
-const callRevertStatus = httpsCallable(functionsInstance, 'revertStatusV1');   
-const callMobCullUpdater = httpsCallable(functionsInstance, 'mobCullUpdaterV1'); 
+const callGetServerTime = httpsCallable(functionsInstance, 'getServerTimeV1');
+const callRevertStatus = httpsCallable(functionsInstance, 'revertStatusV1');
+const callMobCullUpdater = httpsCallable(functionsInstance, 'mobCullUpdaterV1');
 
 // 認証 (変更なし)
 async function initializeAuth() {
@@ -64,7 +64,7 @@ onAuthStateChanged(auth, (user) => {
 // サーバーUTC取得
 async function getServerTimeUTC() {
     try {
-        const response = await callGetServerTime(); 
+        const response = await callGetServerTime();
 
         if (response.data && typeof response.data.serverTimeMs === 'number') {
             return new Date(response.data.serverTimeMs);
@@ -136,22 +136,33 @@ const submitReport = async (mobNo, timeISO, memo) => {
         displayStatus("モブデータが見つかりません。", "error");
         return;
     }
-    
-    let killTimeDate;
-    if (timeISO) {
-        let parseStr = timeISO;
-        if (timeISO.length === 16 && !timeISO.endsWith('Z')) { // YYYY-MM-DDTHH:mm の場合
-            parseStr = timeISO + ':00.000Z'; 
-        }
 
-        const modalDate = new Date(parseStr);
-        if (!isNaN(modalDate.getTime())) { // getTime() が有効な数値であるかを確認
-            killTimeDate = modalDate;
+    let killTimeDate;
+
+    if (timeISO && typeof timeISO === "string") {
+        const m = timeISO.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
+        if (m) {
+            const [, y, mo, d, h, mi, s] = m;
+            const year = Number(y);
+            const monthIndex = Number(mo) - 1; // JS の月は 0 始まり
+            const day = Number(d);
+            const hour = Number(h);
+            const minute = Number(mi);
+            const second = s ? Number(s) : 0;
+
+            // ローカルタイムとして Date を生成
+            killTimeDate = new Date(year, monthIndex, day, hour, minute, second, 0);
+        } else {
+            // ISO 完全形式（タイムゾーン付き）の場合はそのまま解釈
+            const modalDate = new Date(timeISO);
+            if (!isNaN(modalDate.getTime())) {
+                killTimeDate = modalDate;
+            }
         }
     }
-    
+
     if (!killTimeDate) {
-        // fallbackとしてサーバー時刻を取得
+        // fallback としてサーバー時刻を取得
         killTimeDate = await getServerTimeUTC();
     }
 
@@ -162,7 +173,7 @@ const submitReport = async (mobNo, timeISO, memo) => {
     try {
         await addDoc(collection(db, "reports"), {
             mob_id: mobNo.toString(),
-            kill_time: killTimeDate,
+            kill_time: killTimeDate, // Firestore では Timestamp として保存される
             reporter_uid: userId,
             memo: memo,
             repop_seconds: mob.REPOP_s
@@ -203,14 +214,14 @@ const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
         displayStatus("認証が完了していません。", "error");
         return;
     }
-    const action = nextCulled ? "CULL" : "UNCULL"; 
+    const action = nextCulled ? "CULL" : "UNCULL";
     const mob = mobs.find(m => m.No === mobNo);
     if (!mob) return;
 
     displayStatus(
         `${mob.Name} (${locationId}) ${nextCulled ? "湧き潰し" : "解除"}報告中...`,
         "warning" // 処理中のステータスを表示
-    );    
+    );
     // report_time にクライアント時刻を使用
     const reportTimeDate = new Date();
     // サーバー側が期待するデータ構造
@@ -225,7 +236,7 @@ const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
         // Functionsへの呼び出し
         const response = await callMobCullUpdater(data);
         const result = response.data;
-        
+
         if (result?.success) {
             displayStatus(`${mob.Name} の状態を更新しました。`, "success");
             // 成功時にUIを即時更新
@@ -265,7 +276,7 @@ const revertMobStatus = async (mobNo) => {
     };
 
     try {
-        const response = await callRevertStatus(data); 
+        const response = await callRevertStatus(data);
         const result = response.data;
 
         if (result?.success) {
