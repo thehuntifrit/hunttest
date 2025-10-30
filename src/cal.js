@@ -1,4 +1,3 @@
-
 // cal.js
 
 import { loadMaintenance } from "./app.js";
