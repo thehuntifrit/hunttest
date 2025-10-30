@@ -54,6 +54,7 @@ function isCulled(pointStatus, mobNo) {
         return false;
     }
     return false;
+    console.log(mobNo, point.id, spawnCullStatus)
 }
 
 function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
