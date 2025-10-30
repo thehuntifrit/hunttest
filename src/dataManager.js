@@ -6,10 +6,14 @@ import { calculateRepop } from "./cal.js";
 
 const EXPANSION_MAP = { 1: "新生", 2: "蒼天", 3: "紅蓮", 4: "漆黒", 5: "暁月", 6: "黄金" };
 
+// dataManager.js
+
 const state = {
     userId: localStorage.getItem("user_uuid") || null,
     baseMobData: [],
     mobs: [],
+    mobLocations: {}, 
+};
     filter: JSON.parse(localStorage.getItem("huntFilterState")) || {
         rank: "ALL",
         areaSets: {
@@ -178,16 +182,20 @@ function startRealtime() {
 
         const unsubLoc = subscribeMobLocations(locationsMap => {
             const current = getState().mobs;
+            state.mobLocations = locationsMap; 
+            
             const merged = current.map(m => {
                 const dyn = locationsMap[m.No];
                 let newMob = { ...m };
                 newMob.spawn_cull_status = (dyn && dyn.points) ? dyn.points : {};
                 return newMob;
             });
+            
             setMobs(merged);
             filterAndRender();
             displayStatus("湧き潰しデータ更新完了。", "success");
         });
+        unsubscribes.push(unsubLoc);
         unsubscribes.push(unsubLoc);
     })().catch(err => {
         console.error("Failed to init realtime with maintenance:", err);
