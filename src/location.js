@@ -23,10 +23,10 @@ function handleCrushToggle(e) {
     const mobNo = parseInt(card.dataset.mobNo, 10);
     const locationId = point.dataset.locationId;
     const isCurrentlyCulled = point.dataset.isCulled === "true";
-    
+    const nextCulled = !isCurrentlyCulled;
     console.log(`Cull action detected for Mob: ${mobNo}, Location: ${locationId}, Culling: ${!isCurrentlyCulled}`);
 
-    toggleCrushStatus(mobNo, locationId, isCurrentlyCulled);
+    toggleCrushStatus(mobNo, locationId, nextCulled);
 }
 
 function isCulled(pointStatus, mobNo) {
@@ -111,10 +111,10 @@ function updateCrushUI(mobNo, locationId, isCulled) {
     }
 
     const rank = marker.dataset.rank;
-    const isS_A_Cullable = marker.dataset.isInteractive === "true" && !marker.dataset.isLastone;
+    const isS_A_Cullable = marker.dataset.isInteractive === "true" && marker.dataset.isLastone !== "true";
     // S/Aランクの湧き潰しマーカーの色変更ロジック
     if (isS_A_Cullable) {
-         if (isCulled) {
+        if (isCulled === true) {
              marker.classList.remove("color-b1", "color-b2");
              marker.classList.add(rank === "B1" ? "color-b1-culled" : "color-b2-culled");
          } else {
