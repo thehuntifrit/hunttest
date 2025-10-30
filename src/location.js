@@ -54,10 +54,12 @@ function isCulled(pointStatus, mobNo) {
         return false;
     }
     return false;
-    console.log(mobNo, point.id, spawnCullStatus)
 }
 
 function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
+    
+    console.log("drawSpawnPoint", mobNo, point.id, spawnCullStatus?.[point.id]);
+
     const pointStatus = spawnCullStatus?.[point.id];
     const isCulledFlag = isCulled(pointStatus, mobNo); 
     const isS_A_Cullable = point.mob_ranks.some(r => r === "S" || r === "A");
@@ -112,7 +114,7 @@ function updateCrushUI(mobNo, locationId, isCulled) {
     }
 
     const rank = marker.dataset.rank;
-    const isS_A_Cullable = marker.dataset.isInteractive === "true" && !marker.dataset.isLastone;
+    const isS_A_Cullable = marker.dataset.isInteractive === "true" && !marker.dataset.isLastone;
 
     if (isS_A_Cullable) {
          if (isCulled) {
