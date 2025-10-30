@@ -1,4 +1,4 @@
-// server.js (修正版)
+// server.js (修正版 - PC/スマホ互換性強化)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
@@ -9,7 +9,7 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase
 import { getState } from "./dataManager.js";
 import { closeReportModal } from "./modal.js";
 import { displayStatus } from "./uiRender.js";
-import { isCulled, updateCrushUI } from "./location.js";
+import { isCulled, updateCrushUI } from "./location.js"; 
 
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBikwjGsjL_PVFhx3Vj-OeJCocKA_hQOgU",
@@ -23,12 +23,13 @@ const FIREBASE_CONFIG = {
 const app = initializeApp(FIREBASE_CONFIG);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const functionsInstance = getFunctions(app, "asia-northeast1");
+const DEFAULT_FUNCTIONS_REGION = "asia-northeast1"; 
+const functionsInstance = getFunctions(app, DEFAULT_FUNCTIONS_REGION);
 const analytics = getAnalytics(app);
 
 const callGetServerTime = httpsCallable(functionsInstance, 'getServerTimeV1'); 
-const callRevertStatus = httpsCallable(functionsInstance, 'revertStatusV1');
-const callMobCullUpdater = httpsCallable(functionsInstance, 'mobCullUpdaterV1');
+const callRevertStatus = httpsCallable(functionsInstance, 'revertStatusV1');   
+const callMobCullUpdater = httpsCallable(functionsInstance, 'mobCullUpdaterV1'); 
 
 // 認証 (変更なし)
 async function initializeAuth() {
@@ -63,7 +64,7 @@ onAuthStateChanged(auth, (user) => {
 // サーバーUTC取得
 async function getServerTimeUTC() {
     try {
-        const response = await callGetServerTime(); // V1 関数を呼び出し
+        const response = await callGetServerTime(); 
 
         if (response.data && typeof response.data.serverTimeMs === 'number') {
             return new Date(response.data.serverTimeMs);
@@ -106,7 +107,7 @@ function subscribeMobLocations(onUpdate) {
     return unsub;
 }
 
-// 討伐報告 (reportsコレクションへの直接書き込み) (サーバー時刻取得を async/await で実行)
+// 討伐報告 (reportsコレクションへの直接書き込み)
 const submitReport = async (mobNo, timeISO, memo) => {
     const state = getState();
     const userId = state.userId;
@@ -122,17 +123,23 @@ const submitReport = async (mobNo, timeISO, memo) => {
         displayStatus("モブデータが見つかりません。", "error");
         return;
     }
-    // モーダル入力を優先、未入力や不正ならサーバー時刻を fallback
+    
     let killTimeDate;
     if (timeISO) {
-        const modalDate = new Date(timeISO);
-        if (!isNaN(modalDate)) {
+        let parseStr = timeISO;
+        if (timeISO.length === 16 && !timeISO.endsWith('Z')) { // YYYY-MM-DDTHH:mm の場合
+            parseStr = timeISO + ':00.000Z'; 
+        }
+
+        const modalDate = new Date(parseStr);
+        if (!isNaN(modalDate.getTime())) { // getTime() が有効な数値であるかを確認
             killTimeDate = modalDate;
         }
     }
+    
     if (!killTimeDate) {
-        // ★ await が必須
-        killTimeDate = await getServerTimeUTC(); // fallback
+        // fallbackとしてサーバー時刻を取得
+        killTimeDate = await getServerTimeUTC();
     }
 
     const modalStatusEl = document.querySelector("#modal-status");
@@ -192,12 +199,14 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
         `${mob.Name} (${locationId}) ${action === "CULL" ? "湧き潰し" : "解除"}報告中...`
     );
     
+    // report_time に正確なサーバー時刻を使用
     let reportTimeDate = new Date();
     try {
         reportTimeDate = await getServerTimeUTC();
     } catch (e) {
         console.warn("サーバー時刻取得失敗。クライアント時刻を使用します。", e);
-    }  
+    }
+    
     // サーバー側が期待するデータ構造
     const data = {
         mob_id: mobNo.toString(),
@@ -245,7 +254,7 @@ const revertMobStatus = async (mobNo) => {
     };
 
     try {
-        const response = await callRevertStatus(data); // 定義済みの V1 Callable を使用
+        const response = await callRevertStatus(data); 
         const result = response.data;
 
         if (result?.success) {
