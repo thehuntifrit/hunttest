@@ -23,7 +23,7 @@ const FIREBASE_CONFIG = {
 const app = initializeApp(FIREBASE_CONFIG);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const DEFAULT_FUNCTIONS_REGION = "asia-northeast1"; 
+const DEFAULT_FUNCTIONS_REGION = "us-central1"; 
 const functionsInstance = getFunctions(app, DEFAULT_FUNCTIONS_REGION);
 const analytics = getAnalytics(app);
 
