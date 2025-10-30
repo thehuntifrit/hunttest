@@ -98,23 +98,20 @@ function subscribeMobStatusDocs(onUpdate) {
 
 // ★ データ購読 (Mob Locations)
 function subscribeMobLocations(onUpdate) {
+    // Mob Locations コレクションのリアルタイム購読
     const unsub = onSnapshot(collection(db, "mob_locations"), snapshot => {
-        const map = {}; // ★ 常に空オブジェクトで初期化される
+        const map = {}; // ★ Mob Locations の新しい状態を格納するマップ
         snapshot.forEach(docSnap => {
             const mobNo = parseInt(docSnap.id, 10);
             const data = docSnap.data();
             
             const mobLastKillTime = data.last_kill_time || null; 
             
+            // MobNoをキーに、points（各地点の湧き潰し時刻）とLKTを格納
             map[mobNo] = { points: data.points || {}, last_kill_time: mobLastKillTime };
-            // 各地点の UI 更新
-            Object.entries(data.points || {}).forEach(([locationId, status]) => {
-                // isCulled に Mob Locations ドキュメントの LKT を渡す
-                const isCulledFlag = isCulled(status, mobLastKillTime); 
-                updateCrushUI(mobNo, locationId, isCulledFlag);
-            });
         });
-        onUpdate(map);
+        // dataManager.js に更新された Mob Locations データ全体を渡す
+        onUpdate(map); 
     });
     return unsub;
 }
