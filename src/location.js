@@ -2,32 +2,31 @@
 
 import { DOM } from "./uiRender.js";
 import { toggleCrushStatus } from "./server.js";
-import { getState } from "./dataManager.js"; 
+import { getState } from "./dataManager.js"; 
 
 function handleCrushToggle(e) {
-    console.log("handleCrushToggle called", e.target); 
-    const point = e.target.closest(".spawn-point");
+    console.log("handleCrushToggle called", e.target); 
+    const point = e.target.closest(".spawn-point");
     
-    if (!point) return; 
-    if (point.dataset.isInteractive !== "true") return;
+    if (!point || point.dataset.isInteractive !== "true") return;
 
-    const card = e.target.closest(".mob-card"); 
-    
-    if (!card) {
-        console.error("FATAL: Mob card (.mob-card) not found for interactive spawn point click.");
-        return;
-    }
-    
-    e.preventDefault();
-    e.stopPropagation();
+    const card = e.target.closest(".mob-card"); 
+    
+    if (!card) {
+        console.error("FATAL: Mob card (.mob-card) not found for interactive spawn point click.");
+        return;
+    }
+    
+    e.preventDefault();
+    e.stopPropagation();
 
-    const mobNo = parseInt(card.dataset.mobNo, 10);
-    const locationId = point.dataset.locationId;
-    const isCurrentlyCulled = point.dataset.isCulled === "true";
-    
-    console.log(`Cull action detected for Mob: ${mobNo}, Location: ${locationId}, Culling: ${!isCurrentlyCulled}`);
+    const mobNo = parseInt(card.dataset.mobNo, 10);
+    const locationId = point.dataset.locationId;
+    const isCurrentlyCulled = point.dataset.isCulled === "true";
+    
+    console.log(`Cull action detected for Mob: ${mobNo}, Location: ${locationId}, Culling: ${!isCurrentlyCulled}`);
 
-    toggleCrushStatus(mobNo, locationId, isCurrentlyCulled);
+    toggleCrushStatus(mobNo, locationId, isCurrentlyCulled);
 }
 
 function isCulled(pointStatus, mobNo) {
@@ -113,7 +112,6 @@ function updateCrushUI(mobNo, locationId, isCulled) {
 
     const rank = marker.dataset.rank;
     const isS_A_Cullable = marker.dataset.isInteractive === "true" && !marker.dataset.isLastone;
-
     // S/Aランクの湧き潰しマーカーの色変更ロジック
     if (isS_A_Cullable) {
          if (isCulled) {
@@ -125,21 +123,18 @@ function updateCrushUI(mobNo, locationId, isCulled) {
          }
     }
     
-    // Bランク単独マーカーは湧き潰し対象外のため、ここはS/Aランクの処理と見なす
-    
     marker.dataset.isCulled = isCulled.toString();
     marker.title = `湧き潰し: ${isCulled ? "済" : "未"}`;
 }
 
-
 function attachLocationEvents() {
-    const overlayContainers = document.querySelectorAll(".map-overlay");
-    if (!overlayContainers.length) return;
+    const overlayContainers = document.querySelectorAll(".map-overlay");
+    if (!overlayContainers.length) return;
 
-    overlayContainers.forEach(overlay => {
-        overlay.removeEventListener("click", handleCrushToggle);
-        overlay.addEventListener("click", handleCrushToggle);
-    });
+    overlayContainers.forEach(overlay => {
+        overlay.removeEventListener("click", handleCrushToggle, { capture: true });
+        overlay.addEventListener("click", handleCrushToggle, { capture: true }); 
+    });
 }
 
 export { isCulled, drawSpawnPoint, handleCrushToggle, updateCrushUI, attachLocationEvents };
