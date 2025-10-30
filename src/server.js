@@ -100,7 +100,7 @@ function subscribeMobLocations(onUpdate) {
             const mobNo = parseInt(docSnap.id, 10);
             const data = docSnap.data();
             
-            map[mobNo] = { points: data.points || {} }; 
+            map[mobNo] = data.points || {}; 
         });
         onUpdate(map);
     });
