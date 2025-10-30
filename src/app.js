@@ -32,7 +32,6 @@ async function loadMaintenance() {
             updateMobCards();
         }
 
-        // 計算用に返す値
         return {
             start,
             end,
@@ -115,7 +114,7 @@ function attachCardEvents() {
         const mobNo = parseInt(card.dataset.mobNo, 10);
         const rank = card.dataset.rank;
 
-        // 討伐報告ボタンの処理 (変更なし)
+        // 討伐報告ボタンの処理
         const reportBtn = e.target.closest("button[data-report-type]");
         if (reportBtn) {
             e.stopPropagation();
@@ -123,13 +122,14 @@ function attachCardEvents() {
             if (type === "modal") {
                 openReportModal(mobNo);
             } else if (type === "instant") {
-                const iso = toJstAdjustedIsoString(new Date());
+                const now = new Date();
+                const iso = now.toISOString();
                 submitReport(mobNo, iso, `${rank}ランク即時報告`);
             }
             return;
         }
 
-        // カードヘッダーの開閉処理 (変更なし)
+        // カードヘッダーの開閉処理
         if (e.target.closest("[data-toggle='card-header']")) {
             if (rank === "S") {
                 const panel = card.querySelector(".expandable-panel");
