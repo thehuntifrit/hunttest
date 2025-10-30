@@ -6,8 +6,6 @@ import { calculateRepop } from "./cal.js";
 
 const EXPANSION_MAP = { 1: "新生", 2: "蒼天", 3: "紅蓮", 4: "漆黒", 5: "暁月", 6: "黄金" };
 
-// dataManager.js
-
 const state = {
     userId: localStorage.getItem("user_uuid") || null,
     baseMobData: [],
