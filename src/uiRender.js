@@ -69,8 +69,7 @@ function createMobCard(mob) {
     
     const state = getState();
     const mobLocationsData = state.mobLocations?.[mob.No];
-    const mobLocationsLKT = mobLocationsData?.last_kill_time || null;
-    const spawnCullStatus = mobLocationsData?.points || mob.spawn_cull_status; // Mob Locations の points を優先
+    const spawnCullStatus = mobLocationsData?.points || mob.spawn_cull_status;
 
     let isLastOne = false;
     let validSpawnPoints = [];
@@ -79,7 +78,7 @@ function createMobCard(mob) {
         validSpawnPoints = (mob.spawn_points ?? []).filter(point => {
             const pointStatus = spawnCullStatus?.[point.id];
             
-            return !isCulled(pointStatus, mobLocationsLKT); 
+            return !isCulled(pointStatus, mob.No); 
         });
         isLastOne = validSpawnPoints.length === 1;
     }
@@ -96,10 +95,10 @@ function createMobCard(mob) {
                     : point.mob_ranks[0],
             // isLastOne のフラグを渡す
             isLastOne && point.id === validSpawnPoints[0]?.id,
-            isS_LastOne,
+            isS_LastOne
         )).join("")
         : "";
-
+    
     const cardHeaderHTML = `
 <div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
     <!-- 上段：ランク・モブ名・報告ボタン -->
@@ -266,7 +265,6 @@ function updateProgressText(card, mob) {
     } else {
         rightStr = `未確定`;
     }
-    // 左側に in と Next の両方を置き、Next は初期非表示
     text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
         <div class="pl-2 text-left">
@@ -279,7 +277,6 @@ function updateProgressText(card, mob) {
     </div>
   `;
 
-    // 初回のみ切り替え処理を開始
     const toggleContainer = text.querySelector(".toggle-container");
     if (toggleContainer && !toggleContainer.dataset.toggleStarted) {
         startToggleInNext(toggleContainer);
@@ -360,7 +357,6 @@ function onKillReportReceived(mobId, kill_time) {
     }
 }
 
-// 定期ループ（60秒ごとに全カードを更新）
 setInterval(() => {
     updateProgressBars();
 }, 60000);
