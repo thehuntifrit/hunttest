@@ -11,7 +11,7 @@ const state = {
     baseMobData: [],
     mobs: [],
     mobLocations: {}, 
-};
+    
     filter: JSON.parse(localStorage.getItem("huntFilterState")) || {
         rank: "ALL",
         areaSets: {
