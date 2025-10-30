@@ -184,6 +184,7 @@ function filterAndRender({ isInitialLoad = false } = {}) {
     if (isInitialLoad) {
         updateProgressBars();
     }
+    attachLocationEvents();
 }
 
 function distributeCards() {
