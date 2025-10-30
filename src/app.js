@@ -122,9 +122,14 @@ function attachCardEvents() {
             if (type === "modal") {
                 openReportModal(mobNo);
             } else if (type === "instant") {
-                const now = new Date();
-                const iso = now.toISOString();
-                submitReport(mobNo, iso, `${rank}ランク即時報告`);
+                getServerTimeUTC().then(serverDateUTC => {
+                    const iso = serverDateUTC.toISOString();
+                    submitReport(mobNo, iso, `${rank}ランク即時報告`);
+                }).catch(err => {
+                    console.error("サーバー時刻取得失敗、ローカル時刻で代用:", err);
+                    const fallbackIso = new Date().toISOString();
+                    submitReport(mobNo, fallbackIso, `${rank}ランク即時報告`);
+                });
             }
             return;
         }
