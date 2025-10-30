@@ -30,14 +30,17 @@ function handleCrushToggle(e) {
     toggleCrushStatus(mobNo, locationId, isCurrentlyCulled);
 }
 
-function isCulled(pointStatus, mobLastKillTime) {
+function isCulled(pointStatus, mobNo) {
+    const state = getState();
+    const mob = state.mobs.find(m => m.No === mobNo); 
+    const mobLastKillTime = mob?.last_kill_time || 0; // Mob Status の LKT (秒)
+
     const culledMs = pointStatus?.culled_at && typeof pointStatus.culled_at.toMillis === 'function' 
                          ? pointStatus.culled_at.toMillis() : 0;
     const uncullMs = pointStatus?.uncull_at && typeof pointStatus.uncull_at.toMillis === 'function' 
                          ? pointStatus.uncull_at.toMillis() : 0;
-                         
-    const lastKillMs = mobLastKillTime && typeof mobLastKillTime.toMillis === 'function' 
-                         ? mobLastKillTime.toMillis() : 0;
+    
+    const lastKillMs = typeof mobLastKillTime === 'number' ? mobLastKillTime * 1000 : 0;
     
     if (culledMs === 0 && uncullMs === 0) return false;
     
@@ -47,19 +50,14 @@ function isCulled(pointStatus, mobLastKillTime) {
         return true; // 湧き潰し中 (ON)
     }
     if (isUnculledValid && (!isCulledValid || uncullMs > culledMs)) {
-        return false; // 湧いている状態 (OFF)
+        return false;
     }
-        // 4. その他のケース (両方古い=リセットされている)
-    return false; // 湧き潰しではない (OFF)
+    return false;
 }
 
 function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
     const pointStatus = spawnCullStatus?.[point.id];
-    const state = getState();
-    const mobLocationsData = state.mobLocations?.[mobNo];
-    const mobLastKillTime = mobLocationsData?.last_kill_time || null; 
-    
-    const isCulledFlag = isCulled(pointStatus, mobLastKillTime); 
+    const isCulledFlag = isCulled(pointStatus, mobNo); 
     const isS_A_Cullable = point.mob_ranks.some(r => r === "S" || r === "A");
     const isB_Only = point.mob_ranks.every(r => r.startsWith("B"));
 
