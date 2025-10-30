@@ -105,7 +105,6 @@ async function loadBaseMobData() {
     if (!resp.ok) throw new Error("Mob data failed to load.");
     const data = await resp.json();
 
-    // maintenance を必ずロード
     const maintenance = maintenanceCache || await loadMaintenance();
 
     const baseMobData = Object.entries(data.mobs).map(([no, mob]) => ({
@@ -148,9 +147,10 @@ function startRealtime() {
     // maintenance をロード（キャッシュ再利用）
     (async () => {
         const maintenance = maintenanceCache || await loadMaintenance();
-
+        // Mob Status 購読（LKT/Memoなど）
         const unsubStatus = subscribeMobStatusDocs(mobStatusDataMap => {
             const current = getState().mobs;
+
             const map = new Map();
             Object.values(mobStatusDataMap).forEach(docData => {
                 Object.entries(docData).forEach(([mobId, mobData]) => {
@@ -162,15 +162,16 @@ function startRealtime() {
                     });
                 });
             });
+
             const merged = current.map(m => {
                 const dyn = map.get(m.No);
-                if (dyn) {
-                    const updatedMob = { ...m, ...dyn };
-                    updatedMob.repopInfo = calculateRepop(updatedMob, maintenance);
-                    return updatedMob;
-                }
-                return m;
+                if (!dyn) return m;
+
+                const updatedMob = { ...m, ...dyn };
+                updatedMob.repopInfo = calculateRepop(updatedMob, maintenance);
+                return updatedMob;
             });
+
             setMobs(merged);
             filterAndRender();
             updateProgressBars();
@@ -178,17 +179,20 @@ function startRealtime() {
         });
         unsubscribes.push(unsubStatus);
 
-const unsubLoc = subscribeMobLocations(locationsMap => {
+        // Mob Locations 購読（湧き潰し）
+        const unsubLoc = subscribeMobLocations(locationsMap => {
             const current = getState().mobs;
-            
-            state.mobLocations = locationsMap; 
-            
+            state.mobLocations = locationsMap;
+
             const merged = current.map(m => {
                 const dyn = locationsMap[m.No];
-                let newMob = { ...m };
-                newMob.spawn_cull_status = (dyn && dyn.points) ? dyn.points : {};
-                return newMob;
+                const updatedMob = { ...m };
+
+                updatedMob.spawn_cull_status = dyn || {};
+
+                return updatedMob;
             });
+
             setMobs(merged);
             filterAndRender();
             displayStatus("湧き潰しデータ更新完了。", "success");
