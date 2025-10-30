@@ -24,28 +24,6 @@ function debounce(func, wait) {
     };
 }
 
-function toJstAdjustedIsoString(date) {
-    const options = {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-        timeZone: 'Asia/Tokyo'
-    };
-
-    const parts = new Intl.DateTimeFormat('ja-JP', options).formatToParts(date);
-
-    const year = parts.find(p => p.type === 'year').value;
-    const month = parts.find(p => p.type === 'month').value;
-    const day = parts.find(p => p.type === 'day').value;
-    const hour = parts.find(p => p.type === 'hour').value;
-    const minute = parts.find(p => p.type === 'minute').value;
-
-    return `${year}-${month}-${day}T${hour}:${minute}`;
-}
-
 function getEorzeaTime(date = new Date()) {
     let unixMs = date.getTime();
     const REAL_MS_PER_ET_HOUR = 175 * 1000;
