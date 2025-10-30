@@ -1,7 +1,7 @@
 // server.js (修正版)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc, updateDoc, increment, FieldValue } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-functions.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
@@ -9,7 +9,7 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase
 import { getState } from "./dataManager.js";
 import { closeReportModal } from "./modal.js";
 import { displayStatus } from "./uiRender.js";
-import { isCulled, updateCrushUI } from "./location.js"; // isCulled 関数はLKTを受け取るようにlocation.js側も修正済みを想定
+import { isCulled, updateCrushUI } from "./location.js";
 
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBikwjGsjL_PVFhx3Vj-OeJCocKA_hQOgU",
@@ -19,7 +19,6 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "285578581189",
   appId: "1:285578581189:web:4d9826ee3f988a7519ccac"
 };
-import { serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 const app = initializeApp(FIREBASE_CONFIG);
 const db = getFirestore(app);
@@ -27,12 +26,9 @@ const auth = getAuth(app);
 const functionsInstance = getFunctions(app, "asia-northeast1");
 const analytics = getAnalytics(app);
 
-const functions = functionsInstance;
-
-// ★ HTTPS Callable の初期化: V1関数名に統一し、湧き潰し関数を追加
-const callGetServerTime = httpsCallable(functions, 'getServerTimeV1'); // ★ 関数名変更
-const callRevertStatus = httpsCallable(functions, 'revertStatusV1');   // ★ 関数名変更
-const callMobCullUpdater = httpsCallable(functions, 'mobCullUpdaterV1'); // ★ 新規追加
+const callGetServerTime = httpsCallable(functionsInstance, 'getServerTimeV1'); 
+const callRevertStatus = httpsCallable(functionsInstance, 'revertStatusV1');
+const callMobCullUpdater = httpsCallable(functionsInstance, 'mobCullUpdaterV1');
 
 // 認証 (変更なし)
 async function initializeAuth() {
@@ -66,9 +62,8 @@ onAuthStateChanged(auth, (user) => {
 
 // サーバーUTC取得
 async function getServerTimeUTC() {
-    // const getServerTime = httpsCallable(functionsInstance, "getServerTime"); // 削除
     try {
-        const response = await callGetServerTime(); // ★ 定義済みの V1 関数を呼び出し
+        const response = await callGetServerTime(); // V1 関数を呼び出し
 
         if (response.data && typeof response.data.serverTimeMs === 'number') {
             return new Date(response.data.serverTimeMs);
@@ -96,7 +91,7 @@ function subscribeMobStatusDocs(onUpdate) {
     return () => unsubs.forEach(u => u());
 }
 
-// ★ データ購読 (Mob Locations)
+// データ購読 (Mob Locations)
 function subscribeMobLocations(onUpdate) {
     const unsub = onSnapshot(collection(db, "mob_locations"), snapshot => {
         const map = {};
@@ -111,7 +106,7 @@ function subscribeMobLocations(onUpdate) {
     return unsub;
 }
 
-// 討伐報告 (reportsコレクションへの直接書き込み) (変更なし)
+// 討伐報告 (reportsコレクションへの直接書き込み) (サーバー時刻取得を async/await で実行)
 const submitReport = async (mobNo, timeISO, memo) => {
     const state = getState();
     const userId = state.userId;
@@ -136,6 +131,7 @@ const submitReport = async (mobNo, timeISO, memo) => {
         }
     }
     if (!killTimeDate) {
+        // ★ await が必須
         killTimeDate = await getServerTimeUTC(); // fallback
     }
 
@@ -177,7 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// ★ 湧き潰し報告を Callable に変更
+// 湧き潰し報告を Callable に変更
 const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
     const state = getState();
     const userId = state.userId;
@@ -195,12 +191,19 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
     displayStatus(
         `${mob.Name} (${locationId}) ${action === "CULL" ? "湧き潰し" : "解除"}報告中...`
     );
+    
+    let reportTimeDate = new Date();
+    try {
+        reportTimeDate = await getServerTimeUTC();
+    } catch (e) {
+        console.warn("サーバー時刻取得失敗。クライアント時刻を使用します。", e);
+    }  
     // サーバー側が期待するデータ構造
     const data = {
         mob_id: mobNo.toString(),
         location_id: locationId.toString(),
         action: action,
-        report_time: new Date().toISOString(),
+        report_time: reportTimeDate.toISOString(), // DateオブジェクトをISO形式で送信
     };
 
     try {
@@ -220,7 +223,7 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
     }
 };
 
-// 巻き戻し (revertMobStatus) - Callable 方式に修正済み (関数名とペイロードを最終調整)
+// 巻き戻し (revertMobStatus) - Callable 方式
 const revertMobStatus = async (mobNo) => {
     const state = getState();
     const userId = state.userId;
@@ -242,7 +245,7 @@ const revertMobStatus = async (mobNo) => {
     };
 
     try {
-        const response = await callRevertStatus(data); // ★ 定義済みの V1 Callable を使用
+        const response = await callRevertStatus(data); // 定義済みの V1 Callable を使用
         const result = response.data;
 
         if (result?.success) {
