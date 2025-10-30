@@ -3,7 +3,7 @@
 import { getState, setFilter, loadBaseMobData, setOpenMobCardNo, FILTER_TO_DATA_RANK_MAP, setUserId, startRealtime } from "./dataManager.js";
 import { openReportModal, closeReportModal, initModal } from "./modal.js";
 import { attachLocationEvents } from "./location.js";
-import { submitReport, toggleCrushStatus, initializeAuth } from "./server.js";
+import { submitReport, toggleCrushStatus, initializeAuth, getServerTimeUTC } from "./server.js";
 import { debounce } from "./cal.js";
 import { DOM, filterAndRender, sortAndRedistribute } from "./uiRender.js";
 import { renderRankTabs, renderAreaFilterPanel, updateFilterUI, handleAreaFilterClick } from "./filterUI.js";
