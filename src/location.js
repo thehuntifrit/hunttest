@@ -5,26 +5,19 @@ import { toggleCrushStatus } from "./server.js";
 import { getState } from "./dataManager.js"; 
 
 function handleCrushToggle(e) {
-    // ★ デバッグログ (1): 関数が呼ばれているか確認
     console.log("handleCrushToggle called", e.target); 
-    
     const point = e.target.closest(".spawn-point");
-    // 湧き地点マーカーがクリックされていなければ処理しない
+    
     if (!point) return; 
-
-    // 湧き潰し非インタラクティブな地点なら処理しない
     if (point.dataset.isInteractive !== "true") return;
 
-    // Mob Cardを取得（spawn-pointはmob-card内にある想定）
     const card = e.target.closest(".mob-card"); 
     
-    // ★ Mob Cardが取得できない場合（予期せぬDOM構造）はエラーとして停止
     if (!card) {
         console.error("FATAL: Mob card (.mob-card) not found for interactive spawn point click.");
         return;
     }
     
-    // イベントの伝播とデフォルト動作を停止
     e.preventDefault();
     e.stopPropagation();
 
@@ -32,32 +25,28 @@ function handleCrushToggle(e) {
     const locationId = point.dataset.locationId;
     const isCurrentlyCulled = point.dataset.isCulled === "true";
     
-    // ★ デバッグログ (2): サーバー送信関数が呼ばれる直前
     console.log(`Cull action detected for Mob: ${mobNo}, Location: ${locationId}, Culling: ${!isCurrentlyCulled}`);
 
-    // サーバーへの送信
     toggleCrushStatus(mobNo, locationId, isCurrentlyCulled);
 }
 
 function isCulled(pointStatus, mobLastKillTime) {
-    const culledMs = pointStatus?.culled_at ? pointStatus.culled_at.toMillis() : 0;
-    const uncullMs = pointStatus?.uncull_at ? pointStatus.uncull_at.toMillis() : 0;
+    const culledMs = pointStatus?.culled_at && typeof pointStatus.culled_at.toMillis === 'function' 
+                         ? pointStatus.culled_at.toMillis() : 0;
+    const uncullMs = pointStatus?.uncull_at && typeof pointStatus.uncull_at.toMillis === 'function' 
+                         ? pointStatus.uncull_at.toMillis() : 0;
+                         
     const lastKillMs = mobLastKillTime && typeof mobLastKillTime.toMillis === 'function' 
                          ? mobLastKillTime.toMillis() : 0;
     
     if (culledMs === 0 && uncullMs === 0) return false;
     
-    // --- 判定ロジック ---
-    // 1. 各操作がLKTより新しいかを確認 (リセット判定)
     const isCulledValid = culledMs > lastKillMs;
     const isUnculledValid = uncullMs > lastKillMs;
-    // 2. 有効な操作同士で比較
     if (isCulledValid && (!isUnculledValid || culledMs > uncullMs)) {
         return true; // 湧き潰し中 (ON)
     }
-    // 3. 有効な操作同士で比較
     if (isUnculledValid && (!isCulledValid || uncullMs > culledMs)) {
-        // UNCULL操作がLKTより新しく、かつ、CULL操作が無効/LKTより古い/またはUNCULLより古い
         return false; // 湧いている状態 (OFF)
     }
         // 4. その他のケース (両方古い=リセットされている)
