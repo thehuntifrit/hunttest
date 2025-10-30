@@ -168,43 +168,46 @@ function findNextSpawnTime(mob, startDate) {
 
     let tSec = Math.floor(startDate.getTime() / 1000);
     tSec = alignToCycleBoundary(tSec);
+// --- 継続条件あり ---
+if (mob.weatherDuration?.minutes) {
+    const requiredMinutes = mob.weatherDuration.minutes;
+    const requiredCycles = Math.ceil((requiredMinutes * 60) / WEATHER_CYCLE_SEC);
 
-    // --- 継続条件あり ---
-    if (mob.weatherDuration?.minutes) {
-        const requiredMinutes = mob.weatherDuration.minutes;
-        const requiredCycles = Math.ceil((requiredMinutes * 60) / WEATHER_CYCLE_SEC);
+    let consecutive = 0;
+    let conditionStartSec = null;
 
-        let consecutive = 0;
-        let conditionStartSec = null;
+    for (let end = tSec + 14 * 24 * 3600; tSec < end; tSec += WEATHER_CYCLE_SEC) {
+        const date = new Date(tSec * 1000);
+        const seed = getEorzeaWeatherSeed(date);
 
-        for (let end = tSec + 14 * 24 * 3600; tSec < end; tSec += WEATHER_CYCLE_SEC) {
-            const date = new Date(tSec * 1000);
-            const seed = getEorzeaWeatherSeed(date);
+        const inRange =
+            mob.weatherSeedRange
+                ? (seed >= mob.weatherSeedRange[0] && seed <= mob.weatherSeedRange[1])
+                : mob.weatherSeedRanges
+                    ? mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max)
+                    : false;
 
-            const inRange =
-                mob.weatherSeedRange
-                    ? (seed >= mob.weatherSeedRange[0] && seed <= mob.weatherSeedRange[1])
-                    : mob.weatherSeedRanges
-                        ? mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max)
-                        : false;
-            console.log(
-                `[cycle] ${new Date(tSec * 1000).toISOString()} ET=${getEorzeaTime(new Date(tSec * 1000)).hours}:00 seed=${seed} weather=${mapSeedToWeather(seed)} consecutive=${consecutive}`
-            );
+        console.log(
+            `[cycle] ${date.toISOString()} `
+            + `ET=${getEorzeaTime(date).hours}:00 `
+            + `seed=${seed} inRange=${inRange} consecutive=${consecutive}`
+        );
 
-            if (inRange) {
-                if (consecutive === 0) conditionStartSec = tSec;
-                consecutive++;
-                if (consecutive >= requiredCycles) {
-                    const popSec = conditionStartSec + requiredMinutes * 60;
-                    return new Date(popSec * 1000);
-                }
-            } else {
-                consecutive = 0;
-                conditionStartSec = null;
+        if (inRange) {
+            if (consecutive === 0) conditionStartSec = tSec;
+            consecutive++;
+            if (consecutive >= requiredCycles) {
+                // 連続成立 → 条件開始＋minutes が出現可能時刻
+                const popSec = conditionStartSec + requiredMinutes * 60;
+                return new Date(popSec * 1000);
             }
+        } else {
+            consecutive = 0;
+            conditionStartSec = null;
         }
-        return null;
     }
+    return null;
+}
 
     // --- 瞬間条件 ---
     for (let end = tSec + 14 * 24 * 3600; tSec < end; tSec += WEATHER_CYCLE_SEC) {
