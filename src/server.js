@@ -99,7 +99,7 @@ function subscribeMobLocations(onUpdate) {
         snapshot.forEach(docSnap => {
             const mobNo = parseInt(docSnap.id, 10);
             const data = docSnap.data();
-            
+            console.log("mobNo", mobNo, "data", data);
             map[mobNo] = data.points || {}; 
         });
         onUpdate(map);
