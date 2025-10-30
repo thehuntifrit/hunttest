@@ -311,7 +311,8 @@ function updateExpandablePanel(card, mob) {
     const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
 
     const nextMin = mob.repopInfo?.nextMinRepopDate;
-    const conditionTime = findNextSpawnTime(mob);
+    const baseStart = nextMin ?? new Date(Math.max(mob.repopInfo?.minRepop ?? 0, Date.now()/1000) * 1000);
+    const conditionTime = findNextSpawnTime(mob, baseStart);
     const displayTime = (nextMin && conditionTime)
         ? (conditionTime > nextMin ? conditionTime : nextMin)
         : (nextMin || conditionTime);
