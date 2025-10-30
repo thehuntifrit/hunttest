@@ -180,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// 湧き潰し報告を Callable に変更
+// ★ 湧き潰し報告を Callable に変更
 const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
     const state = getState();
     const userId = state.userId;
@@ -190,22 +190,17 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
         displayStatus("認証が完了していません。", "error");
         return;
     }
-    // サーバー関数に合わせてアクション名を大文字に
     const action = isCurrentlyCulled ? "UNCULL" : "CULL"; 
     const mob = mobs.find(m => m.No === mobNo);
     if (!mob) return;
 
     displayStatus(
-        `${mob.Name} (${locationId}) ${action === "CULL" ? "湧き潰し" : "解除"}報告中...`
+        `${mob.Name} (${locationId}) ${action === "CULL" ? "湧き潰し" : "解除"}報告中...`,
+        "warning" // warningなど、処理中のステータスを表示
     );
     
-    // report_time に正確なサーバー時刻を使用
-    let reportTimeDate = new Date();
-    try {
-        reportTimeDate = await getServerTimeUTC();
-    } catch (e) {
-        console.warn("サーバー時刻取得失敗。クライアント時刻を使用します。", e);
-    }
+    // report_time にクライアント時刻を使用
+    const reportTimeDate = new Date();
     
     // サーバー側が期待するデータ構造
     const data = {
@@ -216,19 +211,22 @@ const toggleCrushStatus = async (mobNo, locationId, isCurrentlyCulled) => {
     };
 
     try {
-        
+        // Functionsへの呼び出し
         const response = await callMobCullUpdater(data);
         const result = response.data;
         
         if (result?.success) {
             displayStatus(`${mob.Name} の状態を更新しました。`, "success");
         } else {
-             displayStatus(`湧き潰し報告エラー: ${result?.error || "通信失敗"}`, "error");
+             const errorMessage = result?.error || "Functions内部でエラーが発生しました。";
+             console.error("湧き潰し報告エラー (Functions内部):", errorMessage);
+             displayStatus(`湧き潰し報告エラー: ${errorMessage}`, "error");
         }
 
     } catch (error) {
-        console.error("湧き潰し報告エラー:", error);
-        displayStatus(`湧き潰し報告エラー: ${error.message}`, "error");
+        console.error("湧き潰し報告エラー (通信レベル):", error);
+        const userFriendlyError = error.message || "通信または認証に失敗しました。";
+        displayStatus(`致命的な通信エラー: ${userFriendlyError}`, "error");
     }
 };
 
