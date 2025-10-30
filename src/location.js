@@ -24,7 +24,8 @@ function handleCrushToggle(e) {
     const mobNo = parseInt(card.dataset.mobNo, 10);
     const locationId = point.dataset.locationId;
     const isCurrentlyCulled = point.dataset.isCulled === "true";
-    
+    const nextCulled = !isCurrentlyCulled;
+    
     console.log(`Cull action detected for Mob: ${mobNo}, Location: ${locationId}, Action: ${nextCulled ? "CULL" : "UNCULL"}`);
     toggleCrushStatus(mobNo, locationId, nextCulled);
     updateCrushUI(mobNo, locationId, nextCulled); // UI即時反映
