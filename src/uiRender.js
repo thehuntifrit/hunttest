@@ -59,44 +59,44 @@ function processText(text) {
 }
 
 function createMobCard(mob) {
-    const rank = mob.Rank;
-    const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
-    const rankLabel = rankConfig.label || rank;
+    const rank = mob.Rank;
+    const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
+    const rankLabel = rankConfig.label || rank;
 
-    const isExpandable = rank === "S";
-    const { openMobCardNo } = getState();
-    const isOpen = isExpandable && mob.No === openMobCardNo;
-    
-    const state = getState();
-    const mobLocationsData = state.mobLocations?.[mob.No];
-    const spawnCullStatus = mobLocationsData?.points || mob.spawn_cull_status;
+    const isExpandable = rank === "S";
+    const { openMobCardNo } = getState();
+    const isOpen = isExpandable && mob.No === openMobCardNo;
+    
+    const state = getState();
+    const mobLocationsData = state.mobLocations?.[mob.No];
+    const spawnCullStatus = mobLocationsData || mob.spawn_cull_status; // ★ 修正箇所
 
-    let isLastOne = false;
-    let validSpawnPoints = [];
+    let isLastOne = false;
+    let validSpawnPoints = [];
 
-    if (mob.Map && mob.spawn_points) {
-        validSpawnPoints = (mob.spawn_points ?? []).filter(point => {
-            const pointStatus = spawnCullStatus?.[point.id];
-            
-            return !isCulled(pointStatus, mob.No); 
-        });
-        isLastOne = validSpawnPoints.length === 1;
-    }
+    if (mob.Map && mob.spawn_points) {
+        validSpawnPoints = (mob.spawn_points ?? []).filter(point => {
+            const pointStatus = spawnCullStatus?.[point.id];
+            
+            return !isCulled(pointStatus, mob.No); 
+        });
+        isLastOne = validSpawnPoints.length === 1;
+    }
 
-    const isS_LastOne = rank === "S" && isLastOne;
+    const isS_LastOne = rank === "S" && isLastOne;
 
-    const spawnPointsHtml = (rank === "S" && mob.Map)
-        ? (mob.spawn_points ?? []).map(point => drawSpawnPoint(
-            point,
-            spawnCullStatus,
-            mob.No,
-            point.mob_ranks.includes("B2") ? "B2"
-                : point.mob_ranks.includes("B1") ? "B1"
-                    : point.mob_ranks[0],
-            isLastOne && point.id === validSpawnPoints[0]?.id,
-            isS_LastOne
-        )).join("")
-        : "";
+    const spawnPointsHtml = (rank === "S" && mob.Map)
+        ? (mob.spawn_points ?? []).map(point => drawSpawnPoint(
+            point,
+            spawnCullStatus,
+            mob.No,
+            point.mob_ranks.includes("B2") ? "B2"
+                : point.mob_ranks.includes("B1") ? "B1"
+                    : point.mob_ranks[0],
+            isLastOne && point.id === validSpawnPoints[0]?.id,
+            isS_LastOne
+        )).join("")
+        : "";
     
     const cardHeaderHTML = `
 <div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
