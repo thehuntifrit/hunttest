@@ -81,14 +81,6 @@ function getEorzeaWeather(date = new Date(), weatherTable) {
     return "Unknown";
 }
 
-// サイクル境界に揃える（FFXIV天候は1400秒周期）
-const WEATHER_CYCLE_SEC = 23 * 60 + 20; // 1400秒
-
-function alignToCycleBoundary(tSec) {
-    const r = tSec % WEATHER_CYCLE_SEC;
-    return r === 0 ? tSec : (tSec - r + WEATHER_CYCLE_SEC);
-}
-
 // 時間帯条件チェック
 function checkTimeRange(timeRange, timestamp) {
     const et = getEorzeaTime(new Date(timestamp * 1000));
@@ -136,63 +128,81 @@ function checkMobSpawnCondition(mob, date) {
     return true;
 }
 
-function findNextSpawnTime(mob, startDate) {
+const WEATHER_CYCLE_SEC = 23 * 60 + 20; // 1400
+
+function alignToCycleBoundary(tSec) {
+    const r = tSec % WEATHER_CYCLE_SEC;
+    return tSec - r; // 直前のサイクル境界
+}
+
+function checkWeatherInRange(mob, seed) {
+    if (mob.weatherSeedRange) {
+        const [min, max] = mob.weatherSeedRange;
+        return seed >= min && seed <= max;
+    }
+    if (mob.weatherSeedRanges) {
+        return mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max);
+    }
+    return false;
+}
+
+function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
     const startSec = Math.floor(startDate.getTime() / 1000);
-    // 1. 連続天候条件あり
+    // 1) 連続条件があるモブは連続探索のみ。瞬間条件へは落とさない。
     if (mob.weatherDuration?.minutes) {
-        console.log(`[DEBUG] mob:${mob.name} → weatherDuration 分岐に入りました`, mob.weatherDuration);
+        const requiredMinutes = Number(mob.weatherDuration.minutes);
+        const requiredSec = requiredMinutes * 60;
+        const requiredCycles = Math.ceil(requiredSec / WEATHER_CYCLE_SEC);
 
-        const requiredMinutes = mob.weatherDuration.minutes;
-        const requiredCycles = Math.ceil((requiredMinutes * 60) / WEATHER_CYCLE_SEC);
+        const scanStartSec = alignToCycleBoundary(startSec);
+        const limitSec = repopEndSec ?? (startSec + 14 * 24 * 3600);
+        const minRepopSec = repopStartSec ?? startSec;
 
-        let scanStartSec = alignToCycleBoundary(startSec - requiredCycles * WEATHER_CYCLE_SEC);
-        if (scanStartSec < 0) scanStartSec = 0;
+        let consecutiveCycles = 0;
+        let consecutiveStartSec = null;
 
-        let consecutive = 0;
-        let conditionStartSec = null;
+        console.log(`[DEBUG] ${mob.name} 連続天候探索: required=${requiredMinutes}分 (${requiredCycles} cycles), scanStart=${new Date(scanStartSec*1000).toISOString()}`);
 
-        for (let tSec = scanStartSec; tSec < startSec + 14 * 24 * 3600; tSec += WEATHER_CYCLE_SEC) {
-            const date = new Date(tSec * 1000);
-            const seed = getEorzeaWeatherSeed(date);
+        for (let tSec = scanStartSec; tSec <= limitSec; tSec += WEATHER_CYCLE_SEC) {
+            const seed = getEorzeaWeatherSeed(new Date(tSec * 1000));
+            const inRange = checkWeatherInRange(mob, seed);
 
-            const inRange =
-                mob.weatherSeedRange
-                    ? (seed >= mob.weatherSeedRange[0] && seed <= mob.weatherSeedRange[1])
-                    : mob.weatherSeedRanges
-                        ? mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max)
-                        : false;
-
-            console.log(`[DEBUG] ${date.toISOString()} seed=${seed} inRange=${inRange} consecutive=${consecutive}`);
+            console.log(`[DEBUG] ${new Date(tSec * 1000).toISOString()} seed=${seed} inRange=${inRange} consec=${consecutiveCycles}`);
 
             if (inRange) {
-                if (consecutive === 0) conditionStartSec = tSec;
-                consecutive++;
-                if (consecutive >= requiredCycles) {
-                    const popSec = conditionStartSec + requiredMinutes * 60;
-                    console.log(`[DEBUG] 連続天候成立 → 出現時刻: ${new Date(popSec * 1000).toISOString()}`);
-                    return new Date(popSec * 1000);
+                if (consecutiveCycles === 0) consecutiveStartSec = tSec;
+                consecutiveCycles++;
+
+                if (consecutiveCycles >= requiredCycles) {
+                    const popSec = consecutiveStartSec + requiredSec; // 満了時刻
+                    if (popSec >= minRepopSec && popSec <= limitSec) {
+                        console.log(`[DEBUG] 連続成立 → 出現時刻(満了): ${new Date(popSec * 1000).toISOString()}`);
+                        return new Date(popSec * 1000);
+                    }
+                    // 範囲外なら継続
                 }
             } else {
-                consecutive = 0;
-                conditionStartSec = null;
+                consecutiveCycles = 0;
+                consecutiveStartSec = null;
             }
         }
-        console.log(`[DEBUG] 連続天候条件を満たす時刻は見つかりませんでした → null を返します`);
+        console.log(`[DEBUG] 連続条件未成立 → null`);
         return null;
     }
-    // 2. 瞬間条件（天候・月齢・時間帯）の探索ロジック
-    console.log(`[DEBUG] mob:${mob.name} → 瞬間条件分岐に入りました`);
+    // 2) 連続条件がないモブのみ、瞬間条件を探索
+    console.log(`[DEBUG] ${mob.name} 瞬間条件探索開始`);
     const stepSec = 60; // 1分刻み
-    for (let tSec = Math.floor(startSec / stepSec) * stepSec;
-         tSec < startSec + 14 * 24 * 3600;
-         tSec += stepSec) {
+    const t0 = Math.floor(startSec / stepSec) * stepSec;
+    const limitSec = repopEndSec ?? (startSec + 14 * 24 * 3600);
+
+    for (let tSec = t0; tSec <= limitSec; tSec += stepSec) {
         const date = new Date(tSec * 1000);
         if (checkMobSpawnCondition(mob, date)) {
-            console.log(`[DEBUG] 瞬間条件成立 → 出現時刻: ${date.toISOString()}`);
+            console.log(`[DEBUG] 瞬間条件成立 → ${date.toISOString()}`);
             return date;
         }
     }
-    console.log(`[DEBUG] どの条件も満たさず → null を返します`);
+    console.log(`[DEBUG] 瞬間条件未成立 → null`);
     return null;
 }
 
