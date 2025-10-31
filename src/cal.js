@@ -2,6 +2,8 @@
 
 import { loadMaintenance } from "./app.js";
 
+const WEATHER_CYCLE_SEC = 23 * 60 + 20; // 1400
+
 function formatDuration(seconds) {
   const totalMinutes = Math.floor(seconds / 60);
   const h = Math.floor(totalMinutes / 60);
@@ -145,8 +147,6 @@ function checkMobSpawnCondition(mob, date) {
 
   return true;
 }
-
-const WEATHER_CYCLE_SEC = 23 * 60 + 20; // 1400
 
 function alignToCycleBoundary(tSec) {
     const r = tSec % WEATHER_CYCLE_SEC;
