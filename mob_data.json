@@ -180,10 +180,9 @@
       "condition": "新月のET0:00以降の夜間にPOP地点を踏む//※以降は新月中のET 17:00～2:59",
       "repopSeconds": 180000, "maxRepopSeconds": 180000,
       "moonPhase": "新月",
-      "conditions": {"firstNight": { "timeRange": { "start": 0, "end": 3 } },"otherNights": { "timeRange": { "start": 17, "end": 3 } },
+      "conditions": {"firstNight": { "timeRange": { "start": 0, "end": 3 } },"otherNights": { "timeRange": { "start": 17, "end": 3 } }},
       "mapImage": "",
-      "locations": []
-    }
+      "locations": []    
     },
       "12101": {"rank": "S", "name":"サウザンドキャスト・セダ", "area": "北部森林",
       "condition": "フォールゴウド秋瓜湖畔で「ジャッジレイ」を釣り上げる (抽選) //※ET 17:00～20:59 餌: フェザントフライ",
