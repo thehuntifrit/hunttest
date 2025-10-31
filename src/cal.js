@@ -204,7 +204,6 @@ function calculateRepop(mob, maintenance) {
     const lastKill = mob.last_kill_time || 0;
     const repopSec = mob.REPOP_s;
     const maxSec = mob.MAX_s;
-
     // --- maintenance 正規化 ---
     let maint = maintenance;
     if (maint && typeof maint === "object" && "maintenance" in maint && maint.maintenance) {
@@ -273,16 +272,40 @@ function calculateRepop(mob, maintenance) {
             let scanStartSec = baseSec - requiredCycles * WEATHER_CYCLE_SEC;
             if (scanStartSec < serverUp) scanStartSec = serverUp;
             scanStartSec = alignToCycleBoundary(scanStartSec);
+            // 連続天候探索
+            let consecutive = 0;
+            let conditionStartSec = null;
+            for (let tSec = scanStartSec; tSec < baseSec + 14 * 24 * 3600; tSec += WEATHER_CYCLE_SEC) {
+                const date = new Date(tSec * 1000);
+                const seed = getEorzeaWeatherSeed(date);
+                const inRange =
+                    mob.weatherSeedRange
+                        ? (seed >= mob.weatherSeedRange[0] && seed <= mob.weatherSeedRange[1])
+                        : mob.weatherSeedRanges
+                            ? mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max)
+                            : false;
 
-            const found = findNextConsecutiveWeatherWindow(mob, new Date(scanStartSec * 1000), requiredMinutes);
-            if (found) {
-                nextConditionSpawnDate = found;
+                if (inRange) {
+                    if (consecutive === 0) conditionStartSec = tSec;
+                    consecutive++;
+                    if (consecutive >= requiredCycles) {
+                        const popSec = conditionStartSec + requiredMinutes * 60;
+                        if (popSec >= minRepop) {
+                            // 内部は秒精度のまま返す（切り捨て不要）
+                            nextConditionSpawnDate = new Date(popSec * 1000);
+                            break;
+                        }
+                    }
+                } else {
+                    consecutive = 0;
+                    conditionStartSec = null;
+                }
             }
         } else {
             // 月齢・時間帯条件は従来通りの探索
             const baseSec = Math.max(minRepop, now, serverUp);
-            const alignedBase = alignToCycleBoundary(baseSec);
-            nextConditionSpawnDate = findNextSpawnTime(mob, new Date(alignedBase * 1000));
+            // 内部は秒精度のまま返す
+            nextConditionSpawnDate = findNextSpawnTime(mob, new Date(baseSec * 1000));
         }
     }
 
