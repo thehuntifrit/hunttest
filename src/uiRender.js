@@ -23,7 +23,7 @@ const DOM = {
 };
 
 async function updateEorzeaTime() {
-    const serverDate = await getServerTimeUTC(); // サーバーからUTC時刻を取得
+    const serverDate = await getServerTimeUTC(); // Date オブジェクトを返す想定
     const et = getEorzeaTime(serverDate);
     const el = document.getElementById("eorzea-time");
     if (el) {
