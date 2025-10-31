@@ -102,23 +102,32 @@ function checkTimeRange(timeRange, timestamp) {
     }
 }
 
+    // 新月開始直後（32.5〜1.5まで）
+function isFirstNightPhase(phase) {
+    return (phase >= 32.5 || phase < 1.5);
+}
+
+    // 新月継続中（1.5〜4.5まで）
+function isOtherNightsPhase(phase) {
+    return (phase >= 1.5 && phase < 4.5);
+}
+
 // 総合条件チェック
 function checkMobSpawnCondition(mob, date) {
   const ts = Math.floor(date.getTime() / 1000);
   const et = getEorzeaTime(date);
-  const moon = getEorzeaMoonPhase(date);
+  const moon = getEorzeaMoonPhase(date); // 数値 (0〜33)
   const seed = getEorzeaWeatherSeed(date);
-
+  // 月齢ラベル条件
   if (mob.moonPhase) {
     const currentLabel = getMoonPhaseLabel(moon);
     if (currentLabel !== mob.moonPhase) return false;
   }
-
+  // 天候条件
   if (mob.weatherSeedRange) {
     const [min, max] = mob.weatherSeedRange;
     if (seed < min || seed > max) return false;
   }
-
   if (mob.weatherSeedRanges) {
     const ok = mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max);
     if (!ok) return false;
@@ -128,15 +137,21 @@ function checkMobSpawnCondition(mob, date) {
     let ok = false;
     const fn = mob.conditions.firstNight;
     const on = mob.conditions.otherNights;
-    if (fn && fn.timeRange) ok = ok || checkTimeRange(fn.timeRange, ts);
-    if (on && on.timeRange) ok = ok || checkTimeRange(on.timeRange, ts);
+    // 初回夜: 月齢が 32.5〜1.5 の範囲
+    if (fn && fn.timeRange && (moon >= 32.5 || moon <= 1.5)) {
+      ok = ok || checkTimeRange(fn.timeRange, ts);
+    }
+    // 以降夜: 月齢が 1.5〜4.5 の範囲
+    if (on && on.timeRange && moon > 1.5 && moon < 4.5) {
+      ok = ok || checkTimeRange(on.timeRange, ts);
+    }
+
     if (!ok) return false;
   }
   // conditions が無い場合のみ、通常の timeRange / timeRanges を評価
   if (!mob.conditions && mob.timeRange) {
     if (!checkTimeRange(mob.timeRange, ts)) return false;
   }
-
   if (!mob.conditions && mob.timeRanges) {
     const ok = mob.timeRanges.some((tr) => checkTimeRange(tr, ts));
     if (!ok) return false;
@@ -144,6 +159,7 @@ function checkMobSpawnCondition(mob, date) {
 
   return true;
 }
+
 
 function alignToCycleBoundary(tSec) {
     const r = tSec % WEATHER_CYCLE_SEC;
