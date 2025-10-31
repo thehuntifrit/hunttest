@@ -21,12 +21,13 @@ const DOM = {
     modalMemoInput: document.getElementById('report-memo'),
 };
 
-function updateEorzeaTime() {
-    const et = getEorzeaTime();
-    const el = document.getElementById("eorzea-time");
-    if (el) {
-        el.textContent = `ET ${et.hours}:${et.minutes}`;
-    }
+async function updateEorzeaTime() {
+    const serverDate = await getServerTimeUTC(); // サーバーからUTC時刻を取得
+    const et = getEorzeaTime(serverDate);
+    const el = document.getElementById("eorzea-time");
+    if (el) {
+        el.textContent = `ET ${et.hours}:${et.minutes}`;
+    }
 }
 updateEorzeaTime();
 setInterval(updateEorzeaTime, 3000);
