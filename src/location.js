@@ -5,7 +5,6 @@ import { toggleCrushStatus } from "./server.js";
 import { getState } from "./dataManager.js"; 
 
 function handleCrushToggle(e) {
-    console.log("handleCrushToggle called", e.target);
     const point = e.target.closest(".spawn-point");
     if (!point) return;
 
@@ -26,7 +25,6 @@ function handleCrushToggle(e) {
     const isCurrentlyCulled = point.dataset.isCulled === "true";
     const nextCulled = !isCurrentlyCulled;
 
-    console.log(`Cull action detected for Mob: ${mobNo}, Location: ${locationId}, Action: ${nextCulled ? "CULL" : "UNCULL"}`);
     toggleCrushStatus(mobNo, locationId, nextCulled);
     updateCrushUI(mobNo, locationId, nextCulled); // UI即時反映
 }
