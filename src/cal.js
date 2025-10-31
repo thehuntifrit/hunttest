@@ -109,7 +109,6 @@ function checkTimeRange(timeRange, timestamp) {
         return h >= start || h < end; // 日付跨ぎ
     }
 }
-
 // 総合条件チェック
 function checkMobSpawnCondition(mob, date) {
     const et = getEorzeaTime(date);
@@ -144,7 +143,6 @@ function checkMobSpawnCondition(mob, date) {
 
     return true;
 }
-
 // 次の条件成立時刻を探索
 function findNextSpawnTime(mob, startDate) {
     if (!startDate || !(startDate instanceof Date) || isNaN(startDate.getTime())) {
@@ -201,7 +199,6 @@ if (mob.weatherDuration?.minutes) {
             return date;
         }
     }
-
     return null;
 }
 
@@ -265,24 +262,28 @@ function calculateRepop(mob, maintenance) {
 
     if (hasCondition) {
         if (mob.weatherDuration?.minutes) {
-            const durationMin = mob.weatherDuration.minutes;
-            const lookBackSeconds = (durationMin + 30) * 60;
-            const refSec = Math.max(now, minRepop);
-            const scanStartSec = Math.max(refSec - lookBackSeconds, serverUp);
-            const alignedScanStartSec = alignToCycleBoundary(scanStartSec);
-            const searchStart = new Date(alignedScanStartSec * 1000);
+            // 連続天候条件専用ロジック
+            const requiredMinutes = mob.weatherDuration.minutes;
+            const requiredCycles = Math.ceil((requiredMinutes * 60) / WEATHER_CYCLE_SEC);
+            // 基準時刻の決定
+            let baseSec = (lastKill === 0 || lastKill < serverUp)
+                ? serverUp + repopSec
+                : lastKill + repopSec;
 
-            const found = findNextSpawnTime(mob, searchStart);
+            if (now > baseSec || now > maxRepop) {
+                baseSec = now;
+            }
+            // 探索開始点 = 基準時刻 - 必要サイクル分
+            let scanStartSec = baseSec - requiredCycles * WEATHER_CYCLE_SEC;
+            if (scanStartSec < serverUp) scanStartSec = serverUp;
+            scanStartSec = alignToCycleBoundary(scanStartSec);
+
+            const found = findNextConsecutiveWeatherWindow(mob, new Date(scanStartSec * 1000), requiredMinutes);
             if (found) {
-                const foundSec = found.getTime() / 1000;
-                if (foundSec < minRepop) {
-                    const retry = findNextSpawnTime(mob, new Date(alignToCycleBoundary(minRepop) * 1000));
-                    nextConditionSpawnDate = retry || null;
-                } else {
-                    nextConditionSpawnDate = found;
-                }
+                nextConditionSpawnDate = found;
             }
         } else {
+            // 月齢・時間帯条件は従来通りの探索
             const baseSec = Math.max(minRepop, now, serverUp);
             const alignedBase = alignToCycleBoundary(baseSec);
             nextConditionSpawnDate = findNextSpawnTime(mob, new Date(alignedBase * 1000));
