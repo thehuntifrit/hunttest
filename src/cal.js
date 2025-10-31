@@ -140,6 +140,8 @@ function findNextSpawnTime(mob, startDate) {
     const startSec = Math.floor(startDate.getTime() / 1000);
     // 1. 連続天候条件あり
     if (mob.weatherDuration?.minutes) {
+        console.log(`[DEBUG] mob:${mob.name} → weatherDuration 分岐に入りました`, mob.weatherDuration);
+
         const requiredMinutes = mob.weatherDuration.minutes;
         const requiredCycles = Math.ceil((requiredMinutes * 60) / WEATHER_CYCLE_SEC);
 
@@ -160,31 +162,37 @@ function findNextSpawnTime(mob, startDate) {
                         ? mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max)
                         : false;
 
+            console.log(`[DEBUG] ${date.toISOString()} seed=${seed} inRange=${inRange} consecutive=${consecutive}`);
+
             if (inRange) {
                 if (consecutive === 0) conditionStartSec = tSec;
                 consecutive++;
                 if (consecutive >= requiredCycles) {
                     const popSec = conditionStartSec + requiredMinutes * 60;
-                    return new Date(popSec * 1000); // ★ 見つかったら即 return
+                    console.log(`[DEBUG] 連続天候成立 → 出現時刻: ${new Date(popSec * 1000).toISOString()}`);
+                    return new Date(popSec * 1000);
                 }
             } else {
                 consecutive = 0;
                 conditionStartSec = null;
             }
         }
-        // 連続天候条件を持つモブは、探索で見つからなければ null を返して終了
+        console.log(`[DEBUG] 連続天候条件を満たす時刻は見つかりませんでした → null を返します`);
         return null;
     }
     // 2. 瞬間条件（天候・月齢・時間帯）の探索ロジック
+    console.log(`[DEBUG] mob:${mob.name} → 瞬間条件分岐に入りました`);
     const stepSec = 60; // 1分刻み
     for (let tSec = Math.floor(startSec / stepSec) * stepSec;
          tSec < startSec + 14 * 24 * 3600;
          tSec += stepSec) {
         const date = new Date(tSec * 1000);
         if (checkMobSpawnCondition(mob, date)) {
+            console.log(`[DEBUG] 瞬間条件成立 → 出現時刻: ${date.toISOString()}`);
             return date;
         }
     }
+    console.log(`[DEBUG] どの条件も満たさず → null を返します`);
     return null;
 }
 
