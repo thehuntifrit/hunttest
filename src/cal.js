@@ -137,21 +137,19 @@ function checkMobSpawnCondition(mob, date) {
 }
 
 function findNextSpawnTime(mob, startDate) {
-    if (!startDate || !(startDate instanceof Date) || isNaN(startDate.getTime())) {
-        return null;
-    }
-    let tSec = Math.floor(startDate.getTime() / 1000);
-    // --- 連続天候条件あり ---
+    const startSec = Math.floor(startDate.getTime() / 1000);
+    // 1. 連続天候条件あり
     if (mob.weatherDuration?.minutes) {
         const requiredMinutes = mob.weatherDuration.minutes;
         const requiredCycles = Math.ceil((requiredMinutes * 60) / WEATHER_CYCLE_SEC);
 
+        let scanStartSec = alignToCycleBoundary(startSec - requiredCycles * WEATHER_CYCLE_SEC);
+        if (scanStartSec < 0) scanStartSec = 0;
+
         let consecutive = 0;
         let conditionStartSec = null;
-        // 天候は1400秒刻みで探索
-        tSec = alignToCycleBoundary(tSec);
 
-        for (let end = tSec + 14 * 24 * 3600; tSec < end; tSec += WEATHER_CYCLE_SEC) {
+        for (let tSec = scanStartSec; tSec < startSec + 14 * 24 * 3600; tSec += WEATHER_CYCLE_SEC) {
             const date = new Date(tSec * 1000);
             const seed = getEorzeaWeatherSeed(date);
 
@@ -166,27 +164,27 @@ function findNextSpawnTime(mob, startDate) {
                 if (consecutive === 0) conditionStartSec = tSec;
                 consecutive++;
                 if (consecutive >= requiredCycles) {
-                    // 連続成立 → 条件開始＋minutes が出現可能時刻
                     const popSec = conditionStartSec + requiredMinutes * 60;
-                    return new Date(popSec * 1000);
+                    return new Date(popSec * 1000); // ★ 見つかったら即 return
                 }
             } else {
                 consecutive = 0;
                 conditionStartSec = null;
             }
         }
+        // 連続天候条件を持つモブは、探索で見つからなければ null を返して終了
         return null;
     }
-    // --- 瞬間条件（天候以外: 月齢・時間帯） ---
-    tSec = Math.floor(tSec / 60) * 60;
-
-    for (let end = tSec + 14 * 24 * 3600; tSec < end; tSec += 60) {
+    // 2. 瞬間条件（天候・月齢・時間帯）の探索ロジック
+    const stepSec = 60; // 1分刻み
+    for (let tSec = Math.floor(startSec / stepSec) * stepSec;
+         tSec < startSec + 14 * 24 * 3600;
+         tSec += stepSec) {
         const date = new Date(tSec * 1000);
         if (checkMobSpawnCondition(mob, date)) {
             return date;
         }
     }
-
     return null;
 }
 
