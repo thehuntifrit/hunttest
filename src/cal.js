@@ -141,7 +141,6 @@ function checkMobSpawnCondition(mob, date) {
         });
         if (!ok) return false;
     }
-
     return true;
 }
 
@@ -149,9 +148,7 @@ function findNextSpawnTime(mob, startDate) {
     if (!startDate || !(startDate instanceof Date) || isNaN(startDate.getTime())) {
         return null;
     }
-
     let tSec = Math.floor(startDate.getTime() / 1000);
-
     // --- 連続天候条件あり ---
     if (mob.weatherDuration?.minutes) {
         const requiredMinutes = mob.weatherDuration.minutes;
@@ -179,9 +176,7 @@ function findNextSpawnTime(mob, startDate) {
                 if (consecutive >= requiredCycles) {
                     // 連続成立 → 条件開始＋minutes が出現可能時刻
                     const popSec = conditionStartSec + requiredMinutes * 60;
-                    // 秒切り捨て
-                    const aligned = Math.floor(popSec / 60) * 60;
-                    return new Date(aligned * 1000);
+                    return new Date(popSec * 1000);
                 }
             } else {
                 consecutive = 0;
@@ -191,13 +186,12 @@ function findNextSpawnTime(mob, startDate) {
         return null;
     }
     // --- 瞬間条件（天候以外: 月齢・時間帯） ---
-    // 1分刻みで探索、秒は切り捨て
     tSec = Math.floor(tSec / 60) * 60;
 
     for (let end = tSec + 14 * 24 * 3600; tSec < end; tSec += 60) {
         const date = new Date(tSec * 1000);
         if (checkMobSpawnCondition(mob, date)) {
-            return date; // ここで date は常に "XX:YY:00" になる
+            return date;
         }
     }
 
@@ -317,15 +311,26 @@ function calculateRepop(mob, maintenance) {
 
 function formatLastKillTime(timestamp) {
     if (timestamp === 0) return "未報告";
-    const killTimeMs = timestamp * 1000;
+    // 秒を切り捨てて分単位に揃える
+    const aligned = Math.floor(timestamp / 60) * 60;
+    const killTimeMs = aligned * 1000;
+
     const nowMs = Date.now();
     const diffSeconds = Math.floor((nowMs - killTimeMs) / 1000);
+
     if (diffSeconds < 3600) {
         if (diffSeconds < 60) return `Just now`;
         const minutes = Math.floor(diffSeconds / 60);
         return `${minutes}m ago`;
     }
-    const options = { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" };
+
+    const options = {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Asia/Tokyo"
+    };
     const date = new Date(killTimeMs);
     return new Intl.DateTimeFormat("ja-JP", options).format(date);
 }
