@@ -85,24 +85,21 @@ function getEorzeaWeather(date = new Date(), weatherTable) {
 
 // 時間帯条件チェック
 function checkTimeRange(timeRange, timestamp) {
-  const et = getEorzeaTime(new Date(timestamp * 1000));
-  const h = Number(et.hours);
-  const m = Number(et.minutes);
-  const { start, end } = timeRange;
+    const et = getEorzeaTime(new Date(timestamp * 1000));
+    const h = Number(et.hours);
+    const m = Number(et.minutes);
+    const currentMinutes = h * 60 + m; // 0〜1439
 
-  if (start < end) {
-    // 例: 0..3 → 0:00〜2:59
-    if (h > start && h < end) return true;
-    if (h === start) return true;
-    if (h === end - 1 && m <= 59) return true;
-    return false;
-  } else {
-    // 例: 17..3 → 17:00〜23:59 または 0:00〜2:59
-    if (h > start || h < end) return true;
-    if (h === start) return true;
-    if (h === end - 1 && m <= 59) return true;
-    return false;
-  }
+    const startMinutes = timeRange.start * 60;
+    const endMinutes = timeRange.end * 60;
+
+    if (startMinutes < endMinutes) {
+        // 例: 0..3 → 0:00〜2:59
+        return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+    } else {
+        // 例: 17..3 → 17:00〜23:59 または 0:00〜2:59
+        return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+    }
 }
 
 // 総合条件チェック
