@@ -10,8 +10,8 @@ const state = {
     userId: localStorage.getItem("user_uuid") || null,
     baseMobData: [],
     mobs: [],
-    mobLocations: {}, 
-    
+    mobLocations: {},
+
     filter: JSON.parse(localStorage.getItem("huntFilterState")) || {
         rank: "ALL",
         areaSets: {
@@ -73,12 +73,12 @@ const RANK_COLORS = {
 };
 
 const PROGRESS_CLASSES = {
-  P0_60: "progress-p0-60",
-  P60_80: "progress-p60-80",
-  P80_100: "progress-p80-100",
-  TEXT_NEXT: "text-next",
-  TEXT_POP: "text-pop",
-  MAX_OVER_BLINK: "max-over-blink"
+    P0_60: "progress-p0-60",
+    P60_80: "progress-p60-80",
+    P80_100: "progress-p80-100",
+    TEXT_NEXT: "text-next",
+    TEXT_POP: "text-pop",
+    MAX_OVER_BLINK: "max-over-blink"
 };
 
 const FILTER_TO_DATA_RANK_MAP = { FATE: 'F', ALL: 'ALL', S: 'S', A: 'A' };
@@ -100,33 +100,45 @@ async function loadMaintenance() {
     return maintenanceCache;
 }
 
-const baseMobData = Object.entries(data.mobs).map(([no, mob]) => ({
-    No: parseInt(no, 10),
-    Rank: mob.rank,
-    Name: mob.name,
-    Area: mob.area,
-    Condition: mob.condition,
-    Expansion: EXPANSION_MAP[Math.floor(no / 10000)] || "Unknown",
-    REPOP_s: mob.repopSeconds,
-    MAX_s: mob.maxRepopSeconds,
-    moonPhase: mob.moonPhase,
-    timeRange: mob.timeRange,
-    timeRanges: mob.timeRanges,
-    weatherSeedRange: mob.weatherSeedRange,
-    weatherDuration: mob.weatherDuration,   // ★ これを追加
-    Map: mob.mapImage,
-    spawn_points: mob.locations,
-    last_kill_time: 0,
-    prev_kill_time: 0,
-    last_kill_memo: "",
-    spawn_cull_status: {},
-    related_mob_no: mob.rank.startsWith("B") ? mob.relatedMobNo : null,
-    repopInfo: calculateRepop({
+async function loadBaseMobData() {
+    const resp = await fetch(MOB_DATA_URL);
+    if (!resp.ok) throw new Error("Mob data failed to load.");
+    const data = await resp.json();
+
+    const maintenance = maintenanceCache || await loadMaintenance();
+
+    const baseMobData = Object.entries(data.mobs).map(([no, mob]) => ({
+        No: parseInt(no, 10),
+        Rank: mob.rank,
+        Name: mob.name,
+        Area: mob.area,
+        Condition: mob.condition,
+        Expansion: EXPANSION_MAP[Math.floor(no / 10000)] || "Unknown",
         REPOP_s: mob.repopSeconds,
         MAX_s: mob.maxRepopSeconds,
+        moonPhase: mob.moonPhase,
+        timeRange: mob.timeRange,
+        timeRanges: mob.timeRanges,
+        weatherSeedRange: mob.weatherSeedRange,
+        weatherDuration: mob.weatherDuration,   // ★ これを追加
+        Map: mob.mapImage,
+        spawn_points: mob.locations,
         last_kill_time: 0,
-    }, maintenance)
-}));
+        prev_kill_time: 0,
+        last_kill_memo: "",
+        spawn_cull_status: {},
+        related_mob_no: mob.rank.startsWith("B") ? mob.relatedMobNo : null,
+        repopInfo: calculateRepop({
+            REPOP_s: mob.repopSeconds,
+            MAX_s: mob.maxRepopSeconds,
+            last_kill_time: 0,
+        }, maintenance) // ← 正規化済み maintenance を渡す
+    }));
+
+    setBaseMobData(baseMobData);
+    setMobs([...baseMobData]);
+    filterAndRender({ isInitialLoad: true });
+}
 
 function startRealtime() {
     unsubscribes.forEach(fn => fn && fn());
