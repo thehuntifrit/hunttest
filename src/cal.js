@@ -1,6 +1,7 @@
 // cal.js
 
 import { loadMaintenance } from "./app.js";
+import { getServerTimeUTC } from "./server.js";
 
 function formatDuration(seconds) {
     const totalMinutes = Math.floor(seconds / 60);
