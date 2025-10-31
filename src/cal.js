@@ -161,13 +161,9 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
         let consecutiveCycles = 0;
         let consecutiveStartSec = null;
 
-        console.log(`[DEBUG] ${mob.name} 連続天候探索: required=${requiredMinutes}分 (${requiredCycles} cycles), scanStart=${new Date(scanStartSec*1000).toISOString()}`);
-
         for (let tSec = scanStartSec; tSec <= limitSec; tSec += WEATHER_CYCLE_SEC) {
             const seed = getEorzeaWeatherSeed(new Date(tSec * 1000));
             const inRange = checkWeatherInRange(mob, seed);
-
-            console.log(`[DEBUG] ${new Date(tSec * 1000).toISOString()} seed=${seed} inRange=${inRange} consec=${consecutiveCycles}`);
 
             if (inRange) {
                 if (consecutiveCycles === 0) consecutiveStartSec = tSec;
@@ -176,21 +172,18 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
                 if (consecutiveCycles >= requiredCycles) {
                     const popSec = consecutiveStartSec + requiredSec; // 満了時刻
                     if (popSec >= minRepopSec && popSec <= limitSec) {
-                        console.log(`[DEBUG] 連続成立 → 出現時刻(満了): ${new Date(popSec * 1000).toISOString()}`);
+                        console.log(`[SPAWN] ${mob.name} 連続天候成立 → ${new Date(popSec * 1000).toISOString()}`);
                         return new Date(popSec * 1000);
                     }
-                    // 範囲外なら継続
                 }
             } else {
                 consecutiveCycles = 0;
                 consecutiveStartSec = null;
             }
         }
-        console.log(`[DEBUG] 連続条件未成立 → null`);
         return null;
     }
     // 2) 連続条件がないモブのみ、瞬間条件を探索
-    console.log(`[DEBUG] ${mob.name} 瞬間条件探索開始`);
     const stepSec = 60; // 1分刻み
     const t0 = Math.floor(startSec / stepSec) * stepSec;
     const limitSec = repopEndSec ?? (startSec + 14 * 24 * 3600);
@@ -198,11 +191,10 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
     for (let tSec = t0; tSec <= limitSec; tSec += stepSec) {
         const date = new Date(tSec * 1000);
         if (checkMobSpawnCondition(mob, date)) {
-            console.log(`[DEBUG] 瞬間条件成立 → ${date.toISOString()}`);
+            console.log(`[SPAWN] ${mob.name} 瞬間条件成立 → ${date.toISOString()}`);
             return date;
         }
     }
-    console.log(`[DEBUG] 瞬間条件未成立 → null`);
     return null;
 }
 
