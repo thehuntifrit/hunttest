@@ -100,45 +100,33 @@ async function loadMaintenance() {
     return maintenanceCache;
 }
 
-async function loadBaseMobData() {
-    const resp = await fetch(MOB_DATA_URL);
-    if (!resp.ok) throw new Error("Mob data failed to load.");
-    const data = await resp.json();
-
-    const maintenance = maintenanceCache || await loadMaintenance();
-
-    const baseMobData = Object.entries(data.mobs).map(([no, mob]) => ({
-        No: parseInt(no, 10),
-        Rank: mob.rank,
-        Name: mob.name,
-        Area: mob.area,
-        Condition: mob.condition,
-        Expansion: EXPANSION_MAP[Math.floor(no / 10000)] || "Unknown",
+const baseMobData = Object.entries(data.mobs).map(([no, mob]) => ({
+    No: parseInt(no, 10),
+    Rank: mob.rank,
+    Name: mob.name,
+    Area: mob.area,
+    Condition: mob.condition,
+    Expansion: EXPANSION_MAP[Math.floor(no / 10000)] || "Unknown",
+    REPOP_s: mob.repopSeconds,
+    MAX_s: mob.maxRepopSeconds,
+    moonPhase: mob.moonPhase,
+    timeRange: mob.timeRange,
+    timeRanges: mob.timeRanges,
+    weatherSeedRange: mob.weatherSeedRange,
+    weatherDuration: mob.weatherDuration,   // ★ これを追加
+    Map: mob.mapImage,
+    spawn_points: mob.locations,
+    last_kill_time: 0,
+    prev_kill_time: 0,
+    last_kill_memo: "",
+    spawn_cull_status: {},
+    related_mob_no: mob.rank.startsWith("B") ? mob.relatedMobNo : null,
+    repopInfo: calculateRepop({
         REPOP_s: mob.repopSeconds,
         MAX_s: mob.maxRepopSeconds,
-        moonPhase: mob.moonPhase,
-        timeRange: mob.timeRange,
-        timeRanges: mob.timeRanges,
-        weatherSeedRange: mob.weatherSeedRange,
-        weatherSeedRanges: mob.weatherSeedRanges,
-        Map: mob.mapImage,
-        spawn_points: mob.locations,
         last_kill_time: 0,
-        prev_kill_time: 0,
-        last_kill_memo: "",
-        spawn_cull_status: {},
-        related_mob_no: mob.rank.startsWith("B") ? mob.relatedMobNo : null,
-        repopInfo: calculateRepop({
-            REPOP_s: mob.repopSeconds,
-            MAX_s: mob.maxRepopSeconds,
-            last_kill_time: 0,
-        }, maintenance) // ← 正規化済み maintenance を渡す
-    }));
-
-    setBaseMobData(baseMobData);
-    setMobs([...baseMobData]);
-    filterAndRender({ isInitialLoad: true });
-}
+    }, maintenance)
+}));
 
 function startRealtime() {
     unsubscribes.forEach(fn => fn && fn());
