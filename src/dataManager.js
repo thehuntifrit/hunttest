@@ -117,6 +117,7 @@ async function loadBaseMobData() {
         REPOP_s: mob.repopSeconds,
         MAX_s: mob.maxRepopSeconds,
         moonPhase: mob.moonPhase,
+        conditions: mob.conditions,   
         timeRange: mob.timeRange,
         timeRanges: mob.timeRanges,
         weatherSeedRange: mob.weatherSeedRange,
