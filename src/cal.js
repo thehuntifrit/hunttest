@@ -147,6 +147,8 @@ function checkWeatherInRange(mob, seed) {
 }
 
 function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
+    console.log("[CHECK] mob object:", JSON.stringify(mob));
+
     const startSec = Math.floor(startDate.getTime() / 1000);
     // 1) 連続条件があるモブは連続探索のみ。瞬間条件へは落とさない。
     if (mob.weatherDuration?.minutes) {
