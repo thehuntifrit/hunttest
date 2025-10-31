@@ -1,7 +1,6 @@
 // cal.js
 
 import { loadMaintenance } from "./app.js";
-import { getServerTimeUTC } from "./server.js";
 
 function formatDuration(seconds) {
     const totalMinutes = Math.floor(seconds / 60);
@@ -25,10 +24,7 @@ function debounce(func, wait) {
     };
 }
 
-function getEorzeaTime(date) {
-    if (!(date instanceof Date)) {
-        throw new Error("getEorzeaTime: Date オブジェクトを引数に渡してください");
-    }
+function getEorzeaTime(date = new Date()) {
     let unixMs = date.getTime();
     const REAL_MS_PER_ET_HOUR = 175 * 1000;
     const ET_HOURS_PER_DAY = 24;
@@ -46,10 +42,7 @@ function getEorzeaTime(date) {
     };
 }
 
-function getEorzeaMoonPhase(date) {
-    if (!(date instanceof Date)) {
-        throw new Error("getEorzeaMoonPhase: Date オブジェクトを引数に渡してください");
-    }
+function getEorzeaMoonPhase(date = new Date()) {
     const unixSeconds = date.getTime() / 1000;
     const EORZEA_SPEED_RATIO = 20.57142857142857;
     const eorzeaTotalDays = (unixSeconds * EORZEA_SPEED_RATIO) / 86400;
@@ -62,24 +55,23 @@ function getMoonPhaseLabel(phase) {
     return null;
 }
 
-function getEorzeaWeatherSeed(date) {
-    if (!(date instanceof Date)) {
-        throw new Error("getEorzeaWeatherSeed: Date オブジェクトを引数に渡してください");
-    }
+function getEorzeaWeatherSeed(date = new Date()) {
     const unixSeconds = Math.floor(date.getTime() / 1000);
     const eorzeanHours = Math.floor(unixSeconds / 175);
-    const increment = (eorzeanHours + 8 - (eorzeanHours % 8)) % 24;
-    const totalDays = Math.floor(unixSeconds / 4200);
-    const calcBase = (totalDays * 100) + increment;
-    const step1 = (calcBase << 11) ^ calcBase;
-    const step2 = (step1 >>> 8) ^ step1;
-    return step2 % 100;
+    const eorzeanDays = Math.floor(eorzeanHours / 24);
+
+    let timeChunk = (eorzeanHours % 24) - (eorzeanHours % 8);
+    timeChunk = (timeChunk + 8) % 24;
+
+    const seed = eorzeanDays * 100 + timeChunk;
+
+    const step1 = (seed << 11) ^ seed;
+    const step2 = ((step1 >>> 8) ^ step1) >>> 0;
+
+    return step2 % 100; // 0〜99
 }
 
-function getEorzeaWeather(date, weatherTable) {
-    if (!(date instanceof Date)) {
-        throw new Error("getEorzeaWeather: Date オブジェクトを引数に渡してください");
-    }
+function getEorzeaWeather(date = new Date(), weatherTable) {
     const seed = getEorzeaWeatherSeed(date);
     let cumulative = 0;
     for (const entry of weatherTable) {
