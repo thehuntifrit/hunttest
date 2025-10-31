@@ -147,8 +147,6 @@ function checkWeatherInRange(mob, seed) {
 }
 
 function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
-    console.log("[CHECK] mob object:", JSON.stringify(mob));
-
     const startSec = Math.floor(startDate.getTime() / 1000);
     // 1) 連続条件があるモブは連続探索のみ。瞬間条件へは落とさない。
     if (mob.weatherDuration?.minutes) {
@@ -174,7 +172,6 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
                 if (consecutiveCycles >= requiredCycles) {
                     const popSec = consecutiveStartSec + requiredSec; // 満了時刻
                     if (popSec >= minRepopSec && popSec <= limitSec) {
-                        console.log(`[SPAWN] ${mob.name} 連続天候成立 → ${new Date(popSec * 1000).toISOString()}`);
                         return new Date(popSec * 1000);
                     }
                 }
@@ -193,7 +190,6 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
     for (let tSec = t0; tSec <= limitSec; tSec += stepSec) {
         const date = new Date(tSec * 1000);
         if (checkMobSpawnCondition(mob, date)) {
-            console.log(`[SPAWN] ${mob.name} 瞬間条件成立 → ${date.toISOString()}`);
             return date;
         }
     }
