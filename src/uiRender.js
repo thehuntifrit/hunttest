@@ -2,7 +2,6 @@
 
 import { calculateRepop, findNextSpawnTime, formatDuration, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime } from "./cal.js";
 import { drawSpawnPoint, isCulled, attachLocationEvents } from "./location.js"; 
-import { getServerTimeUTC } from "./server.js";
 import { getState, RANK_COLORS, PROGRESS_CLASSES, FILTER_TO_DATA_RANK_MAP } from "./dataManager.js";
 import { renderRankTabs, renderAreaFilterPanel, updateFilterUI, filterMobsByRankAndArea } from "./filterUI.js";
 
@@ -22,9 +21,8 @@ const DOM = {
     modalMemoInput: document.getElementById('report-memo'),
 };
 
-async function updateEorzeaTime() {
-    const serverDate = await getServerTimeUTC(); // Date オブジェクトを返す想定
-    const et = getEorzeaTime(serverDate);
+function updateEorzeaTime() {
+    const et = getEorzeaTime(new Date());
     const el = document.getElementById("eorzea-time");
     if (el) {
         el.textContent = `ET ${et.hours}:${et.minutes}`;
