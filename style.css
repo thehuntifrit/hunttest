@@ -77,14 +77,14 @@ body {
 
 /* --- 進捗バー関連のスタイル定義 --- */
 :root {
-    --bg-dark: #1a1a2e;
-    --text-light: #3e83c4;
+    --bg-dark: #a9a9a9;
+    --text-light: #000000;
     --header-height: 4rem;
     font-family: 'Inter', sans-serif;
 
-    --progress-0-60: #008899;
-    --progress-60-80: #008899;
-    --progress-80-100: #008899;
+    --progress-0-60: #7fffbf;
+    --progress-60-80: #ffff7f;
+    --progress-80-100: #ffbf7f;
 }
 
 .progress-p0-60 {
@@ -140,11 +140,11 @@ body {
 
     0%,
     100% {
-        box-shadow: 0 0 15px rgba(255, 255, 255, 0.9);
+        box-shadow: 0 0 15px rgba(255, 100, 100, 0.9);
     }
 
     50% {
-        box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 5px rgba(255, 100, 100, 0.3);
     }
 }
 
