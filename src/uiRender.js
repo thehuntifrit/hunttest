@@ -289,6 +289,7 @@ function updateProgressBar(card, mob) {
     text.classList.remove(PROGRESS_CLASSES.TEXT_NEXT, PROGRESS_CLASSES.TEXT_POP);
     wrapper.classList.remove(PROGRESS_CLASSES.MAX_OVER_BLINK, PROGRESS_CLASSES.BLINK_WHITE);
 
+    // 状態ごとの分岐
     if (status === "PopWindow") {
         if (elapsedPercent <= 60) {
             bar.classList.add(PROGRESS_CLASSES.P0_60);
@@ -296,15 +297,15 @@ function updateProgressBar(card, mob) {
             bar.classList.add(PROGRESS_CLASSES.P60_80);
         } else {
             bar.classList.add(PROGRESS_CLASSES.P80_100);
-            wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE); // ★ 白点滅
+            wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE);
         }
         text.classList.add(PROGRESS_CLASSES.TEXT_POP);
 
     } else if (status === "MaxOver") {
-        // 100% 到達後は点滅させず固定表示
         bar.classList.add(PROGRESS_CLASSES.P80_100);
-        bar.style.animation = "none"; // ★ アニメーションを無効化
+        bar.style.animation = "none";
         text.classList.add(PROGRESS_CLASSES.TEXT_POP);
+
     } else {
         text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
     }
