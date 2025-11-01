@@ -285,23 +285,16 @@ function updateProgressBar(card, mob) {
 
     bar.classList.remove(PROGRESS_CLASSES.P0_60, PROGRESS_CLASSES.P60_80, PROGRESS_CLASSES.P80_100);
     text.classList.remove(PROGRESS_CLASSES.TEXT_NEXT, PROGRESS_CLASSES.TEXT_POP);
-    wrapper.classList.remove(PROGRESS_CLASSES.BLINK_WHITE);
+    wrapper.classList.remove(PROGRESS_CLASSES.MAX_OVER_BLINK);
 
     if (status === "PopWindow") {
-        if (elapsedPercent <= 60) bar.classList.add(PROGRESS_CLASSES.P0_60); 
-        else if (elapsedPercent <= 80) bar.classList.add(PROGRESS_CLASSES.P60_80); 
-        else bar.classList.add(PROGRESS_CLASSES.P80_100);
-        wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE);
+        if (elapsedPercent <= 60) bar.classList.add(PROGRESS_CLASSES.P0_60); else if (elapsedPercent <= 80)
+            bar.classList.add(PROGRESS_CLASSES.P60_80); else bar.classList.add(PROGRESS_CLASSES.P80_100);
         text.classList.add(PROGRESS_CLASSES.TEXT_POP);
-
     } else if (status === "MaxOver") {
-        bar.classList.add(PROGRESS_CLASSES.P80_100);
-        bar.style.animation = "none";
-        text.classList.add(PROGRESS_CLASSES.TEXT_POP);
-
-    } else {
-        text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
-    }
+        bar.classList.add(PROGRESS_CLASSES.P80_100); text.classList.add(PROGRESS_CLASSES.TEXT_POP);
+        wrapper.classList.add(PROGRESS_CLASSES.MAX_OVER_BLINK);
+    } else { text.classList.add(PROGRESS_CLASSES.TEXT_NEXT); }
 }
 
 function updateProgressText(card, mob) {
