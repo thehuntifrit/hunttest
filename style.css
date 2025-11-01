@@ -127,6 +127,9 @@ transform: scale(1.15);
   0%, 100% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.9); }
   50%      { box-shadow: 0 0 5px rgba(255, 255, 255, 0.2); }
 }
+.progress-blink-white {
+  animation: progress-blink-white 2s ease-in-out infinite;
+}
 
 /* --- 詳細パネルの折りたたみアニメーション --- */
 .expandable-panel {
