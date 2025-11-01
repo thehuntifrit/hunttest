@@ -161,16 +161,6 @@ transition duration-150" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeade
     `;
 }
 
-function parseMobNo(no) {
-  const str = String(no).padStart(5, "0");
-  return {
-    expansion: parseInt(str[0], 10),
-    rankCode: parseInt(str[1], 10),
-    mobNo: parseInt(str.slice(2, 4), 10),
-    instance: parseInt(str[4], 10),
-  };
-}
-
 // ランク優先度: S=2, A=1, F=3 → ソート順 S > A > F
 function rankPriority(rankCode) {
   switch (rankCode) {
@@ -181,7 +171,30 @@ function rankPriority(rankCode) {
   }
 }
 
-// 進捗ソート用 comparator
+function parseMobNo(no) {
+  const str = String(no).padStart(5, "0");
+  return {
+    expansion: parseInt(str[0], 10),
+    rankCode: parseInt(str[1], 10),
+    mobNo: parseInt(str.slice(2, 4), 10),
+    instance: parseInt(str[4], 10),
+  };
+}
+
+// ランク > 拡張降順 > モブNo昇順 > インスタンス昇順
+function baseComparator(a, b) {
+  const pa = parseMobNo(a.No);
+  const pb = parseMobNo(b.No);
+
+  const rankDiff = rankPriority(pa.rankCode) - rankPriority(pb.rankCode);
+  if (rankDiff !== 0) return rankDiff;
+
+  if (pa.expansion !== pb.expansion) return pb.expansion - pa.expansion;
+  if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
+  return pa.instance - pb.instance;
+}
+
+// 時間ソート + baseComparator
 function progressComparator(a, b) {
   const nowSec = Date.now() / 1000;
   const aInfo = a.repopInfo || {};
@@ -201,18 +214,18 @@ function progressComparator(a, b) {
     const bRemain = (bInfo.minRepop || 0) - nowSec;
     if (aRemain !== bRemain) return aRemain - bRemain;
   }
-  // fallback: No順
-  return a.No - b.No;
+  // fallback は baseComparator
+  return baseComparator(a, b);
 }
 
 function filterAndRender({ isInitialLoad = false } = {}) {
   const state = getState();
   const filtered = filterMobsByRankAndArea(state.mobs);
-  // ランクによってソート方法を切り替え
+
   if (["S", "A", "FATE"].includes(state.filter.rank)) {
     filtered.sort(progressComparator);
   } else {
-    filtered.sort((a, b) => a.No - b.No);
+    filtered.sort(baseComparator);
   }
 
   const frag = document.createDocumentFragment();
@@ -263,28 +276,39 @@ function distributeCards() {
 }
 
 function updateProgressBar(card, mob) {
-    const bar = card.querySelector(".progress-bar-bg");
-    const wrapper = bar?.parentElement;
-    const text = card.querySelector(".progress-text");
-    if (!bar || !wrapper || !text) return;
+    const bar = card.querySelector(".progress-bar-bg");
+    const wrapper = bar?.parentElement;
+    const text = card.querySelector(".progress-text");
+    if (!bar || !wrapper || !text) return;
 
-    const { elapsedPercent, status } = mob.repopInfo;
+    const { elapsedPercent, status } = mob.repopInfo;
 
-    bar.style.transition = "width linear 60s";
-    bar.style.width = `${elapsedPercent}%`;
+    bar.style.transition = "width linear 60s";
+    bar.style.width = `${elapsedPercent}%`;
+    // 既存クラスをリセット
+    bar.classList.remove(PROGRESS_CLASSES.P0_60, PROGRESS_CLASSES.P60_80, PROGRESS_CLASSES.P80_100);
+    text.classList.remove(PROGRESS_CLASSES.TEXT_NEXT, PROGRESS_CLASSES.TEXT_POP);
+    wrapper.classList.remove(PROGRESS_CLASSES.MAX_OVER_BLINK, PROGRESS_CLASSES.BLINK_WHITE);
 
-    bar.classList.remove(PROGRESS_CLASSES.P0_60, PROGRESS_CLASSES.P60_80, PROGRESS_CLASSES.P80_100);
-    text.classList.remove(PROGRESS_CLASSES.TEXT_NEXT, PROGRESS_CLASSES.TEXT_POP);
-    wrapper.classList.remove(PROGRESS_CLASSES.MAX_OVER_BLINK);
+    if (status === "PopWindow") {
+        if (elapsedPercent <= 60) {
+            bar.classList.add(PROGRESS_CLASSES.P0_60);
+        } else if (elapsedPercent <= 80) {
+            bar.classList.add(PROGRESS_CLASSES.P60_80);
+        } else {
+            bar.classList.add(PROGRESS_CLASSES.P80_100);
+            wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE); // ★ 白点滅
+        }
+        text.classList.add(PROGRESS_CLASSES.TEXT_POP);
 
-    if (status === "PopWindow") {
-        if (elapsedPercent <= 60) bar.classList.add(PROGRESS_CLASSES.P0_60); else if (elapsedPercent <= 80)
-            bar.classList.add(PROGRESS_CLASSES.P60_80); else bar.classList.add(PROGRESS_CLASSES.P80_100);
-        text.classList.add(PROGRESS_CLASSES.TEXT_POP);
-    } else if (status === "MaxOver") {
-        bar.classList.add(PROGRESS_CLASSES.P80_100); text.classList.add(PROGRESS_CLASSES.TEXT_POP);
-        wrapper.classList.add(PROGRESS_CLASSES.MAX_OVER_BLINK);
-    } else { text.classList.add(PROGRESS_CLASSES.TEXT_NEXT); }
+    } else if (status === "MaxOver") {
+        // 100% 到達後は点滅させず固定表示
+        bar.classList.add(PROGRESS_CLASSES.P80_100);
+        text.classList.add(PROGRESS_CLASSES.TEXT_POP);
+
+    } else {
+        text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
+    }
 }
 
 function updateProgressText(card, mob) {
