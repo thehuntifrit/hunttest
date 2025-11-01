@@ -298,8 +298,8 @@ function updateProgressBar(card, mob) {
         PROGRESS_CLASSES.TEXT_POP
     );
     wrapper.classList.remove(
-        PROGRESS_CLASSES.MAX_OVER)
-    ;
+        PROGRESS_CLASSES.MAX_OVER
+    );
 
     if (status === "PopWindow") {
         if (elapsedPercent <= 40) {
