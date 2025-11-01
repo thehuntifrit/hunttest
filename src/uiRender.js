@@ -282,7 +282,6 @@ function updateProgressBar(card, mob) {
 
     bar.style.transition = "width linear 60s";
     bar.style.width = `${elapsedPercent}%`;
-
     // リセット
     bar.classList.remove(
         PROGRESS_CLASSES.P0_60,
@@ -307,6 +306,7 @@ function updateProgressBar(card, mob) {
         text.classList.add(PROGRESS_CLASSES.TEXT_POP);
 
     } else if (status === "MaxOver") {
+        bar.classList.add(PROGRESS_CLASSES.P80_100);
         text.classList.add(PROGRESS_CLASSES.TEXT_POP);
     } else {
         text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
