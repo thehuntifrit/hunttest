@@ -155,8 +155,10 @@ function createMobCard(mob) {
     </div>
     ` : '';
 
+    const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
+
     return `
-    <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border border-gray-700 
+<div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border ${rankConfig.border} 
 transition duration-150" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeaderHTML}${expandablePanelHTML}</div>
     `;
 }
