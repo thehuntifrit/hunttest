@@ -77,15 +77,15 @@ body {
 
 /* --- 進捗バー関連のスタイル定義 --- */
 :root {
-    --bg-dark: #f5f5f5;
-    --text-light: #000000;
+    --bg-dark: #1a1a2e;
+    --text-light: #3e83c4;
     --header-height: 4rem;
     font-family: 'Inter', sans-serif;
 
-    --progress-0-60: #bcffff;
-    --progress-60-80: #bcffbc;
-    --progress-80-100: #ffcc99;
-    --progress-max-over: #778899;
+    --progress-0-60: #008899;
+    --progress-60-80: #008899;
+    --progress-80-100: #008899;
+    --progress-max-over: #696969;
 }
 
 .progress-p0-60 {
@@ -104,7 +104,7 @@ body {
 .progress-bar-wrapper {
     position: relative;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-    background-color: rgba(245, 245, 245, 0.4);
+    background-color: rgba(0, 0, 0, 0.4);
     overflow: hidden;
 }
 
@@ -133,29 +133,26 @@ body {
     justify-content: center;
     font-weight: 600;
     line-height: 1;
-    color: #000000;
+    color: #ffffff;
     pointer-events: none;
 }
 
 /* PopWindow 80%以上の白点滅 */
-@keyframes progress-max-over {
-
+@keyframes progress-blink-white {
     0%,
     100% {
         box-shadow: 0 0 15px rgba(255, 100, 100, 0.9);
     }
-
     50% {
         box-shadow: 0 0 5px rgba(255, 100, 100, 0.3);
     }
 }
-
-.progress-max-over {
+.progress-blink-white {
     animation: progress-blink-white 2s ease-in-out infinite;
 }
 
 .label-next {
-    color: #000080;
+    color: #ffd700;
     /* 濃いめ */
     font-weight: 600;
     /* 強調したい場合 */
