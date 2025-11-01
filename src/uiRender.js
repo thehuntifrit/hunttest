@@ -107,7 +107,7 @@ function createMobCard(mob) {
     <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
         <!-- 左：ランク -->
         <span
-            class="w-6 h-6 flex items-center justify-center rounded-full text-white text-base font-bold ${rankConfig.bg}">
+            class="w-6 h-6 flex items-center justify-center rounded-full text-white text-xs font-bold ${rankConfig.bg}">
             ${rankLabel}
         </span>
 
@@ -126,7 +126,6 @@ function createMobCard(mob) {
 
     <!-- 下段：プログレスバー（構造のみ） -->
     <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
-        <div class="progress-bar-outer progress-blink-white">
         <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear"
             style="width: 0%"></div>
         <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
@@ -156,7 +155,7 @@ function createMobCard(mob) {
 ` : '';
 
     return `
-<div class="mob-card bg-gray-700 rounded-md shadow-xl overflow-hidden cursor-pointer border ${rankConfig.border} 
+<div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border ${rankConfig.border} 
 transition duration-150" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeaderHTML}${expandablePanelHTML}</div>
 `;
 }
@@ -290,7 +289,6 @@ function updateProgressBar(card, mob) {
     text.classList.remove(PROGRESS_CLASSES.TEXT_NEXT, PROGRESS_CLASSES.TEXT_POP);
     wrapper.classList.remove(PROGRESS_CLASSES.MAX_OVER_BLINK, PROGRESS_CLASSES.BLINK_WHITE);
 
-    // 状態ごとの分岐
     if (status === "PopWindow") {
         if (elapsedPercent <= 60) {
             bar.classList.add(PROGRESS_CLASSES.P0_60);
@@ -298,15 +296,15 @@ function updateProgressBar(card, mob) {
             bar.classList.add(PROGRESS_CLASSES.P60_80);
         } else {
             bar.classList.add(PROGRESS_CLASSES.P80_100);
-            wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE);
+            wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE); // ★ 白点滅
         }
         text.classList.add(PROGRESS_CLASSES.TEXT_POP);
 
     } else if (status === "MaxOver") {
+        // 100% 到達後は点滅させず固定表示
         bar.classList.add(PROGRESS_CLASSES.P80_100);
-        bar.style.animation = "none";
+        bar.style.animation = "none"; // ★ アニメーションを無効化
         text.classList.add(PROGRESS_CLASSES.TEXT_POP);
-
     } else {
         text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
     }
