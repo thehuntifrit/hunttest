@@ -131,7 +131,7 @@ const updateFilterUI = () => {
         const isCurrent = btnRank === state.filter.rank;
 
         btn.classList.remove(
-            "bg-blue-800", "bg-red-800", "bg-yellow-800", "bg-indigo-800",
+            "bg-purple-800", "bg-amber-800", "bg-blue-800", "bg-green-800",
             "bg-gray-500", "hover:bg-gray-400", "bg-green-500", "bg-gray-800"
         );
 
