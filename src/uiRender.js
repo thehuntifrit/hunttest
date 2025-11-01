@@ -283,9 +283,8 @@ function distributeCards() {
 function updateProgressBar(card, mob) {
     const bar = card.querySelector(".progress-bar-bg");
     const wrapper = bar?.parentElement;
-    const outer = wrapper?.parentElement;
     const text = card.querySelector(".progress-text");
-    if (!bar || !wrapper || !outer || !text) return;
+    if (!bar || !wrapper || !text) return;
 
     const { elapsedPercent, status } = mob.repopInfo;
 
@@ -294,17 +293,13 @@ function updateProgressBar(card, mob) {
 
     bar.classList.remove(PROGRESS_CLASSES.P0_60, PROGRESS_CLASSES.P60_80, PROGRESS_CLASSES.P80_100);
     text.classList.remove(PROGRESS_CLASSES.TEXT_NEXT, PROGRESS_CLASSES.TEXT_POP);
-    outer.classList.remove(PROGRESS_CLASSES.BLINK_WHITE);
+    wrapper.classList.remove(PROGRESS_CLASSES.BLINK_WHITE);
 
     if (status === "PopWindow") {
-        if (elapsedPercent <= 60) {
-            bar.classList.add(PROGRESS_CLASSES.P0_60);
-        } else if (elapsedPercent <= 80) {
-            bar.classList.add(PROGRESS_CLASSES.P60_80);
-        } else {
-            bar.classList.add(PROGRESS_CLASSES.P80_100);
-            outer.classList.add(PROGRESS_CLASSES.BLINK_WHITE);
-        }
+        if (elapsedPercent <= 60) bar.classList.add(PROGRESS_CLASSES.P0_60); 
+        else if (elapsedPercent <= 80) bar.classList.add(PROGRESS_CLASSES.P60_80); 
+        else bar.classList.add(PROGRESS_CLASSES.P80_100);
+        wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE);
         text.classList.add(PROGRESS_CLASSES.TEXT_POP);
 
     } else if (status === "MaxOver") {
