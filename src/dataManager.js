@@ -78,7 +78,7 @@ const PROGRESS_CLASSES = {
     P80_100: "progress-p80-100",
     TEXT_NEXT: "text-next",
     TEXT_POP: "text-pop",
-    MAX_OVER_BLINK: "progress-max-over-blink"
+    BLINK_WHITE: "progress-blink-white"
 };
 
 const FILTER_TO_DATA_RANK_MAP = { FATE: 'F', ALL: 'ALL', S: 'S', A: 'A' };
