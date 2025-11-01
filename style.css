@@ -138,7 +138,7 @@ body {
 }
 
 /* PopWindow 80%以上の白点滅 */
-@keyframes progress-blink-white {
+@keyframes progress-max-over {
 
     0%,
     100% {
@@ -150,7 +150,7 @@ body {
     }
 }
 
-.progress-blink-white {
+.progress-max-over {
     animation: progress-blink-white 2s ease-in-out infinite;
 }
 
