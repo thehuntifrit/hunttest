@@ -101,7 +101,7 @@ function createMobCard(mob) {
         }).join("")
         : "";
 
-    const cardHeaderHTML = `
+const cardHeaderHTML = `
 <div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
     <!-- 上段：ランク・モブ名・報告ボタン -->
     <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
@@ -119,27 +119,29 @@ function createMobCard(mob) {
 
         <!-- 右端：報告ボタン（見た目は統一、動作だけ分岐） -->
         <div class="flex-shrink-0 flex items-center justify-end">
-            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center text-[12px] rounded 
+            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}"
+                class="w-8 h-8 flex items-center justify-center text-[12px] rounded 
             bg-amber-900 hover:bg-amber-700 selected:bg-amber-600 text-white font-semibold transition text-center leading-tight whitespace-pre-line">報告<br>する</button>
         </div>
     </div>
 
-  <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
-    <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear"></div>
-    <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"></div>
-  </div>
+    <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
+        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear">
+        </div>
+        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"></div>
+    </div>
 </div>
 
-    <!-- 下段：プログレスバー（構造のみ） -->
-    <div class="progress-bar-outer">    
+<!-- 下段：プログレスバー（構造のみ） -->
+<div class="progress-bar-outer">
     <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
         <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear" style="width: 0%"></div>
         <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold" style="line-height: 1;"></div>
-    </div>
+    </div></div>
 </div>
 `;
 
-    const expandablePanelHTML = isExpandable ? `
+const expandablePanelHTML = isExpandable ? `
 <div class="expandable-panel bg-gray-800/70 ${isOpen ? 'open' : ''}">
     <div class="px-2 py-0 text-sm space-y-0.5">
         <div class="flex justify-between items-start flex-wrap">
@@ -150,8 +152,7 @@ function createMobCard(mob) {
         </div>
         ${mob.Map && rank === 'S' ? `
         <div class="map-content py-0.5 flex justify-center relative">
-            <img src="./maps/${mob.Map}" alt="${mob.Area} Map"
-                class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
+            <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
             <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
         </div>
         ` : ''}
@@ -159,6 +160,11 @@ function createMobCard(mob) {
 </div>
 ` : '';
 
+return `
+<div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border ${rankConfig.border} 
+transition duration-150" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeaderHTML}${expandablePanelHTML}</div>
+`;
+}
     return `
 <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border ${rankConfig.border} 
 transition duration-150" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeaderHTML}${expandablePanelHTML}</div>
