@@ -131,6 +131,11 @@ transform: scale(1.15);
   animation: progress-blink-white 2s ease-in-out infinite;
 }
 
+.label-next {
+  color: #cc0000; /* 濃いめの赤 */
+  font-weight: 600; /* 強調したい場合 */
+}
+
 /* --- 詳細パネルの折りたたみアニメーション --- */
 .expandable-panel {
 max-height: 0;
