@@ -88,18 +88,11 @@ transform: scale(1.15);
   background-color: var(--progress-80-100);
 }
 
-@keyframes progress-blink-white {
-  0%, 100% { box-shadow: 0 0 20px 8px rgba(255,255,255,1); }
-  50%      { box-shadow: 0 0 8px 3px rgba(255,255,255,0.3); }
-}
-.progress-blink-white {
-  animation: progress-blink-white 2s ease-in-out infinite;
-}
-
 .progress-bar-wrapper {
   position: relative;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
   background-color: rgba(0, 0, 0, 0.4);
+  overflow: hidden;
 }
 
 .progress-bar-bg {
@@ -127,6 +120,13 @@ transform: scale(1.15);
   color: #fff;
   pointer-events: none;
 }
+
+/* MaxOver の点滅（既存流用） */
+@keyframes max-over-blink {
+  0%, 100% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.9); }
+  50% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.2); }
+}
+.progress-max-over-blink { animation: max-over-blink 2s ease-in-out infinite; }
 
 .label-next {
   color: #ffd700; /* 濃いめ */
