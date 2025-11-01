@@ -124,12 +124,17 @@ function createMobCard(mob) {
         </div>
     </div>
 
+  <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
+    <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear"></div>
+    <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"></div>
+  </div>
+</div>
+
     <!-- 下段：プログレスバー（構造のみ） -->
+    <div class="progress-bar-outer">    
     <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
-        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear"
-            style="width: 0%"></div>
-        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
-            style="line-height: 1;"></div>
+        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear" style="width: 0%"></div>
+        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold" style="line-height: 1;"></div>
     </div>
 </div>
 `;
@@ -277,17 +282,18 @@ function distributeCards() {
 function updateProgressBar(card, mob) {
     const bar = card.querySelector(".progress-bar-bg");
     const wrapper = bar?.parentElement;
+    const outer = wrapper?.parentElement;
     const text = card.querySelector(".progress-text");
-    if (!bar || !wrapper || !text) return;
+    if (!bar || !wrapper || !outer || !text) return;
 
     const { elapsedPercent, status } = mob.repopInfo;
 
     bar.style.transition = "width linear 60s";
     bar.style.width = `${elapsedPercent}%`;
-    // 既存クラスをリセット
+
     bar.classList.remove(PROGRESS_CLASSES.P0_60, PROGRESS_CLASSES.P60_80, PROGRESS_CLASSES.P80_100);
     text.classList.remove(PROGRESS_CLASSES.TEXT_NEXT, PROGRESS_CLASSES.TEXT_POP);
-    wrapper.classList.remove(PROGRESS_CLASSES.MAX_OVER_BLINK, PROGRESS_CLASSES.BLINK_WHITE);
+    outer.classList.remove(PROGRESS_CLASSES.BLINK_WHITE);
 
     if (status === "PopWindow") {
         if (elapsedPercent <= 60) {
@@ -296,15 +302,15 @@ function updateProgressBar(card, mob) {
             bar.classList.add(PROGRESS_CLASSES.P60_80);
         } else {
             bar.classList.add(PROGRESS_CLASSES.P80_100);
-            wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE); // ★ 白点滅
+            outer.classList.add(PROGRESS_CLASSES.BLINK_WHITE);
         }
         text.classList.add(PROGRESS_CLASSES.TEXT_POP);
 
     } else if (status === "MaxOver") {
-        // 100% 到達後は点滅させず固定表示
         bar.classList.add(PROGRESS_CLASSES.P80_100);
-        bar.style.animation = "none"; // ★ アニメーションを無効化
+        bar.style.animation = "none";
         text.classList.add(PROGRESS_CLASSES.TEXT_POP);
+
     } else {
         text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
     }
