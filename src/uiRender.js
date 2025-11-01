@@ -317,12 +317,6 @@ function updateProgressBar(card, mob) {
     } else {
         text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
     }
-    // --- 追加: バー色に応じてテキスト色を決定 ---
-    const barColor = window.getComputedStyle(bar).backgroundColor;
-    const rgb = barColor.match(/\d+/g).map(Number);
-    const brightness = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
-    // 明度が低ければ白文字、高ければ黒文字
-    text.style.color = brightness < 128 ? "white" : "black";
 }
 
 function updateProgressText(card, mob) {
