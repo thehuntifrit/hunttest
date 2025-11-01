@@ -86,7 +86,6 @@ transform: scale(1.15);
 }
 .progress-p80-100 {
   background-color: var(--progress-80-100);
-  animation: progress-blink-white 2s ease-in-out infinite;
 }
 
 .progress-bar-wrapper {
