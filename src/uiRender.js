@@ -125,19 +125,11 @@ function createMobCard(mob) {
         </div>
     </div>
 
-    <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
-        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear">
-        </div>
-        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"></div>
-    </div>
-</div>
-
 <!-- 下段：プログレスバー（構造のみ） -->
-<div class="progress-bar-outer">
     <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
         <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear" style="width: 0%"></div>
         <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold" style="line-height: 1;"></div>
-    </div></div>
+    </div>
 </div>
 `;
 
