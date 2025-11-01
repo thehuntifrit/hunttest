@@ -297,7 +297,9 @@ function updateProgressBar(card, mob) {
         PROGRESS_CLASSES.TEXT_NEXT,
         PROGRESS_CLASSES.TEXT_POP
     );
-    wrapper.classList.remove(PROGRESS_CLASSES.BLINK_WHITE);
+    wrapper.classList.remove(
+        PROGRESS_CLASSES.MAX_OVER)
+    ;
 
     if (status === "PopWindow") {
         if (elapsedPercent <= 40) {
@@ -306,13 +308,12 @@ function updateProgressBar(card, mob) {
             bar.classList.add(PROGRESS_CLASSES.P60_80);
         } else {
             bar.classList.add(PROGRESS_CLASSES.P80_100);
-            wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE);
         }
         text.classList.add(PROGRESS_CLASSES.TEXT_POP);
 
     } else if (status === "MaxOver") {
         bar.classList.add(PROGRESS_CLASSES.MAX_OVER);
-        bar.style.animation = "none";
+        wrapper.classList.add(PROGRESS_CLASSES.MAX_OVER);
         text.classList.add(PROGRESS_CLASSES.TEXT_POP);
     } else {
         text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
