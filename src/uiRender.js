@@ -119,8 +119,8 @@ function createMobCard(mob) {
 
         <!-- 右端：報告ボタン（見た目は統一、動作だけ分岐） -->
         <div class="flex-shrink-0 flex items-center justify-end">
-            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center text-[12px] rounded bg-amber-900 hover:bg-amber-700 selected:bg-amber-600 
-               text-white font-semibold transition text-center leading-tight whitespace-pre-line">報告<br>する</button>
+            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center text-[12px] rounded 
+            bg-amber-900 hover:bg-amber-700 selected:bg-amber-600 text-white font-semibold transition text-center leading-tight whitespace-pre-line">報告<br>する</button>
         </div>
     </div>
 
