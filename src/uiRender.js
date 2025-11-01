@@ -315,25 +315,28 @@ function updateProgressBar(card, mob) {
     } else {
         text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
     }
-
-    // 白文字をベースに、黒文字を上に重ねて幅でマスクする
-    let overlay = text.querySelector(".overlay-text");
+    
+    let overlay = text.querySelector("[data-role='overlay-text']");
     if (!overlay) {
         overlay = document.createElement("div");
-        overlay.className = "overlay-text";
+        overlay.setAttribute("data-role", "overlay-text");
         overlay.style.position = "absolute";
         overlay.style.top = "0";
         overlay.style.left = "0";
         overlay.style.bottom = "0";
+        overlay.style.width = "0%";
         overlay.style.color = "black";
         overlay.style.overflow = "hidden";
         overlay.style.whiteSpace = "nowrap";
         overlay.style.display = "flex";
         overlay.style.alignItems = "center";
-        overlay.style.justifyContent = "center";
+        overlay.style.justifyContent = "flex-start";
+        overlay.style.pointerEvents = "none";
         text.appendChild(overlay);
     }
-    overlay.textContent = text.textContent;
+    // 現在のテキスト内容を反映（updateProgressText後も維持）
+    overlay.innerHTML = text.innerHTML;
+    // 進捗率に合わせて左から幅を拡げる
     overlay.style.width = `${elapsedPercent}%`;
 }
 
@@ -383,6 +386,11 @@ function updateProgressText(card, mob) {
     if (toggleContainer && !toggleContainer.dataset.toggleStarted) {
         startToggleInNext(toggleContainer);
         toggleContainer.dataset.toggleStarted = "true";
+    }
+    // --- 追加: overlay テキストを最新内容に同期し、左から表示 ---
+    const overlay = text.querySelector("[data-role='overlay-text']");
+    if (overlay) {
+        overlay.innerHTML = text.innerHTML;
     }
 }
 
