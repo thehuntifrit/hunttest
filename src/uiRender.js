@@ -161,11 +161,45 @@ transition duration-150" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeade
     `;
 }
 
+function parseMobNo(no) {
+  const str = String(no).padStart(5, "0");
+  return {
+    expansion: parseInt(str[0], 10),
+    rankCode: parseInt(str[1], 10),
+    mobNo: parseInt(str.slice(2, 4), 10),
+    instance: parseInt(str[4], 10),
+  };
+}
+
+// ランク優先度: S=2, A=1, F=3 → ソート順 S > A > F
+function rankPriority(rankCode) {
+  switch (rankCode) {
+    case 2: return 0; // S
+    case 1: return 1; // A
+    case 3: return 2; // F
+    default: return 99;
+  }
+}
+
+function mobComparator(a, b) {
+  const pa = parseMobNo(a.No);
+  const pb = parseMobNo(b.No);
+  // 1. ランク
+  const rankDiff = rankPriority(pa.rankCode) - rankPriority(pb.rankCode);
+  if (rankDiff !== 0) return rankDiff;
+  // 2. 拡張No (降順)
+  if (pa.expansion !== pb.expansion) return pb.expansion - pa.expansion;
+  // 3. モブNo (昇順)
+  if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
+  // 4. インスタンス (昇順)
+  return pa.instance - pb.instance;
+}
+
 function filterAndRender({ isInitialLoad = false } = {}) {
     const state = getState();
     const filtered = filterMobsByRankAndArea(state.mobs);
 
-    filtered.sort((a, b) => a.No - b.No);
+    filtered.sort(mobComparator);
 
     const frag = document.createDocumentFragment();
     filtered.forEach(mob => {
