@@ -107,7 +107,7 @@ function createMobCard(mob) {
     <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
         <!-- 左：ランク -->
         <span
-            class="w-6 h-6 flex items-center justify-center rounded-lg text-white text-xs font-bold ${rankConfig.bg}">
+            class="w-6 h-6 flex items-center justify-center rounded-full text-white text-xs font-bold ${rankConfig.bg}">
             ${rankLabel}
         </span>
 
@@ -126,7 +126,7 @@ function createMobCard(mob) {
 
     <!-- 下段：プログレスバー（構造のみ） -->
     <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
-        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-full transition-all duration-100 ease-linear"
+        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear"
             style="width: 0%"></div>
         <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
             style="line-height: 1;"></div>
