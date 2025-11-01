@@ -290,7 +290,8 @@ function updateProgressBar(card, mob) {
     bar.classList.remove(
         PROGRESS_CLASSES.P0_60,
         PROGRESS_CLASSES.P60_80,
-        PROGRESS_CLASSES.P80_100
+        PROGRESS_CLASSES.P80_100,
+        PROGRESS_CLASSES.MAX_OVER
     );
     text.classList.remove(
         PROGRESS_CLASSES.TEXT_NEXT,
@@ -310,7 +311,7 @@ function updateProgressBar(card, mob) {
         text.classList.add(PROGRESS_CLASSES.TEXT_POP);
 
     } else if (status === "MaxOver") {
-        bar.classList.add(PROGRESS_CLASSES.P80_100);
+        bar.classList.add(PROGRESS_CLASSES.MAX_OVER);
         bar.style.animation = "none";
         text.classList.add(PROGRESS_CLASSES.TEXT_POP);
     } else {
