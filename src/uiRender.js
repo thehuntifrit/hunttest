@@ -125,8 +125,8 @@ function createMobCard(mob) {
     </div>
 
     <!-- 下段：プログレスバー（構造のみ） -->
-    <div class="progress-bar-outer progress-blink-white">
-    <div class="progress-bar-wrapper h-5 rounded-lg relative transition-all duration-100 ease-linear">
+    <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
+        <div class="progress-bar-outer progress-blink-white">
         <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear"
             style="width: 0%"></div>
         <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
