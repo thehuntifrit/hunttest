@@ -146,7 +146,7 @@ padding-bottom: 0.5rem !important;
   --color-b1: #3e83c4;
   --color-b2: #e16666;
   --color-lastone: #50C878; /* Emerald Green */
-  --color-culled: #dcdcdc;  /* 湧き潰し済みの内側グレー */
+  --color-culled: #c0c0c0;  /* 湧き潰し済みの内側グレー */
 }
 .color-b1:hover,
 .color-b1:focus,
