@@ -101,7 +101,7 @@ function createMobCard(mob) {
         }).join("")
         : "";
 
-const cardHeaderHTML = `
+    const cardHeaderHTML = `
 <div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
     <!-- 上段：ランク・モブ名・報告ボタン -->
     <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
@@ -141,7 +141,7 @@ const cardHeaderHTML = `
 </div>
 `;
 
-const expandablePanelHTML = isExpandable ? `
+    const expandablePanelHTML = isExpandable ? `
 <div class="expandable-panel bg-gray-800/70 ${isOpen ? 'open' : ''}">
     <div class="px-2 py-0 text-sm space-y-0.5">
         <div class="flex justify-between items-start flex-wrap">
@@ -160,11 +160,6 @@ const expandablePanelHTML = isExpandable ? `
 </div>
 ` : '';
 
-return `
-<div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border ${rankConfig.border} 
-transition duration-150" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeaderHTML}${expandablePanelHTML}</div>
-`;
-}
     return `
 <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border ${rankConfig.border} 
 transition duration-150" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeaderHTML}${expandablePanelHTML}</div>
