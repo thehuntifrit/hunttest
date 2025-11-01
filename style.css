@@ -102,7 +102,7 @@ body {
 .progress-bar-wrapper {
     position: relative;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: rgba(192, 192, 192, 0.4);
     overflow: hidden;
 }
 
@@ -131,7 +131,7 @@ body {
     justify-content: center;
     font-weight: 600;
     line-height: 1;
-    color: #fff;
+    color: #000000;
     pointer-events: none;
 }
 
