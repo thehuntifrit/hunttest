@@ -67,9 +67,9 @@ function setOpenMobCardNo(no) {
 }
 
 const RANK_COLORS = {
-    S: { bg: 'bg-green-600', hover: 'hover:bg-green-700', text: 'text-green-600', hex: '#006400', label: 'S' },
-    A: { bg: 'bg-yellow-600', hover: 'hover:bg-yellow-700', text: 'text-yellow-600', hex: '#ca8a04', label: 'A' },
-    F: { bg: 'bg-indigo-600', hover: 'hover:bg-indigo-700', text: 'text-indigo-600', hex: '#4f46e5', label: 'F' },
+    S: { bg: 'bg-amber-600', hover: 'hover:bg-amber-700', text: 'text-amber-600', hex: '#ff8c00', label: 'S' },
+    A: { bg: 'bg-blue-600', hover: 'hover:bg-blue-700', text: 'text-blue-600', hex: '#0000cd', label: 'A' },
+    F: { bg: 'bg-green-600', hover: 'hover:bg-green-700', text: 'text-green-600', hex: '#006400', label: 'F' },
 };
 
 const PROGRESS_CLASSES = {
