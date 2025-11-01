@@ -1,4 +1,3 @@
-
 // uiRender.js
 
 import { calculateRepop, findNextSpawnTime, formatDuration, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime } from "./cal.js";
