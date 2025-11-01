@@ -181,47 +181,61 @@ function rankPriority(rankCode) {
   }
 }
 
-function mobComparator(a, b) {
-  const pa = parseMobNo(a.No);
-  const pb = parseMobNo(b.No);
-  // 1. ランク
-  const rankDiff = rankPriority(pa.rankCode) - rankPriority(pb.rankCode);
-  if (rankDiff !== 0) return rankDiff;
-  // 2. 拡張No (降順)
-  if (pa.expansion !== pb.expansion) return pb.expansion - pa.expansion;
-  // 3. モブNo (昇順)
-  if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
-  // 4. インスタンス (昇順)
-  return pa.instance - pb.instance;
+// 進捗ソート用 comparator
+function progressComparator(a, b) {
+  const nowSec = Date.now() / 1000;
+  const aInfo = a.repopInfo || {};
+  const bInfo = b.repopInfo || {};
+
+  const aOver = (aInfo.status === "PopWindow" || aInfo.status === "MaxOver");
+  const bOver = (bInfo.status === "PopWindow" || bInfo.status === "MaxOver");
+
+  if (aOver && !bOver) return -1;
+  if (!aOver && bOver) return 1;
+
+  if (aOver && bOver) {
+    const diff = (bInfo.elapsedPercent || 0) - (aInfo.elapsedPercent || 0);
+    if (diff !== 0) return diff;
+  } else {
+    const aRemain = (aInfo.minRepop || 0) - nowSec;
+    const bRemain = (bInfo.minRepop || 0) - nowSec;
+    if (aRemain !== bRemain) return aRemain - bRemain;
+  }
+  // fallback: No順
+  return a.No - b.No;
 }
 
 function filterAndRender({ isInitialLoad = false } = {}) {
-    const state = getState();
-    const filtered = filterMobsByRankAndArea(state.mobs);
+  const state = getState();
+  const filtered = filterMobsByRankAndArea(state.mobs);
+  // ランクによってソート方法を切り替え
+  if (["S", "A", "FATE"].includes(state.filter.rank)) {
+    filtered.sort(progressComparator);
+  } else {
+    filtered.sort((a, b) => a.No - b.No);
+  }
 
-    filtered.sort(mobComparator);
+  const frag = document.createDocumentFragment();
+  filtered.forEach(mob => {
+    const temp = document.createElement("div");
+    temp.innerHTML = createMobCard(mob);
+    const card = temp.firstElementChild;
+    frag.appendChild(card);
 
-    const frag = document.createDocumentFragment();
-    filtered.forEach(mob => {
-        const temp = document.createElement("div");
-        temp.innerHTML = createMobCard(mob);
-        const card = temp.firstElementChild;
-        frag.appendChild(card);
+    updateProgressText(card, mob);
+    updateProgressBar(card, mob);
+    updateExpandablePanel(card, mob);
+  });
 
-        updateProgressText(card, mob);
-        updateProgressBar(card, mob);
-        updateExpandablePanel(card, mob);
-    });
+  DOM.masterContainer.innerHTML = "";
+  DOM.masterContainer.appendChild(frag);
+  distributeCards();
 
-    DOM.masterContainer.innerHTML = "";
-    DOM.masterContainer.appendChild(frag);
-    distributeCards();
+  attachLocationEvents();
 
-    attachLocationEvents();
-    
-    if (isInitialLoad) {
-        updateProgressBars();
-    }
+  if (isInitialLoad) {
+    updateProgressBars();
+  }
 }
 
 function distributeCards() {
