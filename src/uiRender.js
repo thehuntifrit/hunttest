@@ -1,24 +1,24 @@
 // uiRender.js
 
 import { calculateRepop, findNextSpawnTime, formatDuration, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime } from "./cal.js";
-import { drawSpawnPoint, isCulled, attachLocationEvents } from "./location.js"; 
+import { drawSpawnPoint, isCulled, attachLocationEvents } from "./location.js";
 import { getState, RANK_COLORS, PROGRESS_CLASSES, FILTER_TO_DATA_RANK_MAP } from "./dataManager.js";
 import { renderRankTabs, renderAreaFilterPanel, updateFilterUI, filterMobsByRankAndArea } from "./filterUI.js";
 
 const DOM = {
-    masterContainer: document.getElementById('master-mob-container'),
-    colContainer: document.getElementById('column-container'),
-    cols: [document.getElementById('column-1'), document.getElementById('column-2'), document.getElementById('column-3')],
-    rankTabs: document.getElementById('rank-tabs'),
-    areaFilterWrapper: document.getElementById('area-filter-wrapper'),
-    areaFilterPanel: document.getElementById('area-filter-panel'),
-    statusMessage: document.getElementById('status-message'),
-    reportModal: document.getElementById('report-modal'),
-    reportForm: document.getElementById('report-form'),
-    modalMobName: document.getElementById('modal-mob-name'),
-    modalStatus: document.getElementById('modal-status'),
-    modalTimeInput: document.getElementById('report-datetime'),
-    modalMemoInput: document.getElementById('report-memo'),
+  masterContainer: document.getElementById('master-mob-container'),
+  colContainer: document.getElementById('column-container'),
+  cols: [document.getElementById('column-1'), document.getElementById('column-2'), document.getElementById('column-3')],
+  rankTabs: document.getElementById('rank-tabs'),
+  areaFilterWrapper: document.getElementById('area-filter-wrapper'),
+  areaFilterPanel: document.getElementById('area-filter-panel'),
+  statusMessage: document.getElementById('status-message'),
+  reportModal: document.getElementById('report-modal'),
+  reportForm: document.getElementById('report-form'),
+  modalMobName: document.getElementById('modal-mob-name'),
+  modalStatus: document.getElementById('modal-status'),
+  modalTimeInput: document.getElementById('report-datetime'),
+  modalMemoInput: document.getElementById('report-memo'),
 };
 
 function updateEorzeaTime() {
@@ -32,30 +32,30 @@ updateEorzeaTime();
 setInterval(updateEorzeaTime, 3000);
 
 function displayStatus(message, type = "info") {
-    const el = document.getElementById("status-message");
-    if (!el) return;
+  const el = document.getElementById("status-message");
+  if (!el) return;
 
-    const typeClasses = {
-        'success': 'bg-green-600',
-        'error': 'bg-red-600',
-        'warning': 'bg-yellow-600',
-        'info': 'bg-blue-600'
-    };
+  const typeClasses = {
+    'success': 'bg-green-600',
+    'error': 'bg-red-600',
+    'warning': 'bg-yellow-600',
+    'info': 'bg-blue-600'
+  };
 
-    Object.values(typeClasses).forEach(cls => el.classList.remove(cls));
+  Object.values(typeClasses).forEach(cls => el.classList.remove(cls));
 
-    el.textContent = message;
-    el.classList.add(typeClasses[type] || typeClasses['info']);
+  el.textContent = message;
+  el.classList.add(typeClasses[type] || typeClasses['info']);
 
-    setTimeout(() => {
-        el.textContent = "";
-        Object.values(typeClasses).forEach(cls => el.classList.remove(cls));
-    }, 5000);
+  setTimeout(() => {
+    el.textContent = "";
+    Object.values(typeClasses).forEach(cls => el.classList.remove(cls));
+  }, 5000);
 }
 
 function processText(text) {
-    if (typeof text !== "string" || !text) return "";
-    return text.replace(/\/\//g, "<br>");
+  if (typeof text !== "string" || !text) return "";
+  return text.replace(/\/\//g, "<br>");
 }
 
 function createMobCard(mob) {
@@ -84,22 +84,22 @@ function createMobCard(mob) {
     }
 
     const isS_LastOne = rank === "S" && isLastOne;
-    const spawnPointsHtml = (rank === "S" && mob.Map)
-        ? (mob.spawn_points ?? []).map(point => {
+  const spawnPointsHtml = (rank === "S" && mob.Map)
+    ? (mob.spawn_points ?? []).map(point => {
             const isThisPointTheLastOne = isLastOne && point.id === validSpawnPoints[0]?.id;
 
             return drawSpawnPoint(
-            point,
-            spawnCullStatus,
-            mob.No,
-            point.mob_ranks.includes("B2") ? "B2"
-                : point.mob_ranks.includes("B1") ? "B1"
-                    : point.mob_ranks[0],
-            isThisPointTheLastOne,
-            isS_LastOne
-        )
+      point,
+      spawnCullStatus,
+      mob.No,
+      point.mob_ranks.includes("B2") ? "B2"
+        : point.mob_ranks.includes("B1") ? "B1"
+          : point.mob_ranks[0],
+      isThisPointTheLastOne,
+      isS_LastOne
+    )
         }).join("")
-        : "";
+    : "";
     
     const cardHeaderHTML = `
 <div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
@@ -119,8 +119,7 @@ function createMobCard(mob) {
 
         <!-- 右端：報告ボタン（見た目は統一、動作だけ分岐） -->
         <div class="flex-shrink-0 flex items-center justify-end">
-            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}"
-                class="w-8 h-8 flex items-center justify-center text-[12px] rounded bg-amber-900 hover:bg-amber-700 selected:bg-amber-600 
+            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center text-[12px] rounded bg-amber-900 hover:bg-amber-700 selected:bg-amber-600 
                text-white font-semibold transition text-center leading-tight whitespace-pre-line">報告<br>する</button>
         </div>
     </div>
@@ -133,34 +132,32 @@ function createMobCard(mob) {
             style="line-height: 1;"></div>
     </div>
 </div>
-    `;
+`;
 
-    const expandablePanelHTML = isExpandable ? `
-    <div class="expandable-panel bg-gray-800/70 ${isOpen ? 'open' : ''}">
-        <div class="px-2 py-0 text-sm space-y-0.5">
-            <div class="flex justify-between items-start flex-wrap">
-                <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
-                <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: <span data-last-memo></span></div>
-                <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽選条件</div>
-                <div class="w-full text-gray-300 mb-2">${processText(mob.Condition)}</div>
-            </div>
-            ${mob.Map && rank === 'S' ? `
-            <div class="map-content py-0.5 flex justify-center relative">
-                <img src="./maps/${mob.Map}" alt="${mob.Area} Map"
-                    class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
-                <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
-            </div>
-            ` : ''}
+const expandablePanelHTML = isExpandable ? `
+<div class="expandable-panel bg-gray-800/70 ${isOpen ? 'open' : ''}">
+    <div class="px-2 py-0 text-sm space-y-0.5">
+        <div class="flex justify-between items-start flex-wrap">
+            <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
+            <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: <span data-last-memo></span></div>
+            <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽選条件</div>
+            <div class="w-full text-gray-300 mb-2">${processText(mob.Condition)}</div>
         </div>
+        ${mob.Map && rank === 'S' ? `
+        <div class="map-content py-0.5 flex justify-center relative">
+            <img src="./maps/${mob.Map}" alt="${mob.Area} Map"
+                class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
+            <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
+        </div>
+        ` : ''}
     </div>
-    ` : '';
+</div>
+` : '';
 
-    const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
-
-    return `
+return `
 <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border ${rankConfig.border} 
 transition duration-150" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeaderHTML}${expandablePanelHTML}</div>
-    `;
+`;
 }
 
 // ランク優先度: S=2, A=1, F=3 → ソート順 S > A > F
@@ -254,27 +251,27 @@ function filterAndRender({ isInitialLoad = false } = {}) {
 }
 
 function distributeCards() {
-    const width = window.innerWidth;
-    const md = 768;
-    const lg = 1024;
-    let cols = 1;
-    if (width >= lg) {
-        cols = 3;
-        DOM.cols[2].classList.remove("hidden");
-    } else if (width >= md) {
-        cols = 2;
-        DOM.cols[2].classList.add("hidden");
-    } else {
-        cols = 1;
-        DOM.cols[2].classList.add("hidden");
-    }
+  const width = window.innerWidth;
+  const md = 768;
+  const lg = 1024;
+  let cols = 1;
+  if (width >= lg) {
+    cols = 3;
+    DOM.cols[2].classList.remove("hidden");
+  } else if (width >= md) {
+    cols = 2;
+    DOM.cols[2].classList.add("hidden");
+  } else {
+    cols = 1;
+    DOM.cols[2].classList.add("hidden");
+  }
 
-    DOM.cols.forEach(col => (col.innerHTML = ""));
-    const cards = Array.from(DOM.masterContainer.children);
-    cards.forEach((card, idx) => {
-        const target = idx % cols;
-        DOM.cols[target].appendChild(card);
-    });
+  DOM.cols.forEach(col => (col.innerHTML = ""));
+  const cards = Array.from(DOM.masterContainer.children);
+  cards.forEach((card, idx) => {
+    const target = idx % cols;
+    DOM.cols[target].appendChild(card);
+  });
 }
 
 function updateProgressBar(card, mob) {
@@ -314,36 +311,36 @@ function updateProgressBar(card, mob) {
 }
 
 function updateProgressText(card, mob) {
-    const text = card.querySelector(".progress-text");
-    if (!text) return;
+  const text = card.querySelector(".progress-text");
+  if (!text) return;
 
-    const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status } = mob.repopInfo;
+  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status } = mob.repopInfo;
 
-    const absFmt = {
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'Asia/Tokyo'
-    };
-    const inTimeStr = nextMinRepopDate
-        ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextMinRepopDate)
-        : "未確定";
-    const nextTimeStr = nextConditionSpawnDate
-        ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate)
-        : null;
-    let rightStr = "";
-    const nowSec = Date.now() / 1000;
-    if (status === "Maintenance" || status === "Next") {
-        rightStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
-    } else if (status === "PopWindow") {
-        rightStr = `残り ${formatDurationHM(maxRepop - nowSec)}`;
-    } else if (status === "MaxOver") {
-        rightStr = `Time Over (100%)`;
-    } else {
-        rightStr = `未確定`;
-    }
-    text.innerHTML = `
+  const absFmt = {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Tokyo'
+  };
+  const inTimeStr = nextMinRepopDate
+    ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextMinRepopDate)
+    : "未確定";
+  const nextTimeStr = nextConditionSpawnDate
+    ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate)
+    : null;
+  let rightStr = "";
+  const nowSec = Date.now() / 1000;
+  if (status === "Maintenance" || status === "Next") {
+    rightStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
+  } else if (status === "PopWindow") {
+    rightStr = `残り ${formatDurationHM(maxRepop - nowSec)}`;
+  } else if (status === "MaxOver") {
+    rightStr = `Time Over (100%)`;
+  } else {
+    rightStr = `未確定`;
+  }
+  text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
         <div class="pl-2 text-left">
           ${rightStr}${status !== "MaxOver" && status !== "Unknown" ? ` (${elapsedPercent.toFixed(0)}%)` : ""}
@@ -356,88 +353,88 @@ function updateProgressText(card, mob) {
   `;
 
 const toggleContainer = text.querySelector(".toggle-container");
-    if (toggleContainer && !toggleContainer.dataset.toggleStarted) {
-        startToggleInNext(toggleContainer);
-        toggleContainer.dataset.toggleStarted = "true";
-    }
+  if (toggleContainer && !toggleContainer.dataset.toggleStarted) {
+    startToggleInNext(toggleContainer);
+    toggleContainer.dataset.toggleStarted = "true";
+  }
 }
 function startToggleInNext(container) {
-    const inLabel = container.querySelector(".label-in");
-    const nextLabel = container.querySelector(".label-next");
-    let showingIn = true;
+  const inLabel = container.querySelector(".label-in");
+  const nextLabel = container.querySelector(".label-next");
+  let showingIn = true;
 
-    setInterval(() => {
-        if (nextLabel.textContent.trim() === "") return;
+  setInterval(() => {
+    if (nextLabel.textContent.trim() === "") return;
 
-        if (showingIn) {
-            inLabel.style.display = "none";
-            nextLabel.style.display = "inline";
-        } else {
-            inLabel.style.display = "inline";
-            nextLabel.style.display = "none";
-        }
-        showingIn = !showingIn;
-    }, 5000);
+    if (showingIn) {
+      inLabel.style.display = "none";
+      nextLabel.style.display = "inline";
+    } else {
+      inLabel.style.display = "inline";
+      nextLabel.style.display = "none";
+    }
+    showingIn = !showingIn;
+  }, 5000);
 }
 
 function updateExpandablePanel(card, mob) {
-    const elNext = card.querySelector("[data-next-time]");
-    const elLast = card.querySelector("[data-last-kill]");
-    const elMemo = card.querySelector("[data-last-memo]");
-    if (!elNext && !elLast && !elMemo) return;
+  const elNext = card.querySelector("[data-next-time]");
+  const elLast = card.querySelector("[data-last-kill]");
+  const elMemo = card.querySelector("[data-last-memo]");
+  if (!elNext && !elLast && !elMemo) return;
 
-    const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
+  const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
 
-    const nextMin = mob.repopInfo?.nextMinRepopDate;
-    const conditionTime = findNextSpawnTime(mob, nextMin);
-    const displayTime = (nextMin && conditionTime)
-        ? (conditionTime > nextMin ? conditionTime : nextMin)
-        : (nextMin || conditionTime);
+  const nextMin = mob.repopInfo?.nextMinRepopDate;
+  const conditionTime = findNextSpawnTime(mob, nextMin);
+  const displayTime = (nextMin && conditionTime)
+    ? (conditionTime > nextMin ? conditionTime : nextMin)
+    : (nextMin || conditionTime);
 
-    const nextStr = displayTime
-        ? new Intl.DateTimeFormat('ja-JP', absFmt).format(displayTime)
-        : "未確定";
+  const nextStr = displayTime
+    ? new Intl.DateTimeFormat('ja-JP', absFmt).format(displayTime)
+    : "未確定";
 
-    const lastStr = formatLastKillTime(mob.last_kill_time);
-    const memoStr = mob.last_kill_memo || "なし";
+  const lastStr = formatLastKillTime(mob.last_kill_time);
+  const memoStr = mob.last_kill_memo || "なし";
 
-    if (elLast) elLast.textContent = `前回: ${lastStr}`;
-    if (elMemo) elMemo.textContent = memoStr;
+  if (elLast) elLast.textContent = `前回: ${lastStr}`;
+  if (elMemo) elMemo.textContent = memoStr;
 }
 
 function updateProgressBars() {
-    const state = getState();
-    state.mobs.forEach((mob) => {
-        const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
-        if (card) {
-            updateProgressText(card, mob);
-            updateProgressBar(card, mob);
-        }
-    });
+  const state = getState();
+  state.mobs.forEach((mob) => {
+    const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
+    if (card) {
+      updateProgressText(card, mob);
+      updateProgressBar(card, mob);
+    }
+  });
 }
 
 const sortAndRedistribute = debounce(() => filterAndRender(), 200);
 const areaPanel = document.getElementById("area-filter-panel");
 
 function onKillReportReceived(mobId, kill_time) {
-    const mob = getState().mobs.find(m => m.No === mobId);
-    if (!mob) return;
+  const mob = getState().mobs.find(m => m.No === mobId);
+  if (!mob) return;
 
-    mob.last_kill_time = Number(kill_time);
-    mob.repopInfo = calculateRepop(mob);
+  mob.last_kill_time = Number(kill_time);
+  mob.repopInfo = calculateRepop(mob);
 
-    const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
-    if (card) {
-        updateProgressText(card, mob);
-        updateProgressBar(card, mob);
-    }
+  const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
+  if (card) {
+    updateProgressText(card, mob);
+    updateProgressBar(card, mob);
+  }
 }
 
 setInterval(() => {
-    updateProgressBars();
+  updateProgressBars();
 }, 60000);
 
 export {
-    filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, DOM,
-    renderAreaFilterPanel, renderRankTabs, sortAndRedistribute, updateFilterUI, onKillReportReceived, updateProgressBars
+  filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, DOM,
+  renderAreaFilterPanel, renderRankTabs, sortAndRedistribute, updateFilterUI, onKillReportReceived, updateProgressBars
 };
