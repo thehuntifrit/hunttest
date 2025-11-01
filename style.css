@@ -132,7 +132,7 @@ transform: scale(1.15);
 }
 
 .label-next {
-  color: #cc0000; /* 濃いめの赤 */
+  color: #ffd700; /* 濃いめ */
   font-weight: 600; /* 強調したい場合 */
 }
 
