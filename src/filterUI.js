@@ -147,10 +147,10 @@ const updateFilterUI = () => {
             }
 
             btn.classList.add(
-                btnRank === "ALL" ? "bg-blue-800"
-                    : btnRank === "S" ? "bg-red-800"
-                        : btnRank === "A" ? "bg-yellow-800"
-                            : btnRank === "FATE" ? "bg-indigo-800"
+                btnRank === "ALL" ? "bg-purple-600"
+                    : btnRank === "S" ? "bg-amber-600"
+                        : btnRank === "A" ? "bg-blue-800"
+                            : btnRank === "FATE" ? "bg-green-600"
                                 : "bg-gray-800"
             );
 
