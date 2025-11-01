@@ -121,12 +121,14 @@ transform: scale(1.15);
   pointer-events: none;
 }
 
-/* MaxOver の点滅（既存流用） */
-@keyframes progress-max-over-blink {
-  0%, 100% { box-shadow: 0 0 15px rgba(255, 100, 100, 0.9); }
-  50% { box-shadow: 0 0 5px rgba(255, 100, 100, 0.2); }
+/* PopWindow 80%以上の白点滅 */
+@keyframes progress-blink-white {
+  0%, 100% { box-shadow: 0 0 15px rgba(255,255,255,0.9); }
+  50%      { box-shadow: 0 0 5px rgba(255,255,255,0.3); }
 }
-.progress-max-over-blink { animation: max-over-blink 2s ease-in-out infinite; }
+.progress-blink-white {
+  animation: progress-blink-white 2s ease-in-out infinite;
+}
 
 .label-next {
   color: #ffd700; /* 濃いめ */
