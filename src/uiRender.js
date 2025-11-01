@@ -125,10 +125,12 @@ function createMobCard(mob) {
         </div>
     </div>
 
-<!-- 下段：プログレスバー（構造のみ） -->
+    <!-- 下段：プログレスバー（構造のみ） -->
     <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
-        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear" style="width: 0%"></div>
-        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold" style="line-height: 1;"></div>
+        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear"
+            style="width: 0%"></div>
+        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
+            style="line-height: 1;"></div>
     </div>
 </div>
 `;
@@ -144,7 +146,8 @@ function createMobCard(mob) {
         </div>
         ${mob.Map && rank === 'S' ? `
         <div class="map-content py-0.5 flex justify-center relative">
-            <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
+            <img src="./maps/${mob.Map}" alt="${mob.Area} Map"
+                class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
             <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
         </div>
         ` : ''}
@@ -282,6 +285,7 @@ function updateProgressBar(card, mob) {
 
     bar.style.transition = "width linear 60s";
     bar.style.width = `${elapsedPercent}%`;
+
     // リセット
     bar.classList.remove(
         PROGRESS_CLASSES.P0_60,
@@ -307,10 +311,17 @@ function updateProgressBar(card, mob) {
 
     } else if (status === "MaxOver") {
         bar.classList.add(PROGRESS_CLASSES.P80_100);
+        bar.style.animation = "none";
         text.classList.add(PROGRESS_CLASSES.TEXT_POP);
     } else {
         text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
     }
+    // --- 追加: バー色に応じてテキスト色を決定 ---
+    const barColor = window.getComputedStyle(bar).backgroundColor;
+    const rgb = barColor.match(/\d+/g).map(Number);
+    const brightness = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
+    // 明度が低ければ白文字、高ければ黒文字
+    text.style.color = brightness < 128 ? "white" : "black";
 }
 
 function updateProgressText(card, mob) {
@@ -361,6 +372,7 @@ function updateProgressText(card, mob) {
         toggleContainer.dataset.toggleStarted = "true";
     }
 }
+
 function startToggleInNext(container) {
     const inLabel = container.querySelector(".label-in");
     const nextLabel = container.querySelector(".label-next");
