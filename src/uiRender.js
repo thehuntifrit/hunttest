@@ -285,7 +285,6 @@ function updateProgressBar(card, mob) {
 
     bar.style.transition = "width linear 60s";
     bar.style.width = `${elapsedPercent}%`;
-
     // リセット
     bar.classList.remove(
         PROGRESS_CLASSES.P0_60,
@@ -316,12 +315,26 @@ function updateProgressBar(card, mob) {
     } else {
         text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
     }
-    // --- 追加: バー色に応じてテキスト色を決定 ---
-    const barColor = window.getComputedStyle(bar).backgroundColor;
-    const rgb = barColor.match(/\d+/g).map(Number);
-    const brightness = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
-    // 明度が低ければ白文字、高ければ黒文字
-    text.style.color = brightness < 128 ? "white" : "black";
+
+    // 白文字をベースに、黒文字を上に重ねて幅でマスクする
+    let overlay = text.querySelector(".overlay-text");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.className = "overlay-text";
+        overlay.style.position = "absolute";
+        overlay.style.top = "0";
+        overlay.style.left = "0";
+        overlay.style.bottom = "0";
+        overlay.style.color = "black";
+        overlay.style.overflow = "hidden";
+        overlay.style.whiteSpace = "nowrap";
+        overlay.style.display = "flex";
+        overlay.style.alignItems = "center";
+        overlay.style.justifyContent = "center";
+        text.appendChild(overlay);
+    }
+    overlay.textContent = text.textContent;
+    overlay.style.width = `${elapsedPercent}%`;
 }
 
 function updateProgressText(card, mob) {
