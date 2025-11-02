@@ -78,14 +78,14 @@ body {
 /* --- 進捗バー関連のスタイル定義 --- */
 :root {
     --bg-dark: #1a1a2e;
-    --text-light: #3e83c4;
+    --text-light: #0a84ff;
     --header-height: 4rem;
     font-family: 'Inter', sans-serif;
 
-    --progress-0-60: #008899;
-    --progress-60-80: #008899;
-    --progress-80-100: #008899;
-    --progress-max-over: #696969;
+    --progress-0-60: #bcddff;
+    --progress-60-80: #bcffbc;
+    --progress-80-100: #ffddbc;
+    --progress-max-over: #708090;
 }
 
 .progress-p0-60 {
@@ -133,7 +133,7 @@ body {
     justify-content: center;
     font-weight: 600;
     line-height: 1;
-    color: #ffffff;
+    color: #0a84ff;
     pointer-events: none;
 }
 
@@ -152,7 +152,7 @@ body {
 }
 
 .label-next {
-    color: #ffd700;
+    color: #0000ff;
     /* 濃いめ */
     font-weight: 600;
     /* 強調したい場合 */
