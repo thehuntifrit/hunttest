@@ -221,6 +221,7 @@ body {
 .color-b1-culled {
     background-color: var(--color-culled);
     border: 2px solid var(--color-b1);
+    opacity: 0.7;
 }
 
 .color-b2-culled {
@@ -232,21 +233,23 @@ body {
 .color-lastone {
     background-color: var(--color-lastone);
     border: 2px solid #008000;
+    width: 16px;
+    height: 16px;
 }
 
 /* --- B-only --- */
 .color-b1-only {
     background-color: #dcdcdc;
     border: 1px solid var(--color-b1);
-    width: 12px;
-    height: 12px;
-    opacity: 0.75;
+    width: 9px;
+    height: 9px;
+    opacity: 0.6;
 }
 
 .color-b2-only {
     background-color: #dcdcdc;
     border: 1px solid var(--color-b2);
-    width: 12px;
-    height: 12px;
-    opacity: 0.75;
+    width: 9px;
+    height: 9px;
+    opacity: 0.6;
 }
