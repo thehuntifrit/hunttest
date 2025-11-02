@@ -111,7 +111,7 @@ function createMobCard(mob) {
     <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
         <!-- 左：ランク -->
         <span
-            class="w-6 h-6 flex items-center justify-center rounded-full text-white text-xs font-bold ${rankConfig.bg}">
+            class="w-6 h-6 flex items-center justify-center rounded-full text-white text-sm font-bold ${rankConfig.bg}">
             ${rankLabel}
         </span>
 
