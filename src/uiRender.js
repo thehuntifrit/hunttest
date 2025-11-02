@@ -146,7 +146,7 @@ function createMobCard(mob) {
             <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
             <div class="w-full text-left text-sm text-gray-300 mb-2">Memo: <span data-last-memo></span></div>
             <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽選条件</div>
-            <div class="w-full text-gray-300 pt-1">${processText(mob.Condition)}</div>
+            <div class="w-full text-gray-300 text-xs mt-1">${processText(mob.Condition)}</div>
         </div>
         ${mob.Map && rank === 'S' ? `
         <div class="map-content py-0.5 flex justify-center relative">
