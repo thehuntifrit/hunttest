@@ -21,23 +21,28 @@
         <div class="max-w-6xl mx-auto px-4 flex items-center justify-between min-h-16 sm:min-h-16 lg:min-h-20">
             <h1 class="text-2xl font-bold text-yellow-400 tracking-wide leading-none flex items-baseline">The<br>Hunt</h1>
             
-            <div class="flex flex-col items-end justify-center gap-1">
-                <span id="eorzea-time-desktop" class="text-sm text-gray-300 hidden lg:block"></span> 
-                <div id="rank-tabs" class="flex justify-end gap-1"></div>
+            <div class="hidden lg:flex flex-col items-end justify-center gap-1">
+                <span id="eorzea-time-desktop" class="text-sm text-gray-300"></span> 
             </div>
         </div>
-        
+
         <div id="area-filter-panel-mobile"
             class="max-w-6xl mx-auto flex flex-wrap justify-end px-4 py-2 block lg:hidden">
-            <div class="w-full text-right pb-1">
-                 <span id="eorzea-time-mobile" class="text-sm text-gray-300"></span>
+            
+            <div class="w-full flex justify-between items-center pb-2">
+                 <span id="eorzea-time-mobile" class="text-sm text-gray-300"></span> 
+                <div id="rank-tabs" class="flex justify-end gap-1"></div>
             </div>
+
             <div class="grid grid-cols-2 gap-2 w-full sm:w-auto"></div>
         </div>
         
         <div id="area-filter-panel-desktop" class="max-w-6xl mx-auto flex flex-wrap justify-end px-4 py-2 hidden lg:block">
+            <div id="rank-tabs-desktop" class="flex justify-end gap-1 mr-2"></div>
+            
             <div class="flex flex-wrap gap-2 justify-end w-full"></div>
         </div>
+        
     </header>
 
     <main class="mx-auto px-2 py-2 sm:px-4 pb-10 
