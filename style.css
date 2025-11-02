@@ -84,7 +84,7 @@ body {
     --progress-0-60: #99ffcc;
     --progress-60-80: #ffff89;
     --progress-80-100: #ffbf7f;
-    --progress-max-over: #444444;
+    --progress-max-over: #777777;
 }
 
 .progress-p0-60 {
