@@ -14,40 +14,13 @@
 
 <body class="bg-gray-900 text-white leading-relaxed">
 
-<header id="main-header" class="fixed top-0 left-0 right-0 bg-gray-800 shadow-lg z-50 transition-all duration-300">
-
+<header id="main-header" class="fixed left-0 right-0 bg-gray-800 shadow-lg z-50 transition-all duration-300 bottom-0 lg:top-0 lg:bottom-auto">    
     <div id="status-message" class="text-center py-2 text-sm text-white bg-gray-800" role="status" aria-live="polite"></div>
-
-    <div id="header-top-band" class="max-w-6xl mx-auto px-4 flex items-center justify-between min-h-16 lg:min-h-20">
-        
-        <h1 class="text-2xl font-bold text-yellow-400 tracking-wide leading-none flex items-baseline">The<br>Hunt</h1>
-        
-        <div class="hidden lg:flex flex-col items-end justify-center gap-1">
-            <span id="eorzea-time-desktop" class="text-sm text-gray-300"></span>
-            </div>
-    </div>
-    
-    <div id="header-bottom-band" class="max-w-6xl mx-auto px-4 flex flex-col-reverse lg:flex-row items-center justify-between pb-2 pt-1 lg:py-2 lg:min-h-12">
-        
-        <div class="flex flex-col w-full lg:w-auto items-start justify-center gap-1">
-            <span id="eorzea-time-mobile" class="text-sm text-gray-300 block lg:hidden w-full text-center sm:text-left"></span>
-            
-            <div id="rank-tabs" class="flex justify-center lg:justify-start gap-1 w-full lg:w-auto"></div>
-        </div>
-
-        <div id="area-filter-container" class="w-full lg:w-auto">
-            <div id="area-filter-panel-mobile"
-                class="flex flex-wrap justify-end block lg:hidden mt-2 lg:mt-0">
-                <div class="grid grid-cols-2 gap-2 w-full sm:w-auto"></div>
-            </div>
-            <div id="area-filter-panel-desktop" class="flex-wrap justify-end hidden lg:flex">
-                <div class="flex flex-wrap gap-2 justify-end w-full"></div>
-            </div>
-        </div>
-    </div>
+    <div id="header-top-band" class="max-w-6xl mx-auto px-4 flex items-center justify-between min-h-16 lg:min-h-20"></div>
+    <div id="header-bottom-band" class="max-w-6xl mx-auto px-4 flex flex-col-reverse lg:flex-row items-center justify-between pb-2 pt-1 lg:py-2 lg:min-h-12"></div>
 </header>
 
-    <main class="mx-auto px-2 py-2 sm:px-4 pb-10 pt-28 sm:pt-28 lg:pt-32">
+<main class="mx-auto px-2 py-2 sm:px-4 pb-10 pt-6 lg:pt-32 pb-32 sm:pb-36 lg:pb-10">
         <div id="master-mob-container" class="hidden"></div>
         <div id="column-container"
             class="grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-2 lg:grid-cols-3 max-w-6xl mx-auto"
