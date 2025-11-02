@@ -177,7 +177,7 @@ body {
     --color-b2: #e16666;
     --color-lastone: #50C878;
     /* Emerald Green */
-    --color-culled: #a9a9a9;
+    --color-culled: #c0c0c0;
     /* 湧き潰し済みの内側グレー */
 }
 
@@ -232,24 +232,24 @@ body {
 /* --- ラストワン --- */
 .color-lastone {
     background-color: var(--color-lastone);
-    border: 1px solid #008000;
-    width: 17px;
-    height: 17px;
+    border: 2px solid #008000;
+    width: 16px;
+    height: 16px;
 }
 
 /* --- B-only --- */
 .color-b1-only {
-    background-color: #dcdcdc;
+    background-color: #d3d3d3;
     border: 1px solid var(--color-b1);
-    width: 9px;
-    height: 9px;
+    width: 11px;
+    height: 11px;
     opacity: 0.6;
 }
 
 .color-b2-only {
-    background-color: #dcdcdc;
+    background-color: #d3d3d3;
     border: 1px solid var(--color-b2);
-    width: 9px;
-    height: 9px;
+    width: 11px;
+    height: 11px;
     opacity: 0.6;
 }
