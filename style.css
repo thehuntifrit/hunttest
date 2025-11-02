@@ -81,10 +81,10 @@ body {
     --header-height: 4rem;
     font-family: 'Inter', sans-serif;
 
-    --progress-0-60: #7affbc;
-    --progress-60-80: #7affbc;
-    --progress-80-100: #7affbc;
-    --progress-max-over: #777777;
+    --progress-0-60: #ccffe5;
+    --progress-60-80: #ccffe5;
+    --progress-80-100: #ccffe5;
+    --progress-max-over: #333333;
 }
 
 .progress-p0-60 {
