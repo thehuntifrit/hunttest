@@ -78,7 +78,7 @@ body {
 /* --- 進捗バー関連のスタイル定義 --- */
 :root {
     --bg-dark: #1a1a2e;
-    --text-light: #0a84ff;
+    --text-light: #3399ff;
     --header-height: 4rem;
     font-family: 'Inter', sans-serif;
 
@@ -133,7 +133,7 @@ body {
     justify-content: center;
     font-weight: 600;
     line-height: 1;
-    color: #0a84ff;
+    color: #3399ff;
     pointer-events: none;
 }
 
