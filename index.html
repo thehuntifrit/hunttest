@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 
@@ -13,41 +14,34 @@
 
 <body class="bg-gray-900 text-white leading-relaxed">
 
-    <header id="main-header" class="fixed left-0 right-0 bg-gray-800 shadow-lg z-50 transition-all duration-300
-        bottom-0 lg:top-0 lg:bottom-auto">
+    <header id="main-header" class="fixed top-0 left-0 right-0 bg-gray-800 shadow-lg z-50 transition-all duration-300">
 
+        <!-- ステータスメッセージ -->
         <div id="status-message" class="text-center py-2 text-sm text-white bg-gray-800" role="status" aria-live="polite"></div>
 
+        <!-- 帯部分（タイトル＋ET＋ランクタブ） -->
         <div class="max-w-6xl mx-auto px-4 flex items-center justify-between min-h-16 sm:min-h-16 lg:min-h-20">
+            <!-- 左：タイトル -->
             <h1 class="text-2xl font-bold text-yellow-400 tracking-wide leading-none flex items-baseline">The<br>Hunt</h1>
-            
-            <div class="hidden lg:flex flex-col items-end justify-center gap-1">
-                <span id="eorzea-time-desktop" class="text-sm text-gray-300"></span> 
-            </div>
-        </div>
-
-        <div id="area-filter-panel-mobile"
-            class="max-w-6xl mx-auto flex flex-wrap justify-end px-4 py-2 block lg:hidden">
-            
-            <div class="w-full flex justify-between items-center pb-2">
-                 <span id="eorzea-time-mobile" class="text-sm text-gray-300"></span> 
+            <!-- 右：ET（上）＋ランクタブ（下） -->
+            <div class="flex flex-col items-end justify-center gap-1">
+                <span id="eorzea-time" class="text-sm text-gray-300"></span>
                 <div id="rank-tabs" class="flex justify-end gap-1"></div>
             </div>
+        </div>
 
+        <!-- エリアパネル（スマホ） -->
+        <div id="area-filter-panel-mobile"
+            class="max-w-6xl mx-auto flex flex-wrap justify-end px-4 py-2 block lg:hidden">
             <div class="grid grid-cols-2 gap-2 w-full sm:w-auto"></div>
         </div>
-        
-        <div id="area-filter-panel-desktop" class="max-w-6xl mx-auto flex flex-wrap justify-end px-4 py-2 hidden lg:block">
-            <div id="rank-tabs-desktop" class="flex justify-end gap-1 mr-2"></div>
-            
+        <!-- エリアパネル（デスクトップ） -->
+        <div id="area-filter-panel-desktop" class="max-w-6xl mx-auto flex flex-wrap justify-end px-4 py-2 hidden">
             <div class="flex flex-wrap gap-2 justify-end w-full"></div>
         </div>
-        
     </header>
 
-    <main class="mx-auto px-2 py-2 sm:px-4 pb-10 
-        pt-6 lg:pt-32 
-        pb-32 sm:pb-36 lg:pb-10">
+    <main class="mx-auto px-2 py-2 sm:px-4 pb-10 pt-28 sm:pt-28 lg:pt-32">
         <div id="master-mob-container" class="hidden"></div>
         <div id="column-container"
             class="grid grid-cols-1 gap-0 md:grid-cols-2 md:gap-2 lg:grid-cols-3 max-w-6xl mx-auto"
