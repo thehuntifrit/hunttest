@@ -232,9 +232,9 @@ body {
 /* --- ラストワン --- */
 .color-lastone {
     background-color: var(--color-lastone);
-    border: 2px solid #008000;
-    width: 16px;
-    height: 16px;
+    border: 1px solid #008000;
+    width: 17px;
+    height: 17px;
 }
 
 /* --- B-only --- */
