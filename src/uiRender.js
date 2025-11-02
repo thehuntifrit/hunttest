@@ -69,17 +69,21 @@ function createMobCard(mob) {
 
     const state = getState();
     const mobLocationsData = state.mobLocations?.[mob.No];
-    const spawnCullStatus = mobLocationsData || mob.spawn_cull_status; // ★ 修正箇所
+    const spawnCullStatus = mobLocationsData || mob.spawn_cull_status; 
 
     let isLastOne = false;
     let validSpawnPoints = [];
 
     if (mob.Map && mob.spawn_points) {
         validSpawnPoints = (mob.spawn_points ?? []).filter(point => {
+            const isS_SpawnPoint = point.mob_ranks.includes("S");
+            if (!isS_SpawnPoint) {
+                return false; // Sランクを含まない地点は除外
+            }
             const pointStatus = spawnCullStatus?.[point.id];
-
             return !isCulled(pointStatus, mob.No);
         });
+        
         isLastOne = validSpawnPoints.length === 1;
     }
 
