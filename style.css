@@ -236,16 +236,16 @@ body {
 
 /* --- B-only --- */
 .color-b1-only {
-    background-color: var(--color-b1);
-    border: 1px solid #fff;
+    background-color: #fff;
+    border: 1px solid var(--color-b1);
     width: 12px;
     height: 12px;
     opacity: 0.75;
 }
 
 .color-b2-only {
-    background-color: var(--color-b2);
-    border: 1px solid #fff;
+    background-color: #fff;
+    border: 1px solid var(--color-b2);
     width: 12px;
     height: 12px;
     opacity: 0.75;
