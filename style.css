@@ -210,11 +210,13 @@ body {
 .color-b1 {
     background-color: var(--color-b1);
     border: 2px solid #000;
+    opacity: 0.7;
 }
 
 .color-b2 {
     background-color: var(--color-b2);
     border: 2px solid #000;
+    opacity: 0.7;
 }
 
 /* --- 湧き潰し済み（外枠B色＋内側グレー） --- */
@@ -227,6 +229,7 @@ body {
 .color-b2-culled {
     background-color: var(--color-culled);
     border: 2px solid var(--color-b2);
+    opacity: 0.7;
 }
 
 /* --- ラストワン --- */
