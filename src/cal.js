@@ -245,19 +245,19 @@ function calculateRepop(mob, maintenance) {
 
   const serverUp = serverUpDate.getTime() / 1000;
 
-  let minRepop = 0, maxRepop = 0;
-  let elapsedPercent = 0;
-  let timeRemaining = "Unknown";
-  let status = "Unknown";
+let minRepop = 0, maxRepop = 0;
+  let elapsedPercent = 0;
+  let timeRemaining = "Unknown";
+  let status = "Unknown";
 
-  if (lastKill === 0 || lastKill < serverUp) {
-    minRepop = serverUp + repopSec;
-    maxRepop = serverUp + maxSec;
-    if (now >= maxRepop) {
-      status = "MaxOver"; elapsedPercent = 100; timeRemaining = `Time Over (100%)`;
-    } else if (now < minRepop) {
-      status = "Maintenance"; timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
-    } else {
+  if (lastKill === 0 || lastKill < serverUp) {
+    minRepop = serverUp + (repopSec * 0.6);
+    maxRepop = serverUp + (maxSec * 0.6);
+    if (now >= maxRepop) {
+      status = "MaxOver"; elapsedPercent = 100; timeRemaining = `Time Over (100%)`;
+    } else if (now < minRepop) {
+      status = "Maintenance"; timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
+    } else {
       status = "PopWindow";
       elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
       timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
