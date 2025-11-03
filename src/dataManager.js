@@ -98,6 +98,8 @@ async function loadMaintenance() {
     maintenanceCache = (data && typeof data === "object" && "maintenance" in data)
         ? data.maintenance
         : data;
+    state.maintenance = maintenanceCache;
+    
     return maintenanceCache;
 }
 
