@@ -136,9 +136,7 @@ function createMobCard(mob) {
     <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
         <!-- 左：ランク -->
         <span
-            class="w-6 h-6 flex items-center justify-center rounded-full text-white text-sm font-bold ${rankConfig.bg}">
-            ${rankLabel}
-        </span>
+            class="w-6 h-6 flex items-center justify-center rounded-full text-white text-sm font-bold ${rankConfig.bg}">${rankLabel}</span>
 
         <!-- 中央：モブ名＋エリア名 -->
         <div class="flex flex-col min-w-0">
@@ -172,8 +170,7 @@ function createMobCard(mob) {
         </div>
         ${mob.Map && rank === 'S' ? `
         <div class="map-content py-0.5 flex justify-center relative">
-            <img src="./maps/${mob.Map}" alt="${mob.Area} Map"
-                class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
+            <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
             <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
         </div>
         ` : ''}
