@@ -58,6 +58,7 @@ function processText(text) {
     return text.replace(/\/\//g, "<br>");
 }
 
+
 function createMobCard(mob) {
     const rank = mob.Rank;
     const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
@@ -73,8 +74,10 @@ function createMobCard(mob) {
 
     let isLastOne = false;
     let validSpawnPoints = [];
+    let displayCountText = ""; // ★ 追加: 表示用の残り個数テキスト
 
     if (mob.Map && mob.spawn_points) {
+        // Sランクを含む地点 かつ 湧き潰されていない地点 のみをカウント
         validSpawnPoints = (mob.spawn_points ?? []).filter(point => {
             const isS_SpawnPoint = point.mob_ranks.includes("S");
             if (!isS_SpawnPoint) {
@@ -84,7 +87,19 @@ function createMobCard(mob) {
             return !isCulled(pointStatus, mob.No);
         });
         
-        isLastOne = validSpawnPoints.length === 1;
+        const remainingCount = validSpawnPoints.length;
+        
+        if (remainingCount === 1) {
+            isLastOne = true;
+            const pointId = validSpawnPoints[0]?.id || "";
+            const pointNumber = pointId.slice(-2); // 末尾2桁を抽出
+            displayCountText = ` (<span class="text-yellow-400">${pointNumber}番</span>)`;
+        } else if (remainingCount > 1) {
+            isLastOne = false;
+            displayCountText = ` (<span class="text-yellow-400">@${remainingCount}コ</span>)`;
+        }
+
+        isLastOne = remainingCount === 1; // ラスト1点の判定は維持
     }
 
     const isS_LastOne = rank === "S" && isLastOne;
@@ -105,6 +120,7 @@ function createMobCard(mob) {
         }).join("")
         : "";
 
+    const mobNameAndCountHtml = `<span class="text-base font-bold truncate">${mob.Name}</span><span class="text-sm font-bold">${displayCountText}</span>`;
     const cardHeaderHTML = `
 <div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
     <!-- 上段：ランク・モブ名・報告ボタン -->
@@ -117,24 +133,21 @@ function createMobCard(mob) {
 
         <!-- 中央：モブ名＋エリア名 -->
         <div class="flex flex-col min-w-0">
-            <span class="text-base font-bold truncate">${mob.Name}</span>
+            <div class="flex items-baseline space-x-1">${mobNameAndCountHtml}</div>
             <span class="text-xs text-gray-400 truncate">${mob.Area} (${mob.Expansion})</span>
         </div>
 
         <!-- 右端：報告ボタン（見た目は統一、動作だけ分岐） -->
         <div class="flex-shrink-0 flex items-center justify-end">
-            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}"
-                class="w-8 h-8 flex items-center justify-center text-[12px] rounded 
+            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center text-[12px] rounded 
             bg-green-900 hover:bg-green-700 selected:bg-green-600 text-white font-semibold transition text-center leading-tight whitespace-pre-line">報告<br>する</button>
         </div>
     </div>
 
     <!-- 下段：プログレスバー（構造のみ） -->
     <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
-        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear"
-            style="width: 0%"></div>
-        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
-            style="line-height: 1;"></div>
+        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear" style="width: 0%"></div>
+        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold" style="line-height: 1;"></div>
     </div>
 </div>
 `;
