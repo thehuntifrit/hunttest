@@ -172,8 +172,7 @@ function createMobCard(mob) {
 </div>
 ` : '';
 
-    const maintenance = getMaintenanceState();
-    const repopInfo = calculateRepop(mob, maintenance);
+    const repopInfo = calculateRepop(mob, state.maintenance);
     const isStopped = repopInfo.isMaintenanceStop;
     const stoppedClass = isStopped ? "opacity-50 grayscale pointer-events-none" : "";
 
