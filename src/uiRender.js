@@ -58,122 +58,131 @@ function processText(text) {
     return text.replace(/\/\//g, "<br>");
 }
 
-
 function createMobCard(mob) {
-    const rank = mob.Rank;
-    const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
-    const rankLabel = rankConfig.label || rank;
+    const rank = mob.Rank;
+    // mob.repop の計算結果に isMaintenanceStop が含まれる
+    const repop = mob.repop || {};
+    const isMaintenanceStop = repop.isMaintenanceStop;
 
-    const isExpandable = rank === "S";
-    const { openMobCardNo } = getState();
-    const isOpen = isExpandable && mob.No === openMobCardNo;
-
-    const state = getState();
-    const mobLocationsData = state.mobLocations?.[mob.No];
-    const spawnCullStatus = mobLocationsData || mob.spawn_cull_status; 
-
-    let isLastOne = false;
-    let validSpawnPoints = [];
-    let displayCountText = ""; // ★ 追加: 表示用の残り個数テキスト
-
-    if (mob.Map && mob.spawn_points) {
-        // Sランクを含む地点 かつ 湧き潰されていない地点 のみをカウント
-        validSpawnPoints = (mob.spawn_points ?? []).filter(point => {
-            const isS_SpawnPoint = point.mob_ranks.includes("S");
-            if (!isS_SpawnPoint) {
-                return false; // Sランクを含まない地点は除外
-            }
-            const pointStatus = spawnCullStatus?.[point.id];
-            return !isCulled(pointStatus, mob.No);
-        });
-        
-        const remainingCount = validSpawnPoints.length;
-        
-        if (remainingCount === 1) {
-            isLastOne = true;
-            const pointId = validSpawnPoints[0]?.id || "";
-            const pointNumber = pointId.slice(-2); // 末尾2桁を抽出
-            displayCountText = ` <span class="text-yellow-400">${pointNumber}番</span>`;
-        } else if (remainingCount > 1) {
-            isLastOne = false;
-            displayCountText = ` <span class="text-xs relative -top-0.5">@</span> ${remainingCount}個`;
-        }
-
-        isLastOne = remainingCount === 1; // ラスト1点の判定は維持
+    const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
+    // メンテナンス停止中は、枠線を特別色に上書き
+    let cardBorderClass = rankConfig.border;
+    if (isMaintenanceStop) {
+        cardBorderClass = "border-amber-400/80"; // メンテナンス中の特別な枠線色
     }
 
-    const isS_LastOne = rank === "S" && isLastOne;
-    const spawnPointsHtml = (rank === "S" && mob.Map)
-        ? (mob.spawn_points ?? []).map(point => {
-            const isThisPointTheLastOne = isLastOne && point.id === validSpawnPoints[0]?.id;
+    const rankLabel = rankConfig.label || rank;
 
-            return drawSpawnPoint(
-                point,
-                spawnCullStatus,
-                mob.No,
-                point.mob_ranks.includes("B2") ? "B2"
-                    : point.mob_ranks.includes("B1") ? "B1"
-                        : point.mob_ranks[0],
-                isThisPointTheLastOne,
-                isS_LastOne
-            )
-        }).join("")
-        : "";
+    const isExpandable = rank === "S";
+    const { openMobCardNo } = getState();
+    const isOpen = isExpandable && mob.No === openMobCardNo;
 
-    const mobNameAndCountHtml = `<span class="text-base font-bold truncate">${mob.Name}</span><span class="text-sm font-bold">${displayCountText}</span>`;
-    const cardHeaderHTML = `
+    const state = getState();
+    const mobLocationsData = state.mobLocations?.[mob.No];
+    const spawnCullStatus = mobLocationsData || mob.spawn_cull_status; 
+
+    let isLastOne = false;
+    let validSpawnPoints = [];
+    let displayCountText = ""; // ★ 追加: 表示用の残り個数テキスト
+
+    if (mob.Map && mob.spawn_points) {
+        // Sランクを含む地点 かつ 湧き潰されていない地点 のみをカウント
+        validSpawnPoints = (mob.spawn_points ?? []).filter(point => {
+            const isS_SpawnPoint = point.mob_ranks.includes("S");
+            if (!isS_SpawnPoint) {
+                return false; // Sランクを含まない地点は除外
+            }
+            const pointStatus = spawnCullStatus?.[point.id];
+            return !isCulled(pointStatus, mob.No);
+        });
+        
+        const remainingCount = validSpawnPoints.length;
+        
+        if (remainingCount === 1) {
+            isLastOne = true;
+            const pointId = validSpawnPoints[0]?.id || "";
+            const pointNumber = pointId.slice(-2); // 末尾2桁を抽出
+            displayCountText = ` <span class="text-yellow-400">${pointNumber}番</span>`;
+        } else if (remainingCount > 1) {
+            isLastOne = false;
+            displayCountText = ` <span class="text-xs relative -top-0.5">@</span> ${remainingCount}個`;
+        }
+
+        isLastOne = remainingCount === 1; // ラスト1点の判定は維持
+    }
+
+    const isS_LastOne = rank === "S" && isLastOne;
+    const spawnPointsHtml = (rank === "S" && mob.Map)
+        ? (mob.spawn_points ?? []).map(point => {
+            const isThisPointTheLastOne = isLastOne && point.id === validSpawnPoints[0]?.id;
+
+            return drawSpawnPoint(
+                point,
+                spawnCullStatus,
+                mob.No,
+                point.mob_ranks.includes("B2") ? "B2"
+                    : point.mob_ranks.includes("B1") ? "B1"
+                        : point.mob_ranks[0],
+                isThisPointTheLastOne,
+                isS_LastOne
+            )
+        }).join("")
+        : "";
+
+    const mobNameAndCountHtml = `<span class="text-base font-bold truncate">${mob.Name}</span><span class="text-sm font-bold">${displayCountText}</span>`;
+    const cardHeaderHTML = `
 <div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
-    <!-- 上段：ランク・モブ名・報告ボタン -->
-    <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
-        <!-- 左：ランク -->
-        <span
-            class="w-6 h-6 flex items-center justify-center rounded-full text-white text-sm font-bold ${rankConfig.bg}">
-            ${rankLabel}
-        </span>
+    <!-- 上段：ランク・モブ名・報告ボタン -->
+    <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
+        <!-- 左：ランク -->
+        <span
+            class="w-6 h-6 flex items-center justify-center rounded-full text-white text-sm font-bold ${rankConfig.bg}">
+            ${rankLabel}
+        </span>
 
-        <!-- 中央：モブ名＋エリア名 -->
-        <div class="flex flex-col min-w-0">
-            <div class="flex items-baseline space-x-1">${mobNameAndCountHtml}</div>
-            <span class="text-xs text-gray-400 truncate">${mob.Area} (${mob.Expansion})</span>
-        </div>
+        <!-- 中央：モブ名＋エリア名 -->
+        <div class="flex flex-col min-w-0">
+            <div class="flex items-baseline space-x-1">${mobNameAndCountHtml}</div>
+            <span class="text-xs text-gray-400 truncate">${mob.Area} (${mob.Expansion})</span>
+        </div>
 
-        <!-- 右端：報告ボタン（見た目は統一、動作だけ分岐） -->
-        <div class="flex-shrink-0 flex items-center justify-end">
-            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center text-[12px] rounded 
-            bg-green-600 hover:bg-green-400 selected:bg-green-800 text-white font-semibold transition text-center leading-tight whitespace-pre-line">報告<br>する</button>
-        </div>
-    </div>
+        <!-- 右端：報告ボタン（見た目は統一、動作だけ分岐） -->
+        <div class="flex-shrink-0 flex items-center justify-end">
+            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center text-[12px] rounded 
+            bg-green-600 hover:bg-green-400 selected:bg-green-800 text-white font-semibold transition text-center leading-tight whitespace-pre-line">報告<br>する</button>
+        </div>
+    </div>
 
-    <!-- 下段：プログレスバー（構造のみ） -->
-    <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
-        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear" style="width: 0%"></div>
-        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold" style="line-height: 1;"></div>
-    </div>
+    <!-- 下段：プログレスバー（構造のみ） -->
+    <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
+        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear" style="width: 0%"></div>
+        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold" style="line-height: 1;"></div>
+        </div>
 </div>
 `;
 
-    const expandablePanelHTML = isExpandable ? `
+    const expandablePanelHTML = isExpandable ? `
 <div class="expandable-panel bg-gray-800/70 ${isOpen ? 'open' : ''}">
-    <div class="px-2 py-0 text-sm space-y-0.5">
-        <div class="flex justify-between items-start flex-wrap">
-            <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
-            <div class="w-full text-left text-sm text-gray-300">Memo: <span data-last-memo></span></div>
-            <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽選条件</div>
-            <div class="w-full text-gray-300 text-xs mt-1">${processText(mob.Condition)}</div>
-        </div>
-        ${mob.Map && rank === 'S' ? `
-        <div class="map-content py-0.5 flex justify-center relative">
-            <img src="./maps/${mob.Map}" alt="${mob.Area} Map"
-                class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
-            <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
-        </div>
-        ` : ''}
-    </div>
+    <div class="px-2 py-0 text-sm space-y-0.5">
+        <div class="flex justify-between items-start flex-wrap">
+            <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
+            <div class="w-full text-left text-sm text-gray-300">Memo: <span data-last-memo></span></div>
+            <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽選条件</div>
+            <div class="w-full text-gray-300 text-xs mt-1">${processText(mob.Condition)}</div>
+        </div>
+        ${mob.Map && rank === 'S' ? `
+        <div class="map-content py-0.5 flex justify-center relative">
+            <img src="./maps/${mob.Map}" alt="${mob.Area} Map"
+                class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
+            <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
+        </div>
+        ` : ''}
+        </div>
 </div>
 ` : '';
 
-    return `
-<div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border ${rankConfig.border} 
+    return `
+<div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border ${cardBorderClass} ${isMaintenanceStop ? 'maintenance-stop pointer-events-none opacity-70' : ''} 
 transition duration-150" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeaderHTML}${expandablePanelHTML}</div>
 `;
 }
