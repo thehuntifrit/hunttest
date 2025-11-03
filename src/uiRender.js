@@ -121,7 +121,7 @@ function createMobCard(mob) {
         }).join("")
         : "";
 
-    const mobNameAndCountHtml = `<span class="text-base font-bold truncate">${mob.Name}</span><span class="text-sm font-bold">${displayCountText}</span>`;
+    const mobNameAndCountHtml = `<span class="text-base flex items-baseline font-bold truncate">${mob.Name}</span><span class="text-sm flex items-baseline font-bold">${displayCountText}</span>`;
     const cardHeaderHTML = `
 <div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
     <!-- 上段：ランク・モブ名・報告ボタン -->
