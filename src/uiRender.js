@@ -93,10 +93,10 @@ function createMobCard(mob) {
             isLastOne = true;
             const pointId = validSpawnPoints[0]?.id || "";
             const pointNumber = pointId.slice(-2); // 末尾2桁を抽出
-            displayCountText = ` (<span class="text-yellow-400">${pointNumber}番</span>)`;
+            displayCountText = ` <span class="text-yellow-400">${pointNumber}番</span>`;
         } else if (remainingCount > 1) {
             isLastOne = false;
-            displayCountText = ` (<span class="text-yellow-400">@${remainingCount}コ</span>)`;
+            displayCountText = ` <span class="text-yellow-400">@${remainingCount}</span>`;
         }
 
         isLastOne = remainingCount === 1; // ラスト1点の判定は維持
