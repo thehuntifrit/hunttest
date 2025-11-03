@@ -97,7 +97,7 @@ function createMobCard(mob) {
             displayCountText = ` <span class="text-yellow-400">${pointNumber}番</span>`;
         } else if (remainingCount > 1) {
             isLastOne = false;
-            displayCountText = ` <span class="text-xs relative -top-0.5">@</span> ${remainingCount}<span class="text-sm">個</span>`;
+            displayCountText = ` <span class="text-xs relative -top-0.5">@</span> ${remainingCount}<span class="text-xs">個</span>`;
         }
 
         isLastOne = remainingCount === 1; // ラスト1点の判定は維持
