@@ -89,15 +89,19 @@ body {
 
 .progress-p0-60 {
     background-color: var(--progress-0-60);
+    opacity: 0.7;
 }
 .progress-p60-80 {
     background-color: var(--progress-60-80);
+    opacity: 0.7;
 }
 .progress-p80-100 {
     background-color: var(--progress-80-100);
+    opacity: 0.7;
 }
 .progress-max-over {
     background-color: var(--progress-max-over);
+    opacity: 0.7;
 }
 
 .progress-bar-wrapper {
@@ -254,5 +258,5 @@ body {
     border: 2px solid var(--color-b2);
     width: 10px;
     height: 10px;
-    opacity: 0.6;
+    opacity: 0.7;
 }
