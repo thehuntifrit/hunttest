@@ -286,7 +286,7 @@ function calculateRepop(mob, maintenance) {
 
   // --- 条件探索 ---
   let nextConditionSpawnDate = null;
-  const hasCondition = !!mob.moonPhase || !!mob.timeRange || !!mob.weatherSeedRange || !!mob.weatherSeedRanges;
+  const hasCondition = !!mob.moonPhase || !!mob.timeRange || !!mob.timeRanges || !!mob.weatherSeedRange || !!mob.weatherSeedRanges;
 
   if (hasCondition) {
     const baseSecForConditionSearch = Math.max(minRepop, now, serverUp);
