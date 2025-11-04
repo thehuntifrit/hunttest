@@ -32,26 +32,26 @@ function updateEorzeaTime() {
 updateEorzeaTime();
 setInterval(updateEorzeaTime, 3000);
 
-function displayStatus(message, type = "info") {
-    const el = document.getElementById("status-message");
+function displayStatus(message, type = "info", duration = 5000) {
+    const el = document.getElementById("status-message-temp");
     if (!el) return;
 
-    const typeClasses = {
-        'success': 'bg-green-600',
-        'error': 'bg-red-600',
-        'warning': 'bg-yellow-600',
-        'info': 'bg-blue-600'
-    };
+    const color = {
+        info: "text-blue-300",
+        success: "text-green-300",
+        error: "text-red-300"
+    }[type] || "text-white";
 
-    Object.values(typeClasses).forEach(cls => el.classList.remove(cls));
-
-    el.textContent = message;
-    el.classList.add(typeClasses[type] || typeClasses['info']);
+    el.innerHTML = `<div class="${color}">${message}</div>`;
+    document.getElementById("status-message")?.classList.remove("hidden");
 
     setTimeout(() => {
-        el.textContent = "";
-        Object.values(typeClasses).forEach(cls => el.classList.remove(cls));
-    }, 5000);
+        el.innerHTML = "";
+        const persistent = document.getElementById("status-message-maintenance");
+        if (!persistent || persistent.innerHTML.trim() === "") {
+            document.getElementById("status-message")?.classList.add("hidden");
+        }
+    }, duration);
 }
 
 function processText(text) {
