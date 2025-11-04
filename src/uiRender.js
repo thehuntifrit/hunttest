@@ -372,7 +372,7 @@ function updateProgressText(card, mob) {
     } else {
         rightStr = `未確定`;
     }
-
+    
     text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
         <div class="pl-2 text-left">
