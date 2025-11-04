@@ -98,7 +98,7 @@ body {
 }
 .progress-max-over {
     background-color: var(--progress-max-over);
-    color: #3399ff;
+    text-color: #3399ff;
 }
 
 .progress-bar-wrapper {
