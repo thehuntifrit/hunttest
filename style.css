@@ -13,9 +13,7 @@ body {
 
 #status-message {
     min-height: 1rem;
-    /* 常に2remの高さを確保 */
     line-height: 1rem;
-    /* テキストを中央寄せ */
 }
 
 .maintenance-banner {
@@ -32,12 +30,11 @@ body {
 .maintenance-banner .server-up-time {
     font-size: 0.9em;
     color: #bbb;
-    /* 薄暗いグレーで控えめに */
     font-weight: normal;
     margin-top: 4px;
 }
 
-/* --- ステータスメッセージ表示用クラスの追加 --- */
+/* --- ステータスメッセージ表示用 --- */
 .bg-green-600 {
     background-color: #059669;
 }
@@ -156,9 +153,7 @@ body {
 
 .label-next {
     color: #9580ff;
-    /* 濃いめ */
     font-weight: 600;
-    /* 強調したい場合 */
 }
 
 /* --- 詳細パネルの折りたたみアニメーション --- */
@@ -180,9 +175,7 @@ body {
     --color-b1: #3e83c4;
     --color-b2: #e16666;
     --color-lastone: #50C878;
-    /* Emerald Green */
     --color-culled: #c0c0c0;
-    /* 湧き潰し済みの内側グレー */
 }
 
 .color-b1:hover,
