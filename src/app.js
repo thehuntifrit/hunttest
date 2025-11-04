@@ -45,22 +45,25 @@ async function loadMaintenance() {
     }
 }
 
-
 function renderStatusBar(start, end, serverUp) {
-    const el = document.getElementById('status-message');
+    const el = document.getElementById("status-message-maintenance");
     if (!el) return;
     el.innerHTML = `
-    <div class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3">
-      <div class="font-semibold">メンテナンス予定: ${formatDate(start)} ～ ${formatDate(end)}</div>
-    </div>
-  `;
-    el.classList.remove('hidden');
+      <div class="font-semibold text-yellow-300">
+        メンテナンス予定: ${formatDate(start)} ～ ${formatDate(end)}
+      </div>
+    `;
+    document.getElementById("status-message")?.classList.remove("hidden");
 }
 
 function clearStatusBar() {
-    const el = document.getElementById('status-message');
+    const el = document.getElementById("status-message-maintenance");
     if (!el) return;
-    el.innerHTML = '';
+    el.innerHTML = "";
+    const tempEl = document.getElementById("status-message-temp");
+    if (!tempEl || tempEl.innerHTML.trim() === "") {
+        document.getElementById("status-message")?.classList.add("hidden");
+    }
 }
 
 function updateMobCards() {
