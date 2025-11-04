@@ -897,9 +897,9 @@
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "Ultima_Thule.webp",
       "locations": [
-        {"id":"UT_101", "x": 28.6, "y": 22.2, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UT_102", "x": 43.4, "y": 20.6, "mob_ranks": ["S", "A", "B2"]},
-        {"id":"UT_103", "x": 67.4, "y": 26.0, "mob_ranks": ["S", "A", "B2"]},
+        {"id":"UT_101", "x": 29.2, "y": 23.2, "mob_ranks": ["S", "A", "B2"]},
+        {"id":"UT_102", "x": 44.2, "y": 21.6, "mob_ranks": ["S", "A", "B2"]},
+        {"id":"UT_103", "x": 66.4, "y": 26.8, "mob_ranks": ["S", "A", "B2"]},
         {"id":"UT_104", "x": 16.4, "y": 47.6, "mob_ranks": ["S", "A", "B2"]},
         {"id":"UT_105", "x": 25.6, "y": 51.2, "mob_ranks": ["S", "A", "B2"]},
         {"id":"UT_106", "x": 36.0, "y": 61.6, "mob_ranks": ["S", "A", "B1"]},
