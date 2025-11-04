@@ -360,6 +360,7 @@ function updateProgressText(card, mob) {
     const nextTimeStr = nextConditionSpawnDate
         ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate)
         : null;
+
     let rightStr = "";
     const nowSec = Date.now() / 1000;
     if (status === "Maintenance" || status === "Next") {
@@ -371,6 +372,7 @@ function updateProgressText(card, mob) {
     } else {
         rightStr = `未確定`;
     }
+
     text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
         <div class="pl-2 text-left">
@@ -382,6 +384,12 @@ function updateProgressText(card, mob) {
         </div>
     </div>
   `;
+
+    if (status === "MaxOver") {
+        text.classList.add("max-over");
+    } else {
+        text.classList.remove("max-over");
+    }
 
     const toggleContainer = text.querySelector(".toggle-container");
     if (toggleContainer && !toggleContainer.dataset.toggleStarted) {
