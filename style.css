@@ -136,6 +136,10 @@ body {
     pointer-events: none;
 }
 
+.progress-text.long-wait {
+    color: #888888; /* グレー */
+}
+
 .progress-text.max-over {
     color: #3399ff;
 }
