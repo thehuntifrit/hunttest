@@ -385,10 +385,17 @@ function updateProgressText(card, mob) {
     </div>
   `;
 
+    // --- 状態に応じたクラス付与 ---
     if (status === "MaxOver") {
         text.classList.add("max-over");
     } else {
         text.classList.remove("max-over");
+    }
+
+    if (minRepop - nowSec >= 3600) {
+        text.classList.add("long-wait");
+    } else {
+        text.classList.remove("long-wait");
     }
 
     const toggleContainer = text.querySelector(".toggle-container");
