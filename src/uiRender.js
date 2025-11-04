@@ -176,9 +176,9 @@ function createMobCard(mob) {
     const isStopped = repopInfo.isMaintenanceStop;
     const stoppedClass = isStopped ? "opacity-50 grayscale pointer-events-none" : "";
 
-    return `
-<div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border ${rankConfig.border} 
-transition duration-150 ${stoppedClass}" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeaderHTML}${expandablePanelHTML}</div>
+return `
+<div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer transition duration-150 ${stoppedClass}" 
+style="border: 0.5px solid ${rankConfig.rgbaBorder};" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeaderHTML}${expandablePanelHTML}</div>
 `;
 }
 
