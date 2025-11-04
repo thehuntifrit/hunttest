@@ -178,7 +178,7 @@ function createMobCard(mob) {
 
 return `
 <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer transition duration-150 ${stoppedClass}" 
-style="border: 0.5px solid ${rankConfig.rgbaBorder};" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeaderHTML}${expandablePanelHTML}</div>
+style="border: 1px solid ${rankConfig.rgbaBorder};" data-mob-no="${mob.No}" data-rank="${rank}">${cardHeaderHTML}${expandablePanelHTML}</div>
 `;
 }
 
