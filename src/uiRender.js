@@ -64,6 +64,10 @@ function createMobCard(mob) {
     const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
     const rankLabel = rankConfig.label || rank;
 
+    const repopInfo = calculateRepop(mob, state.maintenance);
+    const isStopped = repopInfo.isMaintenanceStop;
+    const stoppedClass = isStopped ? "opacity-50 grayscale pointer-events-none" : "";
+    
     const isExpandable = rank === "S";
     const { openMobCardNo } = getState();
     const isOpen = isExpandable && mob.No === openMobCardNo;
@@ -171,10 +175,6 @@ function createMobCard(mob) {
     </div>
 </div>
 ` : '';
-
-    const repopInfo = calculateRepop(mob, state.maintenance);
-    const isStopped = repopInfo.isMaintenanceStop;
-    const stoppedClass = isStopped ? "opacity-50 grayscale pointer-events-none" : "";
 
     return `
 <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer border ${rankConfig.border} 
