@@ -98,7 +98,6 @@ body {
 }
 .progress-max-over {
     background-color: var(--progress-max-over);
-    text-color: #3399ff;
 }
 
 .progress-bar-wrapper {
@@ -135,6 +134,10 @@ body {
     line-height: 1;
     color: #FFFFFF;
     pointer-events: none;
+}
+
+.progress-text.max-over {
+    color: #3399ff;
 }
 
 /* PopWindow 80%以上の白点滅 */
