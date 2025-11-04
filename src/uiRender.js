@@ -1,3 +1,4 @@
+
 // uiRender.js
 
 import { loadMaintenance } from "./app.js";
@@ -203,6 +204,19 @@ function parseMobNo(no) {
 }
 
 // ランク > 拡張降順 > モブNo昇順 > インスタンス昇順
+function baseComparator(a, b) {
+    const pa = parseMobNo(a.No);
+    const pb = parseMobNo(b.No);
+
+    const rankDiff = rankPriority(pa.rankCode) - rankPriority(pb.rankCode);
+    if (rankDiff !== 0) return rankDiff;
+
+    if (pa.expansion !== pb.expansion) return pb.expansion - pa.expansion;
+    if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
+    return pa.instance - pb.instance;
+}
+
+// 時間ソート + baseComparator
 function progressComparator(a, b) {
     const nowSec = Date.now() / 1000;
     const aInfo = a.repopInfo || {};
@@ -228,30 +242,6 @@ function progressComparator(a, b) {
         if (aRemain !== bRemain) return aRemain - bRemain;
     }
 
-    return baseComparator(a, b);
-}
-
-// 時間ソート + baseComparator
-function progressComparator(a, b) {
-    const nowSec = Date.now() / 1000;
-    const aInfo = a.repopInfo || {};
-    const bInfo = b.repopInfo || {};
-
-    const aOver = (aInfo.status === "PopWindow" || aInfo.status === "MaxOver");
-    const bOver = (bInfo.status === "PopWindow" || bInfo.status === "MaxOver");
-
-    if (aOver && !bOver) return -1;
-    if (!aOver && bOver) return 1;
-
-    if (aOver && bOver) {
-        const diff = (bInfo.elapsedPercent || 0) - (aInfo.elapsedPercent || 0);
-        if (diff !== 0) return diff;
-    } else {
-        const aRemain = (aInfo.minRepop || 0) - nowSec;
-        const bRemain = (bInfo.minRepop || 0) - nowSec;
-        if (aRemain !== bRemain) return aRemain - bRemain;
-    }
-    // fallback は baseComparator
     return baseComparator(a, b);
 }
 
