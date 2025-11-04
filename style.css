@@ -214,13 +214,13 @@ body {
 .color-b1 {
     background-color: var(--color-b1);
     border: 2px solid #000;
-    opacity: 0.7;
+    opacity: 0.6;
 }
 
 .color-b2 {
     background-color: var(--color-b2);
     border: 2px solid #000;
-    opacity: 0.7;
+    opacity: 0.6;
 }
 
 /* --- 湧き潰し済み（外枠B色＋内側グレー） --- */
