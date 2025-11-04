@@ -203,16 +203,32 @@ function parseMobNo(no) {
 }
 
 // ランク > 拡張降順 > モブNo昇順 > インスタンス昇順
-function baseComparator(a, b) {
-    const pa = parseMobNo(a.No);
-    const pb = parseMobNo(b.No);
+function progressComparator(a, b) {
+    const nowSec = Date.now() / 1000;
+    const aInfo = a.repopInfo || {};
+    const bInfo = b.repopInfo || {};
+    // メンテナンス停止中のモブは最下層へ
+    const aStopped = aInfo.isMaintenanceStop;
+    const bStopped = bInfo.isMaintenanceStop;
+    if (aStopped && !bStopped) return 1;
+    if (!aStopped && bStopped) return -1;
 
-    const rankDiff = rankPriority(pa.rankCode) - rankPriority(pb.rankCode);
-    if (rankDiff !== 0) return rankDiff;
+    const aOver = (aInfo.status === "PopWindow" || aInfo.status === "MaxOver");
+    const bOver = (bInfo.status === "PopWindow" || bInfo.status === "MaxOver");
 
-    if (pa.expansion !== pb.expansion) return pb.expansion - pa.expansion;
-    if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
-    return pa.instance - pb.instance;
+    if (aOver && !bOver) return -1;
+    if (!aOver && bOver) return 1;
+
+    if (aOver && bOver) {
+        const diff = (bInfo.elapsedPercent || 0) - (aInfo.elapsedPercent || 0);
+        if (diff !== 0) return diff;
+    } else {
+        const aRemain = (aInfo.minRepop || 0) - nowSec;
+        const bRemain = (bInfo.minRepop || 0) - nowSec;
+        if (aRemain !== bRemain) return aRemain - bRemain;
+    }
+
+    return baseComparator(a, b);
 }
 
 // 時間ソート + baseComparator
