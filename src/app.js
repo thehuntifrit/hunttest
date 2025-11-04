@@ -52,7 +52,6 @@ function renderStatusBar(start, end, serverUp) {
     el.innerHTML = `
     <div class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3">
       <div class="font-semibold">メンテナンス予定: ${formatDate(start)} ～ ${formatDate(end)}</div>
-      <div class="text-gray-300">サーバー起動: ${formatDate(serverUp)}</div>
     </div>
   `;
     el.classList.remove('hidden');
