@@ -160,7 +160,6 @@ function checkMobSpawnCondition(mob, date) {
   return true;
 }
 
-
 function alignToCycleBoundary(tSec) {
     const r = tSec % WEATHER_CYCLE_SEC;
     return tSec - r; // 直前のサイクル境界
@@ -182,7 +181,7 @@ function alignToEorzeaHourBoundary(realSec) {
   return Math.floor(realSec / ET_HOUR_SEC) * ET_HOUR_SEC;
 }
 
-function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
+function findNextSpawnTimes(mob, startDate, repopStartSec, repopEndSec) {
   const startSec = Math.floor(startDate.getTime() / 1000);
 
   // 1) 連続条件があるモブは従来通り天候サイクル探索
@@ -209,6 +208,7 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
         if (consecutiveCycles >= requiredCycles) {
           const popSec = consecutiveStartSec + requiredSec;
           if (popSec >= minRepopSec && popSec <= limitSec) {
+            const now = Date.now() / 1000;
             return {
               nextConditionSpawnDate: new Date(popSec * 1000),
               nextConditionSpawnDate2: null,
@@ -223,6 +223,7 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
     }
     return { nextConditionSpawnDate: null, nextConditionSpawnDate2: null, currentConditionActive: false };
   }
+
   // 2) 連続条件がないモブは ET hour 単位 (175秒刻み) で探索
   const stepSec = 175;
   const t0 = alignToEorzeaHourBoundary(startSec);
@@ -233,11 +234,11 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
     const date = new Date(tSec * 1000);
     if (checkMobSpawnCondition(mob, date)) {
       results.push(date);
-      if (results.length >= 2) break;
+      if (results.length >= 2) break; // 2件で打ち切り
     }
   }
-  // 現在が条件内かどうかを判定
-  const nowDate = new Date(Date.now());
+
+  const nowDate = new Date();
   const currentConditionActive = checkMobSpawnCondition(mob, nowDate);
 
   return {
@@ -319,12 +320,14 @@ function calculateRepop(mob, maintenance) {
     } else {
       // 現在条件外なら次回候補を探索（2件まで）
       const baseSecForConditionSearch = Math.max(minRepop, now, serverUp);
-      const { nextConditionSpawnDate: first, nextConditionSpawnDate2: second } =
+      const { nextConditionSpawnDate: first, nextConditionSpawnDate2: second, currentConditionActive: active } =
         findNextSpawnTimes(mob, new Date(baseSecForConditionSearch * 1000));
       nextConditionSpawnDate = first;
       nextConditionSpawnDate2 = second;
+      currentConditionActive = active;
     }
   }
+
   // --- メンテナンス停止判定ロジック ---
   const minRepopAfterMaintenanceStart = minRepop > maintenanceStart;
   const conditionAfterMaintenanceStart = nextConditionSpawnDate 
@@ -340,9 +343,9 @@ function calculateRepop(mob, maintenance) {
     status,
     nextMinRepopDate,
     nextConditionSpawnDate,
-    nextConditionSpawnDate2,
+    nextConditionSpawnDate2,   // ★追加
     isMaintenanceStop,
-    currentConditionActive
+    currentConditionActive     // ★追加
   };
 
   function baseResult(status) {
