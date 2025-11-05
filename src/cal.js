@@ -177,9 +177,15 @@ function checkWeatherInRange(mob, seed) {
   return false;
 }
 
+function alignToEorzeaHourBoundary(realSec) {
+  const ET_HOUR_SEC = 175; // 1 ET hour = 175秒
+  return Math.floor(realSec / ET_HOUR_SEC) * ET_HOUR_SEC;
+}
+
 function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
   const startSec = Math.floor(startDate.getTime() / 1000);
-  // 1) 連続条件があるモブは連続探索のみ。瞬間条件へは落とさない。
+
+  // 1) 連続条件があるモブは従来通り天候サイクル探索
   if (mob.weatherDuration?.minutes) {
     const requiredMinutes = Number(mob.weatherDuration.minutes);
     const requiredSec = requiredMinutes * 60;
@@ -203,7 +209,11 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
         if (consecutiveCycles >= requiredCycles) {
           const popSec = consecutiveStartSec + requiredSec;
           if (popSec >= minRepopSec && popSec <= limitSec) {
-            return new Date(popSec * 1000);
+            return {
+              nextConditionSpawnDate: new Date(popSec * 1000),
+              nextConditionSpawnDate2: null,
+              currentConditionActive: (now >= consecutiveStartSec && now < popSec)
+            };
           }
         }
       } else {
@@ -211,20 +221,30 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
         consecutiveStartSec = null;
       }
     }
-    return null;
+    return { nextConditionSpawnDate: null, nextConditionSpawnDate2: null, currentConditionActive: false };
   }
-  // 2) 連続条件がないモブのみ、瞬間条件を探索
-  const stepSec = 60;
-  const t0 = Math.floor(startSec / stepSec) * stepSec;
+  // 2) 連続条件がないモブは ET hour 単位 (175秒刻み) で探索
+  const stepSec = 175;
+  const t0 = alignToEorzeaHourBoundary(startSec);
   const limitSec = repopEndSec ?? (startSec + 14 * 24 * 3600);
 
+  const results = [];
   for (let tSec = t0; tSec <= limitSec; tSec += stepSec) {
     const date = new Date(tSec * 1000);
     if (checkMobSpawnCondition(mob, date)) {
-      return date;
+      results.push(date);
+      if (results.length >= 2) break;
     }
   }
-  return null;
+  // 現在が条件内かどうかを判定
+  const nowDate = new Date(Date.now());
+  const currentConditionActive = checkMobSpawnCondition(mob, nowDate);
+
+  return {
+    nextConditionSpawnDate: results[0] || null,
+    nextConditionSpawnDate2: results[1] || null,
+    currentConditionActive
+  };
 }
 
 // repop計算
@@ -252,6 +272,7 @@ function calculateRepop(mob, maintenance) {
   let timeRemaining = "Unknown";
   let status = "Unknown";
   let isMaintenanceStop = false;
+  let currentConditionActive = false;
 
   if (lastKill === 0 || lastKill < serverUp) {
     minRepop = serverUp + (repopSec * 0.6);
@@ -286,67 +307,30 @@ function calculateRepop(mob, maintenance) {
 
   // --- 条件探索 ---
   let nextConditionSpawnDate = null;
+  let nextConditionSpawnDate2 = null;
   const hasCondition = !!mob.moonPhase || !!mob.timeRange || !!mob.timeRanges || !!mob.weatherSeedRange || !!mob.weatherSeedRanges;
 
   if (hasCondition) {
-    const baseSecForConditionSearch = Math.max(minRepop, now, serverUp);
+    const nowDate = new Date(now * 1000);
 
-    if (mob.weatherDuration?.minutes) {
-      const requiredMinutes = mob.weatherDuration.minutes;
-      const requiredCycles = Math.ceil((requiredMinutes * 60) / WEATHER_CYCLE_SEC);
-      // 基準時刻の決定
-      let baseSec = (lastKill === 0 || lastKill < serverUp)
-        ? serverUp + (repopSec * 0.6)
-        : lastKill + repopSec;
-
-      if (now > baseSec || now > maxRepop) {
-        baseSec = now;
-      }
-      // 探索開始点 = 基準時刻 - 必要サイクル分
-      let scanStartSec = baseSec - requiredCycles * WEATHER_CYCLE_SEC;
-      if (scanStartSec < serverUp) scanStartSec = serverUp;
-      scanStartSec = alignToCycleBoundary(scanStartSec);
-      // 連続天候探索
-      let consecutive = 0;
-      let conditionStartSec = null;
-      for (let tSec = scanStartSec; tSec < baseSec + 14 * 24 * 3600; tSec += WEATHER_CYCLE_SEC) {
-        const date = new Date(tSec * 1000);
-        const seed = getEorzeaWeatherSeed(date);
-        const inRange =
-          mob.weatherSeedRange
-            ? (seed >= mob.weatherSeedRange[0] && seed <= mob.weatherSeedRange[1])
-            : mob.weatherSeedRanges
-              ? mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max)
-              : false;
-
-        if (inRange) {
-          if (consecutive === 0) conditionStartSec = tSec;
-          consecutive++;
-          if (consecutive >= requiredCycles) {
-            const popSec = conditionStartSec + requiredMinutes * 60;
-            if (popSec >= minRepop) {
-              nextConditionSpawnDate = new Date(popSec * 1000);
-              break;
-            }
-          }
-        } else {
-          consecutive = 0;
-          conditionStartSec = null;
-        }
-      }
+    // 現在が条件内かどうかを判定
+    if (checkMobSpawnCondition(mob, nowDate)) {
+      currentConditionActive = true;
     } else {
-      const baseSec = baseSecForConditionSearch; 
-      nextConditionSpawnDate = findNextSpawnTime(mob, new Date(baseSec * 1000));
+      // 現在条件外なら次回候補を探索（2件まで）
+      const baseSecForConditionSearch = Math.max(minRepop, now, serverUp);
+      const { nextConditionSpawnDate: first, nextConditionSpawnDate2: second } =
+        findNextSpawnTimes(mob, new Date(baseSecForConditionSearch * 1000));
+      nextConditionSpawnDate = first;
+      nextConditionSpawnDate2 = second;
     }
   }
-
   // --- メンテナンス停止判定ロジック ---
   const minRepopAfterMaintenanceStart = minRepop > maintenanceStart;
   const conditionAfterMaintenanceStart = nextConditionSpawnDate 
     ? (nextConditionSpawnDate.getTime() / 1000) > maintenanceStart
     : false;
   isMaintenanceStop = minRepopAfterMaintenanceStart || conditionAfterMaintenanceStart;
-
 
   return {
     minRepop,
@@ -356,7 +340,9 @@ function calculateRepop(mob, maintenance) {
     status,
     nextMinRepopDate,
     nextConditionSpawnDate,
-    isMaintenanceStop
+    nextConditionSpawnDate2,
+    isMaintenanceStop,
+    currentConditionActive
   };
 
   function baseResult(status) {
@@ -368,7 +354,9 @@ function calculateRepop(mob, maintenance) {
       status,
       nextMinRepopDate: null,
       nextConditionSpawnDate: null,
-      isMaintenanceStop: false
+      nextConditionSpawnDate2: null,
+      isMaintenanceStop: false,
+      currentConditionActive: false
     };
   }
 }
