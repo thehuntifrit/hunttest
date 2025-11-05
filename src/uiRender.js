@@ -454,6 +454,20 @@ function updateExpandablePanel(card, mob) {
   if (elMemo) elMemo.textContent = memoStr;
 }
 
+function updateProgressBars() {
+  const state = getState();
+  state.mobs.forEach((mob) => {
+    const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
+    if (card) {
+      updateProgressText(card, mob);
+      updateProgressBar(card, mob);
+    }
+  });
+}
+
+const sortAndRedistribute = debounce(() => filterAndRender(), 200);
+const areaPanel = document.getElementById("area-filter-panel");
+
 function onKillReportReceived(mobId, kill_time) {
   const mob = getState().mobs.find(m => m.No === mobId);
   if (!mob) return;
@@ -472,5 +486,7 @@ setInterval(() => {
   updateProgressBars();
 }, 60000);
 
-export { filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, DOM,
-  renderAreaFilterPanel, renderRankTabs, updateFilterUI, onKillReportReceived, updateProgressBars };
+export {
+  filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, DOM,
+  renderAreaFilterPanel, renderRankTabs, sortAndRedistribute, updateFilterUI, onKillReportReceived, updateProgressBars
+};
