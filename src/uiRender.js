@@ -138,7 +138,7 @@ function createMobCard(mob) {
         <!-- 右端：報告ボタン（見た目は統一、動作だけ分岐） -->
         <div class="flex-shrink-0 flex items-center justify-end">
             <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center rounded transition text-center leading-tight">
-                <img src="./icon/reports.webp" alt="報告する" class="w-8 h-8 object-contain transition hover:brightness-120 focus:brightness-120 active:brightness-130" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <img src="./icon/reports.webp" alt="報告する" class="w-8 h-8 object-contain transition hover:brightness-125 focus:brightness-125 active:brightness-150" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <span style="display:none;" class="w-8 h-8 flex items-center justify-center text-[12px] rounded 
                 bg-green-600 hover:bg-green-400 selected:bg-green-800 text-white font-semibold leading-tight whitespace-pre-line">報告<br>する</span>
             </button>
