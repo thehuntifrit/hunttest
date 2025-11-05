@@ -354,33 +354,18 @@ function updateProgressText(card, mob) {
   const text = card.querySelector(".progress-text");
   if (!text) return;
 
-  const {
-    elapsedPercent,
-    nextMinRepopDate,
-    nextConditionSpawnDate,
-    minRepop,
-    maxRepop,
-    status
-  } = mob.repopInfo;
+  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status } = mob.repopInfo;
+  const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
 
-  const absFmt = {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Asia/Tokyo'
-  };
-
-  // 最低保証時間
   const inTimeStr = nextMinRepopDate
     ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextMinRepopDate)
     : "未確定";
-  // 条件による次回候補（代表値のみ）
+
   let nextTimeStr = null;
   if (nextConditionSpawnDate) {
     nextTimeStr = new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate);
   }
-  // 左側の進行状況テキスト
+
   let rightStr = "";
   const nowSec = Date.now() / 1000;
   if (status === "Maintenance" || status === "Next") {
@@ -393,11 +378,11 @@ function updateProgressText(card, mob) {
     rightStr = `未確定`;
   }
 
-  // HTML 出力
   text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
         <div class="pl-2 text-left">
-          ${rightStr}${status !== "MaxOver" && status !== "Unknown" ? ` (${elapsedPercent.toFixed(0)}%)` : ""}</div>
+          ${rightStr}${status !== "MaxOver" && status !== "Unknown" ? ` (${elapsedPercent.toFixed(0)}%)` : ""}
+        </div>
         <div class="pr-1 text-right toggle-container">
           <span class="label-in">in ${inTimeStr}</span>
           <span class="label-next" style="display:none;">${nextTimeStr ? `Next ${nextTimeStr}` : ""}</span>
@@ -405,7 +390,6 @@ function updateProgressText(card, mob) {
     </div>
   `;
 
-  // --- 状態に応じたクラス付与 ---
   if (status === "MaxOver") {
     text.classList.add("max-over");
   } else {
@@ -417,7 +401,7 @@ function updateProgressText(card, mob) {
   } else {
     text.classList.remove("long-wait");
   }
-  // in/next のトグル切替
+
   const toggleContainer = text.querySelector(".toggle-container");
   if (toggleContainer && !toggleContainer.dataset.toggleStarted) {
     startToggleInNext(toggleContainer);
@@ -450,16 +434,10 @@ function updateExpandablePanel(card, mob) {
   const elMemo = card.querySelector("[data-last-memo]");
   if (!elNext && !elLast && !elMemo) return;
 
-  const absFmt = {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Asia/Tokyo'
-  };
+  const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
 
   const nextMin = mob.repopInfo?.nextMinRepopDate;
-  const conditionTime = mob.repopInfo?.nextConditionSpawnDate; // 代表値を利用
+  const conditionTime = mob.repopInfo?.nextConditionSpawnDate;
   const displayTime = (nextMin && conditionTime)
     ? (conditionTime > nextMin ? conditionTime : nextMin)
     : (nextMin || conditionTime);
@@ -475,7 +453,6 @@ function updateExpandablePanel(card, mob) {
   if (elLast) elLast.textContent = `前回: ${lastStr}`;
   if (elMemo) elMemo.textContent = memoStr;
 }
-anel");
 
 function onKillReportReceived(mobId, kill_time) {
   const mob = getState().mobs.find(m => m.No === mobId);
