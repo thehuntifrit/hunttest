@@ -401,7 +401,4 @@ function formatLastKillTime(timestamp) {
   return new Intl.DateTimeFormat("ja-JP", options).format(date);
 }
 
-export {
-  calculateRepop, checkMobSpawnCondition, findNextSpawnTime, getEorzeaTime, getEorzeaMoonPhase, formatDuration,
-  getEorzeaWeatherSeed, getEorzeaWeather, getMoonPhaseLabel, formatDurationHM, debounce, formatLastKillTime
-};
+export { calculateRepop, checkMobSpawnCondition, findNextSpawnTime, getEorzeaTime,  formatDuration, formatDurationHM, debounce, formatLastKillTime };
