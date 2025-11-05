@@ -351,21 +351,22 @@ function updateProgressText(card, mob) {
     const text = card.querySelector(".progress-text");
     if (!text) return;
 
-    const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status } = mob.repopInfo;
+    const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status, currentConditionActive } = mob.repopInfo;
+    const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
 
-    const absFmt = {
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'Asia/Tokyo'
-    };
     const inTimeStr = nextMinRepopDate
         ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextMinRepopDate)
         : "未確定";
-    const nextTimeStr = nextConditionSpawnDate
-        ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate)
-        : null;
+
+    let nextTimeStr = null;
+    if (currentConditionActive && nextConditionSpawnDate) {
+        const nowSec = Date.now() / 1000;
+        const remainMin = Math.max(0, Math.floor((nextConditionSpawnDate.getTime() / 1000 - nowSec) / 60));
+        nextTimeStr = `@ ${remainMin}分`;
+    } else if (nextConditionSpawnDate) {
+        // 通常時は原型通りのフォーマット
+        nextTimeStr = new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate);
+    }
 
     let rightStr = "";
     const nowSec = Date.now() / 1000;
