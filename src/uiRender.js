@@ -473,4 +473,4 @@ setInterval(() => {
 }, 60000);
 
 export { filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, DOM,
-  renderAreaFilterPanel, renderRankTabs, sortAndRedistribute, updateFilterUI, onKillReportReceived, updateProgressBars };
+  renderAreaFilterPanel, renderRankTabs, updateFilterUI, onKillReportReceived, updateProgressBars };
