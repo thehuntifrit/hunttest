@@ -197,6 +197,7 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
 
     let consecutiveCycles = 0;
     let consecutiveStartSec = null;
+    const results = [];
 
     for (let tSec = scanStartSec; tSec <= limitSec; tSec += WEATHER_CYCLE_SEC) {
       const seed = getEorzeaWeatherSeed(new Date(tSec * 1000));
@@ -209,12 +210,8 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
         if (consecutiveCycles >= requiredCycles) {
           const popSec = consecutiveStartSec + requiredSec;
           if (popSec >= minRepopSec && popSec <= limitSec) {
-            const now = Date.now() / 1000;
-            return {
-              nextConditionSpawnDate: new Date(popSec * 1000),
-              nextConditionSpawnDate2: null,
-              currentConditionActive: (now >= consecutiveStartSec && now < popSec)
-            };
+            results.push(new Date(popSec * 1000));
+            if (results.length >= 2) break;
           }
         }
       } else {
@@ -222,9 +219,20 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
         consecutiveStartSec = null;
       }
     }
-    return { nextConditionSpawnDate: null, nextConditionSpawnDate2: null, currentConditionActive: false };
-  }
 
+    const now = Date.now() / 1000;
+    let currentConditionActive = false;
+    if (results.length > 0 && consecutiveStartSec !== null) {
+      const firstEnd = results[0].getTime() / 1000;
+      currentConditionActive = (now >= consecutiveStartSec && now < firstEnd);
+    }
+
+    return {
+      nextConditionSpawnDate: results[0] || null,
+      nextConditionSpawnDate2: results[1] || null,
+      currentConditionActive
+    };
+  }
   // 2) 通常条件は ET hour 単位 (175秒刻み)
   const stepSec = 175;
   const t0 = alignToEorzeaHourBoundary(startSec);
