@@ -44,17 +44,21 @@ function getEorzeaTime(date = new Date()) {
   };
 }
 
-function getEorzeaMoonPhase(date = new Date()) {
+function getEorzeaMoonInfo(date = new Date()) {
   const unixSeconds = date.getTime() / 1000;
   const EORZEA_SPEED_RATIO = 20.57142857142857;
   const eorzeaTotalDays = (unixSeconds * EORZEA_SPEED_RATIO) / 86400;
-  return (eorzeaTotalDays % 32) + 1;
-}
+  // 月齢（1〜33相当）
+  const phase = (eorzeaTotalDays % 32) + 1;
+  // ラベル判定
+  let label = null;
+  if (phase >= 32.5 || phase < 4.5) {
+    label = "新月";
+  } else if (phase >= 16.5 && phase < 20.5) {
+    label = "満月";
+  }
 
-function getMoonPhaseLabel(phase) {
-  if (phase >= 32.5 || phase < 4.5) return "新月";
-  if (phase >= 16.5 && phase < 20.5) return "満月";
-  return null;
+  return { phase, label };
 }
 
 function getEorzeaWeatherSeed(date = new Date()) {
@@ -116,12 +120,11 @@ function isOtherNightsPhase(phase) {
 function checkMobSpawnCondition(mob, date) {
   const ts = Math.floor(date.getTime() / 1000);
   const et = getEorzeaTime(date);
-  const moon = getEorzeaMoonPhase(date); // 数値 (0〜33)
+  const moonInfo = getEorzeaMoonInfo(date); // { phase, label }
   const seed = getEorzeaWeatherSeed(date);
   // 月齢ラベル条件
   if (mob.moonPhase) {
-    const currentLabel = getMoonPhaseLabel(moon);
-    if (currentLabel !== mob.moonPhase) return false;
+    if (moonInfo.label !== mob.moonPhase) return false;
   }
   // 天候条件
   if (mob.weatherSeedRange) {
@@ -138,11 +141,11 @@ function checkMobSpawnCondition(mob, date) {
     const fn = mob.conditions.firstNight;
     const on = mob.conditions.otherNights;
     // 初回夜: 月齢が 32.5〜1.5 の範囲
-    if (fn && fn.timeRange && (moon >= 32.5 || moon <= 1.5)) {
+    if (fn && fn.timeRange && (moonInfo.phase >= 32.5 || moonInfo.phase <= 1.5)) {
       ok = ok || checkTimeRange(fn.timeRange, ts);
     }
     // 以降夜: 月齢が 1.5〜4.5 の範囲
-    if (on && on.timeRange && moon > 1.5 && moon < 4.5) {
+    if (on && on.timeRange && moonInfo.phase > 1.5 && moonInfo.phase < 4.5) {
       ok = ok || checkTimeRange(on.timeRange, ts);
     }
 
@@ -159,7 +162,6 @@ function checkMobSpawnCondition(mob, date) {
 
   return true;
 }
-
 
 function alignToCycleBoundary(tSec) {
     const r = tSec % WEATHER_CYCLE_SEC;
