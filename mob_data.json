@@ -110,7 +110,7 @@
       "locations": []
     },
       "12021": {"rank": "S", "name":"ケロゲロス", "area": "低地ラノシア",
-      "condition": "満月直前のET17:00にPOP地点を踏む//※以降は満月中のET 17:00～3:00",
+      "condition": "満月直後のET17:00にPOP地点を踏む//※以降は満月中のET 17:00～3:00",
       "repopSeconds": 180000, "maxRepopSeconds": 180000,
       "moonPhase": "満月",
       "timeRange": { "start": 17, "end": 3 },
@@ -118,7 +118,7 @@
       "locations": []
     },
       "12031": {"rank": "S", "name":"ガーロック", "area": "東ラノシア",
-      "condition": "LT 3時間20分 (200分間) 雨が降らない",
+      "condition": "LT 200分間 (3時間20分) 雨が降らない",
       "repopSeconds": 151200, "maxRepopSeconds": 172800,
       "weatherSeedRange": [0, 89],
       "weatherDuration": { "minutes": 200 },
@@ -177,7 +177,7 @@
       "locations": [] 
     },
       "12091": {"rank": "S", "name":"マインドフレア", "area": "南部森林",
-      "condition": "新月のET0:00以降の夜間にPOP地点を踏む//※以降は新月中のET 17:00～2:59",
+      "condition": "新月最初のET0:00以降の夜間にPOP地点を踏む//※以降は新月中のET 17:00～2:59",
       "repopSeconds": 180000, "maxRepopSeconds": 180000,
       "moonPhase": "新月",
       "conditions": {"firstNight": { "timeRange": { "start": 0, "end": 3 } },"otherNights": { "timeRange": { "start": 17, "end": 3 } }},
@@ -199,7 +199,7 @@
       "locations": []
     },
       "12121": {"rank": "S", "name":"ブロンテス 📍", "area": "中央ザナラーン",
-      "condition": "POP地点で食事を食べる",
+      "condition": "POP地点で食事をとる",
       "repopSeconds": 241200, "maxRepopSeconds": 277200,
       "mapImage": "Central_Thanalan.webp",
       "locations": [
@@ -343,7 +343,7 @@
       "locations": [] 
     },
       "22011": {"rank": "S", "name":"カイザーベヒーモス 📍", "area": "クルザス西部高地",
-      "condition": "ミニオン「ロイヤルベビーモス」を連れてPOP地点を踏む",
+      "condition": "ミニオン「ロイヤルベビーモス」を出してPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "Coerthas_Western_Highlands.webp",
       "locations": [
@@ -393,7 +393,7 @@
       "locations": [] 
     },
       "22051": {"rank": "S", "name":"ペイルライダー", "area": "低地ドラヴァニア",
-      "condition": "低地ドラの「宝の地図G7 (古ぼけた地図G7)」の宝箱を開ける (抽選)",
+      "condition": "低地ドラヴァニアの宝箱を開ける (抽選)//※宝の地図G7 (古ぼけた地図G7)",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "",
       "locations": [] 
@@ -507,7 +507,7 @@
       "locations": [] 
     },
       "32041": {"rank": "S", "name":"オキナ", "area": "紅玉海",
-      "condition": "「ユメミガイ」「カラナシユメミ」各100体討伐後、満月になる//※満月中に討伐数を満たすのも可",
+      "condition": "「ユメミガイ」「カラナシユメミ」各100体討伐した状態で満月を迎える、または満月中に討伐数を満たす",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "moonPhase": "満月",
       "mapImage": "",
@@ -669,7 +669,7 @@
       "locations": [] 
     },
       "42031": {"rank": "S", "name":"タルキア 📍", "area": "アム・アレーン",
-      "condition": "青魔導士の「自爆」をPOP地点で使う//※プレイヤーが死亡時にPOP",
+      "condition": "青魔導士のスキル「自爆」をPOP地点で使う//※プレイヤーが死亡時にPOP",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "Amh_Araeng.webp",
       "locations": [
@@ -748,7 +748,7 @@
       "locations": [] 
     },
       "42061": {"rank": "S", "name":"グニット", "area": "テンペスト",
-      "condition": "クリオニッドにディープシーリーチを3匹捕食させ、最大化バフがついたクリオニッドの「バッカルコーン」をプレイヤーが受ける (抽選)//※バリア有効。倒される必要なし",
+      "condition": "クリオニッドにディープシーリーチを3匹捕食させ、最大化がついたクリオニッドの「バッカルコーン」をプレイヤーが受ける (抽選)//※バリア有効。倒される必要なし",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "",
       "locations": [] 
@@ -1042,7 +1042,7 @@
       "locations": [] 
     },
       "62011": {"rank": "S", "name":"1️⃣ 厭忌のキーリーゲー 📍", "area": "オルコ・パチャ",
-      "condition": "新月のET 0:00～5:59 + 天候が「霧」の条件を満たした時にPOP地点を踏む",
+      "condition": "「新月」+「ET 0:00～5:59」+「霧」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "moonPhase": "新月",
       "weatherSeedRange": [70, 79], 
@@ -1062,7 +1062,7 @@
       ]
     },
       "62012": {"rank": "S", "name":"2️⃣ 厭忌のキーリーゲー 📍", "area": "オルコ・パチャ",
-      "condition": "新月のET 0:00～5:59 + 天候が「霧」の条件を満たした時にPOP地点を踏む",
+      "condition": "「新月」+「ET 0:00～5:59」+「霧」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "moonPhase": "新月",
       "weatherSeedRange": [70, 79], 
@@ -1082,7 +1082,7 @@
       ]
     },
       "62013": {"rank": "S", "name":"3️⃣ 厭忌のキーリーゲー 📍", "area": "オルコ・パチャ",
-      "condition": "新月のET 0:00～5:59 + 天候が「霧」の条件を満たした時にPOP地点を踏む",
+      "condition": "「新月」+「ET 0:00～5:59」+「霧」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "moonPhase": "新月",
       "weatherSeedRange": [70, 79], 
@@ -1149,7 +1149,7 @@
       "locations": [] 
     },
       "62061": {"rank": "S", "name": "ウェザーリポーター 📍", "area": "リビング・メモリー",
-      "condition": "青魔道士の「猛吹雪」をPOP地点で使う",
+      "condition": "青魔道士のスキル「猛吹雪」をPOP地点で使う",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "Living_Memory.webp",
       "locations": [
