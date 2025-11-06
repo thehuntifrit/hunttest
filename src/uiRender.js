@@ -354,20 +354,31 @@ function updateProgressText(card, mob) {
   const text = card.querySelector(".progress-text");
   if (!text) return;
 
-  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status } = mob.repopInfo;
+  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnRanges, minRepop, maxRepop, status } = mob.repopInfo;
   const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
 
   const inTimeStr = nextMinRepopDate
     ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextMinRepopDate)
     : "未確定";
 
-  let nextTimeStr = null;
-  if (nextConditionSpawnDate) {
-    nextTimeStr = new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate);
-  }
-
-  let rightStr = "";
   const nowSec = Date.now() / 1000;
+
+  // --- 特殊条件レンジ判定 ---
+  let conditionStr = "";
+  if (Array.isArray(nextConditionSpawnRanges) && nextConditionSpawnRanges.length > 0) {
+    const activeRange = nextConditionSpawnRanges.find(r => nowSec >= r.startSec && nowSec < r.endSec);
+    if (activeRange) {
+      const remainSec = activeRange.endSec - nowSec;
+      conditionStr = ` @ ${formatDurationHM(remainSec)} 有効`;
+    } else {
+      // 次のレンジ開始時刻を表示
+      const nextRange = nextConditionSpawnRanges[0];
+      const nextDate = new Date(nextRange.startSec * 1000);
+      conditionStr = ` Next ${new Intl.DateTimeFormat('ja-JP', absFmt).format(nextDate)}`;
+    }
+  }
+  // --- 右側の進捗文字列 ---
+  let rightStr = "";
   if (status === "Maintenance" || status === "Next") {
     rightStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
   } else if (status === "PopWindow") {
@@ -381,11 +392,10 @@ function updateProgressText(card, mob) {
   text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
         <div class="pl-2 text-left">
-          ${rightStr}${status !== "MaxOver" && status !== "Unknown" ? ` (${elapsedPercent.toFixed(0)}%)` : ""}
+          ${rightStr}${status !== "MaxOver" && status !== "Unknown" ? ` (${elapsedPercent.toFixed(0)}%)` : ""}${conditionStr}
         </div>
         <div class="pr-1 text-right toggle-container">
           <span class="label-in">in ${inTimeStr}</span>
-          <span class="label-next" style="display:none;">${nextTimeStr ? `Next ${nextTimeStr}` : ""}</span>
         </div>
     </div>
   `;
@@ -395,7 +405,6 @@ function updateProgressText(card, mob) {
   } else {
     text.classList.remove("max-over");
   }
-
   if (minRepop - nowSec >= 3600) {
     text.classList.add("long-wait");
   } else {
