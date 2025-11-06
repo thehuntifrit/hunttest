@@ -115,11 +115,6 @@ function isOtherNightsPhase(phase) {
     return (phase >= 1.5 && phase < 4.5);
 }
 
-function alignToCycleBoundary(tSec) {
-    const r = tSec % WEATHER_CYCLE_SEC;
-    return tSec - r; // 直前のサイクル境界
-}
-
 function checkWeatherInRange(mob, seed) {
   if (mob.weatherSeedRange) {
     const [min, max] = mob.weatherSeedRange;
@@ -273,7 +268,6 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
 }
 
 // repop計算
-// repop計算（修正版）
 function calculateRepop(mob, maintenance) {
   const now = Date.now() / 1000;
   const lastKill = mob.last_kill_time || 0;
