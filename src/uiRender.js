@@ -354,28 +354,40 @@ function updateProgressText(card, mob) {
   const text = card.querySelector(".progress-text");
   if (!text) return;
 
-  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status, currentConditionActive } = mob.repopInfo;
+  const { elapsedPercent, nextMinRepopDate, minRepop, maxRepop, status, nextConditionSpawnDate, currentConditionActive, nextConditionSpawnRanges } 
+    = mob.repopInfo;
+
   const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
+  const nowSec = Date.now() / 1000;
 
   const inTimeStr = nextMinRepopDate
     ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextMinRepopDate)
     : "未確定";
 
-  const nowSec = Date.now() / 1000;
+  // --- 右側の「Next」ラベルに入れる文字列（必ず非空） ---
+  let nextTimeStr = "未確定";
 
-  // --- Next側の表示文字列を決定 ---
-  let nextTimeStr = "";
-  if (nextConditionSpawnDate) {
+  if (Array.isArray(nextConditionSpawnRanges) && nextConditionSpawnRanges.length > 0) {
+    // UI側で能動的に算出
+    const activeRange = nextConditionSpawnRanges.find(r => nowSec >= r.startSec && nowSec < r.endSec);
+    if (activeRange) {
+      const remainMin = Math.max(0, Math.floor((activeRange.endSec - nowSec) / 60));
+      nextTimeStr = `@ ${remainMin}分`;
+    } else {
+      const nextRange = nextConditionSpawnRanges[0];
+      nextTimeStr = new Intl.DateTimeFormat('ja-JP', absFmt).format(new Date(nextRange.startSec * 1000));
+    }
+  } else if (nextConditionSpawnDate) {
+    // 互換フィールドが来る場合のフォールバック
     if (currentConditionActive) {
-      // 現在が条件レンジ内 → 残り時間を @ n分 で表示
       const remainMin = Math.max(0, Math.floor((nextConditionSpawnDate.getTime() / 1000 - nowSec) / 60));
       nextTimeStr = `@ ${remainMin}分`;
     } else {
-      // 通常時は次の条件開始時刻を表示
       nextTimeStr = new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate);
     }
   }
-  // --- 左側の進捗文字列 ---
+
+  // --- 左側の進捗文字列（変更なし） ---
   let rightStr = "";
   if (status === "Maintenance" || status === "Next") {
     rightStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
@@ -394,12 +406,12 @@ function updateProgressText(card, mob) {
         </div>
         <div class="pr-1 text-right toggle-container">
           <span class="label-in">in ${inTimeStr}</span>
-          <span class="label-next" style="display:none;">${nextTimeStr ? `Next ${nextTimeStr}` : ""}</span>
+          <span class="label-next" style="display:none;">Next ${nextTimeStr}</span>
         </div>
     </div>
   `;
 
-  // --- 状態に応じたクラス付与 ---
+  // 状態クラス付与（現状維持）
   if (status === "MaxOver") {
     text.classList.add("max-over");
   } else {
