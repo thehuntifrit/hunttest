@@ -234,8 +234,10 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
         consecutiveCycles = 0;
         consecutiveStartSec = null;
       }
+
       tSec += WEATHER_CYCLE_SEC;
     }
+
     return results;
   }
   // 2) 単発天候条件
@@ -269,15 +271,14 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
     }
     return results;
   }
-  // 3) ET/月齢条件のみ → 今回は対象外（従来通り1件返す）
+  // 3) ET/月齢条件のみ（今回は従来通り1件だが返却形式を配列に統一）
   let tSec = alignToEtHourBoundary(startSec);
   for (; tSec <= limitSec; tSec += 175) {
     const date = new Date(tSec * 1000);
     if (checkMobSpawnCondition(mob, date) && tSec >= minRepopSec) {
-      return [ { startSec: tSec, endSec: tSec + 175 } ]; // 配列形式に統一
+      return [{ startSec: tSec, endSec: tSec + 175 }];
     }
   }
-
   return [];
 }
 
