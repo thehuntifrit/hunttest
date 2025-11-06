@@ -189,6 +189,7 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
   const limitSec = repopEndSec ?? (startSec + 14 * 24 * 3600);
   const minRepopSec = repopStartSec ?? startSec;
 
+  const results = []; // 候補レンジを格納する配列
   // 1) 連続天候条件
   if (mob.weatherDuration?.minutes) {
     const requiredMinutes = Number(mob.weatherDuration.minutes);
@@ -199,47 +200,85 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
     let consecutiveCycles = 0;
     let consecutiveStartSec = null;
 
-    for (; tSec <= limitSec; tSec += WEATHER_CYCLE_SEC) {
+    while (tSec <= limitSec && results.length < 20) {
       const seed = getEorzeaWeatherSeed(new Date(tSec * 1000));
       const inRange = checkWeatherInRange(mob, seed);
 
       if (inRange) {
         if (consecutiveCycles === 0) consecutiveStartSec = tSec;
         consecutiveCycles++;
+
         if (consecutiveCycles >= requiredCycles) {
           const popSec = consecutiveStartSec + requiredSec;
-          if (popSec >= minRepopSec && popSec <= limitSec) {
-            return new Date(popSec * 1000);
+          // ヒットが途切れるまで endSec を伸ばす
+          let endCursor = tSec + WEATHER_CYCLE_SEC;
+          let lookAheadSec = tSec + WEATHER_CYCLE_SEC;
+          while (lookAheadSec <= limitSec) {
+            const seedAhead = getEorzeaWeatherSeed(new Date(lookAheadSec * 1000));
+            if (!checkWeatherInRange(mob, seedAhead)) break;
+            endCursor = lookAheadSec + WEATHER_CYCLE_SEC;
+            lookAheadSec += WEATHER_CYCLE_SEC;
           }
+
+          if (endCursor > popSec && endCursor > minRepopSec) {
+            const rangeStart = Math.max(popSec, minRepopSec);
+            results.push({ startSec: rangeStart, endSec: endCursor });
+          }
+          // 次レンジ探索へ
+          tSec = endCursor;
+          consecutiveCycles = 0;
+          consecutiveStartSec = null;
+          continue;
         }
       } else {
         consecutiveCycles = 0;
         consecutiveStartSec = null;
       }
+      tSec += WEATHER_CYCLE_SEC;
     }
-    return null;
+    return results;
   }
   // 2) 単発天候条件
   if (mob.weatherSeedRange || mob.weatherSeedRanges) {
     let tSec = alignToCycleBoundary(startSec);
-    for (; tSec <= limitSec; tSec += WEATHER_CYCLE_SEC) {
-      const date = new Date(tSec * 1000);
-      if (checkMobSpawnCondition(mob, date) && tSec >= minRepopSec) {
-        return date;
+
+    while (tSec <= limitSec && results.length < 20) {
+      const seed = getEorzeaWeatherSeed(new Date(tSec * 1000));
+      const inRange = checkWeatherInRange(mob, seed);
+
+      if (inRange) {
+        const rangeStart = Math.max(tSec, minRepopSec);
+        let endCursor = tSec + WEATHER_CYCLE_SEC;
+        let lookAheadSec = tSec + WEATHER_CYCLE_SEC;
+
+        while (lookAheadSec <= limitSec) {
+          const seedAhead = getEorzeaWeatherSeed(new Date(lookAheadSec * 1000));
+          if (!checkWeatherInRange(mob, seedAhead)) break;
+          endCursor = lookAheadSec + WEATHER_CYCLE_SEC;
+          lookAheadSec += WEATHER_CYCLE_SEC;
+        }
+
+        if (endCursor > rangeStart) {
+          results.push({ startSec: rangeStart, endSec: endCursor });
+        }
+        // 途切れた位置までスキップ
+        tSec = endCursor;
+        continue;
       }
+      tSec += WEATHER_CYCLE_SEC;
     }
-    return null;
+    return results;
   }
-  // 3) ET/月齢条件のみ
+  // 3) ET/月齢条件のみ → 今回は対象外（従来通り1件返す）
   let tSec = alignToEtHourBoundary(startSec);
   for (; tSec <= limitSec; tSec += 175) {
     const date = new Date(tSec * 1000);
     if (checkMobSpawnCondition(mob, date) && tSec >= minRepopSec) {
-      return date;
+      return [ { startSec: tSec, endSec: tSec + 175 } ]; // 配列形式に統一
     }
   }
 
-  return null;
+  return [];
 }
 
 // repop計算
