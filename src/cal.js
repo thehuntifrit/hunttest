@@ -340,68 +340,26 @@ function calculateRepop(mob, maintenance) {
   const nextMinRepopDate = new Date(minRepop * 1000);
 
   // --- 条件探索 ---
-  let nextConditionSpawnDate = null;
+  let nextConditionSpawnRanges = [];
   const hasCondition = !!mob.moonPhase || !!mob.timeRange || !!mob.timeRanges || !!mob.weatherSeedRange || !!mob.weatherSeedRanges;
 
   if (hasCondition) {
     const baseSecForConditionSearch = Math.max(minRepop, now, serverUp);
 
     if (mob.weatherDuration?.minutes) {
-      const requiredMinutes = mob.weatherDuration.minutes;
-      const requiredCycles = Math.ceil((requiredMinutes * 60) / WEATHER_CYCLE_SEC);
-      // 基準時刻の決定
-      let baseSec = (lastKill === 0 || lastKill < serverUp)
-        ? serverUp + (repopSec * 0.6)
-        : lastKill + repopSec;
-
-      if (now > baseSec || now > maxRepop) {
-        baseSec = now;
-      }
-      // 探索開始点 = 基準時刻 - 必要サイクル分
-      let scanStartSec = baseSec - requiredCycles * WEATHER_CYCLE_SEC;
-      if (scanStartSec < serverUp) scanStartSec = serverUp;
-      scanStartSec = alignToCycleBoundary(scanStartSec);
-      // 連続天候探索
-      let consecutive = 0;
-      let conditionStartSec = null;
-      for (let tSec = scanStartSec; tSec < baseSec + 14 * 24 * 3600; tSec += WEATHER_CYCLE_SEC) {
-        const date = new Date(tSec * 1000);
-        const seed = getEorzeaWeatherSeed(date);
-        const inRange =
-          mob.weatherSeedRange
-            ? (seed >= mob.weatherSeedRange[0] && seed <= mob.weatherSeedRange[1])
-            : mob.weatherSeedRanges
-              ? mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max)
-              : false;
-
-        if (inRange) {
-          if (consecutive === 0) conditionStartSec = tSec;
-          consecutive++;
-          if (consecutive >= requiredCycles) {
-            const popSec = conditionStartSec + requiredMinutes * 60;
-            if (popSec >= minRepop) {
-              nextConditionSpawnDate = new Date(popSec * 1000);
-              break;
-            }
-          }
-        } else {
-          consecutive = 0;
-          conditionStartSec = null;
-        }
-      }
+      // 連続天候条件 → findNextSpawnTime を利用して最大20件レンジを取得
+      nextConditionSpawnRanges = findNextSpawnTime(mob, new Date(baseSecForConditionSearch * 1000), minRepop, maxRepop);
     } else {
-      const baseSec = baseSecForConditionSearch; 
-      nextConditionSpawnDate = findNextSpawnTime(mob, new Date(baseSec * 1000));
+      // 単発天候条件・その他条件 → findNextSpawnTime を利用
+      nextConditionSpawnRanges = findNextSpawnTime(mob, new Date(baseSecForConditionSearch * 1000), minRepop, maxRepop);
     }
   }
-
   // --- メンテナンス停止判定ロジック ---
   const minRepopAfterMaintenanceStart = minRepop > maintenanceStart;
-  const conditionAfterMaintenanceStart = nextConditionSpawnDate 
-    ? (nextConditionSpawnDate.getTime() / 1000) > maintenanceStart
+  const conditionAfterMaintenanceStart = nextConditionSpawnRanges.length > 0
+    ? nextConditionSpawnRanges.some(r => r.startSec > maintenanceStart)
     : false;
   isMaintenanceStop = minRepopAfterMaintenanceStart || conditionAfterMaintenanceStart;
-
 
   return {
     minRepop,
@@ -410,7 +368,7 @@ function calculateRepop(mob, maintenance) {
     timeRemaining,
     status,
     nextMinRepopDate,
-    nextConditionSpawnDate,
+    nextConditionSpawnRanges, // ← 配列形式に変更
     isMaintenanceStop
   };
 
@@ -422,7 +380,7 @@ function calculateRepop(mob, maintenance) {
       timeRemaining: "未確定",
       status,
       nextMinRepopDate: null,
-      nextConditionSpawnDate: null,
+      nextConditionSpawnRanges: [], // ← 配列形式に統一
       isMaintenanceStop: false
     };
   }
