@@ -190,6 +190,8 @@ function checkWeatherInRange(mob, seed) {
 
 function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
   const startSec = Math.floor(startDate.getTime() / 1000);
+  const limitSec = repopEndSec ?? (startSec + 14 * 24 * 3600);
+  const minRepopSec = repopStartSec ?? startSec;
   // 1) 連続条件があるモブは連続探索のみ。瞬間条件へは落とさない。
   if (mob.weatherDuration?.minutes) {
     const requiredMinutes = Number(mob.weatherDuration.minutes);
@@ -197,8 +199,6 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
     const requiredCycles = Math.ceil(requiredSec / WEATHER_CYCLE_SEC);
 
     const scanStartSec = alignToCycleBoundary(startSec);
-    const limitSec = repopEndSec ?? (startSec + 14 * 24 * 3600);
-    const minRepopSec = repopStartSec ?? startSec;
 
     let consecutiveCycles = 0;
     let consecutiveStartSec = null;
@@ -224,39 +224,63 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
     }
     return null;
   }
-  
-  // 2) 連続条件がないモブのみ、瞬間条件を探索
-  // コスト最適化のため、ET 1時間ステップ (175秒) で探索する
-  const REAL_MS_PER_ET_HOUR = 175 * 1000;
-  const stepSec = REAL_MS_PER_ET_HOUR / 1000; // 175秒
-  const limitSec = repopEndSec ?? (startSec + 14 * 24 * 3600);
-  
-  // 探索開始時刻を minRepopSec を超える最初のET時境界に揃える
-  let etDate = new Date(startSec * 1000);
+  // 2) 連続条件がないモブの瞬間条件を探索
+  const hasWeatherCondition = !!mob.weatherSeedRange || !!mob.weatherSeedRanges;
+  const hasTimeCondition = !!mob.timeRange || !!mob.timeRanges || !!mob.conditions;
+  // 天候条件あり (月齢 -> 天候 -> ET)
+  if (hasWeatherCondition || mob.moonPhase) {
+    const scanStartSec = alignToCycleBoundary(startSec);
+    const stepSec = WEATHER_CYCLE_SEC; // 1400秒
 
-  // 探索開始点 (startSec) 以降の最初のET時境界まで進める
-  while (true) {
-    const flooredDate = floorToEtHour(etDate);
-    const flooredSec = flooredDate.getTime() / 1000;
-    
-    // startSec >= flooredSec の場合は次のET時境界に進む
-    if (flooredSec >= startSec) {
-      etDate = flooredDate;
-      break;
+    for (let tSec = scanStartSec; tSec <= limitSec; tSec += stepSec) {
+      const date = new Date(tSec * 1000);
+            // 探索順序 1: 月齢チェック (最長周期)
+      if (mob.moonPhase) {
+        const moonInfo = getEorzeaMoonInfo(date);
+        if (moonInfo.label !== mob.moonPhase) continue;
+      }
+            // 探索順序 2: 天候チェック
+      if (hasWeatherCondition) {
+        const seed = getEorzeaWeatherSeed(date);
+        if (!checkWeatherInRange(mob, seed)) continue;
+      }      
+      // 探索順序 3: ETチェック
+      if (checkMobSpawnCondition(mob, date) && tSec >= minRepopSec) {
+        return date;
+      }
     }
-    // 次のET時境界（175秒後）
-    etDate = new Date(flooredDate.getTime() + REAL_MS_PER_ET_HOUR);
-    
-    // 念の為、リミットを超えたらループを抜ける
-    if (etDate.getTime() / 1000 > limitSec) return null;
-  }
+    return null;
+  } 
+  // ET条件のみ (月齢 -> ET)
+  else if (hasTimeCondition) {
+    const REAL_MS_PER_ET_HOUR = 175 * 1000;
+    const stepSec = Math.floor(REAL_MS_PER_ET_HOUR / 1000); // 175秒
+    // minRepopSec に最も近い、かつそれ以降のET時境界を探す
+    const startMs = startSec * 1000;
+    const etTotalMinutes = Math.floor(startMs / (REAL_MS_PER_ET_HOUR / 60));
+    let flooredEtMinutes = Math.floor(etTotalMinutes / 60) * 60;
+    let flooredUnixMs = flooredEtMinutes * (REAL_MS_PER_ET_HOUR / 60);
+    // 揃えた時刻が startMs より前なら、次のET境界に進める
+    if (flooredUnixMs < startMs) {
+      flooredUnixMs += REAL_MS_PER_ET_HOUR;
+    }
+    let etDate = new Date(flooredUnixMs);
 
-  for (let tSec = etDate.getTime() / 1000; tSec <= limitSec; tSec += stepSec) {
-    const date = new Date(tSec * 1000);
-    if (checkMobSpawnCondition(mob, date)) {
-      return date;
+    for (let tSec = Math.floor(etDate.getTime() / 1000); tSec <= limitSec; tSec += stepSec) {
+      const date = new Date(tSec * 1000);
+      // 探索順序 1: 月齢チェック (ET条件に月齢が含まれる場合)
+      if (mob.moonPhase) {
+        const moonInfo = getEorzeaMoonInfo(date);
+        if (moonInfo.label !== mob.moonPhase) continue;
+      }
+            // 探索順序 2: ETチェック (天候条件がないため、月齢チェック後にET条件をチェック)
+      if (checkMobSpawnCondition(mob, date) && tSec >= minRepopSec) {
+        return date;
+      }
     }
+    return null;
   }
+  // 条件なし（旧コードの60秒ステップで条件チェックしていた部分がなくなったため、ここでは必ず null を返す）
   return null;
 }
 
