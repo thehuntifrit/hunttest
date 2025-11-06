@@ -110,7 +110,6 @@ function checkTimeRange(timeRange, timestamp) {
 function isFirstNightPhase(phase) {
     return (phase >= 32.5 || phase < 1.5);
 }
-
     // 新月継続中（1.5〜4.5まで）
 function isOtherNightsPhase(phase) {
     return (phase >= 1.5 && phase < 4.5);
@@ -163,9 +162,15 @@ function checkMobSpawnCondition(mob, date) {
   return true;
 }
 
+// 天候周期 (1400秒 = ET8h) 境界に切り捨て
 function alignToCycleBoundary(tSec) {
-    const r = tSec % WEATHER_CYCLE_SEC;
-    return tSec - r; // 直前のサイクル境界
+  const r = tSec % WEATHER_CYCLE_SEC;
+  return tSec - r; // 直前の天候サイクル境界
+}
+
+// ET Hour (175秒) 境界に切り捨て
+function alignToEtHourBoundary(tSec) {
+  return Math.floor(tSec / 175) * 175;
 }
 
 function checkWeatherInRange(mob, seed) {
@@ -181,27 +186,26 @@ function checkWeatherInRange(mob, seed) {
 
 function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
   const startSec = Math.floor(startDate.getTime() / 1000);
-  // 1) 連続条件があるモブは連続探索のみ。瞬間条件へは落とさない。
+  const limitSec = repopEndSec ?? (startSec + 14 * 24 * 3600);
+  const minRepopSec = repopStartSec ?? startSec;
+
+  // 1) 連続天候条件
   if (mob.weatherDuration?.minutes) {
     const requiredMinutes = Number(mob.weatherDuration.minutes);
     const requiredSec = requiredMinutes * 60;
     const requiredCycles = Math.ceil(requiredSec / WEATHER_CYCLE_SEC);
 
-    const scanStartSec = alignToCycleBoundary(startSec);
-    const limitSec = repopEndSec ?? (startSec + 14 * 24 * 3600);
-    const minRepopSec = repopStartSec ?? startSec;
-
+    let tSec = alignToCycleBoundary(startSec);
     let consecutiveCycles = 0;
     let consecutiveStartSec = null;
 
-    for (let tSec = scanStartSec; tSec <= limitSec; tSec += WEATHER_CYCLE_SEC) {
+    for (; tSec <= limitSec; tSec += WEATHER_CYCLE_SEC) {
       const seed = getEorzeaWeatherSeed(new Date(tSec * 1000));
       const inRange = checkWeatherInRange(mob, seed);
 
       if (inRange) {
         if (consecutiveCycles === 0) consecutiveStartSec = tSec;
         consecutiveCycles++;
-
         if (consecutiveCycles >= requiredCycles) {
           const popSec = consecutiveStartSec + requiredSec;
           if (popSec >= minRepopSec && popSec <= limitSec) {
@@ -215,17 +219,26 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
     }
     return null;
   }
-  // 2) 連続条件がないモブのみ、瞬間条件を探索
-  const stepSec = 60;
-  const t0 = Math.floor(startSec / stepSec) * stepSec;
-  const limitSec = repopEndSec ?? (startSec + 14 * 24 * 3600);
-
-  for (let tSec = t0; tSec <= limitSec; tSec += stepSec) {
+  // 2) 単発天候条件
+  if (mob.weatherSeedRange || mob.weatherSeedRanges) {
+    let tSec = alignToCycleBoundary(startSec);
+    for (; tSec <= limitSec; tSec += WEATHER_CYCLE_SEC) {
+      const date = new Date(tSec * 1000);
+      if (checkMobSpawnCondition(mob, date) && tSec >= minRepopSec) {
+        return date;
+      }
+    }
+    return null;
+  }
+  // 3) ET/月齢条件のみ
+  let tSec = alignToEtHourBoundary(startSec);
+  for (; tSec <= limitSec; tSec += 175) {
     const date = new Date(tSec * 1000);
-    if (checkMobSpawnCondition(mob, date)) {
+    if (checkMobSpawnCondition(mob, date) && tSec >= minRepopSec) {
       return date;
     }
   }
+
   return null;
 }
 
