@@ -354,7 +354,7 @@ function updateProgressText(card, mob) {
   const text = card.querySelector(".progress-text");
   if (!text) return;
 
-  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnRanges, minRepop, maxRepop, status } = mob.repopInfo;
+  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status, currentConditionActive } = mob.repopInfo;
   const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
 
   const inTimeStr = nextMinRepopDate
@@ -363,21 +363,19 @@ function updateProgressText(card, mob) {
 
   const nowSec = Date.now() / 1000;
 
-  // --- 特殊条件レンジ判定 ---
-  let conditionStr = "";
-  if (Array.isArray(nextConditionSpawnRanges) && nextConditionSpawnRanges.length > 0) {
-    const activeRange = nextConditionSpawnRanges.find(r => nowSec >= r.startSec && nowSec < r.endSec);
-    if (activeRange) {
-      const remainSec = activeRange.endSec - nowSec;
-      conditionStr = ` @ ${formatDurationHM(remainSec)}`;
+  // --- Next側の表示文字列を決定 ---
+  let nextTimeStr = "";
+  if (nextConditionSpawnDate) {
+    if (currentConditionActive) {
+      // 現在が条件レンジ内 → 残り時間を @ n分 で表示
+      const remainMin = Math.max(0, Math.floor((nextConditionSpawnDate.getTime() / 1000 - nowSec) / 60));
+      nextTimeStr = `@ ${remainMin}分`;
     } else {
-      // 次のレンジ開始時刻を表示
-      const nextRange = nextConditionSpawnRanges[0];
-      const nextDate = new Date(nextRange.startSec * 1000);
-      conditionStr = ` Next ${new Intl.DateTimeFormat('ja-JP', absFmt).format(nextDate)}`;
+      // 通常時は次の条件開始時刻を表示
+      nextTimeStr = new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate);
     }
   }
-  // --- 右側の進捗文字列 ---
+  // --- 左側の進捗文字列 ---
   let rightStr = "";
   if (status === "Maintenance" || status === "Next") {
     rightStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
@@ -392,19 +390,22 @@ function updateProgressText(card, mob) {
   text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
         <div class="pl-2 text-left">
-          ${rightStr}${status !== "MaxOver" && status !== "Unknown" ? ` (${elapsedPercent.toFixed(0)}%)` : ""}${conditionStr}
+          ${rightStr}${status !== "MaxOver" && status !== "Unknown" ? ` (${elapsedPercent.toFixed(0)}%)` : ""}
         </div>
         <div class="pr-1 text-right toggle-container">
           <span class="label-in">in ${inTimeStr}</span>
+          <span class="label-next" style="display:none;">${nextTimeStr ? `Next ${nextTimeStr}` : ""}</span>
         </div>
     </div>
   `;
 
+  // --- 状態に応じたクラス付与 ---
   if (status === "MaxOver") {
     text.classList.add("max-over");
   } else {
     text.classList.remove("max-over");
   }
+
   if (minRepop - nowSec >= 3600) {
     text.classList.add("long-wait");
   } else {
