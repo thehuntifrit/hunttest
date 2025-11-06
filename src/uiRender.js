@@ -138,7 +138,8 @@ function createMobCard(mob) {
         <!-- 右端：報告ボタン（見た目は統一、動作だけ分岐） -->
         <div class="flex-shrink-0 flex items-center justify-end">
             <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center rounded transition text-center leading-tight">
-                <img src="./icon/reports.webp" alt="報告する" class="w-8 h-8 object-contain transition hover:brightness-125 focus:brightness-125 active:brightness-150" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <img src="./icon/reports.webp" alt="報告する" class="w-8 h-8 object-contain transition hover:brightness-125 focus:brightness-125 active:brightness-150" 
+                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <span style="display:none;" class="w-8 h-8 flex items-center justify-center text-[12px] rounded 
                 bg-green-600 hover:bg-green-400 selected:bg-green-800 text-white font-semibold leading-tight whitespace-pre-line">報告<br>する</span>
             </button>
@@ -354,41 +355,25 @@ function updateProgressText(card, mob) {
   const text = card.querySelector(".progress-text");
   if (!text) return;
 
-  const { elapsedPercent, nextMinRepopDate, minRepop, maxRepop, status, nextConditionSpawnDate, currentConditionActive, nextConditionSpawnRanges } 
-    = mob.repopInfo;
-
+  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status, currentConditionActive } = mob.repopInfo;
   const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
-  const nowSec = Date.now() / 1000;
 
   const inTimeStr = nextMinRepopDate
     ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextMinRepopDate)
     : "未確定";
 
-  // --- 右側の「Next」ラベルに入れる文字列（必ず非空） ---
-  let nextTimeStr = "未確定";
-
-  if (Array.isArray(nextConditionSpawnRanges) && nextConditionSpawnRanges.length > 0) {
-    // UI側で能動的に算出
-    const activeRange = nextConditionSpawnRanges.find(r => nowSec >= r.startSec && nowSec < r.endSec);
-    if (activeRange) {
-      const remainMin = Math.max(0, Math.floor((activeRange.endSec - nowSec) / 60));
-      nextTimeStr = `@ ${remainMin}分`;
-    } else {
-      const nextRange = nextConditionSpawnRanges[0];
-      nextTimeStr = new Intl.DateTimeFormat('ja-JP', absFmt).format(new Date(nextRange.startSec * 1000));
-    }
+  let nextTimeStr = null;
+  if (currentConditionActive && nextConditionSpawnDate) {
+    const nowSec = Date.now() / 1000;
+    const remainMin = Math.max(0, Math.floor((nextConditionSpawnDate.getTime() / 1000 - nowSec) / 60));
+    nextTimeStr = `@ ${remainMin}分`;
   } else if (nextConditionSpawnDate) {
-    // 互換フィールドが来る場合のフォールバック
-    if (currentConditionActive) {
-      const remainMin = Math.max(0, Math.floor((nextConditionSpawnDate.getTime() / 1000 - nowSec) / 60));
-      nextTimeStr = `@ ${remainMin}分`;
-    } else {
-      nextTimeStr = new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate);
-    }
+    // 通常時は原型通りのフォーマット
+    nextTimeStr = new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate);
   }
 
-  // --- 左側の進捗文字列（変更なし） ---
   let rightStr = "";
+  const nowSec = Date.now() / 1000;
   if (status === "Maintenance" || status === "Next") {
     rightStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
   } else if (status === "PopWindow") {
@@ -406,12 +391,12 @@ function updateProgressText(card, mob) {
         </div>
         <div class="pr-1 text-right toggle-container">
           <span class="label-in">in ${inTimeStr}</span>
-          <span class="label-next" style="display:none;">Next ${nextTimeStr}</span>
+          <span class="label-next" style="display:none;">${nextTimeStr ? `Next ${nextTimeStr}` : ""}</span>
         </div>
     </div>
   `;
 
-  // 状態クラス付与（現状維持）
+  // --- 状態に応じたクラス付与 ---
   if (status === "MaxOver") {
     text.classList.add("max-over");
   } else {
@@ -459,7 +444,7 @@ function updateExpandablePanel(card, mob) {
   const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
 
   const nextMin = mob.repopInfo?.nextMinRepopDate;
-  const conditionTime = mob.repopInfo?.nextConditionSpawnDate;
+  const conditionTime = findNextSpawnTime(mob, nextMin);
   const displayTime = (nextMin && conditionTime)
     ? (conditionTime > nextMin ? conditionTime : nextMin)
     : (nextMin || conditionTime);
@@ -471,7 +456,6 @@ function updateExpandablePanel(card, mob) {
   const lastStr = formatLastKillTime(mob.last_kill_time);
   const memoStr = mob.last_kill_memo || "なし";
 
-  if (elNext) elNext.textContent = `次回: ${nextStr}`;
   if (elLast) elLast.textContent = `前回: ${lastStr}`;
   if (elMemo) elMemo.textContent = memoStr;
 }
