@@ -369,7 +369,7 @@ function updateProgressText(card, mob) {
     const activeRange = nextConditionSpawnRanges.find(r => nowSec >= r.startSec && nowSec < r.endSec);
     if (activeRange) {
       const remainSec = activeRange.endSec - nowSec;
-      conditionStr = ` @ ${formatDurationHM(remainSec)} 有効`;
+      conditionStr = ` @ ${formatDurationHM(remainSec)}`;
     } else {
       // 次のレンジ開始時刻を表示
       const nextRange = nextConditionSpawnRanges[0];
