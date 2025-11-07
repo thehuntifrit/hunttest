@@ -380,7 +380,6 @@ function calculateRepop(mob, maintenance) {
   const lastKill = mob.last_kill_time || 0;
   const repopSec = mob.REPOP_s;
   const maxSec = mob.MAX_s;
-
   // メンテナンス情報正規化
   let maint = maintenance;
   if (maint && typeof maint === "object" && "maintenance" in maint && maint.maintenance) {
@@ -394,38 +393,22 @@ function calculateRepop(mob, maintenance) {
 
   const serverUp = serverUpDate.getTime() / 1000;
   const maintenanceStart = startDate.getTime() / 1000;
-
-  // 最短/最大 REPOP（初期スポーン補正がある場合は係数適用。なければ通常加算）
+  // 最短/最大 REPOP
   let minRepop = 0, maxRepop = 0;
   if (lastKill === 0 || lastKill < serverUp) {
-    // 初回スポーン補正: 仕様に応じて 0.6 を使用。プロジェクト仕様に合わせて調整可。
+    // 初回スポーン補正（必要なら係数調整）
     minRepop = serverUp + (repopSec * 0.6);
     maxRepop = serverUp + (maxSec * 0.6);
   } else {
     minRepop = lastKill + repopSec;
     maxRepop = lastKill + maxSec;
   }
-
-  // 状態判定
+  // 初期値
   let status = "Unknown";
   let elapsedPercent = 0;
   let timeRemaining = "Unknown";
 
-  if (now >= maxRepop) {
-    status = "MaxOver";
-    elapsedPercent = 100;
-    timeRemaining = `Time Over (100%)`;
-  } else if (now < minRepop) {
-    status = "Next";
-    timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
-  } else {
-    status = "PopWindow";
-    elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
-    timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
-  }
-
   const nextMinRepopDate = new Date(minRepop * 1000);
-
   // 特殊条件探索
   let nextConditionSpawnDate = null;
   let conditionWindowEnd = null;
@@ -442,10 +425,9 @@ function calculateRepop(mob, maintenance) {
 
   if (hasCondition) {
     const searchStart = Math.max(minRepop, now, serverUp);
-    const searchLimit = searchStart + 14 * 24 * 3600; // 最大14日分探索（必要なら拡張）
+    const searchLimit = searchStart + 14 * 24 * 3600; // 最大14日分探索
 
     let conditionResult = null;
-    // 連続天候の場合
     if (mob.weatherDuration?.minutes) {
       conditionResult = findConsecutiveWeather(mob, searchStart, minRepop, searchLimit, now);
     } else {
@@ -460,11 +442,25 @@ function calculateRepop(mob, maintenance) {
       if (isInConditionWindow) {
         const remainingSec = conditionResult.windowEnd - now;
         timeRemaining = `条件達成中 残り ${formatDurationHM(remainingSec)}`;
-        status = "ConditionActive";
+        status = "ConditionActive"; // 🆕 現在In中を優先
       }
     }
   }
-
+  // 条件に入っていない場合のみ通常判定
+  if (!isInConditionWindow) {
+    if (now >= maxRepop) {
+      status = "MaxOver";
+      elapsedPercent = 100;
+      timeRemaining = `Time Over (100%)`;
+    } else if (now < minRepop) {
+      status = "Next";
+      timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
+    } else {
+      status = "PopWindow";
+      elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
+      timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
+    }
+  }
   // メンテナンス停止判定
   const minRepopAfterMaintenance = minRepop > maintenanceStart;
   const conditionAfterMaintenance = nextConditionSpawnDate
@@ -485,6 +481,7 @@ function calculateRepop(mob, maintenance) {
     isMaintenanceStop
   };
 
+  // 内部ユーティリティ
   function baseResult(status) {
     return {
       minRepop: null,
