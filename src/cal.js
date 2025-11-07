@@ -108,7 +108,7 @@ function getEorzeaMoonInfo(date = new Date()) {
   return { phase, label };
 }
 
-// 新月開始（phase 28 の ET12:00 アンカー）を探索
+// 新月開始（phase 32 の ET12:00 アンカー）を探索
 function findNextNewMoonStart(startSec) {
   let t = alignToEtHour(startSec);
   const limit = startSec + MOON_CYCLE_SEC * 2; // 最大2サイクル先
@@ -116,14 +116,14 @@ function findNextNewMoonStart(startSec) {
   while (t < limit) {
     const etHour = getEtHourFromRealSec(t);
     const { phase } = getEorzeaMoonInfo(new Date(t * 1000));
-    const phaseInt = Math.floor(((phase - 1 + 32) % 32)); // 0..31
-    if (phaseInt === 28 && etHour === 12) return t;
+    const phaseInt = Math.floor(((phase - 1 + 32) % 32) + 1); // 0..31
+    if (phaseInt === 32 && etHour === 12) return t;
     t += ET_HOUR_SEC;
   }
   return null;
 }
 
-// 満月開始（phase 14 の ET12:00 アンカー）を探索
+// 満月開始（phase 16 の ET12:00 アンカー）を探索
 function findNextFullMoonStart(startSec) {
   let t = alignToEtHour(startSec);
   const limit = startSec + MOON_CYCLE_SEC * 2;
@@ -131,8 +131,8 @@ function findNextFullMoonStart(startSec) {
   while (t < limit) {
     const etHour = getEtHourFromRealSec(t);
     const { phase } = getEorzeaMoonInfo(new Date(t * 1000));
-    const phaseInt = Math.floor(((phase - 1 + 32) % 32)); // 0..31
-    if (phaseInt === 14 && etHour === 12) return t;
+    const phaseInt = Math.floor(((phase - 1 + 32) % 32) + 1); // 0..31
+    if (phaseInt === 16 && etHour === 12) return t;
     t += ET_HOUR_SEC;
   }
   return null;
