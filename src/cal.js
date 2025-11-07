@@ -1,4 +1,3 @@
-
 // cal.js
 
 import { loadMaintenance } from "./app.js";
@@ -232,155 +231,174 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
 
 // repop計算
 function calculateRepop(mob, maintenance) {
-    const now = Date.now() / 1000;
-    const lastKill = mob.last_kill_time || 0;
-    const repopSec = mob.REPOP_s;
-    const maxSec = mob.MAX_s;
-    let maint = maintenance;
-    if (maint && typeof maint === "object" && "maintenance" in maint && maint.maintenance) {
-        maint = maint.maintenance;
-    }
-    if (!maint || !maint.serverUp || !maint.start) return baseResult("Unknown");
+  const now = Date.now() / 1000;
+  const lastKill = mob.last_kill_time || 0;
+  const repopSec = mob.REPOP_s;
+  const maxSec = mob.MAX_s;
+  let maint = maintenance;
+  if (maint && typeof maint === "object" && "maintenance" in maint && maint.maintenance) {
+    maint = maint.maintenance;
+  }
+  if (!maint || !maint.serverUp || !maint.start) return baseResult("Unknown"); 
 
-    const serverUpDate = new Date(maint.serverUp);
-    const startDate = new Date(maint.start);
+  const serverUpDate = new Date(maint.serverUp);
+  const startDate = new Date(maint.start);
+  
+  if (isNaN(serverUpDate.getTime()) || isNaN(startDate.getTime())) return baseResult("Unknown");
 
-    if (isNaN(serverUpDate.getTime()) || isNaN(startDate.getTime())) return baseResult("Unknown");
+  const serverUp = serverUpDate.getTime() / 1000;
+  const maintenanceStart = startDate.getTime() / 1000;
 
-    const serverUp = serverUpDate.getTime() / 1000;
-    const maintenanceStart = startDate.getTime() / 1000;
+  let minRepop = 0, maxRepop = 0;
+  let elapsedPercent = 0;
+  let timeRemaining = "Unknown";
+  let status = "Unknown";
+  let isMaintenanceStop = false;
 
-    let minRepop = 0, maxRepop = 0;
-    let elapsedPercent = 0;
-    let timeRemaining = "Unknown";
-    let status = "Unknown";
-    let isMaintenanceStop = false;
+  if (lastKill === 0 || lastKill < serverUp) {
+    minRepop = serverUp + (repopSec * 0.6);
+    maxRepop = serverUp + (maxSec * 0.6);
 
-    if (lastKill === 0 || lastKill < serverUp) {
-        minRepop = serverUp + (repopSec * 0.6);
-        maxRepop = serverUp + (maxSec * 0.6);
-
-        if (now >= maxRepop) {
-            status = "MaxOver"; elapsedPercent = 100; timeRemaining = `Time Over (100%)`;
-        } else if (now < minRepop) {
-            status = "Maintenance"; timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
-        } else {
-            status = "PopWindow";
-            elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
-            timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
-        }
-    } else if (now < lastKill + repopSec) {
-        minRepop = lastKill + repopSec;
-        maxRepop = lastKill + maxSec;
-        status = "Next"; timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
-    } else if (now < lastKill + maxSec) {
-        minRepop = lastKill + repopSec;
-        maxRepop = lastKill + maxSec;
-        status = "PopWindow";
-        elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
-        timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
+    if (now >= maxRepop) {
+      status = "MaxOver"; elapsedPercent = 100; timeRemaining = `Time Over (100%)`;
+    } else if (now < minRepop) {
+      status = "Maintenance"; timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
     } else {
-        minRepop = lastKill + repopSec;
-        maxRepop = lastKill + maxSec;
-        status = "MaxOver"; elapsedPercent = 100; timeRemaining = `Time Over (100%)`;
+      status = "PopWindow";
+      elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
+      timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
     }
+  } else if (now < lastKill + repopSec) {
+    minRepop = lastKill + repopSec;
+    maxRepop = lastKill + maxSec;
+    status = "Next"; timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
+  } else if (now < lastKill + maxSec) {
+    minRepop = lastKill + repopSec;
+    maxRepop = lastKill + maxSec;
+    status = "PopWindow";
+    elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
+    timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
+  } else {
+    minRepop = lastKill + repopSec;
+    maxRepop = lastKill + maxSec;
+    status = "MaxOver"; elapsedPercent = 100; timeRemaining = `Time Over (100%)`;
+  }
 
-    const nextMinRepopDate = new Date(minRepop * 1000);
+  const nextMinRepopDate = new Date(minRepop * 1000);
 
-    // --- 条件探索 ---
-    let nextConditionSpawnDate = null;
-    const hasCondition = !!mob.moonPhase || !!mob.timeRange || !!mob.timeRanges || !!mob.weatherSeedRange || !!mob.weatherSeedRanges;
+  // --- 条件探索 ---
+  let nextConditionSpawnDate = null;
+  const hasCondition = !!mob.moonPhase || !!mob.timeRange || !!mob.timeRanges || !!mob.weatherSeedRange || !!mob.weatherSeedRanges;
 
-    if (hasCondition) {
-        const baseSecForConditionSearch = Math.max(minRepop, now, serverUp);
+  if (hasCondition) {
+    const baseSecForConditionSearch = Math.max(minRepop, now, serverUp);
 
-        if (mob.weatherDuration?.minutes) {
-            // 連続天候条件（変更なし）
-            const requiredMinutes = mob.weatherDuration.minutes;
-            const requiredCycles = Math.ceil((requiredMinutes * 60) / WEATHER_CYCLE_SEC);
+    if (mob.weatherDuration?.minutes) {
+      // 連続天候条件（従来通り）
+      const requiredMinutes = mob.weatherDuration.minutes;
+      const requiredCycles = Math.ceil((requiredMinutes * 60) / WEATHER_CYCLE_SEC);
 
-            let baseSec = (lastKill === 0 || lastKill < serverUp)
-                ? serverUp + (repopSec * 0.6)
-                : lastKill + repopSec;
+      let baseSec = (lastKill === 0 || lastKill < serverUp)
+        ? serverUp + (repopSec * 0.6)
+        : lastKill + repopSec;
 
-            if (now > baseSec || now > maxRepop) {
-                baseSec = now;
+      if (now > baseSec || now > maxRepop) {
+        baseSec = now;
+      }
+
+      let scanStartSec = baseSec - requiredCycles * WEATHER_CYCLE_SEC;
+      if (scanStartSec < serverUp) scanStartSec = serverUp;
+      scanStartSec = alignToCycleBoundary(scanStartSec);
+
+      let consecutive = 0;
+      let conditionStartSec = null;
+      for (let tSec = scanStartSec; tSec < baseSec + 14 * 24 * 3600; tSec += WEATHER_CYCLE_SEC) {
+        const date = new Date(tSec * 1000);
+        const seed = getEorzeaWeatherSeed(date);
+        const inRange =
+          mob.weatherSeedRange
+            ? (seed >= mob.weatherSeedRange[0] && seed <= mob.weatherSeedRange[1])
+            : mob.weatherSeedRanges
+              ? mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max)
+              : false;
+
+        if (inRange) {
+          if (consecutive === 0) conditionStartSec = tSec;
+          consecutive++;
+          if (consecutive >= requiredCycles) {
+            const popSec = conditionStartSec + requiredMinutes * 60;
+            if (popSec >= minRepop) {
+              nextConditionSpawnDate = new Date(popSec * 1000);
+              break;
             }
-
-            let scanStartSec = baseSec - requiredCycles * WEATHER_CYCLE_SEC;
-            if (scanStartSec < serverUp) scanStartSec = serverUp;
-            scanStartSec = alignToCycleBoundary(scanStartSec);
-
-            let consecutive = 0;
-            let conditionStartSec = null;
-            for (let tSec = scanStartSec; tSec < baseSec + 14 * 24 * 3600; tSec += WEATHER_CYCLE_SEC) {
-                const date = new Date(tSec * 1000);
-                const seed = getEorzeaWeatherSeed(date);
-                const inRange =
-                    mob.weatherSeedRange
-                        ? (seed >= mob.weatherSeedRange[0] && seed <= mob.weatherSeedRange[1])
-                        : mob.weatherSeedRanges
-                            ? mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max)
-                            : false;
-
-                if (inRange) {
-                    if (consecutive === 0) conditionStartSec = tSec;
-                    consecutive++;
-                    if (consecutive >= requiredCycles) {
-                        const popSec = conditionStartSec + requiredMinutes * 60;
-                        if (popSec >= minRepop) {
-                            nextConditionSpawnDate = new Date(popSec * 1000);
-                            break;
-                        }
-                    }
-                } else {
-                    consecutive = 0;
-                    conditionStartSec = null;
-                }
-            }
+          }
         } else {
-            // 単発天候のみ -1400秒から探索開始
-            if (mob.weatherSeedRange || mob.weatherSeedRanges) {
-                const alignedBase = alignToCycleBoundary(baseSecForConditionSearch);
-                const shiftedStartSec = alignedBase - WEATHER_CYCLE_SEC; // -1400秒のみ適用
-                nextConditionSpawnDate = findNextSpawnTime(mob, new Date(shiftedStartSec * 1000));
-            } else {
-                // ET/月齢のみは変更なし
-                nextConditionSpawnDate = findNextSpawnTime(mob, new Date(baseSecForConditionSearch * 1000));
-            }
+          consecutive = 0;
+          conditionStartSec = null;
         }
+      }
+    } else {
+      // 単発天候条件のみ -1400秒から探索開始
+      if (mob.weatherSeedRange || mob.weatherSeedRanges) {
+        const alignedBase = alignToCycleBoundary(baseSecForConditionSearch);
+        const shiftedStartSec = alignedBase - WEATHER_CYCLE_SEC; // -1400秒
+
+        const candidate = findNextSpawnTime(
+          mob,
+          new Date(shiftedStartSec * 1000),
+          minRepop,
+          maxRepop
+        );
+
+        // 返却条件: minRepop 以降かつ now 以降
+        if (candidate && candidate.getTime() / 1000 >= minRepop && candidate.getTime() / 1000 >= now) {
+          nextConditionSpawnDate = candidate;
+        }
+      } else {
+        // ET/月齢のみは従来通り
+        const candidate = findNextSpawnTime(
+          mob,
+          new Date(baseSecForConditionSearch * 1000),
+          minRepop,
+          maxRepop
+        );
+        if (candidate && candidate.getTime() / 1000 >= minRepop && candidate.getTime() / 1000 >= now) {
+          nextConditionSpawnDate = candidate;
+        }
+      }
     }
+  }
 
-    // --- メンテナンス停止判定ロジック ---
-    const minRepopAfterMaintenanceStart = minRepop > maintenanceStart;
-    const conditionAfterMaintenanceStart = nextConditionSpawnDate
-        ? (nextConditionSpawnDate.getTime() / 1000) > maintenanceStart
-        : false;
-    isMaintenanceStop = minRepopAfterMaintenanceStart || conditionAfterMaintenanceStart;
+  // --- メンテナンス停止判定ロジック ---
+  const minRepopAfterMaintenanceStart = minRepop > maintenanceStart;
+  const conditionAfterMaintenanceStart = nextConditionSpawnDate 
+    ? (nextConditionSpawnDate.getTime() / 1000) > maintenanceStart
+    : false;
+  isMaintenanceStop = minRepopAfterMaintenanceStart || conditionAfterMaintenanceStart;
 
+  return {
+    minRepop,
+    maxRepop,
+    elapsedPercent,
+    timeRemaining,
+    status,
+    nextMinRepopDate,
+    nextConditionSpawnDate,
+    isMaintenanceStop
+  };
+
+  function baseResult(status) {
     return {
-        minRepop,
-        maxRepop,
-        elapsedPercent,
-        timeRemaining,
-        status,
-        nextMinRepopDate,
-        nextConditionSpawnDate,
-        isMaintenanceStop
+      minRepop: null,
+      maxRepop: null,
+      elapsedPercent: 0,
+      timeRemaining: "未確定",
+      status,
+      nextMinRepopDate: null,
+      nextConditionSpawnDate: null,
+      isMaintenanceStop: false
     };
-
-    function baseResult(status) {
-        return {
-            minRepop: null,
-            maxRepop: null,
-            elapsedPercent: 0,
-            timeRemaining: "未確定",
-            status,
-            nextMinRepopDate: null,
-            nextConditionSpawnDate: null,
-            isMaintenanceStop: false
-        };
-    }
+  }
 }
 
 function formatLastKillTime(timestamp) {
