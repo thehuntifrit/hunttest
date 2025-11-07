@@ -190,3 +190,55 @@ function intersectManyEnvelope(baseIntervals, candidateIntervals) {
   return out;
 }
 
+// ===== Main =====
+function calculateRepop({ lastKill, serverUp, REPOP_s, MAX_s, now, mob }) {
+  // 1) 基準時刻
+  const base = typeof lastKill === "number" && lastKill > 0 ? lastKill : (serverUp || 0);
+  const minRepop = base + (REPOP_s || 0);
+  const maxRepop = base + (MAX_s || 0);
+
+  // 2) 状態判定
+  let status = "BeforeRepop";
+  if (now >= minRepop && now < maxRepop) status = "PopWindow";
+  else if (now >= maxRepop) status = "GuaranteedPop";
+
+  // 3) 特殊条件探索範囲
+  const searchStart = ceilToEtHour(minRepop);   // ET Hourに丸め
+  const searchEnd   = Math.max(searchStart, maxRepop);
+
+  // 4) 特殊条件区間の生成
+  const specials = findNextSpawnIntervals(mob || {}, searchStart, searchEnd);
+
+  // 5) 最短REPOP以降／現在時刻以降に絞り込み
+  const intervalsAfterMin = clampToLowerBound(specials, minRepop);
+  const intervalsAfterNow = clampToLowerBound(specials, now);
+
+  // 6) 次に有効な区間開始
+  const firstIntervalStart = intervalsAfterNow.length ? intervalsAfterNow[0].start : null;
+
+  // 7) 出力
+  return {
+    status,
+    minRepop,
+    maxRepop,
+    intervals: intervalsAfterMin,
+    intervalsFromNow: intervalsAfterNow,
+    firstIntervalStart
+  };
+}
+
+// ===== Export =====
+module.exports = {
+  calculateRepop,
+  findNextSpawnIntervals,
+  buildMoonIntervals,
+  buildWeatherIntervals,
+  buildEtIntervals,
+  getEorzeaWeatherAt,
+  floorToEtHour,
+  ceilToEtHour,
+  floorToWeatherCycle,
+  getEtHourFromReal,
+  ET_HOUR_SEC,
+  WEATHER_CYCLE_SEC
+};
