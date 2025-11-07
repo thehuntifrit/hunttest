@@ -243,17 +243,6 @@ function normalizeEtRangeToReal(tr, cycleStart, cycleEnd) {
   return [startSec, endSec];
 }
 
-function checkWeatherInRange(mob, seed) {
-  if (mob.weatherSeedRange) {
-    const [min, max] = mob.weatherSeedRange;
-    return seed >= min && seed <= max;
-  }
-  if (mob.weatherSeedRanges) {
-    return mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max);
-  }
-  return false;
-}
-
 // ET条件探索（175秒刻み）
 function findNextEtSpawnTime(mob, baseSec, repopStartSec, repopEndSec) {
   const stepSec = 175;
