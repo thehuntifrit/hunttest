@@ -116,12 +116,13 @@ function isOtherNightsPhase(phase) {
     return (phase >= 1.5 && phase < 4.5);
 }
 
-// 総合条件チェック
+// 総合条件チェック（点判定ユーティリティ：既存のまま）
 function checkMobSpawnCondition(mob, date) {
   const ts = Math.floor(date.getTime() / 1000);
   const et = getEorzeaTime(date);
   const moonInfo = getEorzeaMoonInfo(date); // { phase, label }
   const seed = getEorzeaWeatherSeed(date);
+
   // 月齢ラベル条件
   if (mob.moonPhase) {
     if (moonInfo.label !== mob.moonPhase) return false;
@@ -141,14 +142,14 @@ function checkMobSpawnCondition(mob, date) {
     const fn = mob.conditions.firstNight;
     const on = mob.conditions.otherNights;
     // 初回夜: 月齢が 32.5〜1.5 の範囲
-    if (fn && fn.timeRange && (moonInfo.phase >= 32.5 || moonInfo.phase <= 1.5)) {
+    const phase = getEorzeaMoonInfo(date).phase;
+    if (fn && fn.timeRange && (phase >= 32.5 || phase <= 1.5)) {
       ok = ok || checkTimeRange(fn.timeRange, ts);
     }
     // 以降夜: 月齢が 1.5〜4.5 の範囲
-    if (on && on.timeRange && moonInfo.phase > 1.5 && moonInfo.phase < 4.5) {
+    if (on && on.timeRange && phase > 1.5 && phase < 4.5) {
       ok = ok || checkTimeRange(on.timeRange, ts);
     }
-
     if (!ok) return false;
   }
   // conditions が無い場合のみ、通常の timeRange / timeRanges を評価
@@ -159,15 +160,22 @@ function checkMobSpawnCondition(mob, date) {
     const ok = mob.timeRanges.some((tr) => checkTimeRange(tr, ts));
     if (!ok) return false;
   }
-
   return true;
 }
 
+// 天候サイクル境界へ丸め
 function alignToCycleBoundary(tSec) {
   const r = tSec % WEATHER_CYCLE_SEC;
   return tSec - r; // 直前のサイクル境界
 }
 
+// ET時間境界（175秒刻み）へ丸め
+function alignToEtHourBoundary(tSec) {
+  const step = 175; // 1 ET 時間 = 175 秒
+  return Math.floor(tSec / step) * step;
+}
+
+// 天候レンジ判定
 function checkWeatherInRange(mob, seed) {
   if (mob.weatherSeedRange) {
     const [min, max] = mob.weatherSeedRange;
@@ -179,9 +187,68 @@ function checkWeatherInRange(mob, seed) {
   return false;
 }
 
+// サイクル内の ET/月齢成立区間を算出（区間の配列を返す）
+function getEtMoonRangesWithinCycle(mob, cycleStart, cycleEnd) {
+  const etRanges = [];
+
+  // 基本 ET時間帯
+  if (!mob.conditions && mob.timeRange) {
+    etRanges.push(normalizeEtRangeToReal(mob.timeRange, cycleStart, cycleEnd));
+  }
+  if (!mob.conditions && mob.timeRanges && mob.timeRanges.length) {
+    for (const tr of mob.timeRanges) {
+      etRanges.push(normalizeEtRangeToReal(tr, cycleStart, cycleEnd));
+    }
+  }
+  // conditions: firstNight / otherNights の時間帯を月齢条件と併せて区間化
+  if (mob.conditions) {
+    const phaseAtStart = getEorzeaMoonInfo(new Date(cycleStart * 1000)).phase;
+    // 初回夜（32.5〜1.5）
+    const fn = mob.conditions.firstNight;
+    if (fn && fn.timeRange && (phaseAtStart >= 32.5 || phaseAtStart <= 1.5)) {
+      etRanges.push(normalizeEtRangeToReal(fn.timeRange, cycleStart, cycleEnd));
+    }
+    // 以降夜（1.5〜4.5）
+    const on = mob.conditions.otherNights;
+    if (on && on.timeRange && phaseAtStart > 1.5 && phaseAtStart < 4.5) {
+      etRanges.push(normalizeEtRangeToReal(on.timeRange, cycleStart, cycleEnd));
+    }
+  }
+
+  // ET指定が無い場合は「サイクル全体」
+  if (etRanges.length === 0) etRanges.push([cycleStart, cycleEnd]);
+
+  // 月齢ラベル（mob.moonPhase）がある場合は交差を取る
+  let result = [];
+  if (mob.moonPhase) {
+    // サイクル内は月齢ラベルが変化しない前提なら、ラベル一致なら全区間維持
+    const labelAtStart = getEorzeaMoonInfo(new Date(cycleStart * 1000)).label;
+    if (labelAtStart === mob.moonPhase) {
+      result = etRanges;
+    } else {
+      result = []; // ラベル不一致なら区間なし
+    }
+  } else {
+    result = etRanges;
+  }
+  return result;
+}
+
+// ET範囲 { start, end } をリアル秒区間へ（ET境界に合わせて切り上げ/切り捨て）
+function normalizeEtRangeToReal(tr, cycleStart, cycleEnd) {
+  // tr.start/tr.end は ET 時間（0-24×?）換算のインデックスを 175秒単位で表している前提
+  // 例: 0 <= start < end, 区間は [startIdx*175, endIdx*175)
+  const step = 175;
+  const baseEt = alignToEtHourBoundary(cycleStart);
+  const startSec = Math.max(cycleStart, baseEt + (tr.start * step));
+  const endSec = Math.min(cycleEnd, baseEt + (tr.end * step));
+  return [startSec, endSec];
+}
+
+// 連続天候専用（既存のまま）
 function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
   const startSec = Math.floor(startDate.getTime() / 1000);
-  // 1) 連続条件があるモブは連続探索のみ。瞬間条件へは落とさない。
+
   if (mob.weatherDuration?.minutes) {
     const requiredMinutes = Number(mob.weatherDuration.minutes);
     const requiredSec = requiredMinutes * 60;
@@ -215,23 +282,12 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
     }
     return null;
   }
-  // 2) 連続条件がないモブのみ、瞬間条件を探索
-  const stepSec = 60;
-  const t0 = Math.floor(startSec / stepSec) * stepSec;
-  const limitSec = repopEndSec ?? (startSec + 14 * 24 * 3600);
-  const minRepopSec = repopStartSec ?? startSec;
 
-  for (let tSec = t0; tSec <= limitSec; tSec += stepSec) {
-    if (tSec < minRepopSec) continue; // 最短前は返さない
-    const date = new Date(tSec * 1000);
-    if (checkMobSpawnCondition(mob, date)) {
-      return date;
-    }
-  }
+  // 単発はここを使わない（区間判定に切替）
   return null;
 }
 
-// repop計算
+// repop計算（単発天候を区間判定へ切替）
 function calculateRepop(mob, maintenance) {
   const now = Date.now() / 1000;
   const lastKill = mob.last_kill_time || 0;
@@ -245,7 +301,6 @@ function calculateRepop(mob, maintenance) {
 
   const serverUpDate = new Date(maint.serverUp);
   const startDate = new Date(maint.start);
-  
   if (isNaN(serverUpDate.getTime()) || isNaN(startDate.getTime())) return baseResult("Unknown");
 
   const serverUp = serverUpDate.getTime() / 1000;
@@ -296,9 +351,10 @@ function calculateRepop(mob, maintenance) {
     const baseSecForConditionSearch = Math.max(minRepop, now, serverUp);
 
     if (mob.weatherDuration?.minutes) {
+      // 連続天候条件（従来通り）
       const requiredMinutes = mob.weatherDuration.minutes;
       const requiredCycles = Math.ceil((requiredMinutes * 60) / WEATHER_CYCLE_SEC);
-      // 基準時刻の決定
+
       let baseSec = (lastKill === 0 || lastKill < serverUp)
         ? serverUp + (repopSec * 0.6)
         : lastKill + repopSec;
@@ -306,11 +362,11 @@ function calculateRepop(mob, maintenance) {
       if (now > baseSec || now > maxRepop) {
         baseSec = now;
       }
-      // 探索開始点 = 基準時刻 - 必要サイクル分
+
       let scanStartSec = baseSec - requiredCycles * WEATHER_CYCLE_SEC;
       if (scanStartSec < serverUp) scanStartSec = serverUp;
       scanStartSec = alignToCycleBoundary(scanStartSec);
-      // 連続天候探索
+
       let consecutive = 0;
       let conditionStartSec = null;
       for (let tSec = scanStartSec; tSec < baseSec + 14 * 24 * 3600; tSec += WEATHER_CYCLE_SEC) {
@@ -339,24 +395,40 @@ function calculateRepop(mob, maintenance) {
         }
       }
     } else {
-      // 単発天候のみ 開始点を天候境界 -1400秒へ
+      // 単発天候：サイクルごとの区間判定へ切替
       if (mob.weatherSeedRange || mob.weatherSeedRanges) {
-        const alignedBase = alignToCycleBoundary(baseSecForConditionSearch);
-        const shiftedStartSec = alignedBase - WEATHER_CYCLE_SEC; // -1400秒
-        nextConditionSpawnDate = findNextSpawnTime(
-          mob,
-          new Date(shiftedStartSec * 1000),
-          minRepop,
-          undefined
-        );
+        const cycleBase = alignToCycleBoundary(baseSecForConditionSearch);
+        const shiftedStartSec = cycleBase - WEATHER_CYCLE_SEC; // -1400秒で直前サイクルから含める
+        const limitSec = baseSecForConditionSearch + 14 * 24 * 3600;
+
+        for (let cycleStart = shiftedStartSec; cycleStart <= limitSec; cycleStart += WEATHER_CYCLE_SEC) {
+          const cycleEnd = cycleStart + WEATHER_CYCLE_SEC;
+          const seed = getEorzeaWeatherSeed(new Date(cycleStart * 1000));
+          if (!checkWeatherInRange(mob, seed)) continue;
+
+          const ranges = getEtMoonRangesWithinCycle(mob, cycleStart, cycleEnd);
+          for (const [winStart, winEnd] of ranges) {
+            const candidateSec = Math.max(minRepop, now, winStart);
+            if (candidateSec <= winEnd) {
+              nextConditionSpawnDate = new Date(candidateSec * 1000);
+              cycleStart = limitSec + 1; // 外側ループ終了
+              break;
+            }
+          }
+        }
       } else {
-        // ET/月齢のみは変更なし
-        nextConditionSpawnDate = findNextSpawnTime(
-          mob,
-          new Date(baseSecForConditionSearch * 1000),
-          minRepop,
-          undefined
-        );
+        // ET/月齢のみ（従来通り：ET境界に丸めた上で 175秒刻みの点検はあなたの既存ロジックに準拠）
+        // ここでは最短/現在との整合だけ確保
+        const baseEt = alignToEtHourBoundary(baseSecForConditionSearch);
+        const limitSec = baseSecForConditionSearch + 14 * 24 * 3600;
+        for (let tSec = baseEt; tSec <= limitSec; tSec += 175) {
+          if (tSec < minRepop) continue;
+          const d = new Date(tSec * 1000);
+          if (checkMobSpawnCondition(mob, d)) {
+            nextConditionSpawnDate = d;
+            break;
+          }
+        }
       }
     }
   }
