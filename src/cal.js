@@ -302,13 +302,13 @@ function findConsecutiveWeather(mob, startSec, minRepopSec, limitSec, nowSec) {
       if (consecutiveCycles >= requiredCycles) {
         const windowStart = consecutiveStartSec;
         const windowEnd = consecutiveStartSec + requiredSec;
-        // 🆕 現在時刻が区間内ならその区間を返す
-        if (nowSec >= windowStart && nowSec <= windowEnd) {
-          return { windowStart, windowEnd, popTime: nowSec };
+        // 現在が区間内なら現在区間を返す
+        if (nowSec !== undefined && nowSec >= windowStart && nowSec <= windowEnd) {
+          return { windowStart, windowEnd, popTime: windowEnd };
         }
-        // そうでなければ次回の区間を返す
+        // 最短REPOP以降の成立区間
         if (windowEnd >= minRepopSec && windowEnd <= limitSec) {
-          return { windowStart, windowEnd, popTime: windowStart };
+          return { windowStart, windowEnd, popTime: windowEnd };
         }
       }
     } else {
@@ -433,9 +433,9 @@ function calculateRepop(mob, maintenance) {
     const searchLimit = searchStart + 14 * 24 * 3600; // 最大14日分探索（必要なら拡張）
 
     let conditionResult = null;
-
+    // 連続天候の場合
     if (mob.weatherDuration?.minutes) {
-      conditionResult = findConsecutiveWeather(mob, searchStart, minRepop, searchLimit);
+      conditionResult = findConsecutiveWeather(mob, searchStart, minRepop, searchLimit, now);
     } else {
       conditionResult = findNextConditionWindow(mob, searchStart, minRepop, searchLimit);
     }
