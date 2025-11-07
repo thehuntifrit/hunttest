@@ -229,6 +229,121 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
   return null;
 }
 
+// 総合条件チェック
+function checkMobSpawnCondition(mob, date) {
+  const ts = Math.floor(date.getTime() / 1000);
+  const et = getEorzeaTime(date);
+  const moonInfo = getEorzeaMoonInfo(date); // { phase, label }
+  const seed = getEorzeaWeatherSeed(date);
+  // 月齢ラベル条件
+  if (mob.moonPhase) {
+    if (moonInfo.label !== mob.moonPhase) return false;
+  }
+  // 天候条件
+  if (mob.weatherSeedRange) {
+    const [min, max] = mob.weatherSeedRange;
+    if (seed < min || seed > max) return false;
+  }
+  if (mob.weatherSeedRanges) {
+    const ok = mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max);
+    if (!ok) return false;
+  }
+  // conditions を持つモブの時間帯評価（firstNight / otherNights）
+  if (mob.conditions) {
+    let ok = false;
+    const fn = mob.conditions.firstNight;
+    const on = mob.conditions.otherNights;
+    // 初回夜: 月齢が 32.5〜1.5 の範囲
+    if (fn && fn.timeRange && (moonInfo.phase >= 32.5 || moonInfo.phase <= 1.5)) {
+      ok = ok || checkTimeRange(fn.timeRange, ts);
+    }
+    // 以降夜: 月齢が 1.5〜4.5 の範囲
+    if (on && on.timeRange && moonInfo.phase > 1.5 && moonInfo.phase < 4.5) {
+      ok = ok || checkTimeRange(on.timeRange, ts);
+    }
+
+    if (!ok) return false;
+  }
+  // conditions が無い場合のみ、通常の timeRange / timeRanges を評価
+  if (!mob.conditions && mob.timeRange) {
+    if (!checkTimeRange(mob.timeRange, ts)) return false;
+  }
+  if (!mob.conditions && mob.timeRanges) {
+    const ok = mob.timeRanges.some((tr) => checkTimeRange(tr, ts));
+    if (!ok) return false;
+  }
+
+  return true;
+}
+
+function alignToCycleBoundary(tSec) {
+  const r = tSec % WEATHER_CYCLE_SEC;
+  return tSec - r; // 直前のサイクル境界
+}
+
+function checkWeatherInRange(mob, seed) {
+  if (mob.weatherSeedRange) {
+    const [min, max] = mob.weatherSeedRange;
+    return seed >= min && seed <= max;
+  }
+  if (mob.weatherSeedRanges) {
+    return mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max);
+  }
+  return false;
+}
+
+function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
+  const startSec = Math.floor(startDate.getTime() / 1000);
+  // 1) 連続条件があるモブは連続探索のみ。瞬間条件へは落とさない。
+  if (mob.weatherDuration?.minutes) {
+    const requiredMinutes = Number(mob.weatherDuration.minutes);
+    const requiredSec = requiredMinutes * 60;
+    const requiredCycles = Math.ceil(requiredSec / WEATHER_CYCLE_SEC);
+
+    const scanStartSec = alignToCycleBoundary(startSec);
+    const limitSec = repopEndSec ?? (startSec + 14 * 24 * 3600);
+    const minRepopSec = repopStartSec ?? startSec;
+
+    let consecutiveCycles = 0;
+    let consecutiveStartSec = null;
+
+    for (let tSec = scanStartSec; tSec <= limitSec; tSec += WEATHER_CYCLE_SEC) {
+      const seed = getEorzeaWeatherSeed(new Date(tSec * 1000));
+      const inRange = checkWeatherInRange(mob, seed);
+
+      if (inRange) {
+        if (consecutiveCycles === 0) consecutiveStartSec = tSec;
+        consecutiveCycles++;
+
+        if (consecutiveCycles >= requiredCycles) {
+          const popSec = consecutiveStartSec + requiredSec;
+          if (popSec >= minRepopSec && popSec <= limitSec) {
+            return new Date(popSec * 1000);
+          }
+        }
+      } else {
+        consecutiveCycles = 0;
+        consecutiveStartSec = null;
+      }
+    }
+    return null;
+  }
+  // 2) 連続条件がないモブのみ、瞬間条件を探索
+  const stepSec = 60;
+  const t0 = Math.floor(startSec / stepSec) * stepSec;
+  const limitSec = repopEndSec ?? (startSec + 14 * 24 * 3600);
+  const minRepopSec = repopStartSec ?? startSec;
+
+  for (let tSec = t0; tSec <= limitSec; tSec += stepSec) {
+    if (tSec < minRepopSec) continue; // 最短前は返さない
+    const date = new Date(tSec * 1000);
+    if (checkMobSpawnCondition(mob, date)) {
+      return date;
+    }
+  }
+  return null;
+}
+
 // repop計算
 function calculateRepop(mob, maintenance) {
   const now = Date.now() / 1000;
@@ -294,10 +409,9 @@ function calculateRepop(mob, maintenance) {
     const baseSecForConditionSearch = Math.max(minRepop, now, serverUp);
 
     if (mob.weatherDuration?.minutes) {
-      // 連続天候条件（従来通り）
       const requiredMinutes = mob.weatherDuration.minutes;
       const requiredCycles = Math.ceil((requiredMinutes * 60) / WEATHER_CYCLE_SEC);
-
+      // 基準時刻の決定
       let baseSec = (lastKill === 0 || lastKill < serverUp)
         ? serverUp + (repopSec * 0.6)
         : lastKill + repopSec;
@@ -305,11 +419,11 @@ function calculateRepop(mob, maintenance) {
       if (now > baseSec || now > maxRepop) {
         baseSec = now;
       }
-
+      // 探索開始点 = 基準時刻 - 必要サイクル分
       let scanStartSec = baseSec - requiredCycles * WEATHER_CYCLE_SEC;
       if (scanStartSec < serverUp) scanStartSec = serverUp;
       scanStartSec = alignToCycleBoundary(scanStartSec);
-
+      // 連続天候探索
       let consecutive = 0;
       let conditionStartSec = null;
       for (let tSec = scanStartSec; tSec < baseSec + 14 * 24 * 3600; tSec += WEATHER_CYCLE_SEC) {
@@ -338,33 +452,24 @@ function calculateRepop(mob, maintenance) {
         }
       }
     } else {
-      // 単発天候条件のみ -1400秒から探索開始
+      // 単発天候のみ 開始点を天候境界 -1400秒へ
       if (mob.weatherSeedRange || mob.weatherSeedRanges) {
         const alignedBase = alignToCycleBoundary(baseSecForConditionSearch);
         const shiftedStartSec = alignedBase - WEATHER_CYCLE_SEC; // -1400秒
-
-        const candidate = findNextSpawnTime(
+        nextConditionSpawnDate = findNextSpawnTime(
           mob,
           new Date(shiftedStartSec * 1000),
           minRepop,
-          maxRepop
+          undefined
         );
-
-        // 返却条件: minRepop 以降かつ now 以降
-        if (candidate && candidate.getTime() / 1000 >= minRepop && candidate.getTime() / 1000 >= now) {
-          nextConditionSpawnDate = candidate;
-        }
       } else {
-        // ET/月齢のみは従来通り
-        const candidate = findNextSpawnTime(
+        // ET/月齢のみは変更なし
+        nextConditionSpawnDate = findNextSpawnTime(
           mob,
           new Date(baseSecForConditionSearch * 1000),
           minRepop,
-          maxRepop
+          undefined
         );
-        if (candidate && candidate.getTime() / 1000 >= minRepop && candidate.getTime() / 1000 >= now) {
-          nextConditionSpawnDate = candidate;
-        }
       }
     }
   }
