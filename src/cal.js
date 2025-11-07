@@ -276,8 +276,8 @@ function getEtWindowEnd(mob, windowStart) {
 }
 
 // ===== 連続天候探索 =====
-function findConsecutiveWeather(mob, startSec, minRepopSec, limitSec) {
-  const requiredMinutes = mob.weatherDuration?.minutes || 0;
+function findConsecutiveWeather(mob, startSec, minRepopSec, limitSec, nowSec) {
+  const requiredMinutes = mob.weatherDuration.minutes;
   const requiredSec = requiredMinutes * 60;
   const requiredCycles = Math.ceil(requiredSec / WEATHER_CYCLE_SEC);
 
@@ -292,14 +292,17 @@ function findConsecutiveWeather(mob, startSec, minRepopSec, limitSec) {
     if (inRange) {
       if (consecutiveCycles === 0) consecutiveStartSec = tSec;
       consecutiveCycles++;
+
       if (consecutiveCycles >= requiredCycles) {
-        const popSec = consecutiveStartSec + requiredSec;
-        if (popSec >= minRepopSec && popSec <= limitSec) {
-          return {
-            windowStart: consecutiveStartSec,
-            windowEnd: popSec,
-            popTime: popSec
-          };
+        const windowStart = consecutiveStartSec;
+        const windowEnd = consecutiveStartSec + requiredSec;
+        // 🆕 現在時刻が区間内ならその区間を返す
+        if (nowSec >= windowStart && nowSec <= windowEnd) {
+          return { windowStart, windowEnd, popTime: nowSec };
+        }
+        // そうでなければ次回の区間を返す
+        if (windowEnd >= minRepopSec && windowEnd <= limitSec) {
+          return { windowStart, windowEnd, popTime: windowStart };
         }
       }
     } else {
