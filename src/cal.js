@@ -281,41 +281,63 @@ function getEtWindowEnd(mob, windowStart) {
   return windowStart + ET_HOUR_SEC; // デフォルト: 1 ET時間
 }
 
-// ===== 連続天候探索 =====
+// 連続天候（持続時間）探索：部分サイクルを許容し、最短REPOPがサイクル途中でも開始できる
 function findConsecutiveWeather(mob, startSec, minRepopSec, limitSec, nowSec) {
-  const requiredMinutes = mob.weatherDuration.minutes;
+  const requiredMinutes = mob.weatherDuration?.minutes || 0;
   const requiredSec = requiredMinutes * 60;
-  const requiredCycles = Math.ceil(requiredSec / WEATHER_CYCLE_SEC);
+  // スキャン開始は「条件探索開始 or 最短REPOP or サーバーアップ」だが、
+  // サイクル頭に丸めない（途中開始を許容するため）
+  let scanSec = Math.max(startSec, minRepopSec);
+  // スキャン上限を天候サイクル境界に揃えておく（無限ループ防止）
+  const hardLimit = limitSec;
 
-  let scanStartSec = alignToWeatherCycle(startSec);
-  let consecutiveCycles = 0;
-  let consecutiveStartSec = null;
+  while (scanSec <= hardLimit) {
+    // 現在の天候サイクルの開始・終了
+    const cycleStart = alignToWeatherCycle(scanSec);
+    const cycleEnd = cycleStart + WEATHER_CYCLE_SEC;
+    // このサイクルが条件天候か
+    const seed = getEorzeaWeatherSeed(new Date(cycleStart * 1000));
+    const okCycle = checkWeatherInRange(mob, seed);
 
-  for (let tSec = scanStartSec; tSec <= limitSec; tSec += WEATHER_CYCLE_SEC) {
-    const seed = getEorzeaWeatherSeed(new Date(tSec * 1000));
-    const inRange = checkWeatherInRange(mob, seed);
-
-    if (inRange) {
-      if (consecutiveCycles === 0) consecutiveStartSec = tSec;
-      consecutiveCycles++;
-
-      if (consecutiveCycles >= requiredCycles) {
-        const windowStart = consecutiveStartSec;
-        const windowEnd = consecutiveStartSec + requiredSec;
-        // 現在が区間内なら現在区間を返す
-        if (nowSec !== undefined && nowSec >= windowStart && nowSec <= windowEnd) {
-          return { windowStart, windowEnd, popTime: windowEnd };
-        }
-        // 最短REPOP以降の成立区間
-        if (windowEnd >= minRepopSec && windowEnd <= limitSec) {
-          return { windowStart, windowEnd, popTime: windowEnd };
-        }
-      }
-    } else {
-      consecutiveCycles = 0;
-      consecutiveStartSec = null;
+    if (!okCycle) {
+      // 次のサイクルへ
+      scanSec = cycleEnd;
+      continue;
     }
+    // ここから連続天候の積み上げを開始
+    let consecutiveStart = scanSec; // サイクル途中からでも開始する
+    let accumulated = cycleEnd - consecutiveStart; // 最初サイクルの残り部分を加算
+    // 連続加算ループ
+    let cursor = cycleEnd;
+    while (accumulated < requiredSec && cursor <= hardLimit) {
+      const nextCycleStart = cursor;
+      const nextCycleEnd = nextCycleStart + WEATHER_CYCLE_SEC;
+
+      const nextSeed = getEorzeaWeatherSeed(new Date(nextCycleStart * 1000));
+      const nextOk = checkWeatherInRange(mob, nextSeed);
+      if (!nextOk) break;
+
+      // まるごと一サイクルを加算
+      accumulated += WEATHER_CYCLE_SEC;
+      cursor = nextCycleEnd;
+    }
+    // 必要秒数に届いたか
+    if (accumulated >= requiredSec) {
+      const windowStart = consecutiveStart;
+      const windowEnd = consecutiveStart + requiredSec; // 部分サイクルで正確に終了秒を出す
+      // 現在が区間内なら今In中を優先して返す
+      if (nowSec !== undefined && nowSec >= windowStart && nowSec <= windowEnd) {
+        return { windowStart, windowEnd, popTime: windowEnd };
+      }
+      // 最短REPOP以降の成立区間なら返す
+      if (windowEnd >= minRepopSec && windowEnd <= hardLimit) {
+        return { windowStart, windowEnd, popTime: windowEnd };
+      }
+    }
+    // 次の候補へ：このサイクルの終端から再探索
+    scanSec = cycleEnd;
   }
+
   return null;
 }
 
