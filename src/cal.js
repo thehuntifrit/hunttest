@@ -217,9 +217,10 @@ function isOtherNightsPhase(phase) {
   return phase > 0.5 && phase <= 4.5;
 }
 
+// ET条件判定（複数レンジ対応）
 function checkEtCondition(mob, realSec) {
   const { phase } = getEorzeaMoonInfo(new Date(realSec * 1000));
-
+  // conditions がある場合
   if (mob.conditions) {
     const { firstNight, otherNights } = mob.conditions;
 
@@ -231,9 +232,14 @@ function checkEtCondition(mob, realSec) {
     }
     return false;
   }
-
-  if (mob.timeRange) return checkTimeRange(mob.timeRange, realSec);
-  if (mob.timeRanges) return mob.timeRanges.some(tr => checkTimeRange(tr, realSec));
+  // timeRange 単体
+  if (mob.timeRange) {
+    return checkTimeRange(mob.timeRange, realSec);
+  }
+  // 複数 timeRanges
+  if (mob.timeRanges) {
+    return mob.timeRanges.some(tr => checkTimeRange(tr, realSec));
+  }
 
   return true; // ET条件なし
 }
@@ -313,32 +319,36 @@ function findConsecutiveWeather(mob, startSec, minRepopSec, limitSec, nowSec) {
   return null;
 }
 
-// ===== 単発天候 + ET条件の区間探索 =====
+// 月齢＋天候＋ET複合条件探索（交差処理＋複数レンジ対応）
 function findNextConditionWindow(mob, startSec, minRepopSec, limitSec) {
-  // 月齢区間列挙
   const moonRanges = enumerateMoonRanges(startSec, limitSec, mob.moonPhase);
 
   for (const [moonStart, moonEnd] of moonRanges) {
     // 天候条件あり
     if (mob.weatherSeedRange || mob.weatherSeedRanges) {
       let cycleStart = alignToWeatherCycle(moonStart);
+
       for (let tSec = cycleStart; tSec < moonEnd; tSec += WEATHER_CYCLE_SEC) {
         const seed = getEorzeaWeatherSeed(new Date(tSec * 1000));
         if (!checkWeatherInRange(mob, seed)) continue;
 
+        // 月齢区間と天候区間の交差
         const cycleEnd = Math.min(tSec + WEATHER_CYCLE_SEC, moonEnd);
-        let etStart = alignToEtHour(Math.max(tSec, minRepopSec));
+        const intersectStart = Math.max(tSec, moonStart);
+        const intersectEnd = Math.min(cycleEnd, moonEnd);
 
-        for (let etSec = etStart; etSec < cycleEnd; etSec += ET_HOUR_SEC) {
+        // ET条件探索
+        let etStart = alignToEtHour(Math.max(intersectStart, minRepopSec));
+        for (let etSec = etStart; etSec < intersectEnd; etSec += ET_HOUR_SEC) {
           if (etSec < minRepopSec) continue;
           if (checkEtCondition(mob, etSec)) {
-            const windowEnd = Math.min(getEtWindowEnd(mob, etSec), cycleEnd);
+            const windowEnd = Math.min(getEtWindowEnd(mob, etSec), intersectEnd);
             return { windowStart: etSec, windowEnd, popTime: etSec };
           }
         }
       }
     } else {
-      // 天候条件なし: ETのみ
+      // 天候条件なし → 月齢区間と ET条件のみ
       let etStart = alignToEtHour(Math.max(moonStart, minRepopSec));
       for (let etSec = etStart; etSec < moonEnd; etSec += ET_HOUR_SEC) {
         if (etSec < minRepopSec) continue;
