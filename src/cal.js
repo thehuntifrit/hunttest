@@ -245,7 +245,7 @@ function normalizeEtRangeToReal(tr, cycleStart, cycleEnd) {
 
 // ET条件探索（175秒刻み）
 function findNextEtSpawnTime(mob, baseSec, repopStartSec, repopEndSec) {
-  const stepSec = 175;
+  const stepSec = 175; // 1 ET 時間 = 175秒
   const t0 = alignToEtHourBoundary(baseSec);
   const limitSec = repopEndSec ?? (baseSec + 14 * 24 * 3600);
   const minRepopSec = repopStartSec ?? baseSec;
@@ -253,6 +253,7 @@ function findNextEtSpawnTime(mob, baseSec, repopStartSec, repopEndSec) {
   for (let tSec = t0; tSec <= limitSec; tSec += stepSec) {
     if (tSec < minRepopSec) continue;
 
+    // ETレンジをリアル秒に変換
     let ranges = [];
     if (mob.timeRange) {
       ranges.push(normalizeEtRangeToReal(mob.timeRange, tSec, tSec + stepSec));
@@ -263,8 +264,9 @@ function findNextEtSpawnTime(mob, baseSec, repopStartSec, repopEndSec) {
       }
     }
 
+    // 区間判定
     for (const [winStart, winEnd] of ranges) {
-      const candidateSec = Math.max(minRepopSec, tSec, winStart);
+      const candidateSec = Math.max(minRepopSec, now, winStart);
       if (candidateSec <= winEnd) {
         return new Date(candidateSec * 1000);
       }
