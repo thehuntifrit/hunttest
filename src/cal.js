@@ -324,7 +324,6 @@ function findNextConditionWindow(mob, startSec, minRepopSec, limitSec) {
   const moonRanges = enumerateMoonRanges(startSec, limitSec, mob.moonPhase);
 
   for (const [moonStart, moonEnd] of moonRanges) {
-    // 天候条件あり
     if (mob.weatherSeedRange || mob.weatherSeedRanges) {
       let cycleStart = alignToWeatherCycle(moonStart);
 
@@ -332,12 +331,18 @@ function findNextConditionWindow(mob, startSec, minRepopSec, limitSec) {
         const seed = getEorzeaWeatherSeed(new Date(tSec * 1000));
         if (!checkWeatherInRange(mob, seed)) continue;
 
-        // 月齢区間と天候区間の交差
         const cycleEnd = Math.min(tSec + WEATHER_CYCLE_SEC, moonEnd);
         const intersectStart = Math.max(tSec, moonStart);
         const intersectEnd = Math.min(cycleEnd, moonEnd);
+        // プリチェック：minRepopSec が交差区間内かつ ET 条件成立なら、minRepopSec を採用
+        if (minRepopSec >= intersectStart && minRepopSec < intersectEnd) {
+          if (checkEtCondition(mob, minRepopSec)) {
+            const windowEnd = Math.min(getEtWindowEnd(mob, minRepopSec), intersectEnd);
+            return { windowStart: alignToEtHour(minRepopSec), windowEnd, popTime: minRepopSec };
+          }
+        }
 
-        // ET条件探索
+        // 175秒グリッド探索
         let etStart = alignToEtHour(Math.max(intersectStart, minRepopSec));
         for (let etSec = etStart; etSec < intersectEnd; etSec += ET_HOUR_SEC) {
           if (etSec < minRepopSec) continue;
@@ -349,6 +354,13 @@ function findNextConditionWindow(mob, startSec, minRepopSec, limitSec) {
       }
     } else {
       // 天候条件なし → 月齢区間と ET条件のみ
+      if (minRepopSec >= moonStart && minRepopSec < moonEnd) {
+        if (checkEtCondition(mob, minRepopSec)) {
+          const windowEnd = Math.min(getEtWindowEnd(mob, minRepopSec), moonEnd);
+          return { windowStart: alignToEtHour(minRepopSec), windowEnd, popTime: minRepopSec };
+        }
+      }
+      // 175秒グリッド探索
       let etStart = alignToEtHour(Math.max(moonStart, minRepopSec));
       for (let etSec = etStart; etSec < moonEnd; etSec += ET_HOUR_SEC) {
         if (etSec < minRepopSec) continue;
