@@ -106,7 +106,7 @@ function checkTimeRange(timeRange, timestamp) {
     }
 }
 
-// 新月開始直後（32.5〜1.5まで）
+    // 新月開始直後（32.5〜1.5まで）
 function isFirstNightPhase(phase) {
     return (phase >= 32.5 || phase < 1.5);
 }
@@ -118,7 +118,6 @@ function isOtherNightsPhase(phase) {
 // 総合条件チェック
 function checkMobSpawnCondition(mob, date) {
   const ts = Math.floor(date.getTime() / 1000);
-  const et = getEorzeaTime(date);
   const moonInfo = getEorzeaMoonInfo(date); // { phase, label }
   const seed = getEorzeaWeatherSeed(date);
 
@@ -137,23 +136,22 @@ function checkMobSpawnCondition(mob, date) {
     if (!ok) return false;
   }
 
-  // conditions を持つモブの時間帯評価（firstNight / otherNights）
+  // conditions を持つモブの時間帯評価
   if (mob.conditions) {
     let ok = false;
     const fn = mob.conditions.firstNight;
     const on = mob.conditions.otherNights;
-    // 初回夜: 月齢が 32.5〜1.5 の範囲
-    if (fn && fn.timeRange && (moonInfo.phase >= 32.5 || moonInfo.phase <= 1.5)) {
+    const phase = moonInfo.phase;
+    if (fn && fn.timeRange && (phase >= 32.5 || phase <= 1.5)) {
       ok = ok || checkTimeRange(fn.timeRange, ts);
     }
-    // 以降夜: 月齢が 1.5〜4.5 の範囲
-    if (on && on.timeRange && moonInfo.phase > 1.5 && moonInfo.phase < 4.5) {
+    if (on && on.timeRange && phase > 1.5 && phase < 4.5) {
       ok = ok || checkTimeRange(on.timeRange, ts);
     }
     if (!ok) return false;
   }
 
-  // conditions が無い場合のみ、通常の timeRange / timeRanges を評価
+  // conditions が無い場合のみ通常の timeRange / timeRanges を評価
   if (!mob.conditions && mob.timeRange) {
     if (!checkTimeRange(mob.timeRange, ts)) return false;
   }
@@ -165,15 +163,75 @@ function checkMobSpawnCondition(mob, date) {
   return true;
 }
 
+// 天候サイクル境界へ丸め
 function alignToCycleBoundary(tSec) {
   const r = tSec % WEATHER_CYCLE_SEC;
   return tSec - r; // 直前のサイクル境界
 }
 
-// ET時間境界（175秒刻み）に丸め
+// ET時間境界（175秒刻み）へ丸め
 function alignToEtHourBoundary(tSec) {
   const step = 175; // 1 ET 時間 = 175 秒
   return Math.floor(tSec / step) * step;
+}
+
+// 天候レンジ判定
+function checkWeatherInRange(mob, seed) {
+  if (mob.weatherSeedRange) {
+    const [min, max] = mob.weatherSeedRange;
+    return seed >= min && seed <= max;
+  }
+  if (mob.weatherSeedRanges) {
+    return mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max);
+  }
+  return false;
+}
+
+// サイクル内の ET/月齢成立区間を算出（区間の配列を返す）
+function getEtMoonRangesWithinCycle(mob, cycleStart, cycleEnd) {
+  const etRanges = [];
+
+  // 基本 ET時間帯
+  if (!mob.conditions && mob.timeRange) {
+    etRanges.push(normalizeEtRangeToReal(mob.timeRange, cycleStart, cycleEnd));
+  }
+  if (!mob.conditions && mob.timeRanges && mob.timeRanges.length) {
+    for (const tr of mob.timeRanges) {
+      etRanges.push(normalizeEtRangeToReal(tr, cycleStart, cycleEnd));
+    }
+  }
+  // conditions: firstNight / otherNights の時間帯を月齢条件と併せて区間化
+  if (mob.conditions) {
+    const phaseAtStart = getEorzeaMoonInfo(new Date(cycleStart * 1000)).phase;
+    // 初回夜（32.5〜1.5）
+    const fn = mob.conditions.firstNight;
+    if (fn && fn.timeRange && (phaseAtStart >= 32.5 || phaseAtStart <= 1.5)) {
+      etRanges.push(normalizeEtRangeToReal(fn.timeRange, cycleStart, cycleEnd));
+    }
+    // 以降夜（1.5〜4.5）
+    const on = mob.conditions.otherNights;
+    if (on && on.timeRange && phaseAtStart > 1.5 && phaseAtStart < 4.5) {
+      etRanges.push(normalizeEtRangeToReal(on.timeRange, cycleStart, cycleEnd));
+    }
+  }
+
+  // ET指定が無い場合は「サイクル全体」
+  if (etRanges.length === 0) etRanges.push([cycleStart, cycleEnd]);
+
+  // 月齢ラベル（mob.moonPhase）がある場合は交差を取る
+  let result = [];
+  if (mob.moonPhase) {
+    // サイクル内は月齢ラベルが変化しない前提なら、ラベル一致なら全区間維持
+    const labelAtStart = getEorzeaMoonInfo(new Date(cycleStart * 1000)).label;
+    if (labelAtStart === mob.moonPhase) {
+      result = etRanges;
+    } else {
+      result = []; // ラベル不一致なら区間なし
+    }
+  } else {
+    result = etRanges;
+  }
+  return result;
 }
 
 // ETレンジをリアル秒区間に変換
@@ -206,7 +264,6 @@ function findNextEtSpawnTime(mob, baseSec, repopStartSec, repopEndSec) {
   for (let tSec = t0; tSec <= limitSec; tSec += stepSec) {
     if (tSec < minRepopSec) continue;
 
-    // ETレンジをリアル秒に変換
     let ranges = [];
     if (mob.timeRange) {
       ranges.push(normalizeEtRangeToReal(mob.timeRange, tSec, tSec + stepSec));
@@ -217,7 +274,6 @@ function findNextEtSpawnTime(mob, baseSec, repopStartSec, repopEndSec) {
       }
     }
 
-    // 各レンジを判定
     for (const [winStart, winEnd] of ranges) {
       const candidateSec = Math.max(minRepopSec, tSec, winStart);
       if (candidateSec <= winEnd) {
@@ -228,10 +284,10 @@ function findNextEtSpawnTime(mob, baseSec, repopStartSec, repopEndSec) {
   return null;
 }
 
+// 連続天候専用（既存のまま）
 function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
   const startSec = Math.floor(startDate.getTime() / 1000);
 
-  // 1) 連続条件があるモブは連続探索のみ。瞬間条件へは落とさない。
   if (mob.weatherDuration?.minutes) {
     const requiredMinutes = Number(mob.weatherDuration.minutes);
     const requiredSec = requiredMinutes * 60;
@@ -266,7 +322,6 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
     return null;
   }
 
-  // 2) 単発条件は ET探索に委譲
   return null;
 }
 
