@@ -275,7 +275,52 @@ function getEtWindowEnd(mob, windowStart) {
 function findConsecutiveWeather(mob, startSec, minRepopSec, limitSec, nowSec) {
   const requiredMinutes = mob.weatherDuration?.minutes || 0;
   const requiredSec = requiredMinutes * 60;
+  // --- 後方ルックバック：minRepop を含む連続区間を特定 ---
+  // ルックバックは「必要秒数＋1サイクル」を安全に確保
+  const lookbackSec = requiredSec + WEATHER_CYCLE_SEC;
+  let backCursor = alignToWeatherCycle(minRepopSec); // minRepopの属するサイクル頭
+  let consecutiveStart = minRepopSec;                // 初期値（途中から始まっていると仮定）
+  let accumulatedBack = 0;
+  // 直前サイクルから後方に連続が続いているか確認
+  while (accumulatedBack < lookbackSec) {
+    const prevCycleStart = backCursor - WEATHER_CYCLE_SEC;
+    if (prevCycleStart < 0) break;
 
+    const seedPrev = getEorzeaWeatherSeed(new Date(prevCycleStart * 1000));
+    if (!checkWeatherInRange(mob, seedPrev)) {
+      // 直前で途切れる → 連続開始は minRepopSec が属するサイクル内の開始
+      consecutiveStart = Math.max(minRepopSec, backCursor); // minRepopが途中ならその時点が開始
+      break;
+    }
+
+    // 直前サイクルも条件OK → さらに遡る
+    consecutiveStart = prevCycleStart;
+    accumulatedBack += WEATHER_CYCLE_SEC;
+    backCursor = prevCycleStart;
+  }
+
+  // もし直前で途切れなかった場合（十分遡っても途切れず）
+  if (accumulatedBack >= lookbackSec) {
+    // 連続開始は backCursor まで遡れた
+    consecutiveStart = backCursor;
+  }
+
+  // minRepop を含む連続開始が分かったので、そこから前方向へ必要秒数を満たす終了時刻を計算
+  const windowStartAtMin = consecutiveStart;
+  const windowEndAtMin = windowStartAtMin + requiredSec;
+
+  // ここが重要：minRepop が windowEndAtMin より後なら「既に満了済み」
+  if (minRepopSec >= windowEndAtMin) {
+    // 既満了のケースは、その満了時刻（過去）を返す
+    if (nowSec !== undefined && nowSec >= windowStartAtMin && nowSec <= windowEndAtMin) {
+      // ちょうど満了区間内に現在があるケース（理論的には稀）
+      return { windowStart: windowStartAtMin, windowEnd: windowEndAtMin, popTime: windowEndAtMin };
+    }
+    // 既満了なので、その満了時刻を返却（UIは過去時刻として扱える）
+    return { windowStart: windowStartAtMin, windowEnd: windowEndAtMin, popTime: windowEndAtMin };
+  }
+  // まだ満了に届いていない場合は、minRepop 以降で連続を積み上げる通常探索へ
+  // --- 前方探索（部分サイクル許容） ---
   let scanSec = Math.max(startSec, minRepopSec); // 丸めない
   const hardLimit = limitSec;
 
@@ -290,10 +335,9 @@ function findConsecutiveWeather(mob, startSec, minRepopSec, limitSec, nowSec) {
       continue;
     }
 
-    let consecutiveStart = scanSec;                // 途中開始許容
-    let accumulated = cycleEnd - consecutiveStart; // 最初サイクルの残り部分
+    let forwardStart = scanSec;                 // 途中開始許容
+    let accumulated = cycleEnd - forwardStart;  // 最初サイクルの残り部分
 
-    // 後続のフルサイクルを加算
     let cursor = cycleEnd;
     while (accumulated < requiredSec && cursor <= hardLimit) {
       const nextCycleStart = cursor;
@@ -304,8 +348,8 @@ function findConsecutiveWeather(mob, startSec, minRepopSec, limitSec, nowSec) {
     }
 
     if (accumulated >= requiredSec) {
-      const windowStart = consecutiveStart;
-      const windowEnd = consecutiveStart + requiredSec;
+      const windowStart = forwardStart;
+      const windowEnd = forwardStart + requiredSec;
 
       // 今In中優先
       if (nowSec !== undefined && nowSec >= windowStart && nowSec <= windowEnd) {
