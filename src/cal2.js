@@ -1,4 +1,4 @@
-// cal.js - 修正完全版
+// cal.js - 連続天候バグ修正版
 // 区間モデル + 175秒/1400秒グリッド探索 + 終了時刻返却 + 後方互換ユーティリティ
 
 // ===== 定数 =====
@@ -318,13 +318,16 @@ function getEtWindowEnd(mob, windowStart) {
   return windowStart + ET_HOUR_SEC; // デフォルト: 1 ET時間後
 }
 
-// ===== 連続天候探索 =====
-function findConsecutiveWeather(mob, startSec, minRepopSec, limitSec, nowSec) {
+// ===== 連続天候探索（修正版）=====
+function findConsecutiveWeather(mob, minRepopSec, limitSec) {
   const requiredMinutes = mob.weatherDuration.minutes;
   const requiredSec = requiredMinutes * 60;
   const requiredCycles = Math.ceil(requiredSec / WEATHER_CYCLE_SEC);
 
-  let scanStartSec = alignToWeatherCycle(startSec);
+  // minRepopSec から必要サイクル分だけ遡って探索開始
+  const lookbackSec = requiredCycles * WEATHER_CYCLE_SEC;
+  const scanStartSec = alignToWeatherCycle(minRepopSec - lookbackSec);
+
   let consecutiveCycles = 0;
   let consecutiveStartSec = null;
 
@@ -340,15 +343,19 @@ function findConsecutiveWeather(mob, startSec, minRepopSec, limitSec, nowSec) {
         const windowStart = consecutiveStartSec;
         const windowEnd = consecutiveStartSec + requiredSec;
         
-        // 現在が区間内なら現在区間を優先返却
-        if (nowSec !== undefined && nowSec >= windowStart && nowSec <= windowEnd) {
-          // 連続天候の場合: windowStart=天候開始, popTime=条件達成時刻(windowEnd)
-          return { windowStart, windowEnd, popTime: windowEnd };
-        }
-        
-        // 最短REPOP以降の成立区間
-        if (windowEnd >= minRepopSec && windowEnd <= limitSec) {
-          return { windowStart, windowEnd, popTime: windowEnd };
+        // minRepopSec が条件区間内にあるかチェック
+        if (windowEnd >= minRepopSec) {
+          // minRepopSec が区間内なら、minRepopSec が実際の開始点
+          const actualStart = Math.max(windowStart, minRepopSec);
+          
+          // actualStart が windowEnd より前なら有効
+          if (actualStart <= windowEnd) {
+            return { 
+              windowStart: actualStart, 
+              windowEnd, 
+              popTime: windowEnd 
+            };
+          }
         }
       }
     } else {
@@ -496,13 +503,11 @@ function calculateRepop(mob, maintenance) {
     let conditionResult = null;
     
     if (mob.weatherDuration?.minutes) {
-      // 連続天候
+      // 連続天候（minRepop から遡って探索）
       conditionResult = findConsecutiveWeather(
         mob, 
-        searchStart, 
-        minRepop, 
-        searchLimit, 
-        now
+        minRepop,
+        searchLimit
       );
     } else {
       // 単発条件
@@ -609,7 +614,7 @@ function findNextSpawnTime(mob, startDate, repopStartSec, repopEndSec) {
   const limitSec = repopEndSec ?? (startSec + 14 * 24 * 3600);
 
   if (mob.weatherDuration?.minutes) {
-    const res = findConsecutiveWeather(mob, startSec, minRepopSec, limitSec);
+    const res = findConsecutiveWeather(mob, minRepopSec, limitSec);
     return res?.popTime ? new Date(res.popTime * 1000) : null;
   }
 
