@@ -208,16 +208,6 @@ function checkTimeRange(timeRange, realSec) {
   return etHour >= start || etHour < end; // 日跨ぎ
 }
 
-// conditions 用フェーズヘルパ
-function isFirstNightPhase(phase) {
-  // 初回夜: phase 28〜0付近
-  return phase >= 28 || phase <= 0.5;
-}
-function isOtherNightsPhase(phase) {
-  // 以降夜: phase 1〜4付近
-  return phase > 0.5 && phase <= 4.5;
-}
-
 // ET条件判定（複数レンジ対応）
 function checkEtCondition(mob, realSec) {
   const { phase } = getEorzeaMoonInfo(new Date(realSec * 1000));
