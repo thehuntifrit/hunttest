@@ -272,64 +272,65 @@ function getEtWindowEnd(mob, windowStart) {
 
 // ===== 連続天候探索（置き換え） =====
 function findConsecutiveWeather(mob, pointSec, minRepopSec, limitSec) {
-  const requiredMinutes = mob.weatherDuration?.minutes || 0;
-  const requiredSec = requiredMinutes * 60;
-  // 必要継続時間がゼロの場合は成立しない
-  if (requiredSec <= 0) return null;
-  // 巻き戻し探索：現在時点が連続成立中かどうかを確認
-  const scanStart = alignToWeatherCycle(pointSec - requiredSec);
-  let hitStart = null;
+  const requiredMinutes = mob.weatherDuration?.minutes || 0;
+  const requiredSec = requiredMinutes * 60;
+  // 必要継続時間がゼロの場合は成立しない
+  if (requiredSec <= 0) return null;
+  // 巻き戻し探索：現在時点が連続成立中かどうかを確認
+  const scanStart = alignToWeatherCycle(pointSec - requiredSec);
+  let hitStart = null;
 
-  let backCursor = scanStart;
-  let accumulatedBack = 0;
-  while (accumulatedBack < requiredSec) {
-    const seed = getEorzeaWeatherSeed(new Date(backCursor * 1000));
-    if (!checkWeatherInRange(mob, seed)) {
-      break;
-    }
-    hitStart = backCursor;
-    backCursor -= WEATHER_CYCLE_SEC;
-    accumulatedBack += WEATHER_CYCLE_SEC;
-  }
+  let backCursor = scanStart;
+  let accumulatedBack = 0;
+  while (accumulatedBack < requiredSec) {
+    const seed = getEorzeaWeatherSeed(new Date(backCursor * 1000));
+    if (!checkWeatherInRange(mob, seed)) {
+      break;
+    }
+    hitStart = backCursor;
+    backCursor -= WEATHER_CYCLE_SEC;
+    accumulatedBack += WEATHER_CYCLE_SEC;
+  }
 
-  if (hitStart && pointSec >= hitStart && pointSec < hitStart + requiredSec) {
-    const windowStart = hitStart;
-    const windowEnd = windowStart + requiredSec;
-    const remainingSec = windowEnd - pointSec;
-    return { windowStart, windowEnd, popTime: pointSec, remainingSec };
-  }
-  // 前方探索：次に連続成立する開始点を探す（未来成立を返す）
-  let forwardCursor = alignToWeatherCycle(Math.max(minRepopSec, pointSec));
-  while (forwardCursor <= limitSec) {
-    let accumulated = 0;
-    let testCursor = forwardCursor;
+  if (hitStart && pointSec >= hitStart && pointSec < hitStart + requiredSec) {
+    const windowStart = hitStart;
+    const windowEnd = windowStart + requiredSec;
+    const remainingSec = windowEnd - pointSec;
+    return { windowStart, windowEnd, popTime: pointSec, remainingSec };
+  }
+  // 前方探索：次に連続成立する開始点を探す（未来成立を返す）
+  let forwardCursor = alignToWeatherCycle(Math.max(minRepopSec, pointSec));
+  while (forwardCursor <= limitSec) {
+    let accumulated = 0;
+    let testCursor = forwardCursor;
 
-    while (accumulated < requiredSec) {
-      const seed = getEorzeaWeatherSeed(new Date(testCursor * 1000));
-      if (!checkWeatherInRange(mob, seed)) break;
-      accumulated += WEATHER_CYCLE_SEC;
-      testCursor += WEATHER_CYCLE_SEC;
-    }
+    while (accumulated < requiredSec) {
+      const seed = getEorzeaWeatherSeed(new Date(testCursor * 1000));
+      if (!checkWeatherInRange(mob, seed)) break;
+      accumulated += WEATHER_CYCLE_SEC;
+      testCursor += WEATHER_CYCLE_SEC;
+    }
 
-    if (accumulated >= requiredSec) {
-      const windowStart = forwardCursor;
-      const windowEnd = windowStart + accumulated;
-      // 現在区間に含まれる場合：残り時間返却
-      if (pointSec >= windowStart && pointSec < windowEnd) {
-        const remainingSec = windowEnd - pointSec;
-        return { windowStart, windowEnd, popTime: pointSec, remainingSec };
-      }
-      // 未来成立が見つかった場合：開始時刻を返却（残り時間は0）
-      if (windowStart > pointSec) {
-        return { windowStart, windowEnd, popTime: windowStart, remainingSec: 0 };
-      }
-      // 過去区間はスキップ
-    }
+    if (accumulated >= requiredSec) {
+      const windowStart = forwardCursor;
+      const windowEnd = windowStart + accumulated;
+      
+      // 現在区間に含まれる場合：残り時間返却
+      if (pointSec >= windowStart && pointSec < windowEnd) {
+        const remainingSec = windowEnd - pointSec;
+        return { windowStart, windowEnd, popTime: pointSec, remainingSec };
+      }
+      // 未来成立が見つかった場合：開始時刻を返却（残り時間は0）
+      if (windowStart >= pointSec) {
+        return { windowStart, windowEnd, popTime: windowStart, remainingSec: 0 };
+      }
+      // pointSecより過去の区間はスキップし、次の区間を探す
+    }
 
-    forwardCursor += WEATHER_CYCLE_SEC;
-  }
+    forwardCursor += WEATHER_CYCLE_SEC;
+  }
 
-  return null;
+  return null;
 }
 
 // ===== 複合条件探索（置き換え） =====
