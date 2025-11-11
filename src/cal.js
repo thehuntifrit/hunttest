@@ -298,28 +298,30 @@ function findConsecutiveWeather(mob, pointSec, minRepopSec, limitSec) {
     return { windowStart, windowEnd, popTime: pointSec, remainingSec };
   }
   // 前方探索：条件が成立する次の開始点を探す
-  let forwardCursor = alignToWeatherCycle(Math.max(minRepopSec, pointSec));
-  while (forwardCursor <= limitSec) {
-    let accumulated = 0;
-    let testCursor = forwardCursor;
-    while (accumulated < requiredSec) {
-      const seed = getEorzeaWeatherSeed(new Date(testCursor * 1000));
-      if (!checkWeatherInRange(mob, seed)) break;
-      accumulated += WEATHER_CYCLE_SEC;
-      testCursor += WEATHER_CYCLE_SEC;
-    }
+let forwardCursor = alignToWeatherCycle(Math.max(minRepopSec, pointSec));
+while (forwardCursor <= limitSec) {
+  let accumulated = 0;
+  let testCursor = forwardCursor;
 
-    if (accumulated >= requiredSec) {
-      const windowStart = forwardCursor;
-      const windowEnd = windowStart + accumulated;
-      if (pointSec >= windowStart && pointSec < windowEnd) {
-        const remainingSec = windowEnd - pointSec;
-        return { windowStart, windowEnd, popTime: pointSec, remainingSec };
-      }
-      break;
-    }
+  while (accumulated < requiredSec) {
+    const seed = getEorzeaWeatherSeed(new Date(testCursor * 1000));
+    if (!checkWeatherInRange(mob, seed)) break;
+    accumulated += WEATHER_CYCLE_SEC;
+    testCursor += WEATHER_CYCLE_SEC;
+  }
 
-    forwardCursor += WEATHER_CYCLE_SEC;
+  if (accumulated >= requiredSec) {
+    const windowStart = forwardCursor;
+    const windowEnd = windowStart + accumulated;
+
+    if (pointSec >= windowStart && pointSec < windowEnd) {
+      const remainingSec = windowEnd - pointSec;
+      return { windowStart, windowEnd, popTime: pointSec, remainingSec };
+    }
+    // 探索点を含まない場合は次の候補を探す
+  }
+
+  forwardCursor += WEATHER_CYCLE_SEC;
   }
 
   return null;
