@@ -541,13 +541,14 @@ function findNextSpawnTime(mob, pointSec, minRepopSec, limitSec) {
     conditionResult = findNextConditionWindow(mob, pointSec, minRepopSec, limitSec);
   }
 
-  if (conditionResult && conditionResult.remainingSec > 0) {
-    // 探索点が条件内に含まれている → そのまま返す
-    return conditionResult.popTime;
-  }
-  // 条件未成立 → 次の条件開始点を探索
-  if (conditionResult && conditionResult.windowStart > pointSec) {
-    return conditionResult.windowStart;
+  if (conditionResult) {
+    const { windowStart, windowEnd } = conditionResult;
+    if (pointSec >= windowStart && pointSec < windowEnd) {
+      return pointSec;
+    }
+    if (windowStart > pointSec) {
+      return windowStart;
+    }
   }
 
   return null;
