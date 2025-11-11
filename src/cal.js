@@ -476,6 +476,9 @@ function calculateRepop(mob, maintenance) {
     }
   }
 
+  // --- メンテ中判定を追加 ---
+  const isMaintenanceStop = (now >= maintenanceStart && now < serverUp);
+
   return {
     minRepop,
     maxRepop,
