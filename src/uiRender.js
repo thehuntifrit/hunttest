@@ -355,23 +355,39 @@ function updateProgressText(card, mob) {
   const text = card.querySelector(".progress-text");
   if (!text) return;
 
-  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status, currentConditionActive } = mob.repopInfo;
-  const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
+  const {
+    elapsedPercent,
+    nextMinRepopDate,
+    nextConditionSpawnDate,
+    minRepop,
+    maxRepop,
+    status,
+    isInConditionWindow,
+    remainingSec
+  } = mob.repopInfo;
 
+  const absFmt = {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Tokyo'
+  };
+
+  // 右側に常に最短REPOP時刻を表示
   const inTimeStr = nextMinRepopDate
     ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextMinRepopDate)
     : "未確定";
 
+  // 特殊条件の切り替え表示
   let nextTimeStr = null;
-  if (currentConditionActive && nextConditionSpawnDate) {
-    const nowSec = Date.now() / 1000;
-    const remainMin = Math.max(0, Math.floor((nextConditionSpawnDate.getTime() / 1000 - nowSec) / 60));
-    nextTimeStr = `@ ${remainMin}分`;
+  if (isInConditionWindow && remainingSec > 0) {
+    nextTimeStr = `@ ${Math.floor(remainingSec / 60)}分`;
   } else if (nextConditionSpawnDate) {
-    // 通常時は原型通りのフォーマット
     nextTimeStr = new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate);
   }
 
+  // 左側：進捗状態
   let rightStr = "";
   const nowSec = Date.now() / 1000;
   if (status === "Maintenance" || status === "Next") {
@@ -391,7 +407,7 @@ function updateProgressText(card, mob) {
         </div>
         <div class="pr-1 text-right toggle-container">
           <span class="label-in">in ${inTimeStr}</span>
-          <span class="label-next" style="display:none;">${nextTimeStr ? `Next ${nextTimeStr}` : ""}</span>
+          <span class="label-next" style="display:none;">${nextTimeStr ? `${nextTimeStr}` : ""}</span>
         </div>
     </div>
   `;
