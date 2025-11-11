@@ -404,15 +404,20 @@ function calculateRepop(mob, maintenance) {
   }
   if (!maint || !maint.serverUp || !maint.start) return baseResult("Unknown");
 
-  const serverUp = new Date(maint.serverUp).getTime() / 1000;
-  const maintenanceStart = new Date(maint.start).getTime() / 1000;
+  const serverUp = new Date(maint.serverUp).getTime() / 1000;       // サーバー再始動（メンテ終了）
+  const maintenanceStart = new Date(maint.start).getTime() / 1000;  // メンテ開始
 
-  const minRepop = (lastKill === 0 || lastKill < serverUp)
-    ? serverUp + (repopSec * 0.6)
-    : lastKill + repopSec;
-  const maxRepop = (lastKill === 0 || lastKill < serverUp)
-    ? serverUp + (maxSec * 0.6)
-    : lastKill + maxSec;
+  let minRepop, maxRepop;
+
+  if (lastKill === 0 || lastKill <= serverUp) {
+    // メンテ前に倒されたモブ、またはメンテ直後初回 → 0.6倍補正
+    minRepop = serverUp + repopSec * 0.6;
+    maxRepop = serverUp + maxSec * 0.6;
+  } else {
+    // メンテ後通常討伐 → 通常計算
+    minRepop = lastKill + repopSec;
+    maxRepop = lastKill + maxSec;
+  }
 
   const pointSec = Math.max(minRepop, now);
   const nextMinRepopDate = new Date(minRepop * 1000);
@@ -450,7 +455,7 @@ function calculateRepop(mob, maintenance) {
       isInConditionWindow = conditionResult.remainingSec > 0;
 
       if (isInConditionWindow) {
-        timeRemaining = `条件達成中 残り ${formatDurationHM(conditionResult.remainingSec)}`;
+        timeRemaining = `残り ${formatDurationHM(conditionResult.remainingSec)}`;
         status = "ConditionActive";
       }
     }
@@ -470,12 +475,6 @@ function calculateRepop(mob, maintenance) {
       timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
     }
   }
-
-  const minRepopAfterMaintenance = minRepop > maintenanceStart;
-  const conditionAfterMaintenance = nextConditionSpawnDate
-    ? (nextConditionSpawnDate.getTime() / 1000) > maintenanceStart
-    : false;
-  const isMaintenanceStop = minRepopAfterMaintenance || conditionAfterMaintenance;
 
   return {
     minRepop,
