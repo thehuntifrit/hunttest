@@ -364,6 +364,7 @@ function updateProgressText(card, mob) {
     status,
     isInConditionWindow,
     remainingSec
+    // isMaintenanceStop はここでは使わない
   } = mob.repopInfo;
 
   const absFmt = {
@@ -373,12 +374,10 @@ function updateProgressText(card, mob) {
     minute: '2-digit',
     timeZone: 'Asia/Tokyo'
   };
-
   // 右側に常に最短REPOP時刻を表示
   const inTimeStr = nextMinRepopDate
     ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextMinRepopDate)
     : "未確定";
-
   // 特殊条件の切り替え表示
   let nextTimeStr = null;
   if (isInConditionWindow && remainingSec > 0) {
@@ -386,11 +385,10 @@ function updateProgressText(card, mob) {
   } else if (nextConditionSpawnDate) {
     nextTimeStr = new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate);
   }
-
   // 左側：進捗状態
   let rightStr = "";
   const nowSec = Date.now() / 1000;
-  if (status === "Maintenance" || status === "Next") {
+  if (status === "Next") {
     rightStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
   } else if (status === "PopWindow") {
     rightStr = `残り ${formatDurationHM(maxRepop - nowSec)}`;
