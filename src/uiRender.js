@@ -355,43 +355,59 @@ function updateProgressText(card, mob) {
   const text = card.querySelector(".progress-text");
   if (!text) return;
 
-  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status, currentConditionActive } = mob.repopInfo;
-  const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
+  const {
+    elapsedPercent,
+    nextMinRepopDate,
+    nextConditionSpawnDate,
+    minRepop,
+    maxRepop,
+    status,
+    isInConditionWindow,
+    remainingSec
+  } = mob.repopInfo;
 
+  const absFmt = {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Tokyo'
+  };
+
+  // 右側：最短REPOP時刻
   const inTimeStr = nextMinRepopDate
     ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextMinRepopDate)
     : "未確定";
 
+  // 右側：特殊条件 Next 時間
   let nextTimeStr = null;
-  if (currentConditionActive && nextConditionSpawnDate) {
-    const nowSec = Date.now() / 1000;
-    const remainMin = Math.max(0, Math.floor((nextConditionSpawnDate.getTime() / 1000 - nowSec) / 60));
-    nextTimeStr = `@ ${remainMin}分`;
+  if (isInConditionWindow && remainingSec > 0) {
+    nextTimeStr = `@ ${Math.floor(remainingSec / 60)}分`;
   } else if (nextConditionSpawnDate) {
-    // 通常時は原型通りのフォーマット
     nextTimeStr = new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate);
+  } else {
+    nextTimeStr = "未確定"; // ← 空文字ではなく必ず表示
   }
 
-  let rightStr = "";
+  // 左側：進捗状態
+  let leftStr = "";
   const nowSec = Date.now() / 1000;
-  if (status === "Maintenance" || status === "Next") {
-    rightStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
+  if (status === "Next") {
+    leftStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
   } else if (status === "PopWindow") {
-    rightStr = `残り ${formatDurationHM(maxRepop - nowSec)}`;
+    leftStr = `残り ${formatDurationHM(maxRepop - nowSec)}`;
   } else if (status === "MaxOver") {
-    rightStr = `Time Over (100%)`;
+    leftStr = `Time Over (100%)`;
   } else {
-    rightStr = `未確定`;
+    leftStr = `未確定`;
   }
 
   text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
-        <div class="pl-2 text-left">
-          ${rightStr}${status !== "MaxOver" && status !== "Unknown" ? ` (${elapsedPercent.toFixed(0)}%)` : ""}
-        </div>
+        <div class="pl-2 text-left">${leftStr}${status !== "MaxOver" && status !== "Unknown" ? ` (${elapsedPercent.toFixed(0)}%)` : ""}</div>
         <div class="pr-1 text-right toggle-container">
           <span class="label-in">in ${inTimeStr}</span>
-          <span class="label-next" style="display:none;">${nextTimeStr ? `Next ${nextTimeStr}` : ""}</span>
+          <span class="label-next" style="display:none;">${nextTimeStr}</span>
         </div>
     </div>
   `;
