@@ -32,6 +32,10 @@ function isCulled(pointStatus, mobNo) {
     const state = getState();
     const mob = state.mobs.find(m => m.No === mobNo);
     const mobLastKillTime = mob?.last_kill_time || 0;
+    // メンテ情報を取得
+    const serverUpSec = state.maintenance?.serverUp
+        ? new Date(state.maintenance.serverUp).getTime()
+        : 0;
     // Firestore Timestampの安全取り扱い
     const culledMs = pointStatus?.culled_at && typeof pointStatus.culled_at.toMillis === "function"
         ? pointStatus.culled_at.toMillis()
@@ -42,14 +46,18 @@ function isCulled(pointStatus, mobNo) {
         : 0;
     // last_kill_time は秒を想定、ミリ秒に変換
     const lastKillMs = typeof mobLastKillTime === "number" ? mobLastKillTime * 1000 : 0;
+    // サーバー再起動より前の湧き潰しイベントは無効化
+    const validCulledMs = culledMs > serverUpSec ? culledMs : 0;
+    const validUnculledMs = uncullMs > serverUpSec ? uncullMs : 0;
     // どちらも無ければ未湧き潰し
-    if (culledMs === 0 && uncullMs === 0) return false;
+    if (validCulledMs === 0 && validUnculledMs === 0) return false;
 
-    const culledAfterKill = culledMs > lastKillMs;
-    const unculledAfterKill = uncullMs > lastKillMs;
+    const culledAfterKill = validCulledMs > lastKillMs;
+    const unculledAfterKill = validUnculledMs > lastKillMs;
     // 最も新しい有効イベントを採用
-    if (culledAfterKill && (!unculledAfterKill || culledMs >= uncullMs)) return true;
-    if (unculledAfterKill && (!culledAfterKill || uncullMs >= culledMs)) return false;
+    if (culledAfterKill && (!unculledAfterKill || validCulledMs >= validUnculledMs)) return true;
+    if (unculledAfterKill && (!culledAfterKill || validUnculledMs >= validCulledMs)) return false;
+
     return false;
 }
 
