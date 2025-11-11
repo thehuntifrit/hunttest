@@ -274,11 +274,12 @@ function getEtWindowEnd(mob, windowStart) {
 function findConsecutiveWeather(mob, pointSec, minRepopSec, limitSec) {
   const requiredMinutes = mob.weatherDuration?.minutes || 0;
   const requiredSec = requiredMinutes * 60;
+  // 必要継続時間がゼロの場合は成立しない
+  if (requiredSec <= 0) return null;
+  // 巻き戻し探索：現在時点が連続成立中かどうかを確認
   const scanStart = alignToWeatherCycle(pointSec - requiredSec);
-
   let hitStart = null;
 
-  // 巻き戻し探索：条件が継続していたかを確認
   let backCursor = scanStart;
   let accumulatedBack = 0;
   while (accumulatedBack < requiredSec) {
@@ -290,38 +291,42 @@ function findConsecutiveWeather(mob, pointSec, minRepopSec, limitSec) {
     backCursor -= WEATHER_CYCLE_SEC;
     accumulatedBack += WEATHER_CYCLE_SEC;
   }
-  // 条件が継続していた場合、探索点が条件達成開始点
+
   if (hitStart && pointSec >= hitStart && pointSec < hitStart + requiredSec) {
     const windowStart = hitStart;
     const windowEnd = windowStart + requiredSec;
     const remainingSec = windowEnd - pointSec;
     return { windowStart, windowEnd, popTime: pointSec, remainingSec };
   }
-  // 前方探索：条件が成立する次の開始点を探す
-let forwardCursor = alignToWeatherCycle(Math.max(minRepopSec, pointSec));
-while (forwardCursor <= limitSec) {
-  let accumulated = 0;
-  let testCursor = forwardCursor;
+  // 前方探索：次に連続成立する開始点を探す（未来成立を返す）
+  let forwardCursor = alignToWeatherCycle(Math.max(minRepopSec, pointSec));
+  while (forwardCursor <= limitSec) {
+    let accumulated = 0;
+    let testCursor = forwardCursor;
 
-  while (accumulated < requiredSec) {
-    const seed = getEorzeaWeatherSeed(new Date(testCursor * 1000));
-    if (!checkWeatherInRange(mob, seed)) break;
-    accumulated += WEATHER_CYCLE_SEC;
-    testCursor += WEATHER_CYCLE_SEC;
-  }
-
-  if (accumulated >= requiredSec) {
-    const windowStart = forwardCursor;
-    const windowEnd = windowStart + accumulated;
-
-    if (pointSec >= windowStart && pointSec < windowEnd) {
-      const remainingSec = windowEnd - pointSec;
-      return { windowStart, windowEnd, popTime: pointSec, remainingSec };
+    while (accumulated < requiredSec) {
+      const seed = getEorzeaWeatherSeed(new Date(testCursor * 1000));
+      if (!checkWeatherInRange(mob, seed)) break;
+      accumulated += WEATHER_CYCLE_SEC;
+      testCursor += WEATHER_CYCLE_SEC;
     }
-    // 探索点を含まない場合は次の候補を探す
-  }
 
-  forwardCursor += WEATHER_CYCLE_SEC;
+    if (accumulated >= requiredSec) {
+      const windowStart = forwardCursor;
+      const windowEnd = windowStart + accumulated;
+      // 現在区間に含まれる場合：残り時間返却
+      if (pointSec >= windowStart && pointSec < windowEnd) {
+        const remainingSec = windowEnd - pointSec;
+        return { windowStart, windowEnd, popTime: pointSec, remainingSec };
+      }
+      // 未来成立が見つかった場合：開始時刻を返却（残り時間は0）
+      if (windowStart > pointSec) {
+        return { windowStart, windowEnd, popTime: windowStart, remainingSec: 0 };
+      }
+      // 過去区間はスキップ
+    }
+
+    forwardCursor += WEATHER_CYCLE_SEC;
   }
 
   return null;
@@ -329,18 +334,21 @@ while (forwardCursor <= limitSec) {
 
 // ===== 複合条件探索（置き換え） =====
 function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
-  const requiredSec = WEATHER_CYCLE_SEC;
-  const scanStart = alignToWeatherCycle(pointSec - requiredSec);
-
+  // 天候が絡む複合条件でも最低1サイクルの粒度で判定
+  const scanStart = alignToWeatherCycle(pointSec - WEATHER_CYCLE_SEC);
+  // 月齢に応じた候補区間の列挙（moonPhase がなければ全域）
   const moonRanges = enumerateMoonRanges(scanStart, limitSec, mob.moonPhase);
 
   for (const [moonStart, moonEnd] of moonRanges) {
+    // 天候サイクルで走査（天候条件が無い場合も seed 判定は常に true と解釈）
     let weatherCursor = alignToWeatherCycle(Math.max(moonStart, scanStart));
     while (weatherCursor < moonEnd) {
       const seed = getEorzeaWeatherSeed(new Date(weatherCursor * 1000));
-      if (!checkWeatherInRange(mob, seed)) {
-        weatherCursor += WEATHER_CYCLE_SEC;
-        continue;
+      if (mob.weatherSeedRange || mob.weatherSeedRanges) {
+        if (!checkWeatherInRange(mob, seed)) {
+          weatherCursor += WEATHER_CYCLE_SEC;
+          continue;
+        }
       }
 
       const weatherEnd = Math.min(weatherCursor + WEATHER_CYCLE_SEC, moonEnd);
@@ -350,35 +358,42 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
         weatherCursor += WEATHER_CYCLE_SEC;
         continue;
       }
-
+      // ET時間帯の開始候補を時間グリッドで走査
       let etCursor = ceilToEtHour(Math.max(intersectStart, minRepopSec));
       while (etCursor < intersectEnd) {
         if (checkEtCondition(mob, etCursor)) {
-          const etEnd = Math.min(getEtWindowEnd(mob, etCursor), intersectEnd);
-          // ✅ 探索点がこの区間に含まれているかを先に判定
+          // 当該 ET レンジの終端を求め、天候・月齢の交差でクリップ
+          const etEndRaw = getEtWindowEnd(mob, etCursor);
+          const etEnd = Math.min(etEndRaw, intersectEnd);
+          // 現在区間に含まれる場合：残り時間を返却
           if (pointSec >= etCursor && pointSec < etEnd) {
             let windowStart = etCursor;
             let windowEnd = etEnd;
-            // ✅ 継続探索（最大19回）
+            // 連結可能なら天候・ETの継続を最大19回まで連結
             let count = 1;
             let nextEt = alignToWeatherCycle(etEnd);
-
             while (count < 19 && nextEt + ET_HOUR_SEC <= moonEnd) {
               const nextSeed = getEorzeaWeatherSeed(new Date(nextEt * 1000));
-              if (!checkWeatherInRange(mob, nextSeed)) break;
-
+              if (mob.weatherSeedRange || mob.weatherSeedRanges) {
+                if (!checkWeatherInRange(mob, nextSeed)) break;
+              }
               const nextEtStart = ceilToEtHour(nextEt);
               if (!checkEtCondition(mob, nextEtStart)) break;
 
-              const nextEtEnd = getEtWindowEnd(mob, nextEtStart);
-              windowEnd = Math.min(nextEtEnd, moonEnd);
-              nextEt = alignToWeatherCycle(nextEtEnd);
+              const nextEtEndRaw = getEtWindowEnd(mob, nextEtStart);
+              windowEnd = Math.min(nextEtEndRaw, moonEnd);
+              nextEt = alignToWeatherCycle(nextEtEndRaw);
               count++;
             }
 
             const remainingSec = windowEnd - pointSec;
             return { windowStart, windowEnd, popTime: pointSec, remainingSec };
           }
+          // 未来成立が見つかった場合：開始時刻を返却（残り時間は0）
+          if (etCursor > pointSec) {
+            return { windowStart: etCursor, windowEnd: etEnd, popTime: etCursor, remainingSec: 0 };
+          }
+          // 過去はスキップ
         }
 
         etCursor += ET_HOUR_SEC;
@@ -404,13 +419,13 @@ function calculateRepop(mob, maintenance) {
   }
   if (!maint || !maint.serverUp || !maint.start) return baseResult("Unknown");
 
-  const serverUp = new Date(maint.serverUp).getTime() / 1000;       // サーバー再始動（メンテ終了）
-  const maintenanceStart = new Date(maint.start).getTime() / 1000;  // メンテ開始
+  const serverUp = new Date(maint.serverUp).getTime() / 1000;
+  const maintenanceStart = new Date(maint.start).getTime() / 1000;
 
   let minRepop, maxRepop;
 
   if (lastKill === 0 || lastKill <= serverUp) {
-    // メンテ前に倒されたモブ、またはメンテ直後初回 → 0.6倍補正
+    // メンテ前に倒された、またはメンテ直後初回 → 0.6倍補正
     minRepop = serverUp + repopSec * 0.6;
     maxRepop = serverUp + maxSec * 0.6;
   } else {
@@ -439,10 +454,11 @@ function calculateRepop(mob, maintenance) {
     mob.conditions
   );
 
-  let conditionResult = null;
   if (hasCondition) {
+    // 探索範囲は現行据え置き（ここを広げない）
     const searchLimit = pointSec + 14 * 24 * 3600;
 
+    let conditionResult = null;
     if (mob.weatherDuration?.minutes) {
       conditionResult = findConsecutiveWeather(mob, pointSec, minRepop, searchLimit);
     } else {
@@ -450,12 +466,15 @@ function calculateRepop(mob, maintenance) {
     }
 
     if (conditionResult) {
-      nextConditionSpawnDate = new Date(conditionResult.popTime * 1000);
-      conditionWindowEnd = new Date(conditionResult.windowEnd * 1000);
-      isInConditionWindow = conditionResult.remainingSec > 0;
+      const { windowStart, windowEnd, popTime, remainingSec } = conditionResult;
+      // 現在区間内かどうかを厳密判定
+      isInConditionWindow = (pointSec >= windowStart && pointSec < windowEnd);
+      // Next は「区間内なら現在点」「未来成立なら開始時刻」
+      nextConditionSpawnDate = new Date((isInConditionWindow ? pointSec : windowStart) * 1000);
+      conditionWindowEnd = new Date(windowEnd * 1000);
 
       if (isInConditionWindow) {
-        timeRemaining = `残り ${formatDurationHM(conditionResult.remainingSec)}`;
+        timeRemaining = `残り ${formatDurationHM(remainingSec)}`;
         status = "ConditionActive";
       }
     }
@@ -476,7 +495,6 @@ function calculateRepop(mob, maintenance) {
     }
   }
 
-  // --- メンテ中判定を追加 ---
   const isMaintenanceStop = (now >= maintenanceStart && now < serverUp);
 
   return {
