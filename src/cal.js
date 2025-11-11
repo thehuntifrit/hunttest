@@ -271,6 +271,61 @@ function getEtWindowEnd(mob, windowStart) {
 }
 
 // ===== 連続天候探索（置き換え） =====
+function findConsecutiveWeather(mob, pointSec, minRepopSec, limitSec) {
+  const requiredMinutes = mob.weatherDuration?.minutes || 0;
+  const requiredSec = requiredMinutes * 60;
+  const scanStart = alignToWeatherCycle(pointSec - requiredSec);
+
+  let hitStart = null;
+
+  // 巻き戻し探索：条件が継続していたかを確認
+  let backCursor = scanStart;
+  let accumulatedBack = 0;
+  while (accumulatedBack < requiredSec) {
+    const seed = getEorzeaWeatherSeed(new Date(backCursor * 1000));
+    if (!checkWeatherInRange(mob, seed)) {
+      break;
+    }
+    hitStart = backCursor;
+    backCursor -= WEATHER_CYCLE_SEC;
+    accumulatedBack += WEATHER_CYCLE_SEC;
+  }
+  // 条件が継続していた場合、探索点が条件達成開始点
+  if (hitStart && pointSec >= hitStart && pointSec < hitStart + requiredSec) {
+    const windowStart = hitStart;
+    const windowEnd = windowStart + requiredSec;
+    const remainingSec = windowEnd - pointSec;
+    return { windowStart, windowEnd, popTime: pointSec, remainingSec };
+  }
+  // 前方探索：条件が成立する次の開始点を探す
+  let forwardCursor = alignToWeatherCycle(Math.max(minRepopSec, pointSec));
+  while (forwardCursor <= limitSec) {
+    let accumulated = 0;
+    let testCursor = forwardCursor;
+    while (accumulated < requiredSec) {
+      const seed = getEorzeaWeatherSeed(new Date(testCursor * 1000));
+      if (!checkWeatherInRange(mob, seed)) break;
+      accumulated += WEATHER_CYCLE_SEC;
+      testCursor += WEATHER_CYCLE_SEC;
+    }
+
+    if (accumulated >= requiredSec) {
+      const windowStart = forwardCursor;
+      const windowEnd = windowStart + accumulated;
+      if (pointSec >= windowStart && pointSec < windowEnd) {
+        const remainingSec = windowEnd - pointSec;
+        return { windowStart, windowEnd, popTime: pointSec, remainingSec };
+      }
+      break;
+    }
+
+    forwardCursor += WEATHER_CYCLE_SEC;
+  }
+
+  return null;
+}
+
+// ===== 複合条件探索（置き換え） =====
 function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
   const requiredSec = WEATHER_CYCLE_SEC;
   const scanStart = alignToWeatherCycle(pointSec - requiredSec);
@@ -319,68 +374,6 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
               count++;
             }
 
-            const remainingSec = windowEnd - pointSec;
-            return { windowStart, windowEnd, popTime: pointSec, remainingSec };
-          }
-        }
-
-        etCursor += ET_HOUR_SEC;
-      }
-
-      weatherCursor += WEATHER_CYCLE_SEC;
-    }
-  }
-
-  return null;
-}
-
-// ===== 複合条件探索（置き換え） =====
-function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
-  const requiredSec = WEATHER_CYCLE_SEC; // 単発天候は1サイクル＝1400秒
-  const scanStart = alignToWeatherCycle(pointSec - requiredSec);
-
-  const moonRanges = enumerateMoonRanges(scanStart, limitSec, mob.moonPhase);
-
-  for (const [moonStart, moonEnd] of moonRanges) {
-    let weatherCursor = alignToWeatherCycle(Math.max(moonStart, scanStart));
-    while (weatherCursor < moonEnd) {
-      const seed = getEorzeaWeatherSeed(new Date(weatherCursor * 1000));
-      if (!checkWeatherInRange(mob, seed)) {
-        weatherCursor += WEATHER_CYCLE_SEC;
-        continue;
-      }
-
-      const weatherEnd = Math.min(weatherCursor + WEATHER_CYCLE_SEC, moonEnd);
-      const intersectStart = Math.max(weatherCursor, moonStart);
-      const intersectEnd = Math.min(weatherEnd, moonEnd);
-      if (intersectStart >= intersectEnd) {
-        weatherCursor += WEATHER_CYCLE_SEC;
-        continue;
-      }
-
-      let etCursor = ceilToEtHour(Math.max(intersectStart, minRepopSec));
-      while (etCursor < intersectEnd) {
-        if (checkEtCondition(mob, etCursor)) {
-          const etEnd = Math.min(getEtWindowEnd(mob, etCursor), intersectEnd);
-
-          // 継続探索（最大19回）
-          let windowStart = etCursor;
-          let windowEnd = etEnd;
-          let count = 1;
-          let nextEt = etEnd;
-
-          while (count < 19 && nextEt + ET_HOUR_SEC <= moonEnd) {
-            const nextSeed = getEorzeaWeatherSeed(new Date(nextEt * 1000));
-            if (!checkWeatherInRange(mob, nextSeed)) break;
-            if (!checkEtCondition(mob, nextEt)) break;
-
-            const nextEtEnd = getEtWindowEnd(mob, nextEt);
-            windowEnd = Math.min(nextEtEnd, moonEnd);
-            nextEt = nextEtEnd;
-            count++;
-          }
-
-          if (pointSec >= windowStart && pointSec < windowEnd) {
             const remainingSec = windowEnd - pointSec;
             return { windowStart, windowEnd, popTime: pointSec, remainingSec };
           }
