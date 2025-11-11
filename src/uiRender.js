@@ -388,21 +388,22 @@ function updateProgressText(card, mob) {
     mob.weatherSeedRange ||
     mob.weatherSeedRanges ||
     mob.conditions;
-
   // トグル制御フラグ
   let shouldToggle = false;
 
   if (hasCondition) {
     if (isInConditionWindow && remainingSec > 0) {
       nextTimeStr = `@ ${Math.floor(remainingSec / 60)}分`;
-      shouldToggle = true; // 区間内ならトグル対象
+      shouldToggle = true;
     } else if (nextConditionSpawnDate) {
       nextTimeStr = new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate);
-      shouldToggle = true; // 未来時刻が確定したらトグル対象
+      shouldToggle = true;
     } else {
-      nextTimeStr = ""; // 特殊条件があるが未確定の場合は空文字列
+      nextTimeStr = ""; 
       shouldToggle = false;
     }
+  } else {
+    nextTimeStr = ""; // 特殊条件がないものの非表示仕様に従い、空文字列を設定
   }
 
   // 左側：進捗状態
@@ -410,25 +411,31 @@ function updateProgressText(card, mob) {
   const nowSec = Date.now() / 1000;
   if (status === "Next") {
     leftStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
-  } else if (status === "PopWindow" || status === "ConditionActive") {
-    // ConditionActive の場合も PopWindow と同様に残り時間を表示
-    const endSec = status === "ConditionActive" ? mob.repopInfo.conditionWindowEnd.getTime() / 1000 : maxRepop;
-    leftStr = `残り ${formatDurationHM(endSec - nowSec)}`;
+  } else if (status === "PopWindow") {
+    leftStr = `残り ${formatDurationHM(maxRepop - nowSec)}`;
+  } else if (status === "ConditionActive") { // ConditionActive ステータスの追加処理
+    const conditionWindowEnd = mob.repopInfo.conditionWindowEnd ? mob.repopInfo.conditionWindowEnd.getTime() / 1000 : nowSec;
+    leftStr = `残り ${formatDurationHM(conditionWindowEnd - nowSec)}`;
   } else if (status === "MaxOver") {
     leftStr = `Time Over (100%)`;
   } else {
     leftStr = `未確定`;
-  }  
-  // 🚨 修正点: 特殊条件モブかつトグル対象の場合は、初期表示を next にする
+  }
+  
+  const percentStr = status === "PopWindow" 
+    ? ` (${elapsedPercent.toFixed(0)}%)` 
+    : "";
+  
+  // これにより、トグルが始まる前の瞬間から特殊条件の時間が表示される
   const inDisplay = (shouldToggle && nextTimeStr) ? "none" : "inline";
   const nextDisplay = (shouldToggle && nextTimeStr) ? "inline" : "none";
   
   text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
-        <div class="pl-2 text-left">${leftStr}${status !== "MaxOver" && status !== "Unknown" ? ` (${elapsedPercent.toFixed(0)}%)` : ""}</div>
-        <div class="pr-1 text-right toggle-container" data-should-toggle="${shouldToggle}">
+        <div class="pl-2 text-left">${leftStr}${percentStr}</div>
+        <div class="pr-1 text-right toggle-container">
           <span class="label-in" style="display:${inDisplay};">in ${inTimeStr}</span>
-          <span class="label-next" style="display:${nextDisplay};">${nextTimeStr || ''}</span>
+          <span class="label-next" style="display:${nextDisplay};">${nextTimeStr}</span>
         </div>
     </div>
   `;
@@ -447,12 +454,10 @@ function updateProgressText(card, mob) {
   }
 
   const toggleContainer = text.querySelector(".toggle-container");
-    // 🚨 修正点: トグル処理の起動は shouldToggle が true の場合のみ行う
+  
   if (shouldToggle && toggleContainer && !toggleContainer.dataset.toggleStarted) {
     startToggleInNext(toggleContainer);
     toggleContainer.dataset.toggleStarted = "true";
-  } else if (!shouldToggle && toggleContainer && toggleContainer.dataset.toggleStarted === "true") {
-    // トグルを起動しない場合
   }
 }
 
