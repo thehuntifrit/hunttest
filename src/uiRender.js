@@ -374,11 +374,6 @@ function updateProgressText(card, mob) {
     timeZone: 'Asia/Tokyo'
   };
 
-  // 右側：最短REPOP時刻
-  const inTimeStr = nextMinRepopDate
-    ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextMinRepopDate)
-    : "未確定";
-
 // 右側：最短REPOP時刻
 const inTimeStr = nextMinRepopDate
   ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextMinRepopDate)
