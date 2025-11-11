@@ -379,15 +379,30 @@ function updateProgressText(card, mob) {
     ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextMinRepopDate)
     : "未確定";
 
-  // 右側：特殊条件 Next 時間
-  let nextTimeStr = null;
+// 右側：最短REPOP時刻
+const inTimeStr = nextMinRepopDate
+  ? new Intl.DateTimeFormat('ja-JP', absFmt).format(nextMinRepopDate)
+  : "未確定";
+
+// 右側：特殊条件 Next 時間（条件がある場合のみ）
+let nextTimeStr = null;
+const hasCondition =
+  mob.moonPhase ||
+  mob.timeRange ||
+  mob.timeRanges ||
+  mob.weatherSeedRange ||
+  mob.weatherSeedRanges ||
+  mob.conditions;
+
+if (hasCondition) {
   if (isInConditionWindow && remainingSec > 0) {
     nextTimeStr = `@ ${Math.floor(remainingSec / 60)}分`;
   } else if (nextConditionSpawnDate) {
     nextTimeStr = new Intl.DateTimeFormat('ja-JP', absFmt).format(nextConditionSpawnDate);
   } else {
-    nextTimeStr = "未確定"; // ← 空文字ではなく必ず表示
+    nextTimeStr = "未確定"; // ← 条件があるのに確定できない場合のみ未確定
   }
+}
 
   // 左側：進捗状態
   let leftStr = "";
