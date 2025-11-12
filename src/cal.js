@@ -228,6 +228,31 @@ function checkEtCondition(mob, realSec) {
   return true; // ET条件なし
 }
 
+// ===== ET条件区間列挙 =====
+function enumerateETWindows(startSec, endSec, mob) {
+  const windows = [];
+  let cursor = alignToEtHour(startSec);
+
+  while (cursor < endSec) {
+    if (checkEtCondition(mob, cursor)) {
+      const windowStart = cursor;
+      const windowEnd = getEtWindowEnd(mob, windowStart);
+
+      if (windowEnd > windowStart && windowStart < endSec) {
+        windows.push([
+          Math.max(windowStart, startSec),
+          Math.min(windowEnd, endSec)
+        ]);
+      }
+      cursor = windowEnd; // 成立区間の終端まで進める
+    } else {
+      cursor += ET_HOUR_SEC; // 次のET時間へ
+    }
+  }
+
+  return windows;
+}
+
 // 現在ETレンジ終端を計算（複数レンジ中の当該レンジ終端）
 function getEtWindowEnd(mob, windowStart) {
   let ranges = [];
