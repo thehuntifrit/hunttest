@@ -244,9 +244,9 @@ function enumerateETWindows(startSec, endSec, mob) {
           Math.min(windowEnd, endSec)
         ]);
       }
-      cursor = windowEnd; // 成立区間の終端まで進める
+      cursor = windowEnd;
     } else {
-      cursor += ET_HOUR_SEC; // 次のET時間へ
+      cursor += ET_HOUR_SEC;
     }
   }
 
