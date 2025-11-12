@@ -395,8 +395,10 @@ function calculateRepop(mob, maintenance) {
     minRepop = lastKill + repopSec;
     maxRepop = lastKill + maxSec;
   }
+
   // 基準点（UIに渡す時刻は必ずこの基準点以上）
   const pointSec = Math.max(minRepop, now);
+
   // 初期返却値
   let status = "Unknown";
   let elapsedPercent = 0;
@@ -406,7 +408,6 @@ function calculateRepop(mob, maintenance) {
   let nextConditionSpawnDate = null;
   let conditionWindowEnd = null;
   let isInConditionWindow = false;
-
   // 条件有無の検出（既存キー群に準拠）
   const hasCondition = !!(
     mob.moonPhase ||
@@ -419,7 +420,7 @@ function calculateRepop(mob, maintenance) {
   );
 
   if (hasCondition) {
-    const searchLimit = pointSec + 14 * 24 * 3600; // 2週間スキャン上限（既存相当）
+    const searchLimit = pointSec + 14 * 24 * 3600; // 2週間スキャン上限
     let conditionResult = null;
 
     if (mob.weatherDuration?.minutes) {
@@ -431,7 +432,7 @@ function calculateRepop(mob, maintenance) {
     }
 
     if (conditionResult) {
-      const { windowStart, windowEnd, popTime, remainingSec } = conditionResult;
+      const { windowStart, windowEnd } = conditionResult;
       // 基準点が区間に含まれているか
       isInConditionWindow = (pointSec >= windowStart && pointSec < windowEnd);
       // UI表示用の確定スポーン時刻：必ず minRepop 以上
@@ -446,7 +447,6 @@ function calculateRepop(mob, maintenance) {
       }
     }
   }
-
   // 条件非成立時、通常のREPOP進行の表示
   if (!isInConditionWindow) {
     if (now >= maxRepop) {
@@ -464,6 +464,13 @@ function calculateRepop(mob, maintenance) {
   }
 
   const isMaintenanceStop = (now >= maintenanceStart && now < serverUp);
+  // === UI直前での最終保証 ===
+  if (nextConditionSpawnDate) {
+    const sec = Math.floor(nextConditionSpawnDate.getTime() / 1000);
+    if (sec < minRepop) {
+      nextConditionSpawnDate = new Date(minRepop * 1000);
+    }
+  }
 
   return {
     minRepop,
@@ -544,7 +551,7 @@ function findNextSpawnTime(mob, pointSec, minRepopSec, limitSec) {
       return Math.max(windowStart, minRepopSec);
     }
   }
-
+  // === UI直前での最終保証 ===
   return null;
 }
 
