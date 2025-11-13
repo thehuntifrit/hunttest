@@ -440,7 +440,6 @@ function startToggleInNext(container) {
   const nextLabel = container.querySelector(".label-next");
   let showingIn = true;
 
-  // 既存の interval が複数走らないように container にハンドルを保存するのが安全
   setInterval(() => {
     const hasNextText = nextLabel && nextLabel.textContent && nextLabel.textContent.trim().length > 0;
     if (!hasNextText) return;
@@ -478,9 +477,34 @@ function updateExpandablePanel(card, mob) {
   const memoStr = mob.last_kill_memo || "なし";
 
   if (elLast) elLast.textContent = `前回: ${lastStr}`;
-  // ★ 修正 2: メモ表示エリアのコンテンツを processText() を使って安全に挿入
   if (elMemo) elMemo.innerHTML = processText(memoStr);
 }
+
+function updateMemoUI(mob) {
+  const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
+  if (!card) return;
+
+  const elMemoDisplay = card.querySelector('[data-mob-memo-display]');
+  const elMemoEditor = card.querySelector('[data-mob-memo-editor]');
+  const elMemoInput = card.querySelector('[data-mob-memo-input]');
+
+  // 表示モードの更新
+  const memoStr = mob.last_kill_memo || "なし";
+  if (elMemoDisplay) {
+    elMemoDisplay.innerHTML = processText(memoStr);
+    elMemoDisplay.style.display = "inline-block";
+  }
+
+  // エディタモードを非表示に
+  if (elMemoEditor) {
+    elMemoEditor.style.display = "none";
+  }
+  // 入力フィールドの更新 (あれば)
+  if (elMemoInput) {
+    elMemoInput.value = mob.last_kill_memo || "";
+  }
+}
+
 
 function updateProgressBars() {
   const state = getState();
@@ -507,6 +531,7 @@ function onKillReportReceived(mobId, kill_time) {
   if (card) {
     updateProgressText(card, mob);
     updateProgressBar(card, mob);
+    updateExpandablePanel(card, mob);
   }
 }
 
@@ -515,6 +540,6 @@ setInterval(() => {
 }, 60000);
 
 export {
-  filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, DOM,
-  renderAreaFilterPanel, renderRankTabs, sortAndRedistribute, updateFilterUI, onKillReportReceived, updateProgressBars
+  filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, DOM, updateMemoUI,
+  renderAreaFilterPanel, renderRankTabs, sortAndRedistribute, updateFilterUI, onKillReportReceived, updateProgressBars,
 };
