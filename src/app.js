@@ -1,6 +1,6 @@
 // app.js
 
-import { getState, setFilter, loadBaseMobData, setOpenMobCardNo, FILTER_TO_DATA_RANK_MAP, setUserId, startRealtime, onMemoChange } from "./dataManager.js";
+import { getState, setFilter, loadBaseMobData, setOpenMobCardNo, FILTER_TO_DATA_RANK_MAP, setUserId, startRealtime } from "./dataManager.js";
 import { openReportModal, closeReportModal, initModal } from "./modal.js";
 import { attachLocationEvents } from "./location.js";
 import { submitReport, toggleCrushStatus, initializeAuth, getServerTimeUTC, submitMemo } from "./server.js";
@@ -126,12 +126,12 @@ function attachCardEvents() {
             } else if (type === "instant") {
                 getServerTimeUTC().then(serverDateUTC => {
                     const iso = serverDateUTC.toISOString();
-                    
+                    
                     submitReport(mobNo, iso); 
                 }).catch(err => {
                     console.error("サーバー時刻取得失敗、ローカル時刻で代用:", err);
                     const fallbackIso = new Date().toISOString();
-                    
+                    
                     submitReport(mobNo, fallbackIso); 
                 });
             }
@@ -159,7 +159,7 @@ function attachCardEvents() {
             // このカードの編集モードを開く
             elDisplay.style.display = 'none';
             elEditor.style.display = 'block';
-            // 入力欄にフォーカス
+            // 入力欄にフォーカス
             elInput.focus();
             return;
         }
@@ -290,22 +290,9 @@ async function initializeAuthenticationAndRealtime() {
         const userId = await initializeAuth();
         setUserId(userId);
         startRealtime();
-        
-        // メモ変更時のリアルタイム購読を開始し、UIを更新する
-        onMemoChange((updatedMobMemos) => {
-            const state = getState();
-            // 全てのモブカードをチェックし、該当するメモを更新
-            document.querySelectorAll('.mob-card').forEach(card => {
-                const mobNo = parseInt(card.dataset.mobNo, 10);
-                const mob = state.mobs.find(m => m.No === mobNo);
-                
-                // 更新されたメモデータにこのモブが含まれているか確認
-                if (mob && updatedMobMemos[mobNo]) {
-                    updateMemoUI(card, mob);
-                }
-            });
-        });
-        
+        
+        // ★ 削除: onMemoChange の呼び出しを削除
+        
         console.log("App: 認証とリアルタイム購読を開始しました。");
     } catch (error) {
         console.error("App: 認証処理中にエラーが発生しました。", error);
