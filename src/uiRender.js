@@ -171,7 +171,7 @@ function createMobCard(mob) {
                     <button data-action="edit-memo-submit" type="button" class="text-xs text-green-400 hover:text-green-200">送信</button>
                 </div>
             </div>
-            <div class="w-full font-semibold text-yellow-300 border-t border-gray-600 mt-1">抽選条件</div>
+            <div class="w-full font-semibold border-t border-gray-600 mt-1">条件</div>
             <div class="w-full text-gray-300 text-xs mt-1">${processText(mob.Condition)}</div>
         </div>
         ${mob.Map && rank === 'S' ? `
