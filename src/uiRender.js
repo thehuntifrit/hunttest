@@ -489,41 +489,36 @@ function updateExpandablePanel(card, mob) {
   // if (elMemo) elMemo.textContent = memoStr; // 削除
 }
 
-// 修正4: SランクカードのメモUIを更新する関数を新規追加
+// メモUI
 function updateMemoUI(card, mob) {
   if (mob.Rank !== 'S') return;
 
   const state = getState();
   const memoData = state.mobMemos?.[mob.No];
 
-  const elDisplay = card.querySelector('[data-mob-memo-display]');
-  const elTimestamp = card.querySelector('[data-mob-memo-timestamp]');
+  const elDisplay = card.querySelector('[data-mob-memo-display] [data-memo-text]');
+  const elContainer = card.querySelector('[data-mob-memo-display]');
   const elInput = card.querySelector('[data-mob-memo-input]');
   const elEditor = card.querySelector('[data-mob-memo-editor]');
-  
-  if (!elDisplay || !elTimestamp || !elInput || !elEditor) return;
+  
+  if (!elDisplay || !elContainer || !elInput || !elEditor) return;
 
-  const text = memoData?.text || 'メモなし (クリックで編集)';
-  const timestamp = memoData?.timestamp;
-  
-  elDisplay.innerHTML = processText(text);
-
-  if (timestamp) {
-    const date = new Date(timestamp);
-    const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
-    const timeStr = new Intl.DateTimeFormat('ja-JP', absFmt).format(date);
-    elTimestamp.textContent = `共有メモ (最終更新: ${timeStr})`;
-    elTimestamp.classList.remove('hidden');
+  const text = memoData?.text || 'クリックしてメモを記入...';
+  
+  if (memoData?.text && memoData.text.trim() !== '') {
+    elDisplay.textContent = memoData.text;
+    elContainer.classList.remove('text-gray-500');
+    elContainer.classList.add('text-gray-300');
   } else {
-    elTimestamp.textContent = '共有メモ (未投稿)';
+    elDisplay.textContent = 'クリックしてメモを記入...';
+    elContainer.classList.add('text-gray-500');
+    elContainer.classList.remove('text-gray-300');
   }
-
-  // 編集モードからの戻りを考慮して、入力欄の値と表示状態をリセット
+            
   elInput.value = memoData?.text || '';
-  elDisplay.style.display = 'block';
+  elContainer.style.display = 'block';
   elEditor.style.display = 'none';
 }
-
 
 function updateProgressBars() {
   const state = getState();
