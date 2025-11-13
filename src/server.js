@@ -30,11 +30,10 @@ const analytics = getAnalytics(app);
 const callGetServerTime = httpsCallable(functionsInstance, 'getServerTimeV1');
 const callRevertStatus = httpsCallable(functionsInstance, 'revertStatusV1');
 const callMobCullUpdater = httpsCallable(functionsInstance, 'mobCullUpdaterV1');
-// ★ メモ機能 Functions の呼び出しを追加
 const callPostMobMemo = httpsCallable(functionsInstance, 'postMobMemoV1');
 const callGetMobMemos = httpsCallable(functionsInstance, 'getMobMemosV1');
 
-// 認証 (変更なし)
+// 認証
 async function initializeAuth() {
     return new Promise((resolve) => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -64,7 +63,7 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// サーバーUTC取得 (変更なし)
+// サーバーUTC取得
 async function getServerTimeUTC() {
     try {
         const response = await callGetServerTime();
@@ -81,7 +80,7 @@ async function getServerTimeUTC() {
     }
 }
 
-// データ購読 (Mob Status) (変更なし)
+// データ購読 (Mob Status)
 function subscribeMobStatusDocs(onUpdate) {
     const docIds = ["s_latest", "a_latest", "f_latest"];
     const mobStatusDataMap = {};
@@ -95,7 +94,7 @@ function subscribeMobStatusDocs(onUpdate) {
     return () => unsubs.forEach(u => u());
 }
 
-// ★ 新規追加: メモデータの購読 (単一ドキュメント: shared_data/memo)
+// データ購読 (shared_data/memo)
 function subscribeMobMemos(onUpdate) {
     const memoDocRef = doc(db, "shared_data", "memo"); // 'shared_data/memo' を参照
     
@@ -107,7 +106,7 @@ function subscribeMobMemos(onUpdate) {
     return unsub;
 }
 
-// Mob Location関連 (変更なし)
+// Mob Location関連
 function normalizePoints(data) {
     const result = {};
     for (const [key, value] of Object.entries(data)) {
@@ -120,7 +119,7 @@ function normalizePoints(data) {
     return result;
 }
 
-// データ購読 (Mob Locations) (変更なし)
+// データ購読 (Mob Locations)
 function subscribeMobLocations(onUpdate) {
     const unsub = onSnapshot(collection(db, "mob_locations"), snapshot => {
         const map = {};
@@ -155,7 +154,7 @@ const submitReport = async (mobNo, timeISO, memo) => {
 
     let killTimeDate;
 
-    // 時刻解析ロジック (変更なし)
+    // 時刻解析ロジック
     if (timeISO && typeof timeISO === "string") {
         const m = timeISO.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
         if (m) {
@@ -166,7 +165,6 @@ const submitReport = async (mobNo, timeISO, memo) => {
             const hour = Number(h);
             const minute = Number(mi);
             const second = s ? Number(s) : 0;
-
             // ローカルタイムとして Date を生成
             killTimeDate = new Date(year, monthIndex, day, hour, minute, second, 0);
         } else {
@@ -192,7 +190,6 @@ const submitReport = async (mobNo, timeISO, memo) => {
             mob_id: mobNo.toString(),
             kill_time: killTimeDate, // Firestore では Timestamp として保存される
             reporter_uid: userId,
-            // ★ 変更点: memo フィールドの書き込みを削除 (メモ機能は独立したため)
             repop_seconds: mob.REPOP_s
         });
 
@@ -205,7 +202,7 @@ const submitReport = async (mobNo, timeISO, memo) => {
     }
 };
 
-// ★ 新規追加: メモの投稿 (postMobMemoV1 Functions への呼び出し)
+// メモの投稿 (postMobMemoV1 Functions への呼び出し)
 const submitMemo = async (mobNo, memoText) => {
     const state = getState();
     const userId = state.userId;
@@ -317,46 +314,6 @@ const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
     }
 };
 
-// 巻き戻し (revertMobStatus) - Callable 方式 (変更なし)
-const revertMobStatus = async (mobNo) => {
-    const state = getState();
-    const userId = state.userId;
-    const mobs = state.mobs;
-
-    if (!userId) {
-        displayStatus("認証が完了していません。ページをリロードしてください。", "error");
-        return;
-    }
-
-    const mob = mobs.find(m => m.No === mobNo);
-    if (!mob) return;
-
-    displayStatus(`${mob.Name} の状態を巻き戻し中...`, "warning");
-
-    const data = {
-        mob_id: mobNo.toString(),
-        target_report_index: 'prev', // 確定履歴への巻き戻しを明示
-    };
-
-    try {
-        const response = await callRevertStatus(data);
-        const result = response.data;
-
-        if (result?.success) {
-            displayStatus(`${mob.Name} の状態と湧き潰し時刻を直前の記録に巻き戻しました。`, "success");
-        } else {
-            displayStatus(
-                `巻き戻し失敗: ${result?.error || "ログデータが見つからないか、巻き戻しに失敗しました。"}`,
-                "error"
-            );
-        }
-    } catch (error) {
-        console.error("巻き戻しエラー:", error);
-        displayStatus(`巻き戻しエラー: ${error.message}`, "error");
-    }
-};
-
-// ★ エクスポートの更新
 export { 
     initializeAuth, 
     subscribeMobStatusDocs, 
@@ -365,6 +322,5 @@ export {
     submitReport, 
     submitMemo, 
     toggleCrushStatus, 
-    revertMobStatus, 
     getServerTimeUTC 
 };
