@@ -187,17 +187,36 @@ function enumerateWeatherWindows(startSec, endSec, mob) {
 }
 
 // ET条件区間列挙
+// ET条件区間列挙（連続成立対応）
 function enumerateETWindows(startSec, endSec, mob) {
   const ranges = [];
   let curSec = ceilToEtHour(startSec);
+
   while (curSec < endSec) {
     if (!mob.et || checkEtCondition(mob, curSec)) {
-      const windowStart = curSec;
-      const windowEnd = curSec + ET_HOUR_SEC;
-      ranges.push([windowStart, Math.min(windowEnd, endSec)]);
+      // 成立区間開始
+      let windowStart = curSec;
+      let windowEnd = curSec + ET_HOUR_SEC;
+
+      // 連続成立を結合（最大 +19 回 = 20 区間）
+      let consecutive = 1;
+      while (consecutive < 20 && windowEnd < endSec) {
+        const nextCursor = windowEnd;
+        if (checkEtCondition(mob, nextCursor)) {
+          windowEnd += ET_HOUR_SEC;
+          consecutive++;
+        } else {
+          break;
+        }
+      }
+
+      ranges.push([windowStart, windowEnd]);
+      curSec = windowEnd; // 次の探索カーソルを更新
+    } else {
+      curSec += ET_HOUR_SEC;
     }
-    curSec += ET_HOUR_SEC;
   }
+
   return ranges;
 }
 
@@ -215,7 +234,6 @@ function intersectWindows(listA, listB) {
 }
 
 // ===== 機関部分 =====
-
 // 次の条件成立区間を探索
 function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
   const searchEnd = pointSec + 20 * 24 * 3600; // 20日間探索
