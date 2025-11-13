@@ -240,20 +240,21 @@ function intersectWindows(listA, listB) {
 // 次の条件成立区間を探索
 function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
   const searchEnd = pointSec + 20 * 24 * 3600; // 20日間探索
-
   // 各条件の区間列挙
   let moonRanges = mob.moonPhase ? enumerateMoonRanges(pointSec, searchEnd, mob.moonPhase) : [[pointSec, searchEnd]];
   let weatherRanges = mob.weatherSeedRange || mob.weatherSeedRanges ? enumerateWeatherWindows(pointSec, searchEnd, mob) : [[pointSec, searchEnd]];
   let etRanges = mob.et ? enumerateETWindows(pointSec, searchEnd, mob) : [[pointSec, searchEnd]];
-
   // 区間交差
   let intersected = intersectWindows(moonRanges, weatherRanges);
   intersected = intersectWindows(intersected, etRanges);
-
   // 最初の成立区間を返す
   for (const [start, end] of intersected) {
     if (start >= minRepopSec) {
-      return { windowStart: start, windowEnd: end };
+      return {
+        windowStart: start,
+        windowEnd: end,
+        repeatCount: Math.floor((end - start) / ET_HOUR_SEC) // 連続成立回数を保持
+      };
     }
   }
   return null;
