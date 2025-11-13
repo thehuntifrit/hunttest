@@ -467,12 +467,13 @@ function updateExpandablePanel(card, mob) {
     : (nextMin || conditionTime);
 
   const nextStr = displayTime
-    ? new Intl.DateTimeFormat('ja-JP', absFmt).format(displayTime)
+    ? new Intl.DateTimeFormat('ja-JP', absFmt).format(new Date(displayTime * 1000))
     : "未確定";
 
   const lastStr = formatLastKillTime(mob.last_kill_time);
   const memoStr = mob.last_kill_memo || "なし";
 
+  if (elNext) elNext.textContent = `次回: ${nextStr}`;
   if (elLast) elLast.textContent = `前回: ${lastStr}`;
   if (elMemo) elMemo.textContent = memoStr;
 }
