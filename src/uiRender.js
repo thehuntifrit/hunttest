@@ -260,7 +260,17 @@ function filterAndRender({ isInitialLoad = false } = {}) {
     }
 
     const frag = document.createDocumentFragment();
+    const nowSec = Math.floor(Date.now() / 1000);
+
     filtered.forEach(mob => {
+        // repopInfo を生成
+        mob.repopInfo = calculateRepop(
+            mob,
+            nowSec,                  // 現在時刻(秒)
+            mob.last_kill_time || 0, // 最後の討伐時刻(秒)
+            null                     // limitSec 未使用なら null
+        );
+
         const temp = document.createElement("div");
         temp.innerHTML = createMobCard(mob);
         const card = temp.firstElementChild;
