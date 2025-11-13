@@ -423,17 +423,17 @@ function updateProgressText(card, mob) {
     leftStr = `Time Over (100%)`;
   }
   // 進捗％は MaxOver/Unknown 以外のみ表示
-  const percentStr = status !== "MaxOver" && status !== "Unknown" ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)` : "";
+  const percentStr = status !== "MaxOver" && status !== "Unknown" ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)` : "";
 
-  text.innerHTML = `
-    <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
-      <div class="pl-2 text-left">${leftStr}${percentStr}</div>
-      <div class="pr-1 text-right toggle-container">
-        <span class="label-in">in ${inTimeStr}</span>
-        <span class="label-next" style="display:none;">${nextTimeStr}</span>
-      </div>
-    </div>
-  `;
+  text.innerHTML = `
+    <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
+      <div class="pl-2 text-left">${leftStr}${percentStr}</div>
+      <div class="pr-1 text-right toggle-container">
+        <span class="label-in">in ${inTimeStr}</span>
+        <span class="label-next" style="display:none;">${nextTimeStr}</span>
+      </div>
+    </div>
+  `;
 
   // --- 状態に応じたクラス付与 ---
   if (status === "MaxOver") text.classList.add("max-over");
