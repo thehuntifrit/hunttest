@@ -316,6 +316,7 @@ function calculateRepop(mob, pointSec, minRepopSec, limitSec) {
   const minRepop = Math.max(nextWindow.windowStart, minRepopSec);
   const maxRepop = nextWindow.windowEnd;
   const remainingSec = maxRepop > pointSec ? maxRepop - pointSec : 0;
+
   // 状態判定
   let status = "Unknown";
   if (nowSec < minRepop) {
@@ -325,6 +326,7 @@ function calculateRepop(mob, pointSec, minRepopSec, limitSec) {
   } else if (nowSec >= maxRepop) {
     status = "MaxOver";
   }
+
   // 進捗率
   let elapsedPercent = 0;
   if (status === "PopWindow") {
@@ -339,7 +341,7 @@ function calculateRepop(mob, pointSec, minRepopSec, limitSec) {
     nextConditionSpawnDate: nextWindow.windowStart,
     status,
     elapsedPercent,
-    nextMinRepopDate: minRepop * 1000, // UIはDateオブジェクトを期待
+    nextMinRepopDate: new Date(minRepop * 1000), // Dateオブジェクトで返す
     isInConditionWindow: status === "PopWindow",
     minRepop,
     maxRepop
