@@ -19,6 +19,7 @@ const DOM = {
   modalMobName: document.getElementById('modal-mob-name'),
   modalStatus: document.getElementById('modal-status'),
   modalTimeInput: document.getElementById('report-datetime'),
+  modalMemoInput: document.getElementById('report-memo'),
 };
 
 function updateEorzeaTime() {
@@ -119,7 +120,7 @@ function createMobCard(mob) {
     }).join("")
     : "";
 
-const mobNameAndCountHtml = `<span class="text-base flex items-baseline font-bold truncate">${mob.Name}</span>
+  const mobNameAndCountHtml = `<span class="text-base flex items-baseline font-bold truncate">${mob.Name}</span>
                                 <span class="text-sm flex items-baseline font-bold">${displayCountText}</span>`;
   const cardHeaderHTML = `
 <div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
@@ -139,7 +140,7 @@ const mobNameAndCountHtml = `<span class="text-base flex items-baseline font-bol
                 bg-green-600 hover:bg-green-400 selected:bg-green-800 text-white font-semibold leading-tight whitespace-pre-line">報告<br>する</span>
             </button>
         </div>
-        </div>
+    </div>
 
         <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
         <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear"
@@ -150,28 +151,24 @@ const mobNameAndCountHtml = `<span class="text-base flex items-baseline font-bol
 </div>
 `;
 
-  const memoDisplayHTML = `
-<div class="flex justify-between items-start flex-wrap">
-    <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
-    <div class="w-full text-left text-sm text-gray-300">Memo: 
-        <span data-last-memo data-mob-memo-display data-action="edit-memo-open" class="cursor-pointer inline-block w-3/4 max-h-12 overflow-y-auto align-top"></span>
-    </div>
-    <div data-mob-memo-editor style="display:none;" class="w-full mt-1">
-        <textarea data-mob-memo-input rows="2" class="w-full p-1 bg-gray-900 text-sm rounded border border-gray-600 resize-none max-h-[4rem]"></textarea>
-        <div class="flex justify-end space-x-2 mt-1">
-            <button data-action="edit-memo-cancel" type="button" class="text-xs text-gray-400 hover:text-white">キャンセル</button>
-            <button data-action="edit-memo-submit" type="button" class="text-xs text-green-400 hover:text-green-200">送信</button>
-        </div>
-    </div>
-    <div class="w-full font-semibold text-yellow-300 border-t border-gray-600 mt-1">抽選条件</div>
-    <div class="w-full text-gray-300 text-xs mt-1">${processText(mob.Condition)}</div>
-</div>
-`;
-
-  const expandablePanelHTML_fixed = isExpandable ? `
+  const expandablePanelHTML = isExpandable ? `
 <div class="expandable-panel bg-gray-800/70 ${isOpen ? 'open' : ''}">
     <div class="px-2 py-0 text-sm space-y-0.5">
-        ${memoDisplayHTML}
+        <div class="flex justify-between items-start flex-wrap">
+            <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
+            <div class="w-full text-left text-sm text-gray-300">Memo: 
+                <span data-last-memo data-mob-memo-display data-action="edit-memo-open" class="cursor-pointer inline-block w-3/4 max-h-12 overflow-y-auto align-top"></span>
+            </div>
+            <div data-mob-memo-editor style="display:none;" class="w-full mt-1">
+                <textarea data-mob-memo-input rows="2" class="w-full p-1 bg-gray-900 text-sm rounded border border-gray-600 resize-none max-h-[4rem]"></textarea>
+                <div class="flex justify-end space-x-2 mt-1">
+                    <button data-action="edit-memo-cancel" type="button" class="text-xs text-gray-400 hover:text-white">キャンセル</button>
+                    <button data-action="edit-memo-submit" type="button" class="text-xs text-green-400 hover:text-green-200">送信</button>
+                </div>
+            </div>
+            <div class="w-full font-semibold text-yellow-300 border-t border-gray-600 mt-1">抽選条件</div>
+            <div class="w-full text-gray-300 text-xs mt-1">${processText(mob.Condition)}</div>
+        </div>
         ${mob.Map && rank === 'S' ? `
         <div class="map-content py-0.5 flex justify-center relative">
             <img src="./maps/${mob.Map}" alt="${mob.Area} Map"
@@ -190,7 +187,7 @@ const mobNameAndCountHtml = `<span class="text-base flex items-baseline font-bol
   return `
 <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer transition duration-150 ${stoppedClass}"
     style="border: 0.5px solid ${rankConfig.rgbaBorder};" data-mob-no="${mob.No}" data-rank="${rank}">
-    ${cardHeaderHTML}${expandablePanelHTML_fixed}</div>
+    ${cardHeaderHTML}${expandablePanelHTML}</div>
 `;
 }
 
@@ -276,10 +273,6 @@ function filterAndRender({ isInitialLoad = false } = {}) {
     updateProgressText(card, mob);
     updateProgressBar(card, mob);
     updateExpandablePanel(card, mob);
-    // Sランクの場合はメモUIも更新
-    if (mob.Rank === 'S') {
-      updateMemoUI(card, mob);
-    }
   });
 
   DOM.masterContainer.innerHTML = "";
@@ -412,17 +405,17 @@ function updateProgressText(card, mob) {
     leftStr = `Time Over (100%)`;
   }
   // 進捗％は MaxOver/Unknown 以外のみ表示
-  const percentStr = status !== "MaxOver" && status !== "Unknown" ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)` : "";
+  const percentStr = status !== "MaxOver" && status !== "Unknown" ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)` : "";
 
-  text.innerHTML = `
-    <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
-      <div class="pl-2 text-left">${leftStr}${percentStr}</div>
-      <div class="pr-1 text-right toggle-container">
-        <span class="label-in">in ${inTimeStr}</span>
-        <span class="label-next" style="display:none;">${nextTimeStr}</span>
-      </div>
-    </div>
-  `;
+  text.innerHTML = `
+    <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
+      <div class="pl-2 text-left">${leftStr}${percentStr}</div>
+      <div class="pr-1 text-right toggle-container">
+        <span class="label-in">in ${inTimeStr}</span>
+        <span class="label-next" style="display:none;">${nextTimeStr}</span>
+      </div>
+    </div>
+  `;
 
   // --- 状態に応じたクラス付与 ---
   if (status === "MaxOver") text.classList.add("max-over");
@@ -463,12 +456,11 @@ function startToggleInNext(container) {
   }, 5000);
 }
 
-// 修正3: 前回討伐メモに関連する処理を削除
 function updateExpandablePanel(card, mob) {
   const elNext = card.querySelector("[data-next-time]");
   const elLast = card.querySelector("[data-last-kill]");
-  // const elMemo = card.querySelector("[data-last-memo]"); // 削除
-  if (!elNext && !elLast) return; // elMemo のチェックを削除
+  const elMemo = card.querySelector("[data-last-memo]");
+  if (!elNext && !elLast && !elMemo) return;
 
   const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
 
@@ -483,41 +475,11 @@ function updateExpandablePanel(card, mob) {
     : "未確定";
 
   const lastStr = formatLastKillTime(mob.last_kill_time);
-  // const memoStr = mob.last_kill_memo || "なし"; // 削除
+  const memoStr = mob.last_kill_memo || "なし";
 
   if (elLast) elLast.textContent = `前回: ${lastStr}`;
-  // if (elMemo) elMemo.textContent = memoStr; // 削除
-}
-
-// メモUI
-function updateMemoUI(card, mob) {
-  if (mob.Rank !== 'S') return;
-
-  const state = getState();
-  const memoData = state.mobMemos?.[mob.No];
-
-  const elDisplay = card.querySelector('[data-mob-memo-display] [data-memo-text]');
-  const elContainer = card.querySelector('[data-mob-memo-display]');
-  const elInput = card.querySelector('[data-mob-memo-input]');
-  const elEditor = card.querySelector('[data-mob-memo-editor]');
-  
-  if (!elDisplay || !elContainer || !elInput || !elEditor) return;
-
-  const text = memoData?.text || 'クリックしてメモを記入...';
-  
-  if (memoData?.text && memoData.text.trim() !== '') {
-    elDisplay.textContent = memoData.text;
-    elContainer.classList.remove('text-gray-500');
-    elContainer.classList.add('text-gray-300');
-  } else {
-    elDisplay.textContent = 'クリックしてメモを記入...';
-    elContainer.classList.add('text-gray-500');
-    elContainer.classList.remove('text-gray-300');
-  }
-            
-  elInput.value = memoData?.text || '';
-  elContainer.style.display = 'block';
-  elEditor.style.display = 'none';
+  // ★ 修正 2: メモ表示エリアのコンテンツを processText() を使って安全に挿入
+  if (elMemo) elMemo.innerHTML = processText(memoStr);
 }
 
 function updateProgressBars() {
@@ -527,11 +489,6 @@ function updateProgressBars() {
     if (card) {
       updateProgressText(card, mob);
       updateProgressBar(card, mob);
-      updateExpandablePanel(card, mob); // 前回討伐時刻の更新のため維持
-      // メモUIの更新
-      if (mob.Rank === 'S') {
-        updateMemoUI(card, mob);
-      }
     }
   });
 }
@@ -558,6 +515,6 @@ setInterval(() => {
 }, 60000);
 
 export {
-  filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, DOM, updateMemoUI, 
-  renderAreaFilterPanel, renderRankTabs, sortAndRedistribute, updateFilterUI, onKillReportReceived, updateProgressBars,
+  filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, DOM,
+  renderAreaFilterPanel, renderRankTabs, sortAndRedistribute, updateFilterUI, onKillReportReceived, updateProgressBars
 };
