@@ -174,17 +174,17 @@ function checkEtCondition(mob, realSec) {
 
 // ===== 補助関数群 =====
 // 月齢条件区間列挙
-function enumerateMoonRanges(startSec, endSec, phase) {
+function enumerateMoonRanges(startSec, endSec, phaseLabel) {
   const ranges = [];
   let curSec = startSec;
   while (curSec < endSec) {
-    const moonInfo = getEorzeaMoonInfo(curSec);
-    if (!phase || moonInfo.phase === phase) {
+    const { label } = getEorzeaMoonInfo(curSec);
+    if (!phaseLabel || label === phaseLabel) {
       const windowStart = curSec;
-      const windowEnd = curSec + 8 * 3600; // 1 ET 日 = 8h 現実時間
+      const windowEnd = curSec + MOON_PHASE_DURATION_SEC;
       ranges.push([windowStart, Math.min(windowEnd, endSec)]);
     }
-    curSec += 8 * 3600;
+    curSec += ET_DAY_SEC; // 1 ET日ずつ進める
   }
   return ranges;
 }
@@ -294,6 +294,7 @@ function findNextSpawnTime(mob, pointSec, minRepopSec, limitSec) {
 
   return spawnTime;
 }
+
 // 表示用データをまとめる
 function calculateRepop(mob, pointSec, minRepopSec, limitSec) {
   const nextWindow = findNextConditionWindow(mob, pointSec, minRepopSec, limitSec);
@@ -317,36 +318,28 @@ function calculateRepop(mob, pointSec, minRepopSec, limitSec) {
   const maxRepop = nextWindow.windowEnd;
   const remainingSec = maxRepop > pointSec ? maxRepop - pointSec : 0;
 
-  // 状態判定
   let status = "Unknown";
-  if (nowSec < minRepop) {
-    status = "Next";
-  } else if (nowSec >= minRepop && nowSec < maxRepop) {
-    status = "PopWindow";
-  } else if (nowSec >= maxRepop) {
-    status = "MaxOver";
-  }
+  if (nowSec < minRepop) status = "Next";
+  else if (nowSec >= minRepop && nowSec < maxRepop) status = "PopWindow";
+  else if (nowSec >= maxRepop) status = "MaxOver";
 
-  // 進捗率
   let elapsedPercent = 0;
-  if (status === "PopWindow") {
-    elapsedPercent = ((nowSec - minRepop) / (maxRepop - minRepop)) * 100;
-  } else if (status === "MaxOver") {
-    elapsedPercent = 100;
-  }
+  if (status === "PopWindow") elapsedPercent = ((nowSec - minRepop) / (maxRepop - minRepop)) * 100;
+  else if (status === "MaxOver") elapsedPercent = 100;
 
   return {
     popTime: minRepop,
     remainingSec,
-    nextConditionSpawnDate: nextWindow.windowStart,
+    nextConditionSpawnDate: new Date(nextWindow.windowStart * 1000), // Dateで返す
     status,
     elapsedPercent,
-    nextMinRepopDate: new Date(minRepop * 1000), // Dateオブジェクトで返す
+    nextMinRepopDate: new Date(minRepop * 1000), // Dateで返す
     isInConditionWindow: status === "PopWindow",
     minRepop,
     maxRepop
   };
 }
+
 
 // 現在時刻での成立判定
 function checkMobSpawnCondition(mob, pointSec) {
