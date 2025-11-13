@@ -3,7 +3,7 @@
 import { getState, setFilter, loadBaseMobData, setOpenMobCardNo, FILTER_TO_DATA_RANK_MAP, setUserId, startRealtime } from "./dataManager.js";
 import { openReportModal, closeReportModal, initModal } from "./modal.js";
 import { attachLocationEvents } from "./location.js";
-import { submitReport, toggleCrushStatus, initializeAuth, getServerTimeUTC } from "./server.js";
+import { submitReport, toggleCrushStatus, initializeAuth, getServerTimeUTC, submitMemo } from "./server.js"; // ★ 変更点1: submitMemo をインポート
 import { debounce } from "./cal.js";
 import { DOM, filterAndRender, sortAndRedistribute } from "./uiRender.js";
 import { renderRankTabs, renderAreaFilterPanel, updateFilterUI, handleAreaFilterClick } from "./filterUI.js";
@@ -126,11 +126,13 @@ function attachCardEvents() {
             } else if (type === "instant") {
                 getServerTimeUTC().then(serverDateUTC => {
                     const iso = serverDateUTC.toISOString();
-                    submitReport(mobNo, iso, `${rank}ランク即時報告`);
+                    // ★ 変更点2: submitReport からメモ引数を削除
+                    submitReport(mobNo, iso); 
                 }).catch(err => {
                     console.error("サーバー時刻取得失敗、ローカル時刻で代用:", err);
                     const fallbackIso = new Date().toISOString();
-                    submitReport(mobNo, fallbackIso, `${rank}ランク即時報告`);
+                    // ★ 変更点3: submitReport からメモ引数を削除
+                    submitReport(mobNo, fallbackIso); 
                 });
             }
             return;
@@ -167,9 +169,11 @@ async function handleReportSubmit(e) {
     const form = e.target;
     const mobNo = parseInt(form.dataset.mobNo, 10);
     const timeISO = form.elements["kill-time"].value;
-    const memo = form.elements["kill-memo"].value;
+    // ★ 変更点4: メモの取得を削除 (討伐報告は時間のみを送信する)
+    // const memo = form.elements["kill-memo"].value;
 
-    await submitReport(mobNo, timeISO, memo);
+    // ★ 変更点5: submitReport の呼び出しからメモ引数を削除
+    await submitReport(mobNo, timeISO); 
 }
 
 function attachEventListeners() {
@@ -180,8 +184,12 @@ function attachEventListeners() {
     attachLocationEvents();
 
     if (DOM.reportForm) {
+        // 討伐報告フォームのイベント
         DOM.reportForm.addEventListener("submit", handleReportSubmit);
     }
+    
+    // ★ 追記: メモ送信フォームがある場合は、ここでイベントをアタッチすることを想定
+    // 例: document.getElementById("memo-form")?.addEventListener("submit", handleMemoSubmit);
 }
 
 async function initializeAuthenticationAndRealtime() {
