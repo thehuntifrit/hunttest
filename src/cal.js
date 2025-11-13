@@ -282,6 +282,21 @@ function enumerateETWindows(startSec, endSec, mob) {
   return ranges;
 }
 
+// 区間交差
+function intersectWindows(listA, listB) {
+  const result = [];
+  for (const [aStart, aEnd] of listA) {
+    for (const [bStart, bEnd] of listB) {
+      const start = Math.max(aStart, bStart);
+      const end = Math.min(aEnd, bEnd);
+      if (start < end) {
+        result.push([start, end]);
+      }
+    }
+  }
+  return result;
+}
+
 // 区間交差（順序固定）
 function intersectAllWindows(moonRanges, weatherRanges, etRanges) {
   let intersected = intersectWindows(moonRanges, weatherRanges);
