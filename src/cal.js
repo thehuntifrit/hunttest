@@ -92,8 +92,11 @@ function alignToWeatherCycle(realSec) {
 
 // ===== 月齢関連 =====
 // フェーズは 1〜32 の連続値（小数含む）
-function getEorzeaMoonInfo(date = new Date()) {
-  const unixSeconds = date.getTime() / 1000;
+function getEorzeaMoonInfo(input = Date.now()) {
+  const unixSeconds = (input instanceof Date)
+    ? input.getTime() / 1000
+    : (typeof input === "number" ? input : Date.now() / 1000);
+
   const EORZEA_SPEED_RATIO = 20.57142857142857;
   const eorzeaTotalDays = (unixSeconds * EORZEA_SPEED_RATIO) / 86400;
   const phase = (eorzeaTotalDays % 32) + 1; // 1〜32
