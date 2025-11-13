@@ -1,4 +1,4 @@
-// server.js (修正版 - PC/スマホ互換性強化)
+// server.js (修正版 - PC/スマホ互換性強化 + メモ機能追加)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
@@ -30,6 +30,9 @@ const analytics = getAnalytics(app);
 const callGetServerTime = httpsCallable(functionsInstance, 'getServerTimeV1');
 const callRevertStatus = httpsCallable(functionsInstance, 'revertStatusV1');
 const callMobCullUpdater = httpsCallable(functionsInstance, 'mobCullUpdaterV1');
+// ★ メモ機能 Functions の呼び出しを追加
+const callPostMobMemo = httpsCallable(functionsInstance, 'postMobMemoV1');
+const callGetMobMemos = httpsCallable(functionsInstance, 'getMobMemosV1');
 
 // 認証 (変更なし)
 async function initializeAuth() {
@@ -61,7 +64,7 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// サーバーUTC取得
+// サーバーUTC取得 (変更なし)
 async function getServerTimeUTC() {
     try {
         const response = await callGetServerTime();
@@ -78,7 +81,7 @@ async function getServerTimeUTC() {
     }
 }
 
-// データ購読 (Mob Status)
+// データ購読 (Mob Status) (変更なし)
 function subscribeMobStatusDocs(onUpdate) {
     const docIds = ["s_latest", "a_latest", "f_latest"];
     const mobStatusDataMap = {};
@@ -92,6 +95,19 @@ function subscribeMobStatusDocs(onUpdate) {
     return () => unsubs.forEach(u => u());
 }
 
+// ★ 新規追加: メモデータの購読 (単一ドキュメント: shared_data/memo)
+function subscribeMobMemos(onUpdate) {
+    const memoDocRef = doc(db, "shared_data", "memo"); // 'shared_data/memo' を参照
+    
+    const unsub = onSnapshot(memoDocRef, snap => {
+        const data = snap.data() || {};
+        // 取得した MobNoごとのメモ配列をそのまま渡す
+        onUpdate(data); 
+    });
+    return unsub;
+}
+
+// Mob Location関連 (変更なし)
 function normalizePoints(data) {
     const result = {};
     for (const [key, value] of Object.entries(data)) {
@@ -104,7 +120,7 @@ function normalizePoints(data) {
     return result;
 }
 
-// データ購読 (Mob Locations)
+// データ購読 (Mob Locations) (変更なし)
 function subscribeMobLocations(onUpdate) {
     const unsub = onSnapshot(collection(db, "mob_locations"), snapshot => {
         const map = {};
@@ -139,6 +155,7 @@ const submitReport = async (mobNo, timeISO, memo) => {
 
     let killTimeDate;
 
+    // 時刻解析ロジック (変更なし)
     if (timeISO && typeof timeISO === "string") {
         const m = timeISO.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
         if (m) {
@@ -175,7 +192,7 @@ const submitReport = async (mobNo, timeISO, memo) => {
             mob_id: mobNo.toString(),
             kill_time: killTimeDate, // Firestore では Timestamp として保存される
             reporter_uid: userId,
-            memo: memo,
+            // ★ 変更点: memo フィールドの書き込みを削除 (メモ機能は独立したため)
             repop_seconds: mob.REPOP_s
         });
 
@@ -185,6 +202,52 @@ const submitReport = async (mobNo, timeISO, memo) => {
         console.error("レポート送信エラー:", error);
         if (modalStatusEl) modalStatusEl.textContent = "送信エラー: " + (error.message || "通信失敗");
         displayStatus(`討伐報告エラー: ${error.message || "通信失敗"}`, "error");
+    }
+};
+
+// ★ 新規追加: メモの投稿 (postMobMemoV1 Functions への呼び出し)
+const submitMemo = async (mobNo, memoText) => {
+    const state = getState();
+    const userId = state.userId;
+    const mobs = state.mobs;
+
+    if (!userId) {
+        displayStatus("認証が完了していません。", "error");
+        return { success: false, error: "認証エラー" };
+    }
+
+    const mob = mobs.find(m => m.No === mobNo);
+    if (!mob) {
+        displayStatus("モブデータが見つかりません。", "error");
+        return { success: false, error: "Mobデータエラー" };
+    }
+    
+    displayStatus(`${mob.Name} のメモを投稿中...`, "warning");
+
+    const data = {
+        mob_id: mobNo.toString(),
+        memo_text: memoText
+    };
+
+    try {
+        // Functionsへの呼び出し
+        const response = await callPostMobMemo(data);
+        const result = response.data;
+        
+        if (result?.success) {
+            displayStatus(`メモを正常に投稿しました。`, "success");
+            return { success: true };
+        } else {
+            const errorMessage = result?.error || "Functions内部でエラーが発生しました。";
+            console.error("メモ投稿エラー (Functions内部):", errorMessage);
+            displayStatus(`メモ投稿エラー: ${errorMessage}`, "error");
+            return { success: false, error: errorMessage };
+        }
+    } catch (error) {
+        console.error("メモ投稿エラー (通信レベル):", error);
+        const userFriendlyError = error.message || "通信または認証に失敗しました。";
+        displayStatus(`致命的な通信エラー: ${userFriendlyError}`, "error");
+        return { success: false, error: userFriendlyError };
     }
 };
 
@@ -204,7 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// 湧き潰し報告
+// 湧き潰し報告 (変更なし)
 const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
     const state = getState();
     const userId = state.userId;
@@ -254,7 +317,7 @@ const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
     }
 };
 
-// 巻き戻し (revertMobStatus) - Callable 方式
+// 巻き戻し (revertMobStatus) - Callable 方式 (変更なし)
 const revertMobStatus = async (mobNo) => {
     const state = getState();
     const userId = state.userId;
@@ -293,4 +356,15 @@ const revertMobStatus = async (mobNo) => {
     }
 };
 
-export { initializeAuth, subscribeMobStatusDocs, subscribeMobLocations, submitReport, toggleCrushStatus, revertMobStatus, getServerTimeUTC };
+// ★ エクスポートの更新
+export { 
+    initializeAuth, 
+    subscribeMobStatusDocs, 
+    subscribeMobLocations, 
+    subscribeMobMemos, 
+    submitReport, 
+    submitMemo, 
+    toggleCrushStatus, 
+    revertMobStatus, 
+    getServerTimeUTC 
+};
