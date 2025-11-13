@@ -294,50 +294,55 @@ function findNextSpawnTime(mob, pointSec, minRepopSec, limitSec) {
 
   return spawnTime;
 }
-
 // 表示用データをまとめる
 function calculateRepop(mob, pointSec, minRepopSec, limitSec) {
   const nextWindow = findNextConditionWindow(mob, pointSec, minRepopSec, limitSec);
+  const nowSec = Date.now() / 1000;
 
   if (!nextWindow) {
     return {
       popTime: null,
       remainingSec: null,
       nextConditionSpawnDate: null,
-      nextMinRepopDate: null,
-      minRepop: null,
-      maxRepop: null,
       status: "Unknown",
+      elapsedPercent: 0,
+      nextMinRepopDate: null,
       isInConditionWindow: false,
-      elapsedPercent: 0
+      minRepop: null,
+      maxRepop: null
     };
   }
 
-  const popTime = Math.max(nextWindow.windowStart, minRepopSec);
-  const remainingSec = nextWindow.windowEnd > pointSec ? nextWindow.windowEnd - pointSec : 0;
-  // UI契約に合わせて追加
-  const nextMinRepopDate = new Date(popTime * 1000);
-  const minRepop = popTime;
+  const minRepop = Math.max(nextWindow.windowStart, minRepopSec);
   const maxRepop = nextWindow.windowEnd;
-  const isInConditionWindow = pointSec >= nextWindow.windowStart && pointSec < nextWindow.windowEnd;
+  const remainingSec = maxRepop > pointSec ? maxRepop - pointSec : 0;
   // 状態判定
   let status = "Unknown";
-  if (pointSec < minRepop) status = "Next";
-  else if (isInConditionWindow) status = "PopWindow";
-  else if (pointSec >= maxRepop) status = "MaxOver";
-  // 経過率
-  const elapsedPercent = ((pointSec - minRepop) / (maxRepop - minRepop)) * 100;
+  if (nowSec < minRepop) {
+    status = "Next";
+  } else if (nowSec >= minRepop && nowSec < maxRepop) {
+    status = "PopWindow";
+  } else if (nowSec >= maxRepop) {
+    status = "MaxOver";
+  }
+  // 進捗率
+  let elapsedPercent = 0;
+  if (status === "PopWindow") {
+    elapsedPercent = ((nowSec - minRepop) / (maxRepop - minRepop)) * 100;
+  } else if (status === "MaxOver") {
+    elapsedPercent = 100;
+  }
 
   return {
-    popTime,
+    popTime: minRepop,
     remainingSec,
-    nextConditionSpawnDate: nextWindow.windowStart ? new Date(nextWindow.windowStart * 1000) : null,
-    nextMinRepopDate,
-    minRepop,
-    maxRepop,
+    nextConditionSpawnDate: nextWindow.windowStart,
     status,
-    isInConditionWindow,
-    elapsedPercent
+    elapsedPercent,
+    nextMinRepopDate: minRepop * 1000, // UIはDateオブジェクトを期待
+    isInConditionWindow: status === "PopWindow",
+    minRepop,
+    maxRepop
   };
 }
 
