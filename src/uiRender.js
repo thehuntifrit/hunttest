@@ -161,8 +161,8 @@ function createMobCard(mob) {
     <div class="px-2 py-0 text-sm space-y-0.5">
         <div class="flex justify-between items-start flex-wrap">
             <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
-            <div class="w-full text-left text-sm text-gray-300">Memo: 
-                <span data-last-memo data-mob-memo-display data-action="edit-memo-open" class="cursor-pointer inline-block w-3/4 max-h-12 overflow-y-auto align-top"></span>
+            <div class="w-full text-left text-sm text-gray-300">Memo: <span data-last-memo data-mob-memo-display data-action="edit-memo-open" 
+            class="cursor-pointer inline-block w-3/4 max-h-12 overflow-y-auto align-top"></span>
             </div>
             <div data-mob-memo-editor style="display:none;" class="w-full mt-1">
                 <textarea data-mob-memo-input rows="2" class="w-full p-1 bg-gray-900 text-sm rounded border border-gray-600 resize-none max-h-[4rem]"></textarea>
