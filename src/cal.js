@@ -256,24 +256,28 @@ function intersectWindows(listA, listB) {
 // 次の条件成立区間を探索
 function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
   const searchEnd = pointSec + 20 * 24 * 3600; // 20日間探索
-  // 特殊条件がない場合は即確定
+  // 特殊条件なしは即確定
   if (!mob.moonPhase && !mob.weatherSeedRange && !mob.weatherSeedRanges && !mob.et) {
+    console.log("[DEBUG] 条件なし: 即確定", { pointSec, minRepopSec, searchEnd });
     return {
       windowStart: Math.max(pointSec, minRepopSec),
       windowEnd: searchEnd,
       repeatCount: Math.floor((searchEnd - pointSec) / ET_HOUR_SEC)
     };
   }
-  // 各条件の区間列挙
+
   let moonRanges = mob.moonPhase ? enumerateMoonRanges(pointSec, searchEnd, mob.moonPhase) : [[pointSec, searchEnd]];
   let weatherRanges = mob.weatherSeedRange || mob.weatherSeedRanges ? enumerateWeatherWindows(pointSec, searchEnd, mob) : [[pointSec, searchEnd]];
   let etRanges = mob.et ? enumerateETWindows(pointSec, searchEnd, mob) : [[pointSec, searchEnd]];
-  // 区間交差
+
   let intersected = intersectWindows(moonRanges, weatherRanges);
   intersected = intersectWindows(intersected, etRanges);
-  // 最初の成立区間を返す
+
+  console.log("[DEBUG] 区間交差結果", { moonRanges, weatherRanges, etRanges, intersected });
+
   for (const [start, end] of intersected) {
     if (start >= minRepopSec) {
+      console.log("[DEBUG] 成立区間", { start, end });
       return {
         windowStart: start,
         windowEnd: end,
@@ -281,6 +285,7 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
       };
     }
   }
+  console.log("[DEBUG] 成立区間なし");
   return null;
 }
 
@@ -301,6 +306,7 @@ function calculateRepop(mob, pointSec, minRepopSec, limitSec) {
   const nowSec = Date.now() / 1000;
 
   if (!nextWindow) {
+    console.log("[DEBUG] calculateRepop: 未確定", { mob, pointSec, minRepopSec });
     return {
       popTime: null,
       remainingSec: null,
@@ -327,13 +333,15 @@ function calculateRepop(mob, pointSec, minRepopSec, limitSec) {
   if (status === "PopWindow") elapsedPercent = ((nowSec - minRepop) / (maxRepop - minRepop)) * 100;
   else if (status === "MaxOver") elapsedPercent = 100;
 
+  console.log("[DEBUG] calculateRepop: 成立", { minRepop, maxRepop, status, elapsedPercent });
+
   return {
     popTime: minRepop,
     remainingSec,
-    nextConditionSpawnDate: new Date(nextWindow.windowStart * 1000), // Dateで返す
+    nextConditionSpawnDate: nextWindow.windowStart, // 秒数で返す
     status,
     elapsedPercent,
-    nextMinRepopDate: new Date(minRepop * 1000), // Dateで返す
+    nextMinRepopDate: minRepop, // 秒数で返す
     isInConditionWindow: status === "PopWindow",
     minRepop,
     maxRepop
