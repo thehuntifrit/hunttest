@@ -119,42 +119,42 @@ function createMobCard(mob) {
     }).join("")
     : "";
 
-  const mobNameAndCountHtml = `<span class="text-base flex items-baseline font-bold truncate">${mob.Name}</span>
-                                <span class="text-sm flex items-baseline font-bold">${displayCountText}</span>`;
-  const cardHeaderHTML = `
+  const mobNameAndCountHtml = `<span class="text-base flex items-baseline font-bold truncate">${mob.Name}</span>
+                                <span class="text-sm flex items-baseline font-bold">${displayCountText}</span>`;
+  const cardHeaderHTML = `
 <div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
-    <!-- 上段：ランク・モブ名・報告ボタン -->
-    <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
-        <!-- 左：ランク -->
-        <span class="w-6 h-6 flex items-center justify-center rounded-full text-white text-sm font-bold ${rankConfig.bg}">${rankLabel}</span>
+    <!-- 上段：ランク・モブ名・報告ボタン -->
+    <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
+        <!-- 左：ランク -->
+        <span class="w-6 h-6 flex items-center justify-center rounded-full text-white text-sm font-bold ${rankConfig.bg}">${rankLabel}</span>
 
-        <!-- 中央：モブ名＋エリア名 -->
-        <div class="flex flex-col min-w-0">
-            <div class="flex items-baseline space-x-1">${mobNameAndCountHtml}</div>
-            <span class="text-xs text-gray-400 truncate">${mob.Area} (${mob.Expansion})</span>
-        </div>
+        <!-- 中央：モブ名＋エリア名 -->
+        <div class="flex flex-col min-w-0">
+            <div class="flex items-baseline space-x-1">${mobNameAndCountHtml}</div>
+            <span class="text-xs text-gray-400 truncate">${mob.Area} (${mob.Expansion})</span>
+        </div>
 
-        <!-- 右端：報告ボタン（見た目は統一、動作だけ分岐） -->
-        <div class="flex-shrink-0 flex items-center justify-end">
-            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center rounded transition text-center leading-tight">
-                <img src="./icon/reports.webp" alt="報告する" class="w-8 h-8 object-contain transition hover:brightness-125 focus:brightness-125 active:brightness-150" 
-                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <span style="display:none;" class="w-8 h-8 flex items-center justify-center text-[12px] rounded 
-                bg-green-600 hover:bg-green-400 selected:bg-green-800 text-white font-semibold leading-tight whitespace-pre-line">報告<br>する</span>
-            </button>
-        </div>
-    </div>
+        <!-- 右端：報告ボタン（見た目は統一、動作だけ分岐） -->
+        <div class="flex-shrink-0 flex items-center justify-end">
+            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center rounded transition text-center leading-tight">
+                <img src="./icon/reports.webp" alt="報告する" class="w-8 h-8 object-contain transition hover:brightness-125 focus:brightness-125 active:brightness-150" 
+                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <span style="display:none;" class="w-8 h-8 flex items-center justify-center text-[12px] rounded 
+                bg-green-600 hover:bg-green-400 selected:bg-green-800 text-white font-semibold leading-tight whitespace-pre-line">報告<br>する</span>
+            </button>
+        </div>
+    </div>
 
-    <!-- 下段：プログレスバー（構造のみ） -->
-    <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
-        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear"
-            style="width: 0%"></div>
-        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
-            style="line-height: 1;"></div>
-    </div>
+    <!-- 下段：プログレスバー（構造のみ） -->
+    <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
+        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear"
+            style="width: 0%"></div>
+        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
+            style="line-height: 1;"></div>
+    </div>
 </div>
 `;
-// ★ 必要な変更 1: Sランクモブ用のインライン編集UIを定義。インデントを合わせる。
+  
   const sRankMemoSection = `
             <div data-mob-memo-display data-action="edit-memo-open"
                 class="w-full text-left text-sm text-gray-300 min-h-[1.25rem] border border-transparent hover:border-blue-600 rounded px-1 py-[1px] transition duration-100 cursor-pointer whitespace-pre-wrap">
