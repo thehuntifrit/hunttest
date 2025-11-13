@@ -381,7 +381,7 @@ function calculateRepop(mob, pointSec, minRepopSec, limitSec, serverUpSec) {
 
   if (mob.lastKillTime === 0 || mob.lastKillTime <= serverUpSec) {
     minRepop = minRepopSec * 0.6;
-    maxRepop = maxRepopSec * 0.6;
+    maxRepop = mob.MAX_s * 0.6;
   }
 
   const remainingSec = maxRepop > pointSec ? maxRepop - pointSec : 0;
@@ -414,6 +414,7 @@ function calculateRepop(mob, pointSec, minRepopSec, limitSec, serverUpSec) {
     maxRepop
   };
 }
+
 // 現在時刻での成立判定
 function checkMobSpawnCondition(mob, pointSec) {
   if (mob.moonPhase) {
