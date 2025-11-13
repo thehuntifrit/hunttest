@@ -1,7 +1,6 @@
 // dataManager.js
 
-import { filterAndRender, displayStatus, updateProgressBars, updateMemoUI } from "./uiRender.js"; // ★ 修正: updateMemoUI をインポート
-import { subscribeMobStatusDocs, subscribeMobLocations, subscribeMobMemos } from "./server.js"; // ★ 修正: subscribeMobMemos を追加
+import { subscribeMobStatusDocs, subscribeMobLocations, subscribeMobMemos } from "./server.js";
 import { calculateRepop } from "./cal.js";
 
 const EXPANSION_MAP = { 1: "新生", 2: "蒼天", 3: "紅蓮", 4: "漆黒", 5: "暁月", 6: "黄金" };
@@ -11,7 +10,7 @@ const state = {
     baseMobData: [],
     mobs: [],
     mobLocations: {},
-    mobMemos: {}, // ★ 追記: リアルタイム共有メモデータを格納する
+    mobMemos: {},
 
     filter: JSON.parse(localStorage.getItem("huntFilterState")) || {
         rank: "ALL",
@@ -95,12 +94,10 @@ async function loadMaintenance() {
     const res = await fetch(MAINTENANCE_URL);
     if (!res.ok) throw new Error("Maintenance data failed to load.");
     const data = await res.json();
-    // 形を正規化してキャッシュ
     maintenanceCache = (data && typeof data === "object" && "maintenance" in data)
         ? data.maintenance
         : data;
     state.maintenance = maintenanceCache;
-    
     return maintenanceCache;
 }
 
@@ -125,7 +122,7 @@ async function loadBaseMobData() {
         timeRange: mob.timeRange,
         timeRanges: mob.timeRanges,
         weatherSeedRange: mob.weatherSeedRange,
-        weatherDuration: mob.weatherDuration,   // ★ これを追加
+        weatherDuration: mob.weatherDuration,   
         Map: mob.mapImage,
         spawn_points: mob.locations,
         last_kill_time: 0,
@@ -137,22 +134,20 @@ async function loadBaseMobData() {
             REPOP_s: mob.repopSeconds,
             MAX_s: mob.maxRepopSeconds,
             last_kill_time: 0,
-        }, maintenance) // ← 正規化済み maintenance を渡す
+        }, maintenance)
     }));
 
     setBaseMobData(baseMobData);
     setMobs([...baseMobData]);
-    filterAndRender({ isInitialLoad: true });
 }
 
 function startRealtime() {
     unsubscribes.forEach(fn => fn && fn());
     unsubscribes = [];
 
-    // maintenance をロード（キャッシュ再利用）
     (async () => {
         const maintenance = maintenanceCache || await loadMaintenance();
-        
+        
         // Mob Status 購読（LKT/Memoなど）
         const unsubStatus = subscribeMobStatusDocs(mobStatusDataMap => {
             const current = getState().mobs;
@@ -179,27 +174,20 @@ function startRealtime() {
             });
 
             setMobs(merged);
-            filterAndRender();
-            updateProgressBars();
-            displayStatus("LKT/Memoデータ更新完了。", "success");
         });
         unsubscribes.push(unsubStatus);
 
-        // ★ 追記: Mob Memos 購読（共有メモ）
+        // Mob Memos 購読（共有メモ）
         const unsubMemos = subscribeMobMemos(memosMap => {
             state.mobMemos = {};
+            
             Object.entries(memosMap).forEach(([mobId, memoData]) => {
                 const mobNo = parseInt(mobId, 10);
                 state.mobMemos[mobNo] = {
                     text: memoData.text || '',
-                    timestamp: memoData.timestamp?.toMillis() || null, // Firebase Timestamp to ms
+                    timestamp: memoData.timestamp?.toMillis() || null,
                 };
-                // メモUIを個別に更新
-                const card = document.querySelector(`.mob-card[data-mob-no="${mobNo}"]`);
-                const mob = getMobByNo(mobNo);
-                if (card && mob) updateMemoUI(card, mob);
             });
-            displayStatus("共有メモデータ更新完了。", "success");
         });
         unsubscribes.push(unsubMemos);
 
@@ -218,14 +206,13 @@ function startRealtime() {
             });
 
             setMobs(merged);
-            filterAndRender();
-            displayStatus("湧き潰しデータ更新完了。", "success");
         });
         unsubscribes.push(unsubLoc);
     })().catch(err => {
         console.error("Failed to init realtime with maintenance:", err);
     });
 }
+
 
 export {
     state, EXPANSION_MAP, getState, getMobByNo, setUserId, setBaseMobData, setMobs, loadBaseMobData,
