@@ -480,17 +480,6 @@ function updateExpandablePanel(card, mob) {
   if (elMemo) elMemo.textContent = memoStr;
 }
 
-function updateProgressBars() {
-  const state = getState();
-  state.mobs.forEach((mob) => {
-    const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
-    if (card) {
-      updateProgressText(card, mob);
-      updateProgressBar(card, mob);
-    }
-  });
-}
-
 const sortAndRedistribute = debounce(() => filterAndRender(), 200);
 const areaPanel = document.getElementById("area-filter-panel");
 
