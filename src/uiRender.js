@@ -161,44 +161,42 @@ function createMobCard(mob) {
                 <span class="font-semibold text-blue-400">Memo: </span><span data-memo-text></span>
             </div>
             <div data-mob-memo-editor style="display:none;">
-                <textarea data-mob-memo-input rows="3" placeholder="Sランクモブの共通メモを記入 (Shift+Enterで改行)" class="w-full text-sm text-white bg-gray-900/80 p-1 rounded border border-blue-600 focus:outline-none resize-none"></textarea>
+                <textarea data-mob-memo-input rows="3" placeholder="メモを記入 (Shift+Enterで改行)" class="w-full text-sm text-white bg-gray-900/80 p-1 rounded border border-blue-600 focus:outline-none resize-none"></textarea>
                 <div class="flex justify-end space-x-2 mt-1">
-                    <button data-action="edit-memo-cancel" class="px-2 py-0.5 text-xs rounded bg-gray-600 hover:bg-gray-500 text-white">キャンセル</button>
-                    <button data-action="edit-memo-submit" class="px-2 py-0.5 text-xs rounded bg-green-600 hover:bg-green-500 text-white">投稿 (Enter)</button>
+                    <button data-action="edit-memo-cancel" class="px-2 py-0.5 text-xs rounded bg-gray-600 hover:bg-gray-500 text-white">❎️</button>
+                    <button data-action="edit-memo-submit" class="px-2 py-0.5 text-xs rounded bg-green-600 hover:bg-green-500 text-white">☑(Enter)</button>
                 </div>
             </div>`;
 
-
-  const expandablePanelHTML = isExpandable ? `
+  const expandablePanelHTML = isExpandable ? `
 <div class="expandable-panel bg-gray-800/70 ${isOpen ? 'open' : ''}">
-    <div class="px-2 py-0 text-sm space-y-0.5">
-        <div class="flex justify-between items-start flex-wrap">
-            <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
-            ${rank === 'S' ? sRankMemoSection : `<div class="w-full text-left text-sm text-gray-300">Memo: <span data-last-memo></span></div>`}
-            <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽選条件</div>
-            <div class="w-full text-gray-300 text-xs mt-1">${processText(mob.Condition)}</div>
-        </div>
-        ${mob.Map && rank === 'S' ? `
-        <div class="map-content py-0.5 flex justify-center relative">
-            <img src="./maps/${mob.Map}" alt="${mob.Area} Map"
-                class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
-            <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
-        </div>
-        ` : ''}
-    </div>
+    <div class="px-2 py-0 text-sm space-y-0.5">
+        <div class="flex justify-between items-start flex-wrap">
+            <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
+            <div class="w-full text-left text-sm text-gray-300">Memo: <span data-last-memo></span></div>
+            <div class="w-full font-semibold border-t border-gray-600">条件</div>
+            <div class="w-full text-gray-300 text-xs mt-1">${processText(mob.Condition)}</div>
+        </div>
+        ${mob.Map && rank === 'S' ? `
+        <div class="map-content py-0.5 flex justify-center relative">
+            <img src="./maps/${mob.Map}" alt="${mob.Area} Map"
+                class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
+            <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
+        </div>
+        ` : ''}
+    </div>
 </div>
 ` : '';
 
-  const repopInfo = calculateRepop(mob, state.maintenance);
-  const isStopped = repopInfo.isMaintenanceStop;
-  const stoppedClass = isStopped ? "opacity-50 grayscale pointer-events-none" : "";
+  const repopInfo = calculateRepop(mob, state.maintenance);
+  const isStopped = repopInfo.isMaintenanceStop;
+  const stoppedClass = isStopped ? "opacity-50 grayscale pointer-events-none" : "";
 
-  return `
+  return `
 <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer transition duration-150 ${stoppedClass}"
-    style="border: 0.5px solid ${rankConfig.rgbaBorder};" data-mob-no="${mob.No}" data-rank="${rank}">
-    ${cardHeaderHTML}${expandablePanelHTML}</div>
+    style="border: 0.5px solid ${rankConfig.rgbaBorder};" data-mob-no="${mob.No}" data-rank="${rank}">
+    ${cardHeaderHTML}${expandablePanelHTML}</div>
 `;
-}
 
 // ランク優先度: S=2, A=1, F=3 → ソート順 S > A > F
 function rankPriority(rankCode) {
