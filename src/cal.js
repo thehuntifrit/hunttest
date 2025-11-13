@@ -256,6 +256,14 @@ function intersectWindows(listA, listB) {
 // 次の条件成立区間を探索
 function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
   const searchEnd = pointSec + 20 * 24 * 3600; // 20日間探索
+  // 特殊条件がない場合は即確定
+  if (!mob.moonPhase && !mob.weatherSeedRange && !mob.weatherSeedRanges && !mob.et) {
+    return {
+      windowStart: Math.max(pointSec, minRepopSec),
+      windowEnd: searchEnd,
+      repeatCount: Math.floor((searchEnd - pointSec) / ET_HOUR_SEC)
+    };
+  }
   // 各条件の区間列挙
   let moonRanges = mob.moonPhase ? enumerateMoonRanges(pointSec, searchEnd, mob.moonPhase) : [[pointSec, searchEnd]];
   let weatherRanges = mob.weatherSeedRange || mob.weatherSeedRanges ? enumerateWeatherWindows(pointSec, searchEnd, mob) : [[pointSec, searchEnd]];
@@ -269,7 +277,7 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
       return {
         windowStart: start,
         windowEnd: end,
-        repeatCount: Math.floor((end - start) / ET_HOUR_SEC) // 連続成立回数を保持
+        repeatCount: Math.floor((end - start) / ET_HOUR_SEC)
       };
     }
   }
@@ -295,7 +303,8 @@ function calculateRepop(mob, pointSec, minRepopSec, limitSec) {
     return {
       popTime: null,
       remainingSec: null,
-      nextConditionSpawnDate: null
+      nextConditionSpawnDate: null,
+      confirmed: false
     };
   }
 
@@ -305,7 +314,8 @@ function calculateRepop(mob, pointSec, minRepopSec, limitSec) {
   return {
     popTime,
     remainingSec,
-    nextConditionSpawnDate: nextWindow.windowStart
+    nextConditionSpawnDate: nextWindow.windowStart,
+    confirmed: true
   };
 }
 
