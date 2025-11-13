@@ -270,6 +270,65 @@ function getEtWindowEnd(mob, windowStart) {
   return windowStart + ET_HOUR_SEC;
 }
 
+// 月齢条件区間列挙
+function enumerateMoonRanges(startSec, endSec, phase) {
+  const ranges = [];
+  let curSec = startSec;
+  while (curSec < endSec) {
+    const moonInfo = getEorzeaMoonInfo(curSec);
+    if (moonInfo.phase === phase) {
+      const windowStart = curSec;
+      const windowEnd = curSec + 8 * 3600; // 1 ET 日 = 8h 現実時間
+      ranges.push([windowStart, Math.min(windowEnd, endSec)]);
+    }
+    curSec += 8 * 3600;
+  }
+  return ranges;
+}
+
+// 天候条件区間列挙
+function enumerateWeatherWindows(startSec, endSec, mob) {
+  const ranges = [];
+  let curSec = startSec;
+  while (curSec < endSec) {
+    if (checkWeatherInRange(mob, curSec)) {
+      const windowStart = curSec;
+      const windowEnd = curSec + 1400; // 天候単位（23分20秒）
+      ranges.push([windowStart, Math.min(windowEnd, endSec)]);
+    }
+    curSec += 1400;
+  }
+  return ranges;
+}
+
+// ET条件区間列挙
+function enumerateETWindows(startSec, endSec, mob) {
+  const ranges = [];
+  let curSec = alignToEtHour(startSec);
+  while (curSec < endSec) {
+    if (checkEtCondition(mob, curSec)) {
+      const windowStart = curSec;
+      const windowEnd = curSec + 3600; // 1 ET 時間 = 2分55秒 現実時間
+      ranges.push([windowStart, Math.min(windowEnd, endSec)]);
+    }
+    curSec += 3600;
+  }
+  return ranges;
+}
+
+// 区間交差
+function intersectWindows(listA, listB) {
+  const result = [];
+  for (const [aStart, aEnd] of listA) {
+    for (const [bStart, bEnd] of listB) {
+      const start = Math.max(aStart, bStart);
+      const end = Math.min(aEnd, bEnd);
+      if (start < end) result.push([start, end]);
+    }
+  }
+  return result;
+}
+
 // ===== 連続天候探索 =====
 function findConsecutiveWeather(mob, pointSec, minRepopSec, limitSec) {
   const requiredMinutes = mob.weatherDuration?.minutes || 0;
@@ -345,66 +404,23 @@ function findConsecutiveWeather(mob, pointSec, minRepopSec, limitSec) {
 }
 
 function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
-  const scanStart = alignToWeatherCycle(pointSec - WEATHER_CYCLE_SEC);
-  const moonRanges = enumerateMoonRanges(scanStart, limitSec, mob.moonPhase);
+  const searchEnd = pointSec + 20 * 24 * 3600; // 20日間探索
 
-  for (const [moonStart, moonEnd] of moonRanges) {
-    let weatherCursor = alignToWeatherCycle(Math.max(moonStart, scanStart));
-    while (weatherCursor < moonEnd) {
-      const seed = getEorzeaWeatherSeed(new Date(weatherCursor * 1000));
-      if (mob.weatherSeedRange || mob.weatherSeedRanges) {
-        if (!checkWeatherInRange(mob, seed)) {
-          weatherCursor += WEATHER_CYCLE_SEC;
-          continue;
-        }
-      }
+  // 各条件の区間列挙
+  let moonRanges = mob.moon ? enumerateMoonRanges(pointSec, searchEnd, mob.moon) : [[pointSec, searchEnd]];
+  let weatherRanges = mob.weather ? enumerateWeatherWindows(pointSec, searchEnd, mob) : [[pointSec, searchEnd]];
+  let etRanges = mob.et ? enumerateETWindows(pointSec, searchEnd, mob) : [[pointSec, searchEnd]];
 
-      const weatherEnd = Math.min(weatherCursor + WEATHER_CYCLE_SEC, moonEnd);
-      const intersectStart = Math.max(weatherCursor, moonStart);
-      const intersectEnd = Math.min(weatherEnd, moonEnd);
-      if (intersectStart >= intersectEnd) {
-        weatherCursor += WEATHER_CYCLE_SEC;
-        continue;
-      }
+  // 区間交差
+  let intersected = intersectWindows(moonRanges, weatherRanges);
+  intersected = intersectWindows(intersected, etRanges);
 
-      // ET条件を基準点で直接判定（丸めない）
-      if (checkEtCondition(mob, pointSec) && pointSec >= intersectStart && pointSec < intersectEnd) {
-        const etEndRaw = getEtWindowEnd(mob, pointSec);
-        const etEnd = Math.min(etEndRaw, intersectEnd);
-        const remainingSec = etEnd - pointSec;
-
-        return {
-          windowStart: intersectStart,
-          windowEnd: etEnd,
-          popTime: Math.max(pointSec, minRepopSec),
-          remainingSec
-        };
-      }
-
-      // ET条件をグリッドで走査（条件開始点を探す）
-      let etCursor = ceilToEtHour(Math.max(intersectStart, minRepopSec));
-      while (etCursor < intersectEnd) {
-        if (checkEtCondition(mob, etCursor)) {
-          const etEndRaw = getEtWindowEnd(mob, etCursor);
-          const etEnd = Math.min(etEndRaw, intersectEnd);
-
-          // 条件開始点が基準点以上であることを保証
-          const popTime = Math.max(etCursor, minRepopSec);
-          return {
-            windowStart: etCursor,
-            windowEnd: etEnd,
-            popTime,
-            remainingSec: 0
-          };
-        }
-
-        etCursor += ET_HOUR_SEC;
-      }
-
-      weatherCursor += WEATHER_CYCLE_SEC;
+  // 最初の成立区間を返す
+  for (const [start, end] of intersected) {
+    if (start >= pointSec + minRepopSec) {
+      return { windowStart: start, windowEnd: end };
     }
   }
-
   return null;
 }
 
