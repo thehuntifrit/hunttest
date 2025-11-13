@@ -460,11 +460,10 @@ function updateExpandablePanel(card, mob) {
 
   const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
 
-  const nextMin = mob.repopInfo?.nextMinRepopDate; // Date | null
+  const nextMin = mob.repopInfo?.nextMinRepopDate; // Date
   const nextMinSec = nextMin instanceof Date ? Math.floor(nextMin.getTime() / 1000) : null;
-  // 条件時間は「最短基準で次の成立点」を探す
   const conditionTimeSec = nextMinSec != null ? findNextSpawnTime(mob, nextMinSec, nextMinSec) : null;
-  // 表示は「条件が未来なら条件時刻、なければ最短」
+
   const displayTimeSec = (nextMinSec && conditionTimeSec)
     ? (conditionTimeSec > nextMinSec ? conditionTimeSec : nextMinSec)
     : (nextMinSec ?? conditionTimeSec);
