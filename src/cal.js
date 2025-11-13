@@ -304,18 +304,40 @@ function calculateRepop(mob, pointSec, minRepopSec, limitSec) {
       popTime: null,
       remainingSec: null,
       nextConditionSpawnDate: null,
-      confirmed: false
+      nextMinRepopDate: null,
+      minRepop: null,
+      maxRepop: null,
+      status: "Unknown",
+      isInConditionWindow: false,
+      elapsedPercent: 0
     };
   }
 
   const popTime = Math.max(nextWindow.windowStart, minRepopSec);
   const remainingSec = nextWindow.windowEnd > pointSec ? nextWindow.windowEnd - pointSec : 0;
+  // UI契約に合わせて追加
+  const nextMinRepopDate = new Date(popTime * 1000);
+  const minRepop = popTime;
+  const maxRepop = nextWindow.windowEnd;
+  const isInConditionWindow = pointSec >= nextWindow.windowStart && pointSec < nextWindow.windowEnd;
+  // 状態判定
+  let status = "Unknown";
+  if (pointSec < minRepop) status = "Next";
+  else if (isInConditionWindow) status = "PopWindow";
+  else if (pointSec >= maxRepop) status = "MaxOver";
+  // 経過率
+  const elapsedPercent = ((pointSec - minRepop) / (maxRepop - minRepop)) * 100;
 
   return {
     popTime,
     remainingSec,
-    nextConditionSpawnDate: nextWindow.windowStart,
-    confirmed: true
+    nextConditionSpawnDate: nextWindow.windowStart ? new Date(nextWindow.windowStart * 1000) : null,
+    nextMinRepopDate,
+    minRepop,
+    maxRepop,
+    status,
+    isInConditionWindow,
+    elapsedPercent
   };
 }
 
