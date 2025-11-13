@@ -1,11 +1,11 @@
 // app.js
 
-import { getState, setFilter, loadBaseMobData, setOpenMobCardNo, FILTER_TO_DATA_RANK_MAP, setUserId, startRealtime } from "./dataManager.js";
+import { getState, setFilter, loadBaseMobData, setOpenMobCardNo, FILTER_TO_DATA_RANK_MAP, setUserId, startRealtime, onMemoChange } from "./dataManager.js";
 import { openReportModal, closeReportModal, initModal } from "./modal.js";
 import { attachLocationEvents } from "./location.js";
-import { submitReport, toggleCrushStatus, initializeAuth, getServerTimeUTC, submitMemo } from "./server.js"; // ★ 変更点1: submitMemo をインポート
+import { submitReport, toggleCrushStatus, initializeAuth, getServerTimeUTC, submitMemo } from "./server.js";
 import { debounce } from "./cal.js";
-import { DOM, filterAndRender, sortAndRedistribute, updateMemoUI } from "./uiRender.js"; // ★ 修正: updateMemoUI をインポート
+import { DOM, filterAndRender, sortAndRedistribute, updateMemoUI } from "./uiRender.js";
 import { renderRankTabs, renderAreaFilterPanel, updateFilterUI, handleAreaFilterClick } from "./filterUI.js";
 
 async function loadMaintenance() {
@@ -126,19 +126,19 @@ function attachCardEvents() {
             } else if (type === "instant") {
                 getServerTimeUTC().then(serverDateUTC => {
                     const iso = serverDateUTC.toISOString();
-                    // ★ 変更点2: submitReport からメモ引数を削除
+                    
                     submitReport(mobNo, iso); 
                 }).catch(err => {
                     console.error("サーバー時刻取得失敗、ローカル時刻で代用:", err);
                     const fallbackIso = new Date().toISOString();
-                    // ★ 変更点3: submitReport からメモ引数を削除
+                    
                     submitReport(mobNo, fallbackIso); 
                 });
             }
             return;
         }
 
-        // ★ 追記: Sランクメモ表示エリアクリックで編集モードへ
+        // Sランクメモ表示エリアクリックで編集モードへ
         const memoDisplay = e.target.closest('[data-mob-memo-display][data-action="edit-memo-open"]');
         if (memoDisplay) {
             e.stopPropagation();
@@ -147,7 +147,7 @@ function attachCardEvents() {
             const elDisplay = memoDisplay;
             const elEditor = card.querySelector('[data-mob-memo-editor]');
             const elInput = card.querySelector('[data-mob-memo-input]');
-            
+            
             // 既に開いている編集モードを閉じる
             document.querySelectorAll('[data-mob-memo-editor]').forEach(editor => {
                 if (editor !== elEditor) {
@@ -159,8 +159,7 @@ function attachCardEvents() {
             // このカードの編集モードを開く
             elDisplay.style.display = 'none';
             elEditor.style.display = 'block';
-            
-            // 入力欄にフォーカス
+            // 入力欄にフォーカス
             elInput.focus();
             return;
         }
@@ -185,7 +184,7 @@ function attachCardEvents() {
         }
     });
 
-    // ★ 追記: メモ入力欄での Enter キーイベント（送信）と ESC キーイベント（キャンセル）
+    // メモ入力欄での Enter キーイベント（送信）と ESC キーイベント（キャンセル）
     DOM.colContainer.addEventListener('keydown', e => {
         const input = e.target.closest('[data-mob-memo-input]');
         if (!input) return;
@@ -214,57 +213,52 @@ async function handleReportSubmit(e) {
     const form = e.target;
     const mobNo = parseInt(form.dataset.mobNo, 10);
     const timeISO = form.elements["kill-time"].value;
-    
+    
     await submitReport(mobNo, timeISO); 
 }
 
-// ★ 追記: メモ送信処理
+// メモ送信処理
 async function handleMemoSubmit(e) {
     e.preventDefault();
 
     const btn = e.target.closest('[data-action="edit-memo-submit"]');
     if (!btn) return;
-    
+    
     const card = btn.closest('.mob-card');
     if (!card) return;
-    
+    
     const mobNo = parseInt(card.dataset.mobNo, 10);
     const elInput = card.querySelector('[data-mob-memo-input]');
     const newMemo = elInput.value.trim();
 
-    // 送信処理
     await submitMemo(mobNo, newMemo);
 
-    // UIをディスプレイモードに戻す
     const elEditor = card.querySelector('[data-mob-memo-editor]');
     const elDisplay = card.querySelector('[data-mob-memo-display]');
-    
+    
     if (elEditor && elDisplay) {
         elEditor.style.display = 'none';
         elDisplay.style.display = 'block';
     }
-    
-    const mob = getState().mobs.find(m => m.No === mobNo);
-    if (mob) updateMemoUI(card, mob);
+    
 }
 
-// ★ 追記: メモ編集キャンセル処理
+// メモ編集キャンセル処理
 function handleMemoCancel(e) {
     e.preventDefault();
-    
+    
     const btn = e.target.closest('[data-action="edit-memo-cancel"]');
     if (!btn) return;
-    
+    
     const card = btn.closest('.mob-card');
     if (!card) return;
 
     const mobNo = parseInt(card.dataset.mobNo, 10);
     const mob = getState().mobs.find(m => m.No === mobNo);
-    
+    
     // updateMemoUI を使って入力内容を破棄し、ディスプレイモードに戻す
     if (mob) updateMemoUI(card, mob);
 }
-
 
 function attachEventListeners() {
     renderRankTabs();
@@ -278,7 +272,7 @@ function attachEventListeners() {
         DOM.reportForm.addEventListener("submit", handleReportSubmit);
     }
     
-    // ★ 追記: メモ編集関連のイベントリスナー
+    // メモ編集関連のイベントリスナー
     DOM.colContainer.addEventListener('click', e => {
         // 送信ボタン
         if (e.target.closest('[data-action="edit-memo-submit"]')) {
@@ -296,13 +290,28 @@ async function initializeAuthenticationAndRealtime() {
         const userId = await initializeAuth();
         setUserId(userId);
         startRealtime();
+        
+        // メモ変更時のリアルタイム購読を開始し、UIを更新する
+        onMemoChange((updatedMobMemos) => {
+            const state = getState();
+            // 全てのモブカードをチェックし、該当するメモを更新
+            document.querySelectorAll('.mob-card').forEach(card => {
+                const mobNo = parseInt(card.dataset.mobNo, 10);
+                const mob = state.mobs.find(m => m.No === mobNo);
+                
+                // 更新されたメモデータにこのモブが含まれているか確認
+                if (mob && updatedMobMemos[mobNo]) {
+                    updateMemoUI(card, mob);
+                }
+            });
+        });
+        
         console.log("App: 認証とリアルタイム購読を開始しました。");
     } catch (error) {
         console.error("App: 認証処理中にエラーが発生しました。", error);
         setUserId(null);
     }
 }
-
 
 document.addEventListener('DOMContentLoaded', () => {
     initializeAuthenticationAndRealtime();
