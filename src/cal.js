@@ -135,6 +135,22 @@ function checkWeatherInRange(mob, seed) {
   return false;
 }
 
+function checkTimeRange(timeRange, realSec) {
+  const etHour = getEtHourFromRealSec(realSec);
+  const { start, end } = timeRange;
+
+  if (start < end) return etHour >= start && etHour < end;
+  return etHour >= start || etHour < end; // 日跨ぎ
+}
+
+// 夜フェーズ判定（phase は 1〜32 小数）
+function isFirstNightPhase(phase) {
+  return phase >= 32.5 || phase < 1.5; // 32日12:00〜1日12:00
+}
+function isOtherNightsPhase(phase) {
+  return phase >= 1.5 && phase < 4.5; // 1日12:00〜4日12:00
+}
+
 // ET条件判定（複数レンジ対応）
 function checkEtCondition(mob, realSec) {
   const { phase } = getEorzeaMoonInfo(new Date(realSec * 1000));
