@@ -317,8 +317,8 @@ function findNextSpawnTime(mob, pointSec, minRepopSec, limitSec) {
 }
 
 // リポップ計算（serverUp短縮・停止判定込み）
-function calculateRepop(mob, pointSecSec, minRepopSec, maxRepopSec, limitSec, serverUpSec) {
-  const nextWindow = findNextConditionWindow(mob, pointSecSec, minRepopSec, limitSec);
+function calculateRepop(mob, pointSec, minRepopSec, limitSec, serverUpSec) {
+  const nextWindow = findNextConditionWindow(mob, pointSec, minRepopSec, limitSec);
   const nowSec = Math.floor(Date.now() / 1000);
 
   if (!nextWindow) {
@@ -340,14 +340,16 @@ function calculateRepop(mob, pointSecSec, minRepopSec, maxRepopSec, limitSec, se
 
   let minRepop = Math.max(nextWindow.windowStart, minRepopSec);
   let maxRepop = nextWindow.windowEnd;
-
+  // serverUp基準の短縮ロジック
   if (mob.lastKillTime === 0 || mob.lastKillTime <= serverUpSec) {
     minRepop = minRepopSec * 0.6;
-    maxRepop = maxRepopSec * 0.6;
+    if (typeof mob.MAX_s === "number") {
+      maxRepop = mob.MAX_s * 0.6;   // ← 未定義変数ではなく mob.MAX_s を使用
+    }
   }
 
-  const remainingSec = maxRepop > pointSecSec ? maxRepop - pointSecSec : 0;
-  const isMaintenanceStop = serverUpSec > pointSecSec;
+  const remainingSec = maxRepop > pointSec ? maxRepop - pointSec : 0;
+  const isMaintenanceStop = serverUpSec > pointSec;
 
   let status = "Unknown";
   if (nowSec < minRepop) status = "Next";
@@ -358,8 +360,11 @@ function calculateRepop(mob, pointSecSec, minRepopSec, maxRepopSec, limitSec, se
   if (isMaintenanceStop) status = "Next";
 
   let elapsedPercent = 0;
-  if (status === "PopWindow") elapsedPercent = ((nowSec - minRepop) / (maxRepop - minRepop)) * 100;
-  else if (status === "MaxOver") elapsedPercent = 100;
+  if (status === "PopWindow" && maxRepop > minRepop) {
+    elapsedPercent = ((nowSec - minRepop) / (maxRepop - minRepop)) * 100;
+  } else if (status === "MaxOver") {
+    elapsedPercent = 100;
+  }
 
   return {
     popTime: minRepop,
