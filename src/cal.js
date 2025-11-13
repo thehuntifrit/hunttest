@@ -340,12 +340,11 @@ function calculateRepop(mob, pointSec, minRepopSec, limitSec) {
   };
 }
 
-
 // 現在時刻での成立判定
 function checkMobSpawnCondition(mob, pointSec) {
   if (mob.moonPhase) {
-    const moonInfo = getEorzeaMoonInfo(pointSec);
-    if (moonInfo.phase !== mob.moonPhase) return false;
+    const { label } = getEorzeaMoonInfo(pointSec);
+    if (label !== mob.moonPhase) return false;
   }
   if (mob.weatherSeedRange || mob.weatherSeedRanges) {
     const seed = getEorzeaWeatherSeed(new Date(pointSec * 1000));
