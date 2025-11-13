@@ -105,61 +105,6 @@ function getEorzeaMoonInfo(date = new Date()) {
   return { phase, label };
 }
 
-// 近傍判定用（ETグリッドで±0.6日 ≒ ±14.4ET時間程度の緩め判定）
-function isNearPhase(phase, target) {
-  const diff = Math.abs(((phase - target + 32) % 32));
-  return diff < 0.6 || diff > 31.4;
-}
-
-// 新月開始（phase ~32 近傍）をETグリッドで探索
-function findNextNewMoonStart(startSec) {
-  let t = alignToEtHour(startSec);
-  const limit = startSec + MOON_CYCLE_SEC * 2;
-  while (t < limit) {
-    const { phase } = getEorzeaMoonInfo(new Date(t * 1000));
-    if (isNearPhase(phase, 32)) return t;
-    t += ET_HOUR_SEC;
-  }
-  return null;
-}
-
-// 満月開始（phase ~16 近傍）をETグリッドで探索
-function findNextFullMoonStart(startSec) {
-  let t = alignToEtHour(startSec);
-  const limit = startSec + MOON_CYCLE_SEC * 2;
-  while (t < limit) {
-    const { phase } = getEorzeaMoonInfo(new Date(t * 1000));
-    if (isNearPhase(phase, 16)) return t;
-    t += ET_HOUR_SEC;
-  }
-  return null;
-}
-
-// 月齢区間列挙（開始→4ET日）
-function enumerateMoonRanges(startSec, endSec, moonPhase) {
-  if (!moonPhase) return [[startSec, endSec]];
-  const ranges = [];
-  let moonStart = null;
-
-  if (moonPhase === "新月") moonStart = findNextNewMoonStart(startSec);
-  else if (moonPhase === "満月") moonStart = findNextFullMoonStart(startSec);
-  else return [[startSec, endSec]];
-
-  while (moonStart && moonStart < endSec) {
-    const moonEnd = moonStart + MOON_PHASE_DURATION_SEC; // 4 ET日
-    ranges.push([Math.max(moonStart, startSec), Math.min(moonEnd, endSec)]);
-    moonStart += MOON_CYCLE_SEC; // 次の同フェーズ
-  }
-  return ranges;
-}
-// 夜フェーズ判定（phase は 1〜32 小数）
-function isFirstNightPhase(phase) {
-  return phase >= 32.5 || phase < 1.5; // 32日12:00〜1日12:00
-}
-function isOtherNightsPhase(phase) {
-  return phase >= 1.5 && phase < 4.5; // 1日12:00〜4日12:00
-}
-
 // ===== 天候関連 =====
 function getEorzeaWeatherSeed(date = new Date()) {
   const unixSeconds = Math.floor(date.getTime() / 1000);
@@ -175,17 +120,6 @@ function getEorzeaWeatherSeed(date = new Date()) {
   return step2 % 100; // 0〜99
 }
 
-// 天候テーブルからラベル決定（累積率）
-function getEorzeaWeather(date = new Date(), weatherTable) {
-  const seed = getEorzeaWeatherSeed(date);
-  let cumulative = 0;
-  for (const entry of weatherTable) {
-    cumulative += entry.rate;
-    if (seed < cumulative) return entry.weather;
-  }
-  return "Unknown";
-}
-
 // weatherSeedRange(s) 判定
 function checkWeatherInRange(mob, seed) {
   if (mob.weatherSeedRange) {
@@ -196,15 +130,6 @@ function checkWeatherInRange(mob, seed) {
     return mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max);
   }
   return false;
-}
-
-// ===== ET時間帯関連 =====
-function checkTimeRange(timeRange, realSec) {
-  const etHour = getEtHourFromRealSec(realSec);
-  const { start, end } = timeRange;
-
-  if (start < end) return etHour >= start && etHour < end;
-  return etHour >= start || etHour < end; // 日跨ぎ
 }
 
 // ET条件判定（複数レンジ対応）
@@ -228,50 +153,7 @@ function checkEtCondition(mob, realSec) {
   return true; // ET条件なし
 }
 
-// 現在ETレンジ終端を計算（複数レンジ中の当該レンジ終端）
-function getEtWindowEnd(mob, windowStart) {
-  let ranges = [];
-
-  if (mob.conditions) {
-    const { phase } = getEorzeaMoonInfo(new Date(windowStart * 1000));
-    if (isFirstNightPhase(phase) && mob.conditions.firstNight?.timeRange) {
-      ranges.push(mob.conditions.firstNight.timeRange);
-    } else if (isOtherNightsPhase(phase) && mob.conditions.otherNights?.timeRange) {
-      ranges.push(mob.conditions.otherNights.timeRange);
-    }
-  } else if (mob.timeRange) {
-    ranges.push(mob.timeRange);
-  } else if (mob.timeRanges) {
-    ranges = mob.timeRanges;
-  }
-
-  const startEtHour = getEtHourFromRealSec(windowStart);
-
-  for (const range of ranges) {
-    if (!range) continue;
-    const { start, end } = range;
-
-    if (start < end) {
-      if (startEtHour >= start && startEtHour < end) {
-        const hoursToEnd = end - startEtHour;
-        return windowStart + hoursToEnd * ET_HOUR_SEC;
-      }
-    } else {
-      // 日跨ぎ
-      if (startEtHour >= start || startEtHour < end) {
-        const hoursToEnd = startEtHour >= start
-          ? (24 - startEtHour) + end
-          : (end - startEtHour);
-        return windowStart + hoursToEnd * ET_HOUR_SEC;
-      }
-    }
-  }
-  // 当該レンジが特定できない場合は1ET時間デフォルト
-  return windowStart + ET_HOUR_SEC;
-}
-
 // ===== 補助関数群 =====
-
 // 月齢条件区間列挙
 function enumerateMoonRanges(startSec, endSec, phase) {
   const ranges = [];
