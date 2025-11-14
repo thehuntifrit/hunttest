@@ -194,22 +194,23 @@ function intersectAllWindows(moonRanges, weatherRanges, etRanges) {
 
 // 月齢区間列挙
 function enumerateMoonRanges(startSec, endSec, phaseLabel) {
-    const ranges = [];
-    let curSec = startSec;
-    while (curSec < endSec) {
-        const { label } = getEorzeaMoonInfo(curSec);
-        if (label === phaseLabel) {
-            const phaseStart = Math.floor(curSec / ET_DAY_SEC) * ET_DAY_SEC;
-            const phaseEnd = phaseStart + MOON_PHASE_DURATION_SEC;
-            if (curSec >= phaseStart && curSec < phaseEnd) {
-                ranges.push([curSec, Math.min(phaseEnd, endSec)]);
-            } else if (curSec < phaseStart) {
-                ranges.push([phaseStart, Math.min(phaseEnd, endSec)]);
-            }
-        }
-        curSec += ET_DAY_SEC;
+  const ranges = [];
+  let curSec = startSec;
+  while (curSec < endSec) {
+    const { label, phase } = getEorzeaMoonInfo(curSec);
+    if (label === phaseLabel) {
+      // フェーズ境界を正しく算出
+      const EORZEA_SPEED_RATIO = 20.57142857142857;
+      const eorzeaTotalDays = (curSec * EORZEA_SPEED_RATIO) / 86400;
+      const phaseIndex = Math.floor(eorzeaTotalDays % 32);
+      const phaseStart = curSec - ((phase % 1) * ET_DAY_SEC);
+      const phaseEnd = phaseStart + MOON_PHASE_DURATION_SEC;
+
+      ranges.push([Math.max(curSec, phaseStart), Math.min(phaseEnd, endSec)]);
     }
-    return ranges;
+    curSec += ET_DAY_SEC;
+  }
+  return ranges;
 }
 
 // 天候区間列挙
@@ -245,38 +246,35 @@ function enumerateWeatherWindows(startSec, endSec, mob) {
 
 // ET区間列挙
 function enumerateETWindows(startSec, endSec, mob) {
-    const ranges = [];
-    let curSec = alignToEtHour(startSec);
-    while (curSec < endSec) {
-        if (!mob.et || checkEtCondition(mob, curSec)) {
-            let windowStart = curSec;
-            let windowEnd = curSec + ET_HOUR_SEC;
-            if (checkEtCondition(mob, startSec)) {
-                windowStart = startSec;
-            }
-            if (mob.timeRange) {
-                const { start, end } = mob.timeRange;
-                if (start > end) {
-                    windowEnd = curSec + ((24 - start) + end) * ET_HOUR_SEC;
-                }
-            }
-            let consecutive = 1;
-            while (consecutive < 20 && windowEnd < endSec) {
-                const nextCursor = windowEnd;
-                if (checkEtCondition(mob, nextCursor)) {
-                    windowEnd += ET_HOUR_SEC;
-                    consecutive++;
-                } else {
-                    break;
-                }
-            }
-            ranges.push([windowStart, windowEnd]);
-            curSec = windowEnd;
+  const ranges = [];
+  let curSec = alignToEtHour(startSec);
+  while (curSec < endSec) {
+    if (!mob.et || checkEtCondition(mob, curSec)) {
+      let windowStart = curSec;
+      let windowEnd = curSec + ET_HOUR_SEC;
+
+      if (checkEtCondition(mob, startSec)) {
+        windowStart = startSec;
+      }
+
+      let consecutive = 1;
+      while (consecutive < 20 && windowEnd < endSec) {
+        const nextCursor = windowEnd;
+        if (checkEtCondition(mob, nextCursor)) {
+          windowEnd += ET_HOUR_SEC;
+          consecutive++;
         } else {
-            curSec += ET_HOUR_SEC;
+          break;
         }
+      }
+
+      ranges.push([windowStart, windowEnd]);
+      curSec = windowEnd;
+    } else {
+      curSec += ET_HOUR_SEC;
     }
-    return ranges;
+  }
+  return ranges;
 }
 
 // 次の条件成立区間探索
@@ -317,71 +315,74 @@ function findNextSpawnTime(mob, pointSec, minRepopSec, limitSec) {
 }
 
 // リポップ計算（serverUp短縮・停止判定込み）
-function calculateRepop(mob, pointSec, minRepopSec, limitSec, serverUpSec) {
-    const nextWindow = findNextConditionWindow(mob, pointSec, minRepopSec, limitSec);
-    const nowSec = Math.floor(Date.now() / 1000);
+function calculateRepop(mob, pointSec, minRepopSec, limitSec, serverUpSec, maintenanceStartSec) {
+  const nextWindow = findNextConditionWindow(mob, pointSec, minRepopSec, limitSec);
+  const nowSec = Math.floor(Date.now() / 1000);
 
-    if (!nextWindow) {
-        return {
-            popTime: null,
-            remainingSec: null,
-            timeRemaining: null,
-            nextConditionSpawnDate: null,
-            conditionWindowEnd: null,
-            status: "Unknown",
-            elapsedPercent: 0,
-            nextMinRepopDate: null,
-            isInConditionWindow: false,
-            isMaintenanceStop: false,
-            minRepop: null,
-            maxRepop: null
-        };
-    }
-
-    let minRepop = Math.max(nextWindow.windowStart, minRepopSec);
-    let maxRepop = nextWindow.windowEnd;
-    // serverUp基準の短縮ロジック
-    if (mob.lastKillTime === 0 || mob.lastKillTime <= serverUpSec) {
-        if (typeof mob.REPOP_s === "number") {
-            minRepop = serverUpSec + mob.REPOP_s * 0.6;
-        }
-        if (typeof mob.MAX_s === "number") {
-            maxRepop = serverUpSec + mob.MAX_s * 0.6;
-        }
-    }
-
-    const remainingSec = maxRepop > pointSec ? maxRepop - pointSec : 0;
-    const isMaintenanceStop = serverUpSec > pointSec;
-
-    let status = "Unknown";
-    if (nowSec < minRepop) status = "Next";
-    else if (nowSec >= minRepop && nowSec < maxRepop) status = "PopWindow";
-    else if (nowSec >= maxRepop) status = "MaxOver";
-
-    if (checkMobSpawnCondition(mob, nowSec)) status = "ConditionActive";
-    if (isMaintenanceStop) status = "Next";
-
-    let elapsedPercent = 0;
-    if (status === "PopWindow" && maxRepop > minRepop) {
-        elapsedPercent = ((nowSec - minRepop) / (maxRepop - minRepop)) * 100;
-    } else if (status === "MaxOver") {
-        elapsedPercent = 100;
-    }
-
+  if (!nextWindow) {
     return {
-        popTime: minRepop,
-        remainingSec,
-        timeRemaining: formatDurationHM(remainingSec),
-        nextConditionSpawnDate: nextWindow.windowStart,
-        conditionWindowEnd: nextWindow.windowEnd,
-        status,
-        elapsedPercent,
-        nextMinRepopDate: minRepop,
-        isInConditionWindow: status === "PopWindow" || status === "ConditionActive",
-        isMaintenanceStop,
-        minRepop,
-        maxRepop
+      popTime: null,
+      remainingSec: null,
+      timeRemaining: null,
+      nextConditionSpawnDate: null,
+      conditionWindowEnd: null,
+      status: "Unknown",
+      elapsedPercent: 0,
+      nextMinRepopDate: null,
+      isInConditionWindow: false,
+      isMaintenanceStop: false,
+      minRepop: null,
+      maxRepop: null
     };
+  }
+
+  let minRepop, maxRepop;
+  // serverUp基準の短縮ロジック
+  if (mob.lastKillTime === 0 || mob.lastKillTime <= serverUpSec) {
+    if (typeof mob.REPOP_s === "number") {
+      minRepop = serverUpSec + mob.REPOP_s * 0.6;
+    }
+    if (typeof mob.MAX_s === "number") {
+      maxRepop = serverUpSec + mob.MAX_s * 0.6;
+    }
+  } else {
+    // 通常討伐後
+    minRepop = mob.lastKillTime + mob.REPOP_s;
+    maxRepop = mob.lastKillTime + mob.MAX_s;
+  }
+
+  const remainingSec = maxRepop > pointSec ? maxRepop - pointSec : 0;
+  const isMaintenanceStop = (nowSec >= maintenanceStartSec && nowSec < serverUpSec);
+
+  let status = "Unknown";
+  if (nowSec < minRepop) status = "Next";
+  else if (nowSec >= minRepop && nowSec < maxRepop) status = "PopWindow";
+  else if (nowSec >= maxRepop) status = "MaxOver";
+  // ConditionActive 判定は pointSec 基準
+  if (checkMobSpawnCondition(mob, pointSec)) status = "ConditionActive";
+  if (isMaintenanceStop) status = "Next";
+
+  let elapsedPercent = 0;
+  if (status === "PopWindow" && maxRepop > minRepop) {
+    elapsedPercent = ((nowSec - minRepop) / (maxRepop - minRepop)) * 100;
+  } else if (status === "MaxOver") {
+    elapsedPercent = 100;
+  }
+
+  return {
+    popTime: minRepop,
+    remainingSec,
+    timeRemaining: formatDurationHM(remainingSec),
+    nextConditionSpawnDate: nextWindow.windowStart,
+    conditionWindowEnd: nextWindow.windowEnd,
+    status,
+    elapsedPercent,
+    nextMinRepopDate: minRepop,
+    isInConditionWindow: status === "PopWindow" || status === "ConditionActive",
+    isMaintenanceStop,
+    minRepop,
+    maxRepop
+  };
 }
 
 // 成立判定
