@@ -340,7 +340,7 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
           return {
             windowStart: trueWindowStart,
             windowEnd,
-            popTime: Math.max(pointSec, minRepopSec),
+            popTime: pointSec, // ★ 基準点 pointSec を採用
             remainingSec
           };
         }
@@ -378,7 +378,7 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
       return {
         windowStart,
         windowEnd,
-        popTime: Math.max(windowStart, minRepopSec),
+        popTime: Math.max(windowStart, pointSec), // ★ windowStartとpointSecの遅い方
         remainingSec: 0
       };
     }
@@ -394,8 +394,6 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
 
   return null;
 }
-
-// findConsecutiveWeather は廃止（コードから削除）
 
 // ===== 条件ウィンドウ探索 =====
 function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
@@ -422,15 +420,29 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
       
       if (intersectStart >= intersectEnd) continue;
     
-      // ET条件なし（天候/月齢条件のみ）で現在成立中の場合
-      if (pointSec >= intersectStart && pointSec < intersectEnd && !mob.timeRange && !mob.timeRanges && !mob.conditions) {
-        const remainingSec = intersectEnd - pointSec;
-        return {
-          windowStart: intersectStart,
-          windowEnd: intersectEnd,
-          popTime: Math.max(pointSec, minRepopSec),
-          remainingSec
-        };
+      // ET条件なし（天候/月齢条件のみ）の場合の処理
+      if (!mob.timeRange && !mob.timeRanges && !mob.conditions) {
+        
+        // pointSec が成立区間に含まれている場合 (現在成立中)
+        if (pointSec >= intersectStart && pointSec < intersectEnd) {
+          const remainingSec = intersectEnd - pointSec;
+          return {
+            windowStart: intersectStart,
+            windowEnd: intersectEnd,
+            popTime: pointSec, // ★ 基準点 pointSec を採用
+            remainingSec
+          };
+        } 
+        // pointSec が成立区間より前にある場合 (未来のウィンドウ開始)
+        else if (intersectStart > pointSec) {
+          const nextPopTime = Math.max(intersectStart, pointSec); 
+          return {
+            windowStart: intersectStart,
+            windowEnd: intersectEnd,
+            popTime: nextPopTime, // ★ Math.maxを適用
+            remainingSec: 0
+          };
+        }
       }
     }
     
@@ -444,23 +456,25 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
         const etEndRaw = getEtWindowEnd(mob, etCursor);
         const etEnd = Math.min(etEndRaw, intersectEnd);
         
-        // pointSec が成立ウィンドウ内にいるかチェック
+        // popTimeは etCursor と pointSec の遅い方
+        const popTime = Math.max(etCursor, pointSec);
+        
+        // pointSec が成立ウィンドウ内にいるかチェック (現在成立中)
         if (pointSec >= etCursor && pointSec < etEnd) {
           const remainingSec = etEnd - pointSec;
           return {
             windowStart: etCursor,
             windowEnd: etEnd,
-            popTime: Math.max(pointSec, minRepopSec),
+            popTime: pointSec, // ★ 基準点 pointSec を採用
             remainingSec
           };
         }
 
-        // 未来の成立開始点を返す
-        const popTime = Math.max(etCursor, minRepopSec);
+        // 未来の成立開始点を返す (etCursor > pointSec の場合)
         return {
           windowStart: etCursor,
           windowEnd: etEnd,
-          popTime,
+          popTime, // ★ Math.maxを適用
           remainingSec: 0
         };
       }
@@ -620,15 +634,8 @@ function findNextSpawnTime(mob, pointSec, minRepopSec, limitSec) {
   let conditionResult = findNextConditionWindow(mob, pointSec, minRepopSec, limitSec);
 
   if (conditionResult) {
-    const { windowStart, windowEnd } = conditionResult;
-
-    if (pointSec >= windowStart && pointSec < windowEnd) {
-      return Math.max(pointSec, minRepopSec);
-    }
-
-    if (windowStart > pointSec) {
-      return Math.max(windowStart, minRepopSec);
-    }
+    const { popTime } = conditionResult;
+    return popTime;
   }
 
   return null;
