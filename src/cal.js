@@ -368,12 +368,8 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
   }
 
   // --- B. 前方探索 ---
-  // ロジック: pointSec 以降の最初の天候境界から探索開始、minRepopSec も考慮
-  let forwardCursor = ceilToWeatherCycle(pointSec); // pointSec 以降の最初の天候境界
-
-  if (forwardCursor < minRepopSec) {
-    forwardCursor = ceilToWeatherCycle(minRepopSec); // minRepopSec も超えるよう保証
-  }
+  // ロジック: minRepopSec か pointSec の次の天候境界から探索開始
+  let forwardCursor = ceilToWeatherCycle(Math.max(minRepopSec, pointSec));
 
   while (forwardCursor <= limitSec) {
     let accumulated = 0;
@@ -502,7 +498,7 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
         return {
           windowStart,
           windowEnd,
-          popTime: intersectStart, // ★ 修正: ET境界ではなく厳密な交差開始時刻を採用
+          popTime: windowStart, 
           remainingSec: 0
         };
       }
