@@ -317,8 +317,8 @@ function findNextSpawnTime(mob, pointSec, minRepopSec) {
 }
 
 // リポップ計算（serverUp短縮・停止判定込み）
-function calculateRepop(mob, pointSec, minRepopSec, serverUpSec, maintenanceStartSec) {
-  const nextWindow = findNextConditionWindow(mob, pointSec, minRepopSec);
+function calculateRepop(mob, pointSec, serverUpSec, maintenanceStartSec) {
+  const nextWindow = findNextConditionWindow(mob, pointSec, serverUpSec);
   const nowSec = Math.floor(Date.now() / 1000);
 
   if (!nextWindow) {
@@ -339,8 +339,8 @@ function calculateRepop(mob, pointSec, minRepopSec, serverUpSec, maintenanceStar
   }
 
   let minRepop, maxRepop;
-  // serverUp基準の短縮ロジック（既存踏襲）
-  if (mob.lastKillTime === 0 || mob.lastKillTime <= serverUpSec) {
+  // lastKillTime が未記録(0) または メンテ前の討伐 → serverUpSec 基準
+  if (!mob.lastKillTime || mob.lastKillTime <= serverUpSec) {
     if (typeof mob.REPOP_s === "number") {
       minRepop = serverUpSec + mob.REPOP_s * 0.6;
     }
@@ -348,24 +348,34 @@ function calculateRepop(mob, pointSec, minRepopSec, serverUpSec, maintenanceStar
       maxRepop = serverUpSec + mob.MAX_s * 0.6;
     }
   } else {
-    // 通常討伐後（既存踏襲）
+    // 通常討伐後 → lastKillTime 基準
     minRepop = mob.lastKillTime + mob.REPOP_s;
     maxRepop = mob.lastKillTime + mob.MAX_s;
   }
-
+  // 残り時間
   const remainingSec = maxRepop > pointSec ? maxRepop - pointSec : 0;
+  // メンテ中判定
   const isMaintenanceStop = (nowSec >= maintenanceStartSec && nowSec < serverUpSec);
-
+  // ステータス判定
   let status = "Unknown";
-  if (nowSec < minRepop) status = "Next";
-  else if (nowSec >= minRepop && nowSec < maxRepop) status = "PopWindow";
-  else if (nowSec >= maxRepop) status = "MaxOver";
-  // ConditionActive 判定は pointSec 基準（既存踏襲）
-  if (checkMobSpawnCondition(mob, pointSec)) status = "ConditionActive";
-  if (isMaintenanceStop) status = "Next";
-
+  if (nowSec < minRepop) {
+    status = "Next";
+  } else if (nowSec >= minRepop && nowSec < maxRepop) {
+    status = "PopWindow";
+  } else if (nowSec >= maxRepop) {
+    status = "MaxOver";
+  }
+  // 条件成立なら ConditionActive に昇格（ただし minRepop 以降のみ）
+  if (status === "PopWindow" && checkMobSpawnCondition(mob, pointSec)) {
+    status = "ConditionActive";
+  }
+  // メンテ中は常に Next
+  if (isMaintenanceStop) {
+    status = "Next";
+  }
+  // 経過率
   let elapsedPercent = 0;
-  if (status === "PopWindow" && maxRepop > minRepop) {
+  if ((status === "PopWindow" || status === "ConditionActive") && maxRepop > minRepop) {
     elapsedPercent = ((nowSec - minRepop) / (maxRepop - minRepop)) * 100;
   } else if (status === "MaxOver") {
     elapsedPercent = 100;
@@ -375,7 +385,7 @@ function calculateRepop(mob, pointSec, minRepopSec, serverUpSec, maintenanceStar
     popTime: minRepop,
     remainingSec,
     timeRemaining: formatDurationHM(remainingSec),
-    nextConditionSpawnDate: nextWindow.windowStart,
+    nextConditionSpawnDate: Math.max(minRepop, nextWindow.windowStart),
     conditionWindowEnd: nextWindow.windowEnd,
     status,
     elapsedPercent,
