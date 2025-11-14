@@ -124,7 +124,7 @@ async function loadBaseMobData() {
         timeRange: mob.timeRange,
         timeRanges: mob.timeRanges,
         weatherSeedRange: mob.weatherSeedRange,
-        weatherDurationSec: mob.weatherDuration,
+        weatherDuration: mob.weatherDuration,   // ★ これを追加
         Map: mob.mapImage,
         spawn_points: mob.locations,
         last_kill_time: 0,
@@ -132,20 +132,11 @@ async function loadBaseMobData() {
         last_kill_memo: "",
         spawn_cull_status: {},
         related_mob_no: mob.rank.startsWith("B") ? mob.relatedMobNo : null,
-        repopInfo: calculateRepop(
-            {
-                REPOP_s: mob.repopSeconds,
-                MAX_s: mob.maxRepopSeconds,
-                lastKillTime: 0,
-                moonPhase: mob.moonPhase,
-                conditions: mob.conditions,
-                timeRange: mob.timeRange,
-                timeRanges: mob.timeRanges,
-                weatherSeedRange: mob.weatherSeedRange,
-                weatherDurationSec: mob.weatherDuration
-            },
-            maintenance.serverUp // ← 正規化済み serverUpSec を渡す
-        )
+        repopInfo: calculateRepop({
+            REPOP_s: mob.repopSeconds,
+            MAX_s: mob.maxRepopSeconds,
+            last_kill_time: 0,
+        }, maintenance) // ← 正規化済み maintenance を渡す
     }));
 
     setBaseMobData(baseMobData);
