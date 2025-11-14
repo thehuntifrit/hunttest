@@ -3,12 +3,12 @@
 // ===== 定数 =====
 const ET_HOUR_SEC = 175;                 // 1 ET時間 = 175秒
 const WEATHER_CYCLE_SEC = 1400;          // 天候サイクル = 1400秒 (23分20秒)
-const ET_DAY_SEC = ET_HOUR_SEC * 24;     // 1 ET日 = 4200秒
+const ET_DAY_SEC = ET_HOUR_SEC * 24;     // 1 ET日 = 4200秒 (1 phase 変化にかかる秒数)
 const MOON_CYCLE_SEC = ET_DAY_SEC * 32;  // 月齢サイクル = 134400秒 (37時間20分)
 const MOON_PHASE_DURATION_SEC = ET_DAY_SEC * 4; // 新月/満月 = 4 ET日 (16800秒)
 const MAX_CONSECUTIVE_CYCLES = 20;       // 最大継続結合サイクル数 (+19回分)
 
-// ===== 表示ユーティリティ =====
+// ===== 表示ユーティリティ (変更なし) =====
 function formatDuration(seconds) {
   const totalMinutes = Math.floor(seconds / 60);
   const h = Math.floor(totalMinutes / 60);
@@ -55,7 +55,7 @@ function formatLastKillTime(timestamp) {
   return new Intl.DateTimeFormat("ja-JP", options).format(date);
 }
 
-// ===== ET時間関連 =====
+// ===== ET時間関連 (変更なし) =====
 function getEorzeaTime(date = new Date()) {
   const unixMs = date.getTime();
   const REAL_MS_PER_ET_HOUR = ET_HOUR_SEC * 1000;
@@ -103,40 +103,51 @@ function getEorzeaMoonInfo(date = new Date()) {
   const phase = (eorzeaTotalDays % 32) + 1; // 1〜33 の連続値として扱われる
 
   let label = null;
-  if (phase >= 32.5 || phase < 4.5) label = "新月";
-  else if (phase >= 16.5 && phase < 20.5) label = "満月";
+  if (phase >= 32.5 || phase < 4.5) label = "新月"; // 32日12:00〜4日12:00
+  else if (phase >= 16.5 && phase < 20.5) label = "満月"; // 16日12:00〜20日12:00
 
   return { phase, label };
 }
 
-// 近傍判定用（ETグリッドで±0.6日 ≒ ±14.4ET時間程度の緩め判定）
-function isNearPhase(phase, target) {
-  const diff = Math.abs(((phase - target + 32) % 32));
-  return diff < 0.6 || diff > 31.4;
+// 修正: 厳密な月齢開始時刻を直接計算 (phase = 32.5)
+function calculateNextNewMoonStart(startSec) {
+  const startPhase = getEorzeaMoonInfo(new Date(startSec * 1000)).phase;
+  const targetPhase = 32.5;
+
+  let phaseDiff = targetPhase - startPhase;
+  if (phaseDiff < 0) phaseDiff += 32; // サイクルを跨ぐ
+
+  // 1 phase = 4200 秒 (ET_DAY_SEC)
+  let nextStartSec = startSec + phaseDiff * ET_DAY_SEC;
+  
+  // 探索範囲の限界を超えた場合の次のサイクルへ
+  if (nextStartSec > startSec + MOON_CYCLE_SEC) {
+    nextStartSec -= MOON_CYCLE_SEC;
+  } else if (nextStartSec < startSec) {
+    nextStartSec += MOON_CYCLE_SEC;
+  }
+  
+  return nextStartSec;
 }
 
-// 新月開始（phase ~32 近傍）をETグリッドで探索
-function findNextNewMoonStart(startSec) {
-  let t = alignToEtHour(startSec);
-  const limit = startSec + MOON_CYCLE_SEC * 2;
-  while (t < limit) {
-    const { phase } = getEorzeaMoonInfo(new Date(t * 1000));
-    if (isNearPhase(phase, 32)) return t;
-    t += ET_HOUR_SEC;
-  }
-  return null;
-}
+// 修正: 厳密な月齢開始時刻を直接計算 (phase = 16.5)
+function calculateNextFullMoonStart(startSec) {
+  const startPhase = getEorzeaMoonInfo(new Date(startSec * 1000)).phase;
+  const targetPhase = 16.5;
 
-// 満月開始（phase ~16 近傍）をETグリッドで探索
-function findNextFullMoonStart(startSec) {
-  let t = alignToEtHour(startSec);
-  const limit = startSec + MOON_CYCLE_SEC * 2;
-  while (t < limit) {
-    const { phase } = getEorzeaMoonInfo(new Date(t * 1000));
-    if (isNearPhase(phase, 16)) return t;
-    t += ET_HOUR_SEC;
+  let phaseDiff = targetPhase - startPhase;
+  if (phaseDiff < 0) phaseDiff += 32; // サイクルを跨ぐ
+
+  // 1 phase = 4200 秒 (ET_DAY_SEC)
+  let nextStartSec = startSec + phaseDiff * ET_DAY_SEC;
+  
+  if (nextStartSec > startSec + MOON_CYCLE_SEC) {
+    nextStartSec -= MOON_CYCLE_SEC;
+  } else if (nextStartSec < startSec) {
+    nextStartSec += MOON_CYCLE_SEC;
   }
-  return null;
+
+  return nextStartSec;
 }
 
 // 月齢区間列挙（開始→4ET日）
@@ -145,9 +156,14 @@ function enumerateMoonRanges(startSec, endSec, moonPhase) {
   const ranges = [];
   let moonStart = null;
 
-  if (moonPhase === "新月") moonStart = findNextNewMoonStart(startSec);
-  else if (moonPhase === "満月") moonStart = findNextFullMoonStart(startSec);
+  if (moonPhase === "新月") moonStart = calculateNextNewMoonStart(startSec);
+  else if (moonPhase === "満月") moonStart = calculateNextFullMoonStart(startSec);
   else return [[startSec, endSec]];
+
+  // 探索開始点以前の moonStart は無視する
+  while (moonStart < startSec) {
+    moonStart += MOON_CYCLE_SEC;
+  }
 
   while (moonStart && moonStart < endSec) {
     const moonEnd = moonStart + MOON_PHASE_DURATION_SEC; // 4 ET日
@@ -164,7 +180,7 @@ function isOtherNightsPhase(phase) {
   return phase >= 1.5 && phase < 4.5; // 1日12:00〜4日12:00
 }
 
-// ===== 天候関連 =====
+// ===== 天候関連 (変更なし) =====
 function getEorzeaWeatherSeed(date = new Date()) {
   const unixSeconds = Math.floor(date.getTime() / 1000);
   const eorzeanHours = Math.floor(unixSeconds / ET_HOUR_SEC);
@@ -202,7 +218,7 @@ function checkWeatherInRange(mob, seed) {
   return false;
 }
 
-// ===== ET時間帯関連 =====
+// ===== ET時間帯関連 (変更なし) =====
 function checkTimeRange(timeRange, realSec) {
   const etHour = getEtHourFromRealSec(realSec);
   const { start, end } = timeRange;
@@ -378,7 +394,7 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
       return {
         windowStart,
         windowEnd,
-        popTime: Math.max(windowStart, pointSec), // ★ windowStartとpointSecの遅い方
+        popTime: windowStart, // ★ 未来のウィンドウなので windowStart を採用
         remainingSec: 0
       };
     }
@@ -397,7 +413,8 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
 
 // ===== 条件ウィンドウ探索 =====
 function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
-  const moonScanStart = alignToWeatherCycle(pointSec - MOON_PHASE_DURATION_SEC); // 月齢探索の安全な過去起点
+  // 月齢の探索開始を pointSec の MOON_PHASE_DURATION_SEC 前から開始する
+  const moonScanStart = Math.max(minRepopSec, pointSec) - MOON_PHASE_DURATION_SEC;
   const moonRanges = enumerateMoonRanges(moonScanStart, limitSec, mob.moonPhase);
 
   for (const [moonStart, moonEnd] of moonRanges) {
@@ -420,6 +437,9 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
       
       if (intersectStart >= intersectEnd) continue;
     
+      // ★ 修正：探索開始点を pointSec 以降にクリップ (複合条件での結果なしを解消)
+      intersectStart = Math.max(intersectStart, pointSec); 
+
       // ET条件なし（天候/月齢条件のみ）の場合の処理
       if (!mob.timeRange && !mob.timeRanges && !mob.conditions) {
         
@@ -435,46 +455,50 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
         } 
         // pointSec が成立区間より前にある場合 (未来のウィンドウ開始)
         else if (intersectStart > pointSec) {
-          const nextPopTime = Math.max(intersectStart, pointSec); 
+          // popTimeは windowStart をそのまま採用 (月齢はリアルタイム時刻)
           return {
             windowStart: intersectStart,
             windowEnd: intersectEnd,
-            popTime: nextPopTime, // ★ Math.maxを適用
+            popTime: intersectStart, 
             remainingSec: 0
           };
         }
       }
+    } else {
+      // 天候条件がない場合でも、pointSec 以降にクリップ
+      intersectStart = Math.max(intersectStart, pointSec); 
     }
     
     // --- 2. ET条件の走査 ---
     
-    // 探索起点を Math.max(intersectStart, minRepopSec) の次の ET 時間境界とする
-    let etCursor = ceilToEtHour(Math.max(intersectStart, minRepopSec));
+    // 探索起点を intersectStart の 次の ET 時間境界とする
+    let etCursor = ceilToEtHour(intersectStart); 
 
     while (etCursor < intersectEnd) {
       if (checkEtCondition(mob, etCursor)) {
         const etEndRaw = getEtWindowEnd(mob, etCursor);
         const etEnd = Math.min(etEndRaw, intersectEnd);
         
-        // popTimeは etCursor と pointSec の遅い方
-        const popTime = Math.max(etCursor, pointSec);
-        
-        // pointSec が成立ウィンドウ内にいるかチェック (現在成立中)
-        if (pointSec >= etCursor && pointSec < etEnd) {
-          const remainingSec = etEnd - pointSec;
+        const windowStart = etCursor;
+        const windowEnd = etEnd;
+
+        // pointSec が成立ウィンドウ内にいるかチェック (現在成立中/基準点跨ぎ)
+        if (pointSec >= windowStart && pointSec < windowEnd) {
+          const remainingSec = windowEnd - pointSec;
           return {
-            windowStart: etCursor,
-            windowEnd: etEnd,
+            windowStart,
+            windowEnd,
             popTime: pointSec, // ★ 基準点 pointSec を採用
             remainingSec
           };
         }
 
-        // 未来の成立開始点を返す (etCursor > pointSec の場合)
+        // 未来の成立開始点を返す 
+        // windowStart (etCursor) は pointSec 以降の ET 境界
         return {
-          windowStart: etCursor,
-          windowEnd: etEnd,
-          popTime, // ★ Math.maxを適用
+          windowStart,
+          windowEnd,
+          popTime: windowStart, 
           remainingSec: 0
         };
       }
@@ -486,7 +510,7 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
   return null;
 }
 
-// ===== メイン REPOP 計算 =====
+// ===== メイン REPOP 計算 (変更なし) =====
 function calculateRepop(mob, maintenance) {
   const now = Date.now() / 1000;
   const lastKill = mob.last_kill_time || 0;
@@ -599,7 +623,7 @@ function calculateRepop(mob, maintenance) {
   }
 }
 
-// ===== 後方互換：点判定関数 =====
+// ===== 後方互換：点判定関数 (変更なし) =====
 function checkMobSpawnCondition(mob, date) {
   const pointSec = Math.floor(date.getTime() / 1000);
   // 月齢条件
@@ -641,7 +665,7 @@ function findNextSpawnTime(mob, pointSec, minRepopSec, limitSec) {
   return null;
 }
 
-// ===== エクスポート =====
+// ===== エクスポート (変更なし) =====
 export {
   calculateRepop,
   checkMobSpawnCondition,
