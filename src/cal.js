@@ -350,7 +350,6 @@ function calculateRepop(mob, pointSec, minRepopSec, limitSec, serverUpSec) {
         }
     }
 
-
     const remainingSec = maxRepop > pointSec ? maxRepop - pointSec : 0;
     const isMaintenanceStop = serverUpSec > pointSec;
 
