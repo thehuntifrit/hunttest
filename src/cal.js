@@ -97,13 +97,11 @@ function ceilToWeatherCycle(realSec) {
 }
 
 // ===== 月齢関連 =====
-// フェーズは 1〜32 の連続値（小数含む、意図としては 1〜33）
 function getEorzeaMoonInfo(date = new Date()) {
   const unixSeconds = date.getTime() / 1000;
   const EORZEA_SPEED_RATIO = 20.57142857142857;
   const eorzeaTotalDays = (unixSeconds * EORZEA_SPEED_RATIO) / 86400;
-  const phase = (eorzeaTotalDays % 32) + 1; // 1〜32
-  // 備考: 仕様では 1〜33 の連続値として扱われる
+  const phase = (eorzeaTotalDays % 32) + 1; // 1〜33 の連続値として扱われる
 
   let label = null;
   if (phase >= 32.5 || phase < 4.5) label = "新月";
@@ -520,12 +518,10 @@ function calculateRepop(mob, maintenance) {
   );
 
   if (hasCondition) {
-    // *** [C1: 探索限界を20日に拡大] ***
     const searchLimit = pointSec + 20 * 24 * 3600;
 
     let conditionResult = null;
-    
-    // *** findConsecutiveWeatherをfindNextConditionWindowに統合/置き換え ***
+      // *** findConsecutiveWeatherをfindNextConditionWindowに統合/置き換え ***
     if (mob.weatherDuration?.minutes) {
       // 連続天候モブの場合、天候探索のみを実行し、結果をconditionResultに格納
       conditionResult = findWeatherWindow(mob, pointSec, minRepop, searchLimit);
@@ -596,8 +592,6 @@ function calculateRepop(mob, maintenance) {
     };
   }
 }
-
-// findConsecutiveWeather は廃止（コードから削除済み）
 
 // ===== 後方互換：点判定関数 =====
 function checkMobSpawnCondition(mob, date) {
