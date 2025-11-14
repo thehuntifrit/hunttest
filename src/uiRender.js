@@ -415,7 +415,7 @@ function updateProgressText(card, mob) {
       <div class="pl-2 text-left">${leftStr}${percentStr}</div>
       <div class="pr-1 text-right toggle-container">
         <span class="label-in">in ${inTimeStr}</span>
-        <span class="label-next" style="display:none;">Next ${nextTimeStr}</span>
+        <span class="label-next" style="display:none;">${nextTimeStr}</span>
       </div>
     </div>
   `;
