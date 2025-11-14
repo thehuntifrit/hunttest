@@ -352,83 +352,93 @@ function updateProgressBar(card, mob) {
 }
 
 function updateProgressText(card, mob) {
-  const text = card.querySelector(".progress-text");
-  if (!text) return;
+  const text = card.querySelector(".progress-text");
+  if (!text) return;
 
-  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status, isInConditionWindow, remainingSec
-        } = mob.repopInfo || {};
+  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status, isInConditionWindow, remainingSec, timeRemaining
+        } = mob.repopInfo || {};
 
-  const absFmt = { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" };
-  // 右側：最短REPOP時刻（宣言衝突回避のため let に統一）
-  let inTimeStr = "未確定";
-  if (nextMinRepopDate) {
-    try {
-      inTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(nextMinRepopDate);
-    } catch {
-      inTimeStr = "未確定";
-    }
-  }
-  // 右側：特殊条件 Next（条件がある場合のみ）
-  let nextTimeStr = "";
-  const hasCondition =
-    !!(mob.moonPhase || mob.timeRange || mob.timeRanges || mob.weatherSeedRange || mob.weatherSeedRanges || mob.conditions);
+  const absFmt = { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" };
+  
+  // 右側：最短REPOP時刻
+  let inTimeStr = "未確定";
+  if (nextMinRepopDate) {
+    try {
+      inTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(nextMinRepopDate);
+    } catch {
+      inTimeStr = "未確定";
+    }
+  }
+  
+  // 右側：特殊条件 Next（トグル対象）
+  let nextTimeStr = "";
+  const hasCondition =
+    !!(mob.moonPhase || mob.timeRange || mob.timeRanges || mob.weatherSeedRange || mob.weatherSeedRanges || mob.conditions);
 
-  if (hasCondition) {
-    if (isInConditionWindow && remainingSec > 0) {
-      // 残り時間（@表示）
-      const mins = Math.floor(remainingSec / 60);
-      nextTimeStr = mins > 0 ? `@ ${mins}分` : "@ 00分";
-    } else if (nextConditionSpawnDate) {
-      // 未来成立は日時表示
-      try {
-        nextTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(nextConditionSpawnDate);
-      } catch {
-        nextTimeStr = "";
-      }
-    } else {
-      // 条件ありだが未確定 → トグル対象にしないため空文字
-      nextTimeStr = "";
-    }
-  }
-  // 左側：進捗状態
-  const nowSec = Date.now() / 1000;
-  let leftStr = "未確定";
-  if (status === "Next") {
-    leftStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
-  } else if (status === "PopWindow") {
-    leftStr = `残り ${formatDurationHM(maxRepop - nowSec)}`;
-  } else if (status === "MaxOver") {
-    leftStr = `Time Over (100%)`;
-  }
-  // 進捗％は MaxOver/Unknown 以外のみ表示
-  const percentStr = status !== "MaxOver" && status !== "Unknown" ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)` : "";
+  if (hasCondition) {
+    if (isInConditionWindow && (status === "PopWindow" || status === "ConditionActive") && remainingSec > 0) {
+      // ★ 修正点: PopWindow/ConditionActive中で条件成立中の場合、残り時間をトグル対象にする
+      // formatDurationHM を使用して「残り 00h00m」形式で表示
+      nextTimeStr = `残り ${formatDurationHM(remainingSec)}`;
+    } else if (nextConditionSpawnDate && status === "Next") {
+      // Next 時間帯で、次に条件が成立する日時を表示
+      try {
+        nextTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(nextConditionSpawnDate);
+      } catch {
+        nextTimeStr = "";
+      }
+    } else {
+      nextTimeStr = "";
+    }
+  }
+  
+  // 左側：進捗状態
+  const nowSec = Date.now() / 1000;
+  let leftStr = "未確定";
 
-  text.innerHTML = `
-    <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
-      <div class="pl-2 text-left">${leftStr}${percentStr}</div>
-      <div class="pr-1 text-right toggle-container">
-        <span class="label-in">in ${inTimeStr}</span>
-        <span class="label-next" style="display:none;">${nextTimeStr}</span>
-      </div>
-    </div>
-  `;
+  // ConditionActive の表示ロジックは左側（leftStr）に残す
+  if (status === "ConditionActive") {
+    leftStr = timeRemaining; // calculateRepop から計算済みの残り時間文字列を使用
+  } else if (status === "Next") {
+    leftStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
+  } else if (status === "PopWindow") {
+    leftStr = `残り ${formatDurationHM(maxRepop - nowSec)}`;
+  } else if (status === "MaxOver") {
+    leftStr = `Time Over (100%)`;
+  }
+  
+  // 進捗％は MaxOver/Unknown/ConditionActive 以外のみ表示
+  const percentStr = status !== "MaxOver" && status !== "Unknown" && status !== "ConditionActive" 
+    ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)` 
+    : "";
 
-  // --- 状態に応じたクラス付与 ---
-  if (status === "MaxOver") text.classList.add("max-over");
-  else text.classList.remove("max-over");
+  text.innerHTML = `
+    <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
+      <div class="pl-2 text-left">${leftStr}${percentStr}</div>
+      <div class="pr-1 text-right toggle-container">
+        <span class="label-in">in ${inTimeStr}</span>
+        <span class="label-next" style="display:none;">${nextTimeStr}</span>
+      </div>
+    </div>
+  `;
 
-  if (minRepop - nowSec >= 3600) text.classList.add("long-wait");
-  else text.classList.remove("long-wait");
-  // --- トグル開始条件の厳密化 ---
-  const toggleContainer = text.querySelector(".toggle-container");
-  const nextLabel = toggleContainer?.querySelector(".label-next");
-  // 次表示が存在する場合のみトグル開始（未確定＝空文字は対象外）
-  const hasNextDisplay = !!(nextLabel && nextLabel.textContent && nextLabel.textContent.trim().length > 0);
+  // --- 状態に応じたクラス付与 ---
+  if (status === "MaxOver") text.classList.add("max-over");
+  else text.classList.remove("max-over");
 
-  if (hasNextDisplay && toggleContainer && !toggleContainer.dataset.toggleStarted) {
-    startToggleInNext(toggleContainer);
-    toggleContainer.dataset.toggleStarted = "true";
-  }
+  if (minRepop - nowSec >= 3600) text.classList.add("long-wait");
+  else text.classList.remove("long-wait");
+  
+  // --- トグル開始条件の厳密化 ---
+  const toggleContainer = text.querySelector(".toggle-container");
+  const nextLabel = toggleContainer?.querySelector(".label-next");
+  // 次表示が存在する場合のみトグル開始（未確定＝空文字は対象外）
+  const hasNextDisplay = !!(nextLabel && nextLabel.textContent && nextLabel.textContent.trim().length > 0);
+
+  if (hasNextDisplay && toggleContainer && !toggleContainer.dataset.toggleStarted) {
+    startToggleInNext(toggleContainer);
+    toggleContainer.dataset.toggleStarted = "true";
+  }
 }
 
 function startToggleInNext(container) {
