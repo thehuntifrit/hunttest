@@ -321,7 +321,7 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
   let currentWindowEnd = currentCursor + WEATHER_CYCLE_SEC; 
 
   // 探索を始める安全な過去の境界 
-  const scanStart = ceilToWeatherCycle(pointSec - backSec); 
+  const scanStart = ceilToWeatherCycle(pointSec - backSec); 
   
   let consecutiveCycles = 0;
   let lastHitStart = null; 
@@ -369,7 +369,9 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
 
   // --- B. 前方探索 ---
   // ロジック: minRepopSec か pointSec の次の天候境界から探索開始
-  let forwardCursor = ceilToWeatherCycle(Math.max(minRepopSec, pointSec));
+  // [OLD] let forwardCursor = ceilToWeatherCycle(Math.max(minRepopSec, pointSec));
+  // 【修正点3】探索開始を pointSec を含むか直前の境界 (align) に変更
+  let forwardCursor = alignToWeatherCycle(Math.max(minRepopSec, pointSec));
 
   while (forwardCursor <= limitSec) {
     let accumulated = 0;
@@ -471,7 +473,7 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
       intersectStart = Math.max(intersectStart, pointSec); 
     }
     
-    // --- 2. ET条件の走査 (変更なし) ---
+    // --- 2. ET条件の走査 (ETロジック維持) ---
     
     // 探索起点を intersectStart の 次の ET 時間境界とする
     let etCursor = ceilToEtHour(intersectStart); 
