@@ -511,129 +511,126 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
 
 // ===== メイン REPOP 計算 (UIロジック修正) =====
 function calculateRepop(mob, maintenance) {
-  const now = Date.now() / 1000;
-  const lastKill = mob.last_kill_time || 0;
-  const repopSec = mob.REPOP_s;
-  const maxSec = mob.MAX_s;
+  const now = Date.now() / 1000;
+  const lastKill = mob.last_kill_time || 0;
+  const repopSec = mob.REPOP_s;
+  const maxSec = mob.MAX_s;
 
-  let maint = maintenance;
-  if (maint && typeof maint === "object" && "maintenance" in maint && maint.maintenance) {
-    maint = maint.maintenance;
-  }
-  if (!maint || !maint.serverUp || !maint.start) return baseResult("Unknown");
+  let maint = maintenance;
+  if (maint && typeof maint === "object" && "maintenance" in maint && maint.maintenance) {
+    maint = maint.maintenance;
+  }
+  if (!maint || !maint.serverUp || !maint.start) return baseResult("Unknown");
 
-  const serverUp = new Date(maint.serverUp).getTime() / 1000;
-  const maintenanceStart = new Date(maint.start).getTime() / 1000;
+  const serverUp = new Date(maint.serverUp).getTime() / 1000;
+  const maintenanceStart = new Date(maint.start).getTime() / 1000;
 
-  let minRepop, maxRepop;
-  if (lastKill === 0 || lastKill <= serverUp) {
-    minRepop = serverUp + repopSec * 0.6;
-    maxRepop = serverUp + maxSec * 0.6;
-  } else {
-    minRepop = lastKill + repopSec;
-    maxRepop = lastKill + maxSec;
-  }
+  let minRepop, maxRepop;
+  if (lastKill === 0 || lastKill <= serverUp) {
+    minRepop = serverUp + repopSec * 0.6;
+    maxRepop = serverUp + maxSec * 0.6;
+  } else {
+    minRepop = lastKill + repopSec;
+    maxRepop = lastKill + maxSec;
+  }
 
-  const pointSec = Math.max(minRepop, now);
-  const nextMinRepopDate = new Date(minRepop * 1000);
+  const pointSec = Math.max(minRepop, now);
+  const nextMinRepopDate = new Date(minRepop * 1000);
 
-  let status = "Unknown";
-  let elapsedPercent = 0;
-  let timeRemaining = "Unknown";
+  let status = "Unknown";
+  let elapsedPercent = 0;
+  let timeRemaining = "Unknown";
 
-  let nextConditionSpawnDate = null;
-  let conditionWindowEnd = null;
-  let isInConditionWindow = false;
+  let nextConditionSpawnDate = null;
+  let conditionWindowEnd = null;
+  let isInConditionWindow = false;
 
-  const hasCondition = !!(
-    mob.moonPhase ||
-    mob.timeRange ||
-    mob.timeRanges ||
-    mob.weatherSeedRange ||
-    mob.weatherSeedRanges ||
-    mob.conditions
-  );
+  const hasCondition = !!(
+    mob.moonPhase ||
+    mob.timeRange ||
+    mob.timeRanges ||
+    mob.weatherSeedRange ||
+    mob.weatherSeedRanges ||
+    mob.conditions
+  );
 
-  if (hasCondition) {
-    const searchLimit = pointSec + 20 * 24 * 3600;
+  if (hasCondition) {
+    const searchLimit = pointSec + 20 * 24 * 3600;
 
-    let conditionResult = null;
-    conditionResult = findNextConditionWindow(mob, pointSec, minRepop, searchLimit);
+    let conditionResult = null;
+    conditionResult = findNextConditionWindow(mob, pointSec, minRepop, searchLimit);
 
-    if (conditionResult) {
-      const { windowStart, windowEnd, popTime, remainingSec } = conditionResult;
-      isInConditionWindow = (pointSec >= windowStart && pointSec < windowEnd);
+    if (conditionResult) {
+      const { windowStart, windowEnd, popTime, remainingSec } = conditionResult;
+      isInConditionWindow = (pointSec >= windowStart && pointSec < windowEnd);
 
-      const nextSec = popTime;
+      const nextSec = popTime;
 
-      nextConditionSpawnDate = new Date(nextSec * 1000);
-      conditionWindowEnd = new Date(windowEnd * 1000);
+      nextConditionSpawnDate = new Date(nextSec * 1000);
+      conditionWindowEnd = new Date(windowEnd * 1000);
 
-      // 【修正箇所: UIロジック】
-      if (isInConditionWindow) {
-        // 1. 現在成立中の処理 (変更なし)
-        timeRemaining = `残り ${formatDurationHM(remainingSec)}`;
-        status = "ConditionActive";
-      } else {
-        // 2. 未来のウィンドウが見つかった場合の処理 (追加)
-        const timeToCondition = nextSec - now;
-        
-        if (timeToCondition > 0) {
-          timeRemaining = `Next Condition: ${formatDurationHM(timeToCondition)}`;
-          status = "NextCondition";
-        }
-      }
-    }
-  }
+      if (isInConditionWindow) {
+        // 1. 現在成立中の処理
+        timeRemaining = `残り ${formatDurationHM(remainingSec)}`;
+        status = "ConditionActive";
+      } else {
+        // 2. 未来のウィンドウが見つかった場合の処理
+        const timeToCondition = nextSec - now;
+        
+        if (timeToCondition > 0) {
+          timeRemaining = `Next Condition: ${formatDurationHM(timeToCondition)}`;
+          status = "NextCondition";
+        }
+      }
+    }
+  }
 
-  // isInConditionWindow かつ Future Condition の場合は、ここでステータスが決定済み。
-  // それ以外（条件なし or 条件付きだが min/maxRepop の時刻が早い）の場合に、従来のロジックを実行。
-  if (!isInConditionWindow) {
-    if (status === "NextCondition") {
-      // 未来の条件時刻が設定されている場合は、minRepop/maxRepopのロジックを実行しない。
-    } else if (now >= maxRepop) {
-      status = "MaxOver";
-      elapsedPercent = 100;
-      timeRemaining = `Time Over (100%)`;
-    } else if (now < minRepop) {
-      status = "Next";
-      timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
-    } else {
-      status = "PopWindow";
-      elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
-      timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
-    }
-  }
+  // 【修正箇所】: status が ConditionActive または NextCondition 以外の場合に、
+  // 従来の minRepop/maxRepop のロジックを実行する。
+  if (status !== "ConditionActive" && status !== "NextCondition") {
+    if (now >= maxRepop) {
+      status = "MaxOver";
+      elapsedPercent = 100;
+      timeRemaining = `Time Over (100%)`;
+    } else if (now < minRepop) {
+      status = "Next";
+      timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
+    } else {
+      status = "PopWindow";
+      elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
+      timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
+    }
+  }
 
-  const isMaintenanceStop = (now >= maintenanceStart && now < serverUp);
+  const isMaintenanceStop = (now >= maintenanceStart && now < serverUp);
 
-  return {
-    minRepop,
-    maxRepop,
-    elapsedPercent,
-    timeRemaining,
-    status,
-    nextMinRepopDate,
-    nextConditionSpawnDate,
-    conditionWindowEnd,
-    isInConditionWindow,
-    isMaintenanceStop
-  };
+  return {
+    minRepop,
+    maxRepop,
+    elapsedPercent,
+    timeRemaining,
+    status,
+    nextMinRepopDate,
+    nextConditionSpawnDate,
+    conditionWindowEnd,
+    isInConditionWindow,
+    isMaintenanceStop
+  };
 
-  function baseResult(status) {
-    return {
-      minRepop: null,
-      maxRepop: null,
-      elapsedPercent: 0,
-      timeRemaining: "未確定",
-      status,
-      nextMinRepopDate: null,
-      nextConditionSpawnDate: null,
-      conditionWindowEnd: null,
-      isInConditionWindow: false,
-      isMaintenanceStop: false
-    };
-  }
+  function baseResult(status) {
+    return {
+      minRepop: null,
+      maxRepop: null,
+      elapsedPercent: 0,
+      timeRemaining: "未確定",
+      status,
+      nextMinRepopDate: null,
+      nextConditionSpawnDate: null,
+      conditionWindowEnd: null,
+      isInConditionWindow: false,
+      isMaintenanceStop: false
+    };
+  }
 }
 
 // ===== 後方互換：点判定関数 (変更なし) =====
