@@ -369,8 +369,7 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
 
   // --- B. 前方探索 ---
   // ロジック: minRepopSec か pointSec の次の天候境界から探索開始
-  // [OLD] let forwardCursor = alignToWeatherCycle(Math.max(minRepopSec, pointSec));
-  // 【修正点1】探索開始を ceil に戻す: pointSec 以降の未来の天候条件を正しく拾うため
+  // 【修正点1】探索開始を ceil に戻す: pointSec 以降の未来の天候条件を正しく拾うため (元のロジックを維持)
   let forwardCursor = ceilToWeatherCycle(Math.max(minRepopSec, pointSec));
 
   while (forwardCursor <= limitSec) {
@@ -397,7 +396,7 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
         windowStart,
         windowEnd,
         // 連続条件を満たした時刻 (windowStart + backSec) を popTime に採用
-        popTime: windowStart + backSec, 
+        popTime: windowStart, 
         remainingSec: 0
       };
     }
@@ -414,7 +413,7 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
   return null;
 }
 
-// ===== 条件ウィンドウ探索 =====
+// ===== 条件ウィンドウ探索 (変更なし) =====
 function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
   // 月齢の探索開始を pointSec の MOON_PHASE_DURATION_SEC 前から開始する
   const moonScanStart = Math.max(minRepopSec, pointSec) - MOON_PHASE_DURATION_SEC;
@@ -441,10 +440,6 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
       
       if (intersectStart >= intersectEnd) continue;
     
-      // 【修正点2】不要なクリップ処理を削除。
-      // 未来の天候条件が pointSec で切り捨てられる問題を解消
-      // intersectStart = Math.max(intersectStart, pointSec);  <-- 削除
-
       // ET条件なし（天候/月齢条件のみ）の場合の処理
       if (!mob.timeRange && !mob.timeRanges && !mob.conditions) {
         
@@ -470,16 +465,12 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
         }
       }
     } else {
-      // 天候条件がない場合でも、pointSec 以降にクリップ
-      // 【修正点2】天候条件なしの場合のクリップ処理も削除し、ロジックを統一
-      // intersectStart = Math.max(intersectStart, pointSec);  <-- 削除
+      // 天候条件がない場合でも、pointSec 以降にクリップは行わない
     }
     
     // --- 2. ET条件の走査 (ETロジック維持) ---
     
     // 探索起点を max(intersectStart, pointSec) の 次の ET 時間境界とする
-    // intersectStart は月齢の開始点か天候のpopTimeであり、pointSec以前のものを含みうる。
-    // ET条件の探索はpointSec以降から始める必要があるため、ここでpointSecを考慮する
     let etCursor = ceilToEtHour(Math.max(intersectStart, pointSec)); 
 
     while (etCursor < intersectEnd) {
@@ -518,7 +509,7 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
   return null;
 }
 
-// ===== メイン REPOP 計算 (変更なし) =====
+// ===== メイン REPOP 計算 (UIロジック修正) =====
 function calculateRepop(mob, maintenance) {
   const now = Date.now() / 1000;
   const lastKill = mob.last_kill_time || 0;
@@ -578,15 +569,29 @@ function calculateRepop(mob, maintenance) {
       nextConditionSpawnDate = new Date(nextSec * 1000);
       conditionWindowEnd = new Date(windowEnd * 1000);
 
+      // 【修正箇所: UIロジック】
       if (isInConditionWindow) {
+        // 1. 現在成立中の処理 (変更なし)
         timeRemaining = `残り ${formatDurationHM(remainingSec)}`;
         status = "ConditionActive";
+      } else {
+        // 2. 未来のウィンドウが見つかった場合の処理 (追加)
+        const timeToCondition = nextSec - now;
+        
+        if (timeToCondition > 0) {
+          timeRemaining = `Next Condition: ${formatDurationHM(timeToCondition)}`;
+          status = "NextCondition";
+        }
       }
     }
   }
 
+  // isInConditionWindow かつ Future Condition の場合は、ここでステータスが決定済み。
+  // それ以外（条件なし or 条件付きだが min/maxRepop の時刻が早い）の場合に、従来のロジックを実行。
   if (!isInConditionWindow) {
-    if (now >= maxRepop) {
+    if (status === "NextCondition") {
+      // 未来の条件時刻が設定されている場合は、minRepop/maxRepopのロジックを実行しない。
+    } else if (now >= maxRepop) {
       status = "MaxOver";
       elapsedPercent = 100;
       timeRemaining = `Time Over (100%)`;
@@ -650,7 +655,7 @@ function checkMobSpawnCondition(mob, date) {
   return true;
 }
 
-// ===== 後方互換：次スポーン時刻（修正版） =====
+// ===== 後方互換：次スポーン時刻（変更なし） =====
 function findNextSpawnTime(mob, pointSec, minRepopSec, limitSec) {
   const hasCondition = !!(
     mob.moonPhase ||
