@@ -315,7 +315,7 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
   const requiredSec = requiredMinutes > 0 ? requiredMinutes * 60 : WEATHER_CYCLE_SEC;
   const backSec = requiredSec;
 
-  // --- A. 巻き戻し探索 ---
+  // --- A. 巻き戻し探索 (変更なし) ---
   let currentCursor = alignToWeatherCycle(pointSec);
   let currentWindowEnd = currentCursor + WEATHER_CYCLE_SEC;
   const scanStart = ceilToWeatherCycle(pointSec - backSec);
@@ -356,7 +356,7 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
     currentWindowEnd -= WEATHER_CYCLE_SEC;
   }
 
-  // --- B. 前方探索 ---
+  // --- B. 前方探索 (変更なし) ---
   let forwardCursor = ceilToWeatherCycle(Math.max(minRepopSec, pointSec));
 
   while (forwardCursor <= limitSec) {
@@ -379,7 +379,7 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
       return {
         windowStart,
         windowEnd,
-        popTime: windowStart, // ★ 修正: backSecではなく開始点を返す
+        popTime: windowStart, // 開始点を返す
         remainingSec: 0
       };
     }
@@ -406,13 +406,14 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
       const weatherResult = findWeatherWindow(mob, pointSec, minRepopSec, moonEnd);
       if (!weatherResult) continue;
 
-      // ★ 修正: popTimeではなくwindowStartを基準に交差
+      // windowStartを基準に交差 (変更なし)
       intersectStart = Math.max(weatherResult.windowStart, moonStart);
       intersectEnd = Math.min(weatherResult.windowEnd, moonEnd);
 
       if (intersectStart >= intersectEnd) continue;
 
       if (!mob.timeRange && !mob.timeRanges && !mob.conditions) {
+        // 1. 現在成立中の処理
         if (pointSec >= intersectStart && pointSec < intersectEnd) {
           const remainingSec = intersectEnd - pointSec;
           return {
@@ -421,11 +422,18 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
             popTime: pointSec,
             remainingSec
           };
-        } else if (intersectStart > pointSec) {
+        } 
+        
+        // 2. 末来ウィンドウの処理
+        else if (intersectStart > pointSec) {
+          const finalPopTime = Math.max(intersectStart, minRepopSec); 
+          
+          if (finalPopTime >= intersectEnd) continue;
+
           return {
-            windowStart: intersectStart,
+            windowStart: finalPopTime, // popTime が windowStart を兼ねる
             windowEnd: intersectEnd,
-            popTime: weatherResult.popTime,
+            popTime: finalPopTime,
             remainingSec: 0
           };
         }
