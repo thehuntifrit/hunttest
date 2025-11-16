@@ -425,7 +425,7 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
           return {
             windowStart: intersectStart,
             windowEnd: intersectEnd,
-            popTime: intersectStart,
+            popTime: weatherResult.popTime,
             remainingSec: 0
           };
         }
