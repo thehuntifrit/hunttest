@@ -270,6 +270,7 @@ function filterAndRender({ isInitialLoad = false } = {}) {
     updateProgressText(card, mob);
     updateProgressBar(card, mob);
     updateExpandablePanel(card, mob);
+    setupMobMemoUI(mob.No, mob.killTime);
   });
 
   DOM.masterContainer.innerHTML = "";
