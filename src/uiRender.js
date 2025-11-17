@@ -162,7 +162,7 @@ function createMobCard(mob) {
     <div class="px-2 py-0 text-sm space-y-0.5">
         <div class="flex justify-between items-start flex-wrap">
             <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
-            <div class="w-full text-left text-sm text-gray-300">Memo: <span data-last-memo></span></div>
+            <div class="flex items-center text-sm text-gray-300"><span class="mr-1">Memo:</span><span data-last-memo class="flex-1"></span></div>
             <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽選条件</div>
             <div class="w-full text-gray-300 text-xs mt-1">${processText(mob.Condition)}</div>
         </div>
