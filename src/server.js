@@ -275,39 +275,45 @@ function setupMobMemoUI(mobNo, killTime) {
     if (memos.length > 0) {
       const latest = memos[0];
       const postedAt = latest.created_at?.toMillis ? latest.created_at.toMillis() : 0;
-
-      if (postedAt < killTime.getTime()) {
-        memoSpan.textContent = "";
-      } else {
-        memoSpan.textContent = latest.memo_text;
-      }
+      memoSpan.textContent = postedAt < killTime.getTime() ? "" : latest.memo_text;
     } else {
       memoSpan.textContent = "";
     }
   });
+
   // 編集可能にする処理
   memoSpan.addEventListener("click", () => {
     const currentText = memoSpan.textContent;
     const input = document.createElement("input");
     input.type = "text";
     input.value = currentText;
-    input.className = "bg-gray-700 text-gray-300 text-sm flex-1 min-h-[1.5rem] px-1";
+    input.className = "bg-gray-700 text-gray-300 text-sm w-full flex-1 min-h-[1.5rem] px-2";
 
-    memoSpan.replaceWith(input);
+    // 保存ボタンを追加
+    const saveBtn = document.createElement("button");
+    saveBtn.textContent = "保存";
+    saveBtn.className = "ml-2 px-2 py-1 bg-blue-600 text-white text-sm rounded";
+
+    const container = document.createElement("div");
+    container.className = "flex items-center w-full";
+    container.appendChild(input);
+    container.appendChild(saveBtn);
+
+    memoSpan.replaceWith(container);
     input.focus();
-    // 編集完了時に保存（スマホで即閉じるのを防ぐため遅延）
-    input.addEventListener("blur", async () => {
-      setTimeout(async () => {
-        await submitMemo(mobNo, input.value);
-        memoSpan.textContent = input.value || "";
-        input.replaceWith(memoSpan);
-      }, 200);
-    });
-    // Enterキーでも保存
+
+    // 保存処理
+    const finalize = async () => {
+      await submitMemo(mobNo, input.value);
+      memoSpan.textContent = input.value || "";
+      container.replaceWith(memoSpan);
+    };
+
+    saveBtn.addEventListener("click", finalize);
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        input.blur();
+        finalize();
       }
     });
   });
