@@ -88,6 +88,8 @@ body {
   cursor: text;
 }
 
+.mob-memo-row [data-last-memo] { background: transparent; }
+
 /* 編集時の見た目（contenteditable中） */
 [data-last-memo][data-editing="true"] {
   outline: none;
