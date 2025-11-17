@@ -276,7 +276,6 @@ function setupMobMemoUI(mobNo, killTime) {
       const latest = memos[0];
       const postedAt = latest.created_at?.toMillis ? latest.created_at.toMillis() : 0;
 
-      // 討伐時間より前なら空白に見せる
       if (postedAt < killTime.getTime()) {
         memoSpan.textContent = "";
       } else {
@@ -286,28 +285,24 @@ function setupMobMemoUI(mobNo, killTime) {
       memoSpan.textContent = "";
     }
   });
-
   // 編集可能にする処理
   memoSpan.addEventListener("click", () => {
     const currentText = memoSpan.textContent;
     const input = document.createElement("input");
     input.type = "text";
     input.value = currentText;
-    // flex-1 を付けて横並びに広がるようにする
     input.className = "bg-gray-700 text-gray-300 text-sm flex-1 min-h-[1.5rem] px-1";
 
     memoSpan.replaceWith(input);
     input.focus();
-
     // 編集完了時に保存（スマホで即閉じるのを防ぐため遅延）
     input.addEventListener("blur", async () => {
       setTimeout(async () => {
-        await submitMemo(mobNo, input.value); // 既存の投稿関数を利用
+        await submitMemo(mobNo, input.value);
         memoSpan.textContent = input.value || "なし";
         input.replaceWith(memoSpan);
       }, 200);
     });
-
     // Enterキーでも保存
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
