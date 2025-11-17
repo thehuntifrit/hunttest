@@ -266,9 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // MobごとのメモUI制御
 function setupMobMemoUI(mobNo, killTime) {
-  const memoSpan = document.querySelector(
-    `[data-mob-no="${mobNo}"] [data-last-memo]`
-  );
+  const memoSpan = document.querySelector(`[data-mob-no="${mobNo}"] [data-last-memo]`);
   if (!memoSpan) return;
 
   // Firestore購読で最新メモを反映
@@ -277,9 +275,7 @@ function setupMobMemoUI(mobNo, killTime) {
     let text = "";
     if (memos.length > 0) {
       const latest = memos[0];
-      const postedAt = latest.created_at?.toMillis
-        ? latest.created_at.toMillis()
-        : 0;
+      const postedAt = latest.created_at?.toMillis ? latest.created_at.toMillis() : 0;
       text = postedAt < killTime.getTime() ? "" : (latest.memo_text || "");
     }
     if (memoSpan.getAttribute("data-editing") !== "true") {
@@ -294,8 +290,7 @@ function setupMobMemoUI(mobNo, killTime) {
     const input = document.createElement("input");
     input.type = "text";
     input.value = memoSpan.textContent;
-    input.className =
-      "bg-gray-700 text-gray-300 text-sm w-full flex-1 min-h-[1.5rem] px-2";
+    input.className = "text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
 
     memoSpan.replaceWith(input);
     input.focus();
@@ -308,7 +303,8 @@ function setupMobMemoUI(mobNo, killTime) {
       input.replaceWith(newSpan);
       setupMobMemoUI(mobNo, killTime); // 再度イベント付与
     };
-    // Enterキーでのみ保存・閉じる（PC・スマホ共通）
+
+    // Enterキーでのみ保存・閉じる
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
