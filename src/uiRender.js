@@ -272,24 +272,19 @@ filtered.forEach(mob => {
   updateExpandablePanel(card, mob);
 });
 
-// DOMに追加した後で呼ぶ
 DOM.masterContainer.innerHTML = "";
 DOM.masterContainer.appendChild(frag);
 distributeCards();
+attachLocationEvents();
 
-// ここで setupMobMemoUI を呼ぶ
+// ★ DOMに追加した後で呼ぶ
 filtered.forEach(mob => {
-  setupMobMemoUI(String(mob.No), new Date(mob.last_kill_time));
+  const killTime = mob.last_kill_time ? new Date(mob.last_kill_time) : new Date();
+  setupMobMemoUI(String(mob.No), killTime);
 });
 
-  DOM.masterContainer.innerHTML = "";
-  DOM.masterContainer.appendChild(frag);
-  distributeCards();
-
-  attachLocationEvents();
-
-  if (isInitialLoad) {
-    updateProgressBars();
+if (isInitialLoad) {
+  updateProgressBars();
   }
 }
 
