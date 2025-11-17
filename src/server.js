@@ -266,50 +266,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // MobごとのメモUI制御
 function setupMobMemoUI(mobNo, killTime) {
-  const memoSpan = document.querySelector(`[data-mob-no="${mobNo}"] [data-last-memo]`);
+  const memoSpan = document.querySelector(
+    `[data-mob-no="${mobNo}"] [data-last-memo]`
+  );
   if (!memoSpan) return;
 
   // Firestore購読で最新メモを反映
   subscribeMobMemos((data) => {
     const memos = data[mobNo] || [];
+    let text = "";
     if (memos.length > 0) {
       const latest = memos[0];
-      const postedAt = latest.created_at?.toMillis ? latest.created_at.toMillis() : 0;
-      memoSpan.textContent = postedAt < killTime.getTime() ? "" : latest.memo_text;
-    } else {
-      memoSpan.textContent = "";
+      const postedAt = latest.created_at?.toMillis
+        ? latest.created_at.toMillis()
+        : 0;
+      text = postedAt < killTime.getTime() ? "" : (latest.memo_text || "");
+    }
+    if (memoSpan.getAttribute("data-editing") !== "true") {
+      memoSpan.textContent = text;
     }
   });
-
   // 編集可能にする処理
   memoSpan.addEventListener("click", () => {
-    const currentText = memoSpan.textContent;
+    if (memoSpan.getAttribute("data-editing") === "true") return;
+    memoSpan.setAttribute("data-editing", "true");
+
     const input = document.createElement("input");
     input.type = "text";
-    input.value = currentText;
-    input.className = "bg-gray-700 text-gray-300 text-sm w-full flex-1 min-h-[1.5rem] px-2";
+    input.value = memoSpan.textContent;
+    input.className =
+      "bg-gray-700 text-gray-300 text-sm w-full flex-1 min-h-[1.5rem] px-2";
 
-    // 保存ボタンを追加
-    const saveBtn = document.createElement("button");
-    saveBtn.textContent = "保存";
-    saveBtn.className = "ml-2 px-2 py-1 bg-blue-600 text-white text-sm rounded";
-
-    const container = document.createElement("div");
-    container.className = "flex items-center w-full";
-    container.appendChild(input);
-    container.appendChild(saveBtn);
-
-    memoSpan.replaceWith(container);
+    memoSpan.replaceWith(input);
     input.focus();
 
-    // 保存処理
     const finalize = async () => {
       await submitMemo(mobNo, input.value);
-      memoSpan.textContent = input.value || "";
-      container.replaceWith(memoSpan);
+      const newSpan = document.createElement("span");
+      newSpan.setAttribute("data-last-memo", "");
+      newSpan.textContent = input.value || "なし";
+      input.replaceWith(newSpan);
+      setupMobMemoUI(mobNo, killTime); // 再度イベント付与
     };
-
-    saveBtn.addEventListener("click", finalize);
+    // Enterキーでのみ保存・閉じる
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
