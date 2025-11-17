@@ -72,16 +72,16 @@ body {
 }
 
 [data-last-memo] {
-  min-width: 50px;
-  cursor: text;
   display: inline-block;
+  width: 100%;       /* 横いっぱいに広げる */
+  min-height: 1.5rem;
+  cursor: text;
   border: 1px solid red; /* デバッグ用 */
 }
 
 .mob-card input[type="text"] {
-  display: inline-block;
-  flex: 1;
-  min-height: 1.5rem;
+  display: block;
+  width: 100%;       /* 入力欄も横いっぱい */
   box-sizing: border-box;
 }
 
