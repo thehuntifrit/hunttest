@@ -82,12 +82,10 @@ body {
 [data-last-memo] {
   display: block;
   width: 100%;
-  min-height: 1.75rem;
+  min-height: 1rem;
   padding: 2px 6px;
   box-sizing: border-box;
   cursor: text;
-  border: 1px solid var(--memo-debug, transparent); /* デバッグ時に色が見える */
-  background: rgba(0,0,0,0.2);
 }
 
 /* 編集時の見た目（contenteditable中） */
