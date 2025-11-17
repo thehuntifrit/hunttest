@@ -75,6 +75,14 @@ body {
   min-width: 50px;
   cursor: text;
   display: inline-block;
+  border: 1px solid red; /* デバッグ用 */
+}
+
+.mob-card input[type="text"] {
+  display: inline-block;
+  flex: 1;
+  min-height: 1.5rem;
+  box-sizing: border-box;
 }
 
 /* --- 進捗バー関連のスタイル定義 --- */
