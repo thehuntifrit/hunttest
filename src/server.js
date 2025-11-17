@@ -274,7 +274,7 @@ function setupMobMemoUI(mobNo, killTime) {
     const memos = data[mobNo] || [];
     if (memos.length > 0) {
       const latest = memos[0];
-      const postedAt = latest.created_at.toMillis();
+      const postedAt = latest.created_at?.toMillis ? latest.created_at.toMillis() : 0;
 
       // 討伐時間より前なら空白に見せる
       if (postedAt < killTime.getTime()) {
@@ -293,21 +293,25 @@ function setupMobMemoUI(mobNo, killTime) {
     const input = document.createElement("input");
     input.type = "text";
     input.value = currentText;
-    input.className = "bg-gray-700 text-gray-300 text-sm w-full";
+    // flex-1 を付けて横並びに広がるようにする
+    input.className = "bg-gray-700 text-gray-300 text-sm flex-1 min-h-[1.5rem] px-1";
 
     memoSpan.replaceWith(input);
     input.focus();
 
-    // 編集完了時に保存
+    // 編集完了時に保存（スマホで即閉じるのを防ぐため遅延）
     input.addEventListener("blur", async () => {
-      await submitMemo(mobNo, input.value); // 既存の投稿関数を利用
-      memoSpan.textContent = input.value;
-      input.replaceWith(memoSpan);
+      setTimeout(async () => {
+        await submitMemo(mobNo, input.value); // 既存の投稿関数を利用
+        memoSpan.textContent = input.value || "なし";
+        input.replaceWith(memoSpan);
+      }, 200);
     });
 
     // Enterキーでも保存
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
+        e.preventDefault();
         input.blur();
       }
     });
