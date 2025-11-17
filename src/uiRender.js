@@ -462,16 +462,18 @@ function updateExpandablePanel(card, mob) {
   const elMemo = card.querySelector("[data-last-memo]");
   if (!elNext && !elLast && !elMemo) return;
 
-  const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
-
+  const absFmt = { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo", };
   const nextMin = mob.repopInfo?.nextMinRepopDate;
   const conditionTime = findNextSpawnTime(mob, nextMin);
-  const displayTime = (nextMin && conditionTime)
-    ? (conditionTime > nextMin ? conditionTime : nextMin)
-    : (nextMin || conditionTime);
+  const displayTime =
+    nextMin && conditionTime
+      ? conditionTime > nextMin
+        ? conditionTime
+        : nextMin
+      : nextMin || conditionTime;
 
   const nextStr = displayTime
-    ? new Intl.DateTimeFormat('ja-JP', absFmt).format(displayTime)
+    ? new Intl.DateTimeFormat("ja-JP", absFmt).format(displayTime)
     : "未確定";
 
   const lastStr = formatLastKillTime(mob.last_kill_time);
@@ -481,7 +483,8 @@ function updateExpandablePanel(card, mob) {
   }
 
   if (elMemo && !elMemo.hasAttribute("data-initialized")) {
-    elMemo.textContent = memoStr;
+    const memoText = mob.memo_text || mob.memo || "";
+    elMemo.textContent = memoText;
     elMemo.setAttribute("data-initialized", "true");
   }
 
