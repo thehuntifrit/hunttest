@@ -71,6 +71,13 @@ body {
     transform: scale(1.15);
 }
 
+[data-last-memo] {
+  display: inline-block;
+  min-width: 50px;
+  cursor: text;
+  border: 1px solid red; /* デバッグ用 */
+}
+
 /* --- 進捗バー関連のスタイル定義 --- */
 :root {
     --bg-dark: #1a1a2e;
