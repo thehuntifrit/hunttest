@@ -161,7 +161,6 @@ function startRealtime() {
                     map.set(mobNo, {
                         last_kill_time: mobData.last_kill_time?.seconds || 0,
                         prev_kill_time: mobData.prev_kill_time?.seconds || 0,
-                        last_kill_memo: mobData.last_kill_memo || ""
                     });
                 });
             });
