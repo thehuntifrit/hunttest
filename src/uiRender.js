@@ -487,8 +487,18 @@ function updateExpandablePanel(card, mob) {
   const lastStr = formatLastKillTime(mob.last_kill_time);
   const memoStr = mob.last_kill_memo || "なし";
 
-  if (elLast) elLast.textContent = `前回: ${lastStr}`;
-  if (elMemo) elMemo.textContent = memoStr;
+  if (elLast) {
+    elLast.textContent = `前回: ${lastStr}`;
+  }
+
+  if (elMemo && !elMemo.hasAttribute("data-initialized")) {
+    elMemo.textContent = memoStr;
+    elMemo.setAttribute("data-initialized", "true");
+  }
+
+  if (elNext) {
+    elNext.textContent = nextStr;
+  }
 }
 
 function updateProgressBars() {
