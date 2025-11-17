@@ -71,13 +71,10 @@ body {
     transform: scale(1.15);
 }
 
-[data-last-memo] input,
-.mob-card input[type="text"] {
-  display: block;
-  width: 100%;
-  min-height: 1.5rem;
-  padding: 2px 4px;
-  box-sizing: border-box;
+[data-last-memo] {
+  min-width: 50px;
+  cursor: text;
+  display: inline-block;
 }
 
 /* --- 進捗バー関連のスタイル定義 --- */
