@@ -264,6 +264,56 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+// MobごとのメモUI制御
+function setupMobMemoUI(mobNo, killTime) {
+  const memoSpan = document.querySelector(`[data-mob-no="${mobNo}"] [data-last-memo]`);
+  if (!memoSpan) return;
+
+  // Firestore購読で最新メモを反映
+  subscribeMobMemos((data) => {
+    const memos = data[mobNo] || [];
+    if (memos.length > 0) {
+      const latest = memos[0];
+      const postedAt = latest.created_at.toMillis();
+
+      // 討伐時間より前なら空白に見せる
+      if (postedAt < killTime.getTime()) {
+        memoSpan.textContent = "";
+      } else {
+        memoSpan.textContent = latest.memo_text;
+      }
+    } else {
+      memoSpan.textContent = "";
+    }
+  });
+
+  // 編集可能にする処理
+  memoSpan.addEventListener("click", () => {
+    const currentText = memoSpan.textContent;
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = currentText;
+    input.className = "bg-gray-700 text-gray-300 text-sm w-full";
+
+    memoSpan.replaceWith(input);
+    input.focus();
+
+    // 編集完了時に保存
+    input.addEventListener("blur", async () => {
+      await submitMemo(mobNo, input.value); // 既存の投稿関数を利用
+      memoSpan.textContent = input.value;
+      input.replaceWith(memoSpan);
+    });
+
+    // Enterキーでも保存
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        input.blur();
+      }
+    });
+  });
+}
+
 // 湧き潰し報告 (変更なし)
 const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
     const state = getState();
