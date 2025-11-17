@@ -261,17 +261,26 @@ function filterAndRender({ isInitialLoad = false } = {}) {
   }
 
   const frag = document.createDocumentFragment();
-  filtered.forEach(mob => {
-    const temp = document.createElement("div");
-    temp.innerHTML = createMobCard(mob);
-    const card = temp.firstElementChild;
-    frag.appendChild(card);
+filtered.forEach(mob => {
+  const temp = document.createElement("div");
+  temp.innerHTML = createMobCard(mob);
+  const card = temp.firstElementChild;
+  frag.appendChild(card);
 
-    updateProgressText(card, mob);
-    updateProgressBar(card, mob);
-    updateExpandablePanel(card, mob);
-    setupMobMemoUI(mob.No, new Date(mob.last_kill_time));
-  });
+  updateProgressText(card, mob);
+  updateProgressBar(card, mob);
+  updateExpandablePanel(card, mob);
+});
+
+// DOMに追加した後で呼ぶ
+DOM.masterContainer.innerHTML = "";
+DOM.masterContainer.appendChild(frag);
+distributeCards();
+
+// ここで setupMobMemoUI を呼ぶ
+filtered.forEach(mob => {
+  setupMobMemoUI(String(mob.No), new Date(mob.last_kill_time));
+});
 
   DOM.masterContainer.innerHTML = "";
   DOM.masterContainer.appendChild(frag);
