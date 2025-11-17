@@ -299,7 +299,7 @@ function setupMobMemoUI(mobNo, killTime) {
     input.addEventListener("blur", async () => {
       setTimeout(async () => {
         await submitMemo(mobNo, input.value);
-        memoSpan.textContent = input.value || "なし";
+        memoSpan.textContent = input.value || "";
         input.replaceWith(memoSpan);
       }, 200);
     });
