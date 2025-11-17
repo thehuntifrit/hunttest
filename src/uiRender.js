@@ -163,7 +163,7 @@ function createMobCard(mob) {
         <div class="flex justify-between items-start flex-wrap">
             <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
             <div class="flex items-center text-sm text-gray-300"><span class="mr-1">Memo:</span><span data-last-memo class="flex-1"></span></div>
-            <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽選条件</div>
+            <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">条件</div>
             <div class="w-full text-gray-300 text-xs mt-1">${processText(mob.Condition)}</div>
         </div>
         ${mob.Map && rank === 'S' ? `
@@ -375,19 +375,15 @@ function updateProgressText(card, mob) {
       inTimeStr = "未確定";
     }
   }
-  
-  // 右側：特殊条件 Next（トグル対象）
+    // 右側：特殊条件 Next（トグル対象）
   let nextTimeStr = "";
   const hasCondition =
     !!(mob.moonPhase || mob.timeRange || mob.timeRanges || mob.weatherSeedRange || mob.weatherSeedRanges || mob.conditions);
 
   if (hasCondition) {
     if (isInConditionWindow && (status === "PopWindow" || status === "ConditionActive") && remainingSec > 0) {
-      // ★ 修正点: PopWindow/ConditionActive中で条件成立中の場合、残り時間をトグル対象にする
-      // formatDurationHM を使用して「残り 00h00m」形式で表示
       nextTimeStr = `残り ${formatDurationHM(remainingSec)}`;
     } else if (nextConditionSpawnDate && status === "Next") {
-      // Next 時間帯で、次に条件が成立する日時を表示
       try {
         nextTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(nextConditionSpawnDate);
       } catch {
@@ -397,14 +393,12 @@ function updateProgressText(card, mob) {
       nextTimeStr = "";
     }
   }
-  
-  // 左側：進捗状態
+    // 左側：進捗状態
   const nowSec = Date.now() / 1000;
   let leftStr = "未確定";
 
-  // ConditionActive の表示ロジックは左側（leftStr）に残す
   if (status === "ConditionActive") {
-    leftStr = timeRemaining; // calculateRepop から計算済みの残り時間文字列を使用
+    leftStr = timeRemaining;
   } else if (status === "Next") {
     leftStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
   } else if (status === "PopWindow") {
@@ -413,7 +407,6 @@ function updateProgressText(card, mob) {
     leftStr = `Time Over (100%)`;
   }
   
-  // 進捗％は MaxOver/Unknown/ConditionActive 以外のみ表示
   const percentStr = status !== "MaxOver" && status !== "Unknown" && status !== "ConditionActive"  ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)` : "";
 
   text.innerHTML = `
@@ -425,14 +418,12 @@ function updateProgressText(card, mob) {
       </div>
     </div>
   `;
-
   // --- 状態に応じたクラス付与 ---
   if (status === "MaxOver") text.classList.add("max-over");
   else text.classList.remove("max-over");
 
   if (minRepop - nowSec >= 3600) text.classList.add("long-wait");
   else text.classList.remove("long-wait");
-  
   // --- トグル開始条件の厳密化 ---
   const toggleContainer = text.querySelector(".toggle-container");
   const nextLabel = toggleContainer?.querySelector(".label-next");
@@ -449,7 +440,6 @@ function startToggleInNext(container) {
   const inLabel = container.querySelector(".label-in");
   const nextLabel = container.querySelector(".label-next");
   let showingIn = true;
-
   // 既存の interval が複数走らないように container にハンドルを保存するのが安全
   setInterval(() => {
     const hasNextText = nextLabel && nextLabel.textContent && nextLabel.textContent.trim().length > 0;
@@ -485,7 +475,7 @@ function updateExpandablePanel(card, mob) {
     : "未確定";
 
   const lastStr = formatLastKillTime(mob.last_kill_time);
-  const memoStr = mob.last_kill_memo || "なし";
+  const memoStr = mob.last_kill_memo || "";
 
   if (elLast) {
     elLast.textContent = `前回: ${lastStr}`;
