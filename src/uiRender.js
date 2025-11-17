@@ -475,7 +475,6 @@ function updateExpandablePanel(card, mob) {
     : "未確定";
 
   const lastStr = formatLastKillTime(mob.last_kill_time);
-  const memoStr = mob.last_kill_memo || "";
 
   if (elLast) {
     elLast.textContent = `前回: ${lastStr}`;
