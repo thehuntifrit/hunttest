@@ -129,7 +129,6 @@ async function loadBaseMobData() {
         spawn_points: mob.locations,
         last_kill_time: 0,
         prev_kill_time: 0,
-        last_kill_memo: "",
         spawn_cull_status: {},
         related_mob_no: mob.rank.startsWith("B") ? mob.relatedMobNo : null,
         repopInfo: calculateRepop({
