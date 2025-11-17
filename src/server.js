@@ -265,27 +265,23 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // MobごとのメモUI制御
+let editingMobNo = null;
+
 function setupMobMemoUI(mobNo, killTime) {
   const memoSpan = document.querySelector(`[data-mob-no="${mobNo}"] [data-last-memo]`);
   if (!memoSpan) return;
 
-  // Firestore購読で最新メモを反映
   subscribeMobMemos((data) => {
+    if (editingMobNo === mobNo) return; // 編集中は更新しない
     const memos = data[mobNo] || [];
-    let text = "";
-    if (memos.length > 0) {
-      const latest = memos[0];
-      const postedAt = latest.created_at?.toMillis ? latest.created_at.toMillis() : 0;
-      text = postedAt < killTime.getTime() ? "" : (latest.memo_text || "");
-    }
-    if (memoSpan.getAttribute("data-editing") !== "true") {
-      memoSpan.textContent = text;
-    }
+    const latest = memos[0];
+    const postedAt = latest?.created_at?.toMillis ? latest.created_at.toMillis() : 0;
+    memoSpan.textContent = postedAt < killTime.getTime() ? "" : (latest?.memo_text || "");
   });
 
   memoSpan.addEventListener("click", () => {
-    if (memoSpan.getAttribute("data-editing") === "true") return;
-    memoSpan.setAttribute("data-editing", "true");
+    if (editingMobNo) return;
+    editingMobNo = mobNo;
 
     const input = document.createElement("input");
     input.type = "text";
@@ -301,10 +297,10 @@ function setupMobMemoUI(mobNo, killTime) {
       newSpan.setAttribute("data-last-memo", "");
       newSpan.textContent = input.value || "なし";
       input.replaceWith(newSpan);
-      setupMobMemoUI(mobNo, killTime); // 再度イベント付与
+      editingMobNo = null;
+      setupMobMemoUI(mobNo, killTime);
     };
 
-    // Enterキーでのみ保存・閉じる
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
