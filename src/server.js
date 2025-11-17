@@ -286,7 +286,7 @@ function setupMobMemoUI(mobNo, killTime) {
       memoSpan.textContent = text;
     }
   });
-  // 編集可能にする処理
+
   memoSpan.addEventListener("click", () => {
     if (memoSpan.getAttribute("data-editing") === "true") return;
     memoSpan.setAttribute("data-editing", "true");
@@ -308,7 +308,7 @@ function setupMobMemoUI(mobNo, killTime) {
       input.replaceWith(newSpan);
       setupMobMemoUI(mobNo, killTime); // 再度イベント付与
     };
-    // Enterキーでのみ保存・閉じる
+    // Enterキーでのみ保存・閉じる（PC・スマホ共通）
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
