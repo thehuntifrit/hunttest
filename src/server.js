@@ -371,6 +371,7 @@ export {
     subscribeMobMemos, 
     submitReport, 
     submitMemo, 
+    setupMobMemoUI,
     toggleCrushStatus, 
     getServerTimeUTC 
 };
