@@ -273,11 +273,9 @@ function setupMobMemoUI(mobNo, killTime) {
 
   const memoSpan = card.querySelector("[data-last-memo]");
   if (!memoSpan) return;
-
   // 二重初期化ガード（カード単位）
   if (card.hasAttribute("data-memo-initialized")) return;
   card.setAttribute("data-memo-initialized", "true");
-
   // 購読：編集中は書き換えない
   const unsub = subscribeMobMemos((data) => {
     if (card.getAttribute("data-editing") === "true") return;
@@ -298,6 +296,11 @@ function setupMobMemoUI(mobNo, killTime) {
     input.value = memoSpan.textContent;
     input.className = "text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
     input.setAttribute("enterkeyhint", "done");
+    // ★ 白帯対策: 背景と枠を透明化
+    input.style.background = "transparent";
+    input.style.border = "0";
+    input.style.outline = "none";
+    input.style.boxShadow = "none";
 
     memoSpan.replaceWith(input);
     setTimeout(() => input.focus(), 0);
@@ -312,6 +315,8 @@ function setupMobMemoUI(mobNo, killTime) {
       const newSpan = document.createElement("span");
       newSpan.setAttribute("data-last-memo", "");
       newSpan.textContent = input.value || "なし";
+      // ★ 白帯対策: スタイルを完全にクリア
+      newSpan.removeAttribute("style");
 
       input.replaceWith(newSpan);
       card.removeAttribute("data-editing");
@@ -344,7 +349,6 @@ function setupMobMemoUI(mobNo, killTime) {
   // カード破棄時の購読解除（任意でフックがあるなら使う）
   // card.addEventListener("DOMNodeRemoved", () => unsub(), { once: true });
 }
-
 
 // 湧き潰し報告 (変更なし)
 const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
