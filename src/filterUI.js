@@ -31,9 +31,11 @@ const renderRankTabs = () => {
     btn.className =
       `tab-button px-2 py-1 text-sm rounded font-semibold text-white text-center transition ` +
       (isSelected ? "bg-green-500" : "bg-gray-500 hover:bg-gray-400");
-
     // --- クリックイベント ---
     btn.addEventListener("click", () => {
+      // 編集中カードがある場合は処理をスキップ
+      if (document.querySelector(".mob-card[data-editing='true']")) return;
+
       const currentState = getState();
       setFilter({
         rank,
@@ -185,6 +187,9 @@ const updateFilterUI = () => {
 function handleAreaFilterClick(e) {
   const btn = e.target.closest(".area-filter-btn");
   if (!btn) return;
+
+  // 編集中カードがある場合は処理をスキップ
+  if (document.querySelector(".mob-card[data-editing='true']")) return;
 
   const state = getState();
   const uiRank = state.filter.rank;
