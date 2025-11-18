@@ -273,11 +273,9 @@ function setupMobMemoUI(mobNo, killTime) {
 
   const memoSpan = card.querySelector("[data-last-memo]");
   if (!memoSpan) return;
-
   // 二重初期化ガード（カード単位）
   if (card.hasAttribute("data-memo-initialized")) return;
   card.setAttribute("data-memo-initialized", "true");
-
   // 購読：編集中は書き換えない
   const unsub = subscribeMobMemos((data) => {
     if (card.getAttribute("data-editing") === "true") return;
@@ -296,16 +294,13 @@ function setupMobMemoUI(mobNo, killTime) {
     const input = document.createElement("input");
     input.type = "text";
     input.value = memoSpan.textContent;
-    input.setAttribute("enterkeyhint", "done");
-
-    // 入力欄と表示欄で高さ・paddingを完全一致させる
     input.className = "text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
+    input.setAttribute("enterkeyhint", "done");
+    // ★ 白帯対策: 背景と枠を透明化
     input.style.background = "transparent";
-    input.style.border = "1px solid #555";   // 薄い枠線で視認性確保
-    input.style.borderRadius = "4px";
+    input.style.border = "0";
     input.style.outline = "none";
     input.style.boxShadow = "none";
-    input.style.lineHeight = "1.25rem";
 
     memoSpan.replaceWith(input);
     setTimeout(() => input.focus(), 0);
@@ -320,19 +315,18 @@ function setupMobMemoUI(mobNo, killTime) {
       const newSpan = document.createElement("span");
       newSpan.setAttribute("data-last-memo", "");
       newSpan.textContent = input.value || "なし";
-
-      // span 側も input と同じ高さ・paddingを持たせる
-      newSpan.className = "text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
-      newSpan.style.lineHeight = "1.25rem";
-      newSpan.style.background = "transparent";
+      // ★ 白帯対策: スタイルを完全にクリア
+      newSpan.removeAttribute("style");
 
       input.replaceWith(newSpan);
       card.removeAttribute("data-editing");
 
       newSpan.addEventListener("click", (ev) => {
-        setupMobMemoUI(mobNo, killTime);
+        // 再入開始
+        setupMobMemoUI(mobNo, killTime); // 再セットアップで click ハンドラが復元される
         ev.preventDefault();
         ev.stopPropagation();
+        // 直後に再クリックで編集したい場合は、次フレームで開く
         requestAnimationFrame(() => newSpan.dispatchEvent(new MouseEvent("click")));
       });
     };
