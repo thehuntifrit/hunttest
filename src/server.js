@@ -295,10 +295,9 @@ function setupMobMemoUI(mobNo, killTime) {
     input.type = "text";
     input.value = memoSpan.textContent;
     input.setAttribute("enterkeyhint", "done");
-    // 編集中は枠線ありで区別できるようにする
     input.className = "text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
     input.style.background = "transparent";
-    input.style.border = "1px solid #666";   // 編集中のみ枠線
+    input.style.border = "1px solid #666";
     input.style.borderRadius = "4px";
     input.style.lineHeight = "1.25rem";
 
@@ -315,7 +314,6 @@ function setupMobMemoUI(mobNo, killTime) {
       const newSpan = document.createElement("span");
       newSpan.setAttribute("data-last-memo", "");
       newSpan.textContent = input.value || "なし";
-      // 編集終了後は枠線なしで通常表示に戻す
       newSpan.className = "text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
       newSpan.style.lineHeight = "1.25rem";
       newSpan.style.background = "transparent";
@@ -338,9 +336,9 @@ function setupMobMemoUI(mobNo, killTime) {
     input.addEventListener("keydown", onEnter);
     input.addEventListener("keyup", onEnter);
 
+    // ← 修正：blur時にも finalize を呼ぶ
     input.addEventListener("blur", () => {
-      card.removeAttribute("data-editing");
-      editingMobNo = null;
+      finalize();
     }, { once: true });
   });
 }
