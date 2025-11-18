@@ -268,47 +268,83 @@ document.addEventListener("DOMContentLoaded", () => {
 let editingMobNo = null;
 
 function setupMobMemoUI(mobNo, killTime) {
-  const memoSpan = document.querySelector(`[data-mob-no="${mobNo}"] [data-last-memo]`);
+  const card = document.querySelector(`.mob-card[data-mob-no="${mobNo}"]`);
+  if (!card) return;
+
+  const memoSpan = card.querySelector("[data-last-memo]");
   if (!memoSpan) return;
 
-  subscribeMobMemos((data) => {
-    if (editingMobNo === mobNo) return; // 編集中は更新しない
+  // 二重初期化ガード（カード単位）
+  if (card.hasAttribute("data-memo-initialized")) return;
+  card.setAttribute("data-memo-initialized", "true");
+
+  // 購読：編集中は書き換えない
+  const unsub = subscribeMobMemos((data) => {
+    if (card.getAttribute("data-editing") === "true") return;
     const memos = data[mobNo] || [];
     const latest = memos[0];
     const postedAt = latest?.created_at?.toMillis ? latest.created_at.toMillis() : 0;
     memoSpan.textContent = postedAt < killTime.getTime() ? "" : (latest?.memo_text || "");
   });
 
-  memoSpan.addEventListener("click", () => {
-    if (editingMobNo) return;
-    editingMobNo = mobNo;
+  // クリックで編集開始
+  memoSpan.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (card.getAttribute("data-editing") === "true") return;
+    card.setAttribute("data-editing", "true");
 
     const input = document.createElement("input");
     input.type = "text";
     input.value = memoSpan.textContent;
     input.className = "text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
+    input.setAttribute("enterkeyhint", "done");
 
     memoSpan.replaceWith(input);
-    input.focus();
+    setTimeout(() => input.focus(), 0);
+
+    let isComposing = false;
+    input.addEventListener("compositionstart", () => { isComposing = true; });
+    input.addEventListener("compositionend", () => { isComposing = false; });
 
     const finalize = async () => {
       await submitMemo(mobNo, input.value);
+
       const newSpan = document.createElement("span");
       newSpan.setAttribute("data-last-memo", "");
       newSpan.textContent = input.value || "なし";
+
       input.replaceWith(newSpan);
-      editingMobNo = null;
-      setupMobMemoUI(mobNo, killTime);
+      card.removeAttribute("data-editing");
+
+      newSpan.addEventListener("click", (ev) => {
+        // 再入開始
+        setupMobMemoUI(mobNo, killTime); // 再セットアップで click ハンドラが復元される
+        ev.preventDefault();
+        ev.stopPropagation();
+        // 直後に再クリックで編集したい場合は、次フレームで開く
+        requestAnimationFrame(() => newSpan.dispatchEvent(new MouseEvent("click")));
+      });
     };
 
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
+    const onEnter = (e) => {
+      if ((e.key === "Enter" || e.keyCode === 13) && !isComposing) {
         e.preventDefault();
+        e.stopPropagation();
         finalize();
       }
-    });
+    };
+    input.addEventListener("keydown", onEnter);
+    input.addEventListener("keyup", onEnter);
+
+    input.addEventListener("blur", () => {
+      card.removeAttribute("data-editing");
+    }, { once: true });
   });
+
+  // カード破棄時の購読解除（任意でフックがあるなら使う）
+  // card.addEventListener("DOMNodeRemoved", () => unsub(), { once: true });
 }
+
 
 // 湧き潰し報告 (変更なし)
 const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
