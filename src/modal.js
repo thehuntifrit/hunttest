@@ -27,7 +27,6 @@ function closeReportModal() {
     DOM.reportModal.classList.add("hidden");
     DOM.reportModal.classList.remove("flex");
     DOM.modalTimeInput.value = "";
-    DOM.modalMemoInput.value = "";
 }
 
 function setupModalCloseHandlers() {
