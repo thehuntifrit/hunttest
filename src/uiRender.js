@@ -250,8 +250,9 @@ function filterAndRender({ isInitialLoad = false } = {}) {
   const frag = document.createDocumentFragment();
   filtered.forEach(mob => {
     const existing = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
-    if (editingMobNo === String(mob.No) && existing) {
-      frag.appendChild(existing); // 編集中は差し替えない
+    // 編集中カードは差し替えない
+    if (existing && existing.getAttribute("data-editing") === "true") {
+      frag.appendChild(existing);
       return;
     }
     const temp = document.createElement("div");
@@ -269,7 +270,8 @@ function filterAndRender({ isInitialLoad = false } = {}) {
   attachLocationEvents();
   // DOMに追加した後で呼ぶ
   filtered.forEach(mob => {
-    if (editingMobNo === String(mob.No)) return; // 編集中は再セットアップしない
+    const existing = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
+    if (existing && existing.getAttribute("data-editing") === "true") return;
     const killTime = mob.last_kill_time ? new Date(mob.last_kill_time) : new Date();
     setupMobMemoUI(String(mob.No), killTime);
   });
