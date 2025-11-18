@@ -265,81 +265,46 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // MobごとのメモUI制御
-let editingMobNo = null;
-
 function setupMobMemoUI(mobNo, killTime) {
   const card = document.querySelector(`.mob-card[data-mob-no="${mobNo}"]`);
   if (!card) return;
 
-  const memoSpan = card.querySelector("[data-last-memo]");
-  if (!memoSpan) return;
+  let memoDiv = card.querySelector("[data-last-memo]");
+  if (!memoDiv) return;
 
   if (card.hasAttribute("data-memo-initialized")) return;
   card.setAttribute("data-memo-initialized", "true");
 
+  // contenteditable を常設
+  memoDiv.setAttribute("contenteditable", "true");
+  memoDiv.className = "memo-editable text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
+  memoDiv.style.outline = "none";
+  memoDiv.style.borderRadius = "4px";
+
+  // Firestore購読で最新メモを反映（編集中は更新しない）
   const unsub = subscribeMobMemos((data) => {
     if (card.getAttribute("data-editing") === "true") return;
     const memos = data[mobNo] || [];
     const latest = memos[0];
     const postedAt = latest?.created_at?.toMillis ? latest.created_at.toMillis() : 0;
-    memoSpan.textContent = postedAt < killTime.getTime() ? "" : (latest?.memo_text || "");
+    memoDiv.textContent = postedAt < killTime.getTime() ? "" : (latest?.memo_text || "");
   });
-
-  memoSpan.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (card.getAttribute("data-editing") === "true") return;
+  // フォーカス時に編集中フラグを付与
+  memoDiv.addEventListener("focus", () => {
     card.setAttribute("data-editing", "true");
-    editingMobNo = mobNo;
-
-    const input = document.createElement("input");
-    input.type = "text";
-    input.value = memoSpan.textContent;
-    input.setAttribute("enterkeyhint", "done");
-    input.className = "text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
-    input.style.background = "transparent";
-    input.style.border = "1px solid #666";
-    input.style.borderRadius = "4px";
-    input.style.lineHeight = "1.25rem";
-
-    memoSpan.replaceWith(input);
-    setTimeout(() => input.focus(), 0);
-
-    let isComposing = false;
-    input.addEventListener("compositionstart", () => { isComposing = true; });
-    input.addEventListener("compositionend", () => { isComposing = false; });
-
-    const finalize = async () => {
-      await submitMemo(mobNo, input.value);
-
-      const newSpan = document.createElement("span");
-      newSpan.setAttribute("data-last-memo", "");
-      newSpan.textContent = input.value || "なし";
-      newSpan.className = "text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
-      newSpan.style.lineHeight = "1.25rem";
-      newSpan.style.background = "transparent";
-      newSpan.style.border = "none";
-
-      input.replaceWith(newSpan);
-      card.removeAttribute("data-editing");
-      editingMobNo = null;
-
-      setupMobMemoUI(mobNo, killTime);
-    };
-
-    const onEnter = (e) => {
-      if ((e.key === "Enter" || e.keyCode === 13) && !isComposing) {
-        e.preventDefault();
-        e.stopPropagation();
-        finalize();
-      }
-    };
-    input.addEventListener("keydown", onEnter);
-    input.addEventListener("keyup", onEnter);
-
-    // ← 修正：blur時にも finalize を呼ぶ
-    input.addEventListener("blur", () => {
-      finalize();
-    }, { once: true });
+  });
+  // blur時に確定処理
+  memoDiv.addEventListener("blur", async () => {
+    await submitMemo(mobNo, memoDiv.textContent);
+    card.removeAttribute("data-editing");
+  });
+  // Enterキーで確定（スマホIMEでも安定）
+  memoDiv.addEventListener("keydown", async (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      await submitMemo(mobNo, memoDiv.textContent);
+      memoDiv.blur();
+    }
   });
 }
 
