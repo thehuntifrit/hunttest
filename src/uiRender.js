@@ -7,6 +7,8 @@ import { drawSpawnPoint, isCulled, attachLocationEvents } from "./location.js";
 import { getState, RANK_COLORS, PROGRESS_CLASSES, FILTER_TO_DATA_RANK_MAP } from "./dataManager.js";
 import { renderRankTabs, renderAreaFilterPanel, updateFilterUI, filterMobsByRankAndArea } from "./filterUI.js";
 
+let editingMobNo = null;
+
 const DOM = {
   masterContainer: document.getElementById('master-mob-container'),
   colContainer: document.getElementById('column-container'),
@@ -75,15 +77,12 @@ function createMobCard(mob) {
 
   let isLastOne = false;
   let validSpawnPoints = [];
-  let displayCountText = ""; // ★ 追加: 表示用の残り個数テキスト
+  let displayCountText = "";
 
   if (mob.Map && mob.spawn_points) {
-    // Sランクを含む地点 かつ 湧き潰されていない地点 のみをカウント
     validSpawnPoints = (mob.spawn_points ?? []).filter(point => {
       const isS_SpawnPoint = point.mob_ranks.includes("S");
-      if (!isS_SpawnPoint) {
-        return false; // Sランクを含まない地点は除外
-      }
+      if (!isS_SpawnPoint) return false;
       const pointStatus = spawnCullStatus?.[point.id];
       return !isCulled(pointStatus, mob.No);
     });
@@ -93,50 +92,45 @@ function createMobCard(mob) {
     if (remainingCount === 1) {
       isLastOne = true;
       const pointId = validSpawnPoints[0]?.id || "";
-      const pointNumber = pointId.slice(-2); // 末尾2桁を抽出
+      const pointNumber = pointId.slice(-2);
       displayCountText = ` <span class="text-yellow-600">${pointNumber}番</span>`;
     } else if (remainingCount > 1) {
       isLastOne = false;
       displayCountText = ` <span class="text-xs text-gray-400 relative -top-0.5">@</span>&nbsp;${remainingCount}<span class="text-xs relative -top-[0.04rem]">個</span>`;
     }
 
-    isLastOne = remainingCount === 1; // ラスト1点の判定は維持
+    isLastOne = remainingCount === 1;
   }
 
   const isS_LastOne = rank === "S" && isLastOne;
   const spawnPointsHtml = (rank === "S" && mob.Map)
     ? (mob.spawn_points ?? []).map(point => {
-      const isThisPointTheLastOne = isLastOne && point.id === validSpawnPoints[0]?.id;
-
-      return drawSpawnPoint(
-        point,
-        spawnCullStatus,
-        mob.No,
-        point.mob_ranks.includes("B2") ? "B2"
-          : point.mob_ranks.includes("B1") ? "B1"
-            : point.mob_ranks[0],
-        isThisPointTheLastOne,
-        isS_LastOne
-      )
-    }).join("")
+        const isThisPointTheLastOne = isLastOne && point.id === validSpawnPoints[0]?.id;
+        return drawSpawnPoint(
+          point,
+          spawnCullStatus,
+          mob.No,
+          point.mob_ranks.includes("B2") ? "B2"
+            : point.mob_ranks.includes("B1") ? "B1"
+              : point.mob_ranks[0],
+          isThisPointTheLastOne,
+          isS_LastOne
+        );
+      }).join("")
     : "";
 
   const mobNameAndCountHtml = `<span class="text-base flex items-baseline font-bold truncate">${mob.Name}</span>
                                 <span class="text-sm flex items-baseline font-bold">${displayCountText}</span>`;
   const cardHeaderHTML = `
 <div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
-    <!-- 上段：ランク・モブ名・報告ボタン -->
     <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
-        <!-- 左：ランク -->
         <span class="w-6 h-6 flex items-center justify-center rounded-full text-white text-sm font-bold ${rankConfig.bg}">${rankLabel}</span>
 
-        <!-- 中央：モブ名＋エリア名 -->
         <div class="flex flex-col min-w-0">
             <div class="flex items-baseline space-x-1">${mobNameAndCountHtml}</div>
             <span class="text-xs text-gray-400 truncate">${mob.Area} (${mob.Expansion})</span>
         </div>
 
-        <!-- 右端：報告ボタン（見た目は統一、動作だけ分岐） -->
         <div class="flex-shrink-0 flex items-center justify-end">
             <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center rounded transition text-center leading-tight">
                 <img src="./icon/reports.webp" alt="報告する" class="w-8 h-8 object-contain transition hover:brightness-125 focus:brightness-125 active:brightness-150" 
@@ -147,12 +141,9 @@ function createMobCard(mob) {
         </div>
     </div>
 
-    <!-- 下段：プログレスバー（構造のみ） -->
     <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
-        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear"
-            style="width: 0%"></div>
-        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold"
-            style="line-height: 1;"></div>
+        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear" style="width: 0%"></div>
+        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold" style="line-height: 1;"></div>
     </div>
 </div>
 `;
@@ -162,15 +153,14 @@ function createMobCard(mob) {
     <div class="px-2 py-0 text-sm space-y-0.5">
         <div class="flex justify-between items-start flex-wrap">
             <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
-            <div class="mob-memo-row text-sm text-gray-300"><span class="mr-1">Memo:</span><span data-last-memo data-mob-no="${mob.No}"></span></div>
+            <div class="mob-memo-row text-sm text-gray-300"><span class="mr-1">Memo:</span><span data-last-memo></span></div>
             <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽選条件</div>
             <div class="w-full text-gray-300 text-xs mt-1">${processText(mob.Condition)}</div>
         </div>
         ${mob.Map && rank === 'S' ? `
         <div class="map-content py-0.5 flex justify-center relative">
-            <img src="./maps/${mob.Map}" alt="${mob.Area} Map"
-                class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600" data-mob-no="${mob.No}">
-            <div class="map-overlay absolute inset-0" data-mob-no="${mob.No}">${spawnPointsHtml}</div>
+            <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600">
+            <div class="map-overlay absolute inset-0">${spawnPointsHtml}</div>
         </div>
         ` : ''}
     </div>
@@ -183,8 +173,10 @@ function createMobCard(mob) {
 
   return `
 <div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer transition duration-150 ${stoppedClass}"
-    style="border: 0.5px solid ${rankConfig.rgbaBorder};" data-mob-no="${mob.No}" data-rank="${rank}">
-    ${cardHeaderHTML}${expandablePanelHTML}</div>
+    style="border: 0.5px solid ${rankConfig.rgbaBorder};"
+    data-mob-no="${mob.No}" data-rank="${rank}">
+    ${cardHeaderHTML}${expandablePanelHTML}
+</div>
 `;
 }
 
@@ -250,55 +242,39 @@ function progressComparator(a, b) {
   return baseComparator(a, b);
 }
 
-// 編集中のMob番号をグローバルに保持
-let editingMobNo = null;
-
 function filterAndRender({ isInitialLoad = false } = {}) {
   const state = getState();
   const filtered = filterMobsByRankAndArea(state.mobs);
-
-  if (["S", "A", "FATE"].includes(state.filter.rank)) {
-    filtered.sort(progressComparator);
-  } else {
-    filtered.sort(baseComparator);
-  }
+  (["S", "A", "FATE"].includes(state.filter.rank) ? filtered.sort(progressComparator) : filtered.sort(baseComparator));
 
   const frag = document.createDocumentFragment();
   filtered.forEach(mob => {
-    // 編集中のカードは再生成しない
-    if (editingMobNo === String(mob.No)) {
-      const existingCard = document.querySelector(`[data-mob-no="${mob.No}"]`);
-      if (existingCard) {
-        frag.appendChild(existingCard); // 既存カードをそのまま再利用
-        return;
-      }
+    const existing = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
+    if (editingMobNo === String(mob.No) && existing) {
+      frag.appendChild(existing); // 編集中は差し替えない
+      return;
     }
-
     const temp = document.createElement("div");
     temp.innerHTML = createMobCard(mob);
     const card = temp.firstElementChild;
-    frag.appendChild(card);
-
     updateProgressText(card, mob);
     updateProgressBar(card, mob);
     updateExpandablePanel(card, mob);
+    frag.appendChild(card);
   });
 
   DOM.masterContainer.innerHTML = "";
   DOM.masterContainer.appendChild(frag);
   distributeCards();
   attachLocationEvents();
-
   // DOMに追加した後で呼ぶ
   filtered.forEach(mob => {
-    if (editingMobNo === String(mob.No)) return; // 編集中はイベント再付与しない
+    if (editingMobNo === String(mob.No)) return; // 編集中は再セットアップしない
     const killTime = mob.last_kill_time ? new Date(mob.last_kill_time) : new Date();
     setupMobMemoUI(String(mob.No), killTime);
   });
 
-  if (isInitialLoad) {
-    updateProgressBars();
-  }
+  if (isInitialLoad) updateProgressBars();
 }
 
 function distributeCards() {
@@ -475,35 +451,19 @@ function updateExpandablePanel(card, mob) {
   const elMemo = card.querySelector("[data-last-memo]");
   if (!elNext && !elLast && !elMemo) return;
 
-  const absFmt = { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo", };
+  const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
   const nextMin = mob.repopInfo?.nextMinRepopDate;
   const conditionTime = findNextSpawnTime(mob, nextMin);
-  const displayTime =
-    nextMin && conditionTime
-      ? conditionTime > nextMin
-        ? conditionTime
-        : nextMin
-      : nextMin || conditionTime;
-
-  const nextStr = displayTime
-    ? new Intl.DateTimeFormat("ja-JP", absFmt).format(displayTime)
-    : "未確定";
-
+  const displayTime = (nextMin && conditionTime) ? (conditionTime > nextMin ? conditionTime : nextMin) : (nextMin || conditionTime);
+  const nextStr = displayTime ? new Intl.DateTimeFormat('ja-JP', absFmt).format(displayTime) : "未確定";
   const lastStr = formatLastKillTime(mob.last_kill_time);
 
-  if (elLast) {
-    elLast.textContent = `前回: ${lastStr}`;
-  }
-
+  if (elLast) elLast.textContent = `前回: ${lastStr}`;
   if (elMemo && !elMemo.hasAttribute("data-initialized")) {
-    const memoText = mob.memo_text || mob.memo || "";
-    elMemo.textContent = memoText;
+    elMemo.textContent = mob.memo_text || mob.memo || "";
     elMemo.setAttribute("data-initialized", "true");
   }
-
-  if (elNext) {
-    elNext.textContent = nextStr;
-  }
+  if (elNext) elNext.textContent = nextStr;
 }
 
 function updateProgressBars() {
