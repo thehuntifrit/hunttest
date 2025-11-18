@@ -71,7 +71,7 @@ body {
     transform: scale(1.15);
 }
 
-/* メモ入力中でも白帯を作らない */
+/* メモ入力中でも白帯を作らないが、入力欄は見えるようにする */
 .mob-memo-row input[type="text"] {
   display: block;
   width: 100%;
@@ -79,13 +79,14 @@ body {
   padding: 2px 6px;
   box-sizing: border-box;
 
-  background: transparent !important; /* ← 白背景を消す */
-  border: 0 !important;
-  outline: none !important;
-  box-shadow: none !important;
+  background: transparent;       /* 白背景を消す */
+  border: 1px solid #555;        /* 薄いグレー枠を残す */
+  border-radius: 4px;            /* 角丸で自然に */
+  outline: none;
+  box-shadow: none;
 
-  color: #d1d5db; /* text-gray-300 相当 */
-  font-size: 0.875rem; /* text-sm */
+  color: #d1d5db;                /* text-gray-300 相当 */
+  font-size: 0.875rem;           /* text-sm */
   line-height: 1.25rem;
 }
 
