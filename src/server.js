@@ -296,15 +296,16 @@ function setupMobMemoUI(mobNo, killTime) {
     const input = document.createElement("input");
     input.type = "text";
     input.value = memoSpan.textContent;
-    input.className = "text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
     input.setAttribute("enterkeyhint", "done");
 
-    // 白帯対策: 背景は透明にしつつ、枠線を薄く残す
+    // 入力欄と表示欄で高さ・paddingを完全一致させる
+    input.className = "text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
     input.style.background = "transparent";
-    input.style.border = "1px solid #555";   // 薄いグレー枠
-    input.style.borderRadius = "4px";        // 角丸で自然に
+    input.style.border = "1px solid #555";   // 薄い枠線で視認性確保
+    input.style.borderRadius = "4px";
     input.style.outline = "none";
     input.style.boxShadow = "none";
+    input.style.lineHeight = "1.25rem";
 
     memoSpan.replaceWith(input);
     setTimeout(() => input.focus(), 0);
@@ -320,18 +321,18 @@ function setupMobMemoUI(mobNo, killTime) {
       newSpan.setAttribute("data-last-memo", "");
       newSpan.textContent = input.value || "なし";
 
-      // スタイルを完全にクリアして白帯を残さない
-      newSpan.removeAttribute("style");
+      // span 側も input と同じ高さ・paddingを持たせる
+      newSpan.className = "text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
+      newSpan.style.lineHeight = "1.25rem";
+      newSpan.style.background = "transparent";
 
       input.replaceWith(newSpan);
       card.removeAttribute("data-editing");
 
       newSpan.addEventListener("click", (ev) => {
-        // 再入開始
-        setupMobMemoUI(mobNo, killTime); // 再セットアップで click ハンドラが復元される
+        setupMobMemoUI(mobNo, killTime);
         ev.preventDefault();
         ev.stopPropagation();
-        // 直後に再クリックで編集したい場合は、次フレームで開く
         requestAnimationFrame(() => newSpan.dispatchEvent(new MouseEvent("click")));
       });
     };
