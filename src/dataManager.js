@@ -146,7 +146,6 @@ async function loadBaseMobData() {
 function startRealtime() {
     unsubscribes.forEach(fn => fn && fn());
     unsubscribes = [];
-
     // maintenance をロード（キャッシュ再利用）
     (async () => {
         const maintenance = maintenanceCache || await loadMaintenance();
@@ -175,12 +174,14 @@ function startRealtime() {
             });
 
             setMobs(merged);
+            // 編集中カードがある場合は再描画をスキップ
+            if (document.querySelector(".mob-card[data-editing='true']")) return;
+
             filterAndRender();
             updateProgressBars();
             displayStatus("LKT/Memoデータ更新完了。", "success");
         });
         unsubscribes.push(unsubStatus);
-
         // Mob Locations 購読（湧き潰し）
         const unsubLoc = subscribeMobLocations(locationsMap => {
             const current = getState().mobs;
@@ -196,6 +197,9 @@ function startRealtime() {
             });
 
             setMobs(merged);
+            // 編集中カードがある場合は再描画をスキップ
+            if (document.querySelector(".mob-card[data-editing='true']")) return;
+
             filterAndRender();
             displayStatus("湧き潰しデータ更新完了。", "success");
         });
