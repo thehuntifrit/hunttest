@@ -452,17 +452,20 @@ function updateExpandablePanel(card, mob) {
   if (!elNext && !elLast && !elMemo) return;
 
   const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
+
   const nextMin = mob.repopInfo?.nextMinRepopDate;
   const conditionTime = findNextSpawnTime(mob, nextMin);
   const displayTime = (nextMin && conditionTime) ? (conditionTime > nextMin ? conditionTime : nextMin) : (nextMin || conditionTime);
   const nextStr = displayTime ? new Intl.DateTimeFormat('ja-JP', absFmt).format(displayTime) : "未確定";
-  const lastStr = formatLastKillTime(mob.last_kill_time);
 
+  const lastStr = formatLastKillTime(mob.last_kill_time);
   if (elLast) elLast.textContent = `前回: ${lastStr}`;
+
   if (elMemo && !elMemo.hasAttribute("data-initialized")) {
     elMemo.textContent = mob.memo_text || mob.memo || "";
     elMemo.setAttribute("data-initialized", "true");
   }
+
   if (elNext) elNext.textContent = nextStr;
 }
 
