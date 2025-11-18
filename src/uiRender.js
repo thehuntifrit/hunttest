@@ -250,6 +250,9 @@ function progressComparator(a, b) {
   return baseComparator(a, b);
 }
 
+// 編集中のMob番号をグローバルに保持
+let editingMobNo = null;
+
 function filterAndRender({ isInitialLoad = false } = {}) {
   const state = getState();
   const filtered = filterMobsByRankAndArea(state.mobs);
@@ -261,30 +264,40 @@ function filterAndRender({ isInitialLoad = false } = {}) {
   }
 
   const frag = document.createDocumentFragment();
-filtered.forEach(mob => {
-  const temp = document.createElement("div");
-  temp.innerHTML = createMobCard(mob);
-  const card = temp.firstElementChild;
-  frag.appendChild(card);
+  filtered.forEach(mob => {
+    // 編集中のカードは再生成しない
+    if (editingMobNo === String(mob.No)) {
+      const existingCard = document.querySelector(`[data-mob-no="${mob.No}"]`);
+      if (existingCard) {
+        frag.appendChild(existingCard); // 既存カードをそのまま再利用
+        return;
+      }
+    }
 
-  updateProgressText(card, mob);
-  updateProgressBar(card, mob);
-  updateExpandablePanel(card, mob);
-});
+    const temp = document.createElement("div");
+    temp.innerHTML = createMobCard(mob);
+    const card = temp.firstElementChild;
+    frag.appendChild(card);
 
-DOM.masterContainer.innerHTML = "";
-DOM.masterContainer.appendChild(frag);
-distributeCards();
-attachLocationEvents();
+    updateProgressText(card, mob);
+    updateProgressBar(card, mob);
+    updateExpandablePanel(card, mob);
+  });
 
-// ★ DOMに追加した後で呼ぶ
-filtered.forEach(mob => {
-  const killTime = mob.last_kill_time ? new Date(mob.last_kill_time) : new Date();
-  setupMobMemoUI(String(mob.No), killTime);
-});
+  DOM.masterContainer.innerHTML = "";
+  DOM.masterContainer.appendChild(frag);
+  distributeCards();
+  attachLocationEvents();
 
-if (isInitialLoad) {
-  updateProgressBars();
+  // DOMに追加した後で呼ぶ
+  filtered.forEach(mob => {
+    if (editingMobNo === String(mob.No)) return; // 編集中はイベント再付与しない
+    const killTime = mob.last_kill_time ? new Date(mob.last_kill_time) : new Date();
+    setupMobMemoUI(String(mob.No), killTime);
+  });
+
+  if (isInitialLoad) {
+    updateProgressBars();
   }
 }
 
