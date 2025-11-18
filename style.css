@@ -71,28 +71,30 @@ body {
     transform: scale(1.15);
 }
 
-/* メモ入力中でも白帯を作らないが、入力欄は見えるようにする */
-.mob-memo-row input[type="text"] {
+/* 親は横並び。Memoラベル＋編集領域 */
+.mob-memo-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* 選択領域は常に横いっぱい。縦バー化させない */
+[data-last-memo] {
   display: block;
   width: 100%;
   min-height: 1rem;
   padding: 2px 6px;
   box-sizing: border-box;
-
-  background: transparent;       /* 白背景を消す */
-  border: 1px solid #555;        /* 薄いグレー枠を残す */
-  border-radius: 4px;            /* 角丸で自然に */
-  outline: none;
-  box-shadow: none;
-
-  color: #d1d5db;                /* text-gray-300 相当 */
-  font-size: 0.875rem;           /* text-sm */
-  line-height: 1.25rem;
+  cursor: text;
 }
 
-/* span 側は既に透明だが、念のため高さ・行間を統一 */
-.mob-memo-row [data-last-memo] {
-  line-height: 1.25rem;
+.mob-memo-row [data-last-memo] { background: transparent; }
+
+/* 編集時の見た目（contenteditable中） */
+[data-last-memo][data-editing="true"] {
+  outline: none;
+  border-color: #ef4444;
+  background: rgba(0,0,0,0.35);
 }
 
 /* --- 進捗バー関連のスタイル定義 --- */
