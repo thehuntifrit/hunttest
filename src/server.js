@@ -273,9 +273,11 @@ function setupMobMemoUI(mobNo, killTime) {
 
   const memoSpan = card.querySelector("[data-last-memo]");
   if (!memoSpan) return;
+
   // 二重初期化ガード（カード単位）
   if (card.hasAttribute("data-memo-initialized")) return;
   card.setAttribute("data-memo-initialized", "true");
+
   // 購読：編集中は書き換えない
   const unsub = subscribeMobMemos((data) => {
     if (card.getAttribute("data-editing") === "true") return;
@@ -296,9 +298,11 @@ function setupMobMemoUI(mobNo, killTime) {
     input.value = memoSpan.textContent;
     input.className = "text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
     input.setAttribute("enterkeyhint", "done");
-    // ★ 白帯対策: 背景と枠を透明化
+
+    // 白帯対策: 背景は透明にしつつ、枠線を薄く残す
     input.style.background = "transparent";
-    input.style.border = "0";
+    input.style.border = "1px solid #555";   // 薄いグレー枠
+    input.style.borderRadius = "4px";        // 角丸で自然に
     input.style.outline = "none";
     input.style.boxShadow = "none";
 
@@ -315,7 +319,8 @@ function setupMobMemoUI(mobNo, killTime) {
       const newSpan = document.createElement("span");
       newSpan.setAttribute("data-last-memo", "");
       newSpan.textContent = input.value || "なし";
-      // ★ 白帯対策: スタイルを完全にクリア
+
+      // スタイルを完全にクリアして白帯を残さない
       newSpan.removeAttribute("style");
 
       input.replaceWith(newSpan);
