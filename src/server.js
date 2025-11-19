@@ -274,22 +274,30 @@ function setupMobMemoUI(mobNo, killTime) {
 
   if (card.hasAttribute("data-memo-initialized")) return;
   card.setAttribute("data-memo-initialized", "true");
+  
+  console.log(`[DEBUG UI] Mob No: ${mobNo} のメモUIを初期化しました。`);
+
   // contenteditable を常設
   memoDiv.setAttribute("contenteditable", "true");
   memoDiv.className = "memo-editable text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
   memoDiv.style.outline = "none";
   memoDiv.style.borderRadius = "4px";
-
+  // Firestore購読で最新メモを反映（編集中は更新しない）
   const unsub = subscribeMobMemos((data) => {
     setTimeout(() => {
-      if (card.getAttribute("data-editing") === "true") return; 
+      if (card.getAttribute("data-editing") === "true") {
+        console.log(`[DEBUG DATA] Mob No: ${mobNo} 編集中なのでデータ更新をスキップしました。`);
+        return;
+      } 
 
       const memos = data[mobNo] || [];
       const latest = memos[0];
       const postedAt = latest?.created_at?.toMillis ? latest.created_at.toMillis() : 0;
       const newText = postedAt < killTime.getTime() ? "" : (latest?.memo_text || "");
+      
       if (memoDiv.textContent !== newText) {
         memoDiv.textContent = newText;
+        console.log(`[DEBUG DATA] Mob No: ${mobNo} のメモ内容をFirestoreで更新しました。`);
       }
       
     }, 50); // 50ミリ秒程度の遅延
@@ -297,15 +305,17 @@ function setupMobMemoUI(mobNo, killTime) {
   // フォーカス時に編集中フラグを付与
   memoDiv.addEventListener("focus", () => {
     card.setAttribute("data-editing", "true");
+    console.log(`[DEBUG FOCUS] Mob No: ${mobNo} がフォーカスを取得 (data-editing=true)。`);
   });
-
   // クリックイベントの伝播を停止
   memoDiv.addEventListener("click", (e) => {
     e.stopPropagation();
+    console.log(`[DEBUG EVENT] Mob No: ${mobNo} のクリックイベント伝播を停止しました。`);
   });
   // blur では finalize を呼ばず、編集中フラグだけ解除
   memoDiv.addEventListener("blur", () => {
     card.removeAttribute("data-editing");
+    console.log(`[DEBUG BLUR] Mob No: ${mobNo} がフォーカスを喪失 (data-editingを解除)。`);
   });
   // Enterキーで確定（スマホIMEでも安定）
   memoDiv.addEventListener("keydown", async (e) => {
@@ -315,11 +325,12 @@ function setupMobMemoUI(mobNo, killTime) {
       card.removeAttribute("data-editing");
       // 確定後、キーボードを閉じるためにblurを呼ぶ
       memoDiv.blur(); 
+      console.log(`[DEBUG KEY] Mob No: ${mobNo} のメモを確定し、blurを呼び出しました。`);
     }
   });
 }
 
-// 湧き潰し報告 (変更なし)
+// 湧き潰し報告
 const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
     const state = getState();
     const userId = state.userId;
