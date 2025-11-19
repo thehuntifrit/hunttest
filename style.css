@@ -71,25 +71,26 @@ body {
     transform: scale(1.15);
 }
 
-.memo-editable {
-  display: block;
+.mob-memo-row {
+  display: flex;
+  align-items: center;
   width: 100%;
+}
+
+.mob-memo-row span:first-child {
+  flex: 0 0 auto;   /* Memo: ラベルは固定幅 */
+  margin-right: 0.5rem;
+}
+
+[data-last-memo],
+.memo-editable {
+  flex: 1 1 auto;   /* 横いっぱいに広げる */
   min-height: 1.5rem;
   padding: 2px 6px;
   box-sizing: border-box;
   background: transparent;
-  color: #ccc;          /* テキスト色 */
-  font-size: 0.875rem;  /* text-sm 相当 */
-  line-height: 1.25rem;
-  border: none;         /* 通常時は枠線なし */
-  border-radius: 4px;
   cursor: text;
-}
-
-.memo-editable:focus {
-  outline: none;
-  border: 1px solid #666;       /* 編集中は枠線を表示 */
-  background: rgba(0,0,0,0.35); /* 背景を少し暗くして編集中を明示 */
+  display: block;
 }
 
 /* --- 進捗バー関連のスタイル定義 --- */
