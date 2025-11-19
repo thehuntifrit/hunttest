@@ -248,13 +248,12 @@ function filterAndRender({ isInitialLoad = false } = {}) {
   (["S", "A", "FATE"].includes(state.filter.rank) ? filtered.sort(progressComparator) : filtered.sort(baseComparator));
 
   const frag = document.createDocumentFragment();
-  filtered.forEach(mob => {
-    const existing = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
-    // 編集中カードは差し替えない
+    filtered.forEach(mob => {
+  const existing = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
     if (existing && existing.getAttribute("data-editing") === "true") {
-      frag.appendChild(existing);
-      return;
-    }
+      frag.appendChild(existing); // 編集中は絶対に差し替えない
+    return;
+  }
     const temp = document.createElement("div");
     temp.innerHTML = createMobCard(mob);
     const card = temp.firstElementChild;
