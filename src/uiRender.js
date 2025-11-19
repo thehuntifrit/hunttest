@@ -475,10 +475,35 @@ function updateExpandablePanel(card, mob) {
   if (!elNext && !elLast && !elMemo) return;
 
   const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
+  // nextMinRepopDate は Date または null の可能性があるため安全に扱う
+  const nextMinDate = mob.repopInfo?.nextMinRepopDate || null;
+  const nextMinSec = nextMinDate ? Math.floor(nextMinDate.getTime() / 1000) : null;
 
-  const nextMin = mob.repopInfo?.nextMinRepopDate;
-  const conditionTime = findNextSpawnTime(mob, nextMin);
-  const displayTime = (nextMin && conditionTime) ? (conditionTime > nextMin ? conditionTime : nextMin) : (nextMin || conditionTime);
+  // minRepop を秒で持っている場合はそのまま、Dateなら秒に変換
+  let minRepopSec = mob.repopInfo?.minRepop ?? null;
+  if (minRepopSec instanceof Date) minRepopSec = Math.floor(minRepopSec.getTime() / 1000);
+  // 検索上限（秒）を cal.js と合わせる（20日分）
+  const searchLimitSec = Math.floor(Date.now() / 1000) + 20 * 24 * 3600;
+  // findNextSpawnTime は秒（number）を期待するため、null を考慮して呼び出す
+  let conditionTimeSec = null;
+  try {
+    conditionTimeSec = findNextSpawnTime(mob, nextMinSec || Math.floor(Date.now() / 1000), minRepopSec, searchLimitSec);
+  } catch (e) {
+    // 万が一 cal.js 内で例外が出ても UI は壊さない
+    console.error("findNextSpawnTime error:", e);
+    conditionTimeSec = null;
+  }
+  // displayTime を決定（Date を返す形に正規化）
+  const displayTime = (() => {
+    if (conditionTimeSec && nextMinDate) {
+      const conditionDate = new Date(conditionTimeSec * 1000);
+      return (conditionDate > nextMinDate) ? conditionDate : nextMinDate;
+    }
+    if (conditionTimeSec) return new Date(conditionTimeSec * 1000);
+    if (nextMinDate) return nextMinDate;
+    return null;
+  })();
+
   const nextStr = displayTime ? new Intl.DateTimeFormat('ja-JP', absFmt).format(displayTime) : "未確定";
 
   const lastStr = formatLastKillTime(mob.last_kill_time);
