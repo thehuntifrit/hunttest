@@ -275,18 +275,16 @@ function setupMobMemoUI(mobNo, killTime) {
   if (card.hasAttribute("data-memo-initialized")) return;
   card.setAttribute("data-memo-initialized", "true");
   
-  console.log(`[DEBUG UI] Mob No: ${mobNo} のメモUIを初期化しました。`);
-
   // contenteditable を常設
   memoDiv.setAttribute("contenteditable", "true");
   memoDiv.className = "memo-editable text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
   memoDiv.style.outline = "none";
   memoDiv.style.borderRadius = "4px";
+
   // Firestore購読で最新メモを反映（編集中は更新しない）
   const unsub = subscribeMobMemos((data) => {
     setTimeout(() => {
       if (card.getAttribute("data-editing") === "true") {
-        console.log(`[DEBUG DATA] Mob No: ${mobNo} 編集中なのでデータ更新をスキップしました。`);
         return;
       } 
 
@@ -297,27 +295,32 @@ function setupMobMemoUI(mobNo, killTime) {
       
       if (memoDiv.textContent !== newText) {
         memoDiv.textContent = newText;
-        console.log(`[DEBUG DATA] Mob No: ${mobNo} のメモ内容をFirestoreで更新しました。`);
       }
       
-    }, 50); // 50ミリ秒程度の遅延
+    }, 50);
   });
+
   // フォーカス時に編集中フラグを付与
   memoDiv.addEventListener("focus", () => {
     card.setAttribute("data-editing", "true");
-    console.log(`[DEBUG FOCUS] Mob No: ${mobNo} がフォーカスを取得 (data-editing=true)。`);
   });
+
+  // タッチイベントの伝播を停止
+  memoDiv.addEventListener("touchstart", (e) => {
+    e.stopPropagation();
+  }, { passive: true });
+
   // クリックイベントの伝播を停止
   memoDiv.addEventListener("click", (e) => {
     e.stopPropagation();
-    console.log(`[DEBUG EVENT] Mob No: ${mobNo} のクリックイベント伝播を停止しました。`);
   });
-  // blur では finalize を呼ばず、編集中フラグだけ解除
+  
+  // blur では編集中フラグだけ解除
   memoDiv.addEventListener("blur", () => {
     card.removeAttribute("data-editing");
-    console.log(`[DEBUG BLUR] Mob No: ${mobNo} がフォーカスを喪失 (data-editingを解除)。`);
   });
-  // Enterキーで確定（スマホIMEでも安定）
+
+  // Enterキーで確定
   memoDiv.addEventListener("keydown", async (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -325,7 +328,6 @@ function setupMobMemoUI(mobNo, killTime) {
       card.removeAttribute("data-editing");
       // 確定後、キーボードを閉じるためにblurを呼ぶ
       memoDiv.blur(); 
-      console.log(`[DEBUG KEY] Mob No: ${mobNo} のメモを確定し、blurを呼び出しました。`);
     }
   });
 }
