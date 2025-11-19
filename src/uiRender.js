@@ -370,56 +370,63 @@ function updateProgressBar(card, mob) {
 }
 
 function updateProgressText(card, mob) {
-  const text = card.querySelector(".progress-text");
-  if (!text) return;
+  const text = card.querySelector(".progress-text");
+  if (!text) return;
 
-  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status, isInConditionWindow, remainingSec, timeRemaining
-        } = mob.repopInfo || {};
+  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status, isInConditionWindow, timeRemaining
+  } = mob.repopInfo || {};
 
-  const absFmt = { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" };
-  
-  // 右側：最短REPOP時刻
-  let inTimeStr = "未確定";
-  if (nextMinRepopDate) {
-    try {
-      inTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(nextMinRepopDate);
-    } catch {
-      inTimeStr = "未確定";
-    }
-  }
-    // 右側：特殊条件 Next（トグル対象）
-  let nextTimeStr = "";
-  const hasCondition =
-    !!(mob.moonPhase || mob.timeRange || mob.timeRanges || mob.weatherSeedRange || mob.weatherSeedRanges || mob.conditions);
+  const absFmt = { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" };
+    
+  // 右側：最短REPOP時刻
+  let inTimeStr = "未確定";
+  if (nextMinRepopDate) {
+    try {
+      // 常に最短REPOP時刻を 'in' として表示
+      inTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(nextMinRepopDate);
+    } catch {
+      inTimeStr = "未確定";
+    }
+  }
+ // 右側：特殊条件 Next/Active の時刻（トグル対象）
+  let nextTimeStr = "";
+  const hasCondition =
+    !!(mob.moonPhase || mob.timeRange || mob.timeRanges || mob.weatherSeedRange || mob.weatherSeedRanges || mob.conditions);
 
-  if (hasCondition) {
-    if (isInConditionWindow && (status === "PopWindow" || status === "ConditionActive") && remainingSec > 0) {
-      nextTimeStr = `残り ${formatDurationHM(remainingSec)}`;
-    } else if (nextConditionSpawnDate && status === "Next") {
-      try {
-        nextTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(nextConditionSpawnDate);
-      } catch {
-        nextTimeStr = "";
-      }
-    } else {
-      nextTimeStr = "";
-    }
-  }
-    // 左側：進捗状態
-  const nowSec = Date.now() / 1000;
-  let leftStr = "未確定";
-
-  if (status === "ConditionActive") {
-    leftStr = timeRemaining;
-  } else if (status === "Next") {
-    leftStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
-  } else if (status === "PopWindow") {
-    leftStr = `残り ${formatDurationHM(maxRepop - nowSec)}`;
-  } else if (status === "MaxOver") {
-    leftStr = `Time Over (100%)`;
-  }
-  
-  const percentStr = status !== "MaxOver" && status !== "Unknown" && status !== "ConditionActive"  ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)` : "";
+  if (hasCondition) {
+    if (status === "ConditionActive") {
+      // ConditionActiveの場合は、ウィンドウ終了時刻を表示
+      if (mob.repopInfo.conditionWindowEnd) {
+        try {
+          nextTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(mob.repopInfo.conditionWindowEnd);
+        } catch {
+          nextTimeStr = "";
+        }
+      }
+    } else if (status === "NextCondition" && nextConditionSpawnDate) {
+      // NextConditionの場合は、湧き開始時刻を表示
+      try {
+        nextTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(nextConditionSpawnDate);
+      } catch {
+        nextTimeStr = "";
+      }
+    }
+  }
+  
+  // 左側：進捗状態
+  const nowSec = Date.now() / 1000;
+  let leftStr = timeRemaining || "未確定"; // timeRemaining を初期値として利用
+  // 補足: timeRemaining は calculateRepop で既にフォーマットされているため、
+  // ここで再計算するのではなく、statusに応じて % 表示を調整する
+  const percentStr = (status !== "MaxOver" && status !== "Unknown" && status !== "ConditionActive" && status !== "NextCondition") 
+    ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)` 
+    : "";
+  // Next ステータス（条件なし）の場合、時間と % を結合
+  if (status === "Next") {
+    leftStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
+  } else if (status === "PopWindow") {
+    leftStr = `残り ${formatDurationHM(maxRepop - nowSec)}`;
+  }
 
   text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
@@ -429,23 +436,28 @@ function updateProgressText(card, mob) {
         <span class="label-next" style="display:none;">${nextTimeStr}</span>
       </div>
     </div>
-  `;
-  // --- 状態に応じたクラス付与 ---
-  if (status === "MaxOver") text.classList.add("max-over");
-  else text.classList.remove("max-over");
+  `;
+  
+  // --- 状態に応じたクラス付与 ---
+  if (status === "MaxOver") text.classList.add("max-over");
+  else text.classList.remove("max-over");
 
-  if (minRepop - nowSec >= 3600) text.classList.add("long-wait");
-  else text.classList.remove("long-wait");
-  // --- トグル開始条件の厳密化 ---
-  const toggleContainer = text.querySelector(".toggle-container");
-  const nextLabel = toggleContainer?.querySelector(".label-next");
-  // 次表示が存在する場合のみトグル開始（未確定＝空文字は対象外）
-  const hasNextDisplay = !!(nextLabel && nextLabel.textContent && nextLabel.textContent.trim().length > 0);
+  if (minRepop - nowSec >= 3600) text.classList.add("long-wait");
+  else text.classList.remove("long-wait");
 
-  if (hasNextDisplay && toggleContainer && !toggleContainer.dataset.toggleStarted) {
-    startToggleInNext(toggleContainer);
-    toggleContainer.dataset.toggleStarted = "true";
-  }
+  // --- トグル開始条件の厳密化 ---
+  const toggleContainer = text.querySelector(".toggle-container");
+  const nextLabel = toggleContainer?.querySelector(".label-next");
+  // 次表示が存在する場合のみトグル開始（未確定＝空文字は対象外）
+  const hasNextDisplay = !!(nextLabel && nextLabel.textContent && nextLabel.textContent.trim().length > 0);
+
+  if (hasNextDisplay && toggleContainer && !toggleContainer.dataset.toggleStarted) {
+    // startToggleInNext 関数が定義されていることを前提とする
+    if (typeof startToggleInNext === 'function') {
+        startToggleInNext(toggleContainer);
+        toggleContainer.dataset.toggleStarted = "true";
+    }
+  }
 }
 
 function startToggleInNext(container) {
