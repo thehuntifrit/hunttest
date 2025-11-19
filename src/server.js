@@ -274,13 +274,11 @@ function setupMobMemoUI(mobNo, killTime) {
 
   if (card.hasAttribute("data-memo-initialized")) return;
   card.setAttribute("data-memo-initialized", "true");
-
   // contenteditable を常設
   memoDiv.setAttribute("contenteditable", "true");
   memoDiv.className = "memo-editable text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
   memoDiv.style.outline = "none";
   memoDiv.style.borderRadius = "4px";
-
   // Firestore購読で最新メモを反映（編集中は更新しない）
   const unsub = subscribeMobMemos((data) => {
     if (card.getAttribute("data-editing") === "true") return;
@@ -293,9 +291,8 @@ function setupMobMemoUI(mobNo, killTime) {
   memoDiv.addEventListener("focus", () => {
     card.setAttribute("data-editing", "true");
   });
-  // blur時に確定処理
-  memoDiv.addEventListener("blur", async () => {
-    await submitMemo(mobNo, memoDiv.textContent);
+  // blur では finalize を呼ばず、編集中フラグだけ解除
+  memoDiv.addEventListener("blur", () => {
     card.removeAttribute("data-editing");
   });
   // Enterキーで確定（スマホIMEでも安定）
@@ -303,6 +300,7 @@ function setupMobMemoUI(mobNo, killTime) {
     if (e.key === "Enter") {
       e.preventDefault();
       await submitMemo(mobNo, memoDiv.textContent);
+      card.removeAttribute("data-editing");
       memoDiv.blur();
     }
   });
