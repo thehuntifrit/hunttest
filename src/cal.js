@@ -1,4 +1,4 @@
-// cal.js - 区間モデル + 175秒/1400秒グリッド探索 + 終了時刻返却 + 後方互換ユーティリティ
+// cal.js - 修正版: 基準点ロジック + 繰り下げ判定 + 天候延長包含チェック
 
 const ET_HOUR_SEC = 175;
 const WEATHER_CYCLE_SEC = 1400;
@@ -119,7 +119,7 @@ function calculateNextNewMoonStart(startSec) {
   } else if (nextStartSec < startSec) {
     nextStartSec += MOON_CYCLE_SEC;
   }
-  
+   
   return nextStartSec;
 }
 
@@ -156,6 +156,7 @@ function enumerateMoonRanges(startSec, endSec, moonPhase) {
 
   while (moonStart && moonStart < endSec) {
     const moonEnd = moonStart + MOON_PHASE_DURATION_SEC;
+    // 基準点(startSec)が月齢期間内の場合、基準点を開始とするため maxをとる
     ranges.push([Math.max(moonStart, startSec), Math.min(moonEnd, endSec)]);
     moonStart += MOON_CYCLE_SEC;
   }
@@ -275,7 +276,7 @@ function getEtWindowEnd(mob, windowStart) {
 function extendWeatherWindow(mob, windowStart, initialWindowEnd, limitSec) {
   let currentEnd = initialWindowEnd;
   let accumulatedCycles = Math.ceil((currentEnd - windowStart) / WEATHER_CYCLE_SEC);
-  
+   
   if (accumulatedCycles >= MAX_CONSECUTIVE_CYCLES) return currentEnd;
 
   let cursor = currentEnd;
@@ -295,15 +296,21 @@ function extendWeatherWindow(mob, windowStart, initialWindowEnd, limitSec) {
 function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
   const requiredMinutes = mob.weatherDuration?.minutes || 0;
   const requiredSec = requiredMinutes > 0 ? requiredMinutes * 60 : WEATHER_CYCLE_SEC;
+  // backSecは「条件を満たすために必要な過去の継続時間」
   const backSec = requiredSec;  
 
+  // --- 修正: 現在(pointSec)を含む過去のウィンドウを探す ---
+  // 基準点(pointSec)を天候サイクル境界まで「繰り下げ(align)」る
   let currentCursor = alignToWeatherCycle(pointSec);
   let currentWindowEnd = currentCursor + WEATHER_CYCLE_SEC;  
-  const scanStart = ceilToWeatherCycle(pointSec - backSec);  
   
+  // 条件時間分だけ巻き戻した位置から探索開始
+  const scanStart = ceilToWeatherCycle(pointSec - backSec);  
+   
   let consecutiveCycles = 0;
   let lastHitStart = null;  
 
+  // 過去方向へスキャン (現在が進行中の天候ウィンドウ内か確認)
   while (currentCursor >= scanStart) {
     const seed = getEorzeaWeatherSeed(new Date(currentCursor * 1000));
     
@@ -316,21 +323,22 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
     }
     
     if (lastHitStart !== null && consecutiveCycles * WEATHER_CYCLE_SEC >= backSec) {
-      if (pointSec >= lastHitStart && pointSec < currentWindowEnd) {
-        const initialWindowEnd = lastHitStart + consecutiveCycles * WEATHER_CYCLE_SEC;
-        const trueWindowStart = initialWindowEnd - backSec;
-
-        if (pointSec >= trueWindowStart && pointSec < trueWindowStart + backSec) {
-          const windowEnd = extendWeatherWindow(mob, trueWindowStart, trueWindowStart + backSec, limitSec);
-          
-          const remainingSec = windowEnd - pointSec;
-          return {
-            windowStart: trueWindowStart,
-            windowEnd,
-            popTime: pointSec,
-            remainingSec
-          };
-        }
+      // 条件を満たす天候の開始点を特定
+      const initialWindowEnd = lastHitStart + consecutiveCycles * WEATHER_CYCLE_SEC;
+      const trueWindowStart = initialWindowEnd - backSec;
+      // 修正: 現在時刻(pointSec)が「開始点」から「拡張された終了点」の間にあるかを確認
+      // まずウィンドウを最大まで拡張する
+      const windowEnd = extendWeatherWindow(mob, trueWindowStart, initialWindowEnd, limitSec);
+      
+      if (pointSec >= trueWindowStart && pointSec < windowEnd) {
+        const remainingSec = windowEnd - pointSec;
+        return {
+          // 基準点(pointSec)と重なっているので、基準点を開始として返す
+          windowStart: pointSec,
+          windowEnd,
+          popTime: pointSec,
+          remainingSec
+        };
       }
     }
     
@@ -338,6 +346,7 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
     currentWindowEnd -= WEATHER_CYCLE_SEC;
   }
 
+  // --- 未来方向へスキャン ---
   let forwardCursor = ceilToWeatherCycle(Math.max(minRepopSec, pointSec));
 
   while (forwardCursor <= limitSec) {
@@ -355,7 +364,7 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
     if (accumulated >= backSec) {
       const windowStart = consecutiveStart;
       const initialWindowEnd = windowStart + accumulated;
-      
+       
       const windowEnd = extendWeatherWindow(mob, windowStart, initialWindowEnd, limitSec);
 
       return {
@@ -377,6 +386,7 @@ function findWeatherWindow(mob, pointSec, minRepopSec, limitSec) {
 }
 
 function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
+  // 月齢判定用に少し前からスキャン開始 (基準点が月齢期間中の場合を捉えるため)
   const moonScanStart = Math.max(minRepopSec, pointSec) - MOON_PHASE_DURATION_SEC;
   const moonRanges = enumerateMoonRanges(moonScanStart, limitSec, mob.moonPhase);
 
@@ -384,24 +394,26 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
     let intersectStart = moonStart;
     let intersectEnd = moonEnd;
     
+    // 天候条件がある場合
     if (mob.weatherSeedRange || mob.weatherSeedRanges) {
+      // 天候探索は、月齢区間の終了(moonEnd)までをリミットとする
       const weatherResult = findWeatherWindow(mob, pointSec, minRepopSec, moonEnd);
-      
+       
       if (!weatherResult) {
         continue;  
       }
-
+      // 天候の湧き時間(popTime)または月齢開始の遅い方を採用
       intersectStart = Math.max(weatherResult.popTime, moonStart);  
       intersectEnd = Math.min(weatherResult.windowEnd, moonEnd);
-      
+       
       if (intersectStart >= intersectEnd) continue;
-      
+      // ET条件がない場合 (天候+月齢のみ)
       if (!mob.timeRange && !mob.timeRanges && !mob.conditions) {
         
         if (pointSec >= intersectStart && pointSec < intersectEnd) {
           const remainingSec = intersectEnd - pointSec;
           return {
-            windowStart: intersectStart,
+            windowStart: pointSec, // 基準点を開始として返す
             windowEnd: intersectEnd,
             popTime: pointSec,
             remainingSec
@@ -419,33 +431,42 @@ function findNextConditionWindow(mob, pointSec, minRepopSec, limitSec) {
       }
     } 
     
-    let etCursor = ceilToEtHour(intersectStart);  
+    // --- ET条件の探索ロジック ---
+    // intersectStart(基準点含む)をET境界まで「繰り下げ(align)」る
+    // これにより現在進行中のETウィンドウを捕捉可能にする
+    let etCursor = alignToEtHour(intersectStart);  
 
     while (etCursor < intersectEnd) {
+      // ET条件を満たしているか
       if (checkEtCondition(mob, etCursor)) {
         const etEndRaw = getEtWindowEnd(mob, etCursor);
         const etEnd = Math.min(etEndRaw, intersectEnd);
         
-        const windowStart = etCursor;
-        const windowEnd = etEnd;
-
-        if (pointSec >= windowStart && pointSec < windowEnd) {
-          const remainingSec = windowEnd - pointSec;
-          return {
-            windowStart,
-            windowEnd,
-            popTime: pointSec,
-            remainingSec
-          };
-        }
-
-        if (windowStart >= pointSec) {
-          return {
-            windowStart,
-            windowEnd,
-            popTime: windowStart,
-            remainingSec: 0
-          };
+        // ウィンドウ区間: [etCursor, etEnd]
+        // ただし、探索開始地点(intersectStart)より前は無効なのでクリップする
+        // intersectStartがウィンドウ内なら、intersectStartから開始
+        const validStart = Math.max(etCursor, intersectStart);
+        
+        if (validStart < etEnd) {
+            // 基準点(pointSec)がこの有効区間内にあるか
+            if (pointSec >= validStart && pointSec < etEnd) {
+                return {
+                    windowStart: pointSec, // 基準点を返す
+                    windowEnd: etEnd,
+                    popTime: pointSec,
+                    remainingSec: etEnd - pointSec
+                };
+            }
+            
+            // 未来のウィンドウの場合
+            if (validStart >= pointSec) {
+                return {
+                    windowStart: validStart,
+                    windowEnd: etEnd,
+                    popTime: validStart,
+                    remainingSec: 0
+                };
+            }
         }
       }
 
@@ -480,6 +501,7 @@ function calculateRepop(mob, maintenance) {
     maxRepop = lastKill + maxSec;
   }
 
+  // 基準点: 最短REPOPまたは現在時間の遅い方 (未来方向へ探索の基点)
   const pointSec = Math.max(minRepop, now);
   const nextMinRepopDate = new Date(minRepop * 1000);
 
@@ -508,6 +530,7 @@ function calculateRepop(mob, maintenance) {
 
     if (conditionResult) {
       const { windowStart, windowEnd, popTime, remainingSec } = conditionResult;
+      // 基準点(pointSec)が期間内なら「ConditionActive」
       isInConditionWindow = (pointSec >= windowStart && pointSec < windowEnd);
 
       const nextSec = popTime;
