@@ -55,7 +55,23 @@ function formatLastKillTime(timestamp) {
   return new Intl.DateTimeFormat("ja-JP", options).format(date);
 }
 
-// --- ユーティリティ関数（変更なし） ---
+// --- ユーティリティ関数 ---
+function getEorzeaTime(date = new Date()) {
+  const EORZEA_SPEED_RATIO = 20.57142857142857;
+  const realMs = date.getTime();
+  const eorzeaMs = realMs * EORZEA_SPEED_RATIO;
+  
+  const totalSeconds = Math.floor(eorzeaMs / 1000);
+  const etSec = totalSeconds % (60 * 60 * 24); // 1 ET日内の秒数
+  
+  const hour = Math.floor(etSec / 3600);
+  const minute = Math.floor((etSec % 3600) / 60);
+  const second = etSec % 60;
+  
+  const formatted = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+
+  return { hour, minute, second, formatted };
+}
 
 function getEtHourFromRealSec(realSec) {
   const ticks = Math.floor(realSec / ET_HOUR_SEC);
