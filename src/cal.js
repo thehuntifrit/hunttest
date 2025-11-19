@@ -242,47 +242,50 @@ function findWeatherRanges(mob, pointSec, searchLimit) {
 
   const ranges = [];
   const requiredMinutes = mob.weatherDuration?.minutes || 0;
-  const requiredSec = requiredMinutes > 0 ? requiredMinutes * 60 : WEATHER_CYCLE_SEC;
+  const requiredSec = requiredMinutes > 0 ? requiredMinutes * 60 : 0; // 0 は連続不要
+  const requiredCycles = Math.ceil(requiredSec / WEATHER_CYCLE_SEC); // 必要な最小サイクル数
 
-  // 1. 後方スキャン: pointSecを含むアクティブな天候を探す
-  let scanStart = alignToWeatherCycle(pointSec) - requiredSec;
-  // scanStartを天候サイクル境界に揃える
-  scanStart = alignToWeatherCycle(scanStart);
+  // -----------------------------------------------------
+  // 1. 後方スキャン: pointSecを含むアクティブな天候を探す (Active判定)
+  // -----------------------------------------------------
   
-  // pointSecを含むサイクル境界までをチェック
-  let checkCursor = scanStart;
-  let lastHitStart = null;
-  let consecutiveCycles = 0;
-  let currentWindowStart = null;
-  let found = false;
+  let currentCycleStart = alignToWeatherCycle(pointSec);
 
-  while (checkCursor <= alignToWeatherCycle(pointSec)) {
-    const seed = getEorzeaWeatherSeed(new Date(checkCursor * 1000));
-    if (checkWeatherInRange(mob, seed)) {
-      if (currentWindowStart === null) currentWindowStart = checkCursor;
-      consecutiveCycles++;
-      lastHitStart = checkCursor;
-    } else {
-      currentWindowStart = null;
-      consecutiveCycles = 0;
-    }
-    
-    // 連続条件を満たしたら、現在の有効区間を確定させる
-    if (consecutiveCycles * WEATHER_CYCLE_SEC >= requiredSec) {
-        found = true;
-    }
-    checkCursor += WEATHER_CYCLE_SEC;
+  // 判定基準となる時刻（pointSecのサイクル開始時刻）から過去に遡って、連続性をチェック
+  let consecutiveCycles = 0;
+  let scanCursor = currentCycleStart;
+  let trueStart = null;
+  
+  let iterations = 0;
+  // 必要なサイクル数 + 予備数分だけ遡る
+  const maxBackCycles = requiredCycles + 5; 
+
+  // pointSecを含むサイクルから逆順にチェック
+  while (iterations < maxBackCycles && scanCursor >= 0) {
+      const seed = getEorzeaWeatherSeed(new Date(scanCursor * 1000));
+      if (checkWeatherInRange(mob, seed)) {
+          consecutiveCycles++;
+          trueStart = scanCursor; // 現在の連続区間の最も早い開始点
+          scanCursor -= WEATHER_CYCLE_SEC;
+      } else {
+          // 途切れたら終了
+          break;
+      }
+      iterations++;
   }
   
-  // pointSecの時点でアクティブであった場合、その区間を延長して追加
-  if (found && lastHitStart !== null) {
-      // 連続条件を満たした最も早い開始点 (start = lastHitStart) から延長
-      let extendedEnd = lastHitStart + consecutiveCycles * WEATHER_CYCLE_SEC;
-      let extensionCursor = extendedEnd;
-      let iterations = 0;
+  // 連続条件を満たしているか？ (requiredSec == 0 の場合、1サイクルでもOK)
+  const isConditionActive = (requiredCycles === 0 && consecutiveCycles >= 1) || (consecutiveCycles >= requiredCycles);
+
+  if (isConditionActive && trueStart !== null) {
+      // **pointSecを跨ぐアクティブな区間が見つかった**
+      let extendedEnd = currentCycleStart; // pointSec のサイクル終了時刻から延長を開始
+
+      // pointSecのサイクルから未来へ延長
+      let extensionCursor = currentCycleStart;
+      let extIterations = 0;
       
-      // 無限延長（安全装置としてMAX_SEARCH_ITERATIONSを使用）
-      while (extensionCursor <= searchLimit && iterations < MAX_SEARCH_ITERATIONS) {
+      while (extensionCursor <= searchLimit && extIterations < MAX_SEARCH_ITERATIONS) {
           const seed = getEorzeaWeatherSeed(new Date(extensionCursor * 1000));
           if (checkWeatherInRange(mob, seed)) {
               extendedEnd += WEATHER_CYCLE_SEC;
@@ -290,36 +293,46 @@ function findWeatherRanges(mob, pointSec, searchLimit) {
           } else {
               break;
           }
-          iterations++;
+          extIterations++;
       }
       
-      // 天候条件の真の開始点 (lastHitStart) と延長終了点
-      ranges.push([lastHitStart, extendedEnd]);
+      // アクティブな生区間データ [trueStart, extendedEnd] をリストの先頭に追加
+      ranges.push([trueStart, extendedEnd]);
   }
 
-  // 2. 前方スキャン: pointSec以降の未来の天候を探す
+  // -----------------------------------------------------
+  // 2. 前方スキャン: pointSec以降の未来の天候を探す (Next判定)
+  // -----------------------------------------------------
+  // pointSec の次のサイクル境界から検索開始
   let forwardCursor = ceilToWeatherCycle(pointSec);
-  let iterations = 0;
+  iterations = 0;
 
   while (forwardCursor <= searchLimit && iterations < MAX_SEARCH_ITERATIONS) {
-    let accumulated = 0;
+    let accumulatedCycles = 0;
     let testCursor = forwardCursor;
     let consecutiveStart = forwardCursor;
 
     // 連続条件を満たすまで探索
-    while (accumulated < requiredSec) {
+    while (testCursor <= searchLimit) {
       const seed = getEorzeaWeatherSeed(new Date(testCursor * 1000));
       if (!checkWeatherInRange(mob, seed)) break;
-      accumulated += WEATHER_CYCLE_SEC;
-      testCursor += WEATHER_CYCLE_SEC;
-    }
-
-    if (accumulated >= requiredSec) {
-      // 条件を満たしたら、そこから更に延長
-      let initialEnd = consecutiveStart + accumulated;
-      let extendedEnd = initialEnd;
-      let extensionCursor = extendedEnd;
       
+      accumulatedCycles++;
+      testCursor += WEATHER_CYCLE_SEC;
+      
+      // 必要な連続サイクルを満たしたら、その後の延長へ進む
+      if (requiredCycles > 0 && accumulatedCycles >= requiredCycles) break;
+      if (requiredCycles === 0 && accumulatedCycles >= 1) break; // 連続不要なら1サイクルでOK
+    }
+    
+    // 連続条件を満たしているか？
+    if ((requiredCycles === 0 && accumulatedCycles >= 1) || (requiredCycles > 0 && accumulatedCycles >= requiredCycles)) {
+      
+      // 条件を満たした次のサイクルから更に延長
+      let initialEnd = consecutiveStart + accumulatedCycles * WEATHER_CYCLE_SEC;
+      let extendedEnd = initialEnd;
+      let extensionCursor = initialEnd; // ここから延長チェック開始
+
       let extIterations = 0;
       while (extensionCursor <= searchLimit && extIterations < MAX_SEARCH_ITERATIONS) {
         const seed = getEorzeaWeatherSeed(new Date(extensionCursor * 1000));
@@ -332,26 +345,24 @@ function findWeatherRanges(mob, pointSec, searchLimit) {
         extIterations++;
       }
       
+      // 未来の生区間データ
       ranges.push([consecutiveStart, extendedEnd]);
       forwardCursor = extendedEnd; // 延長した終了時刻から次を探索
     } else {
       forwardCursor = ceilToWeatherCycle(testCursor); // 途切れた次のサイクルから再開
     }
     
-    if (forwardCursor <= consecutiveStart) {
-      forwardCursor = consecutiveStart + WEATHER_CYCLE_SEC;
-    }
     iterations++;
   }
 
-  // 重複を排除してソート
+  // 重複を排除してソート（アクティブ区間が先頭になるように）
   ranges.sort((a, b) => a[0] - b[0]);
   return ranges.filter((range, index) => {
     if (index === 0) return true;
+    // 重複する区間を排除
     return range[0] >= ranges[index - 1][1] || range[0] > ranges[index - 1][0];
   });
 }
-
 
 /**
  * ET（時間）の生区間データを抽出する
