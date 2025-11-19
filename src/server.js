@@ -280,27 +280,28 @@ function setupMobMemoUI(mobNo, killTime) {
   memoDiv.style.outline = "none";
   memoDiv.style.borderRadius = "4px";
 
-  // Firestore購読で最新メモを反映（編集中は更新しない）
   const unsub = subscribeMobMemos((data) => {
-    // 【💡修正点：setTimeoutで非同期にし、フォーカス処理が完了するのを待つ】
     setTimeout(() => {
-      // 購読データが流れてきた時点で、編集フラグが付与されていれば処理を中断
       if (card.getAttribute("data-editing") === "true") return; 
 
       const memos = data[mobNo] || [];
       const latest = memos[0];
       const postedAt = latest?.created_at?.toMillis ? latest.created_at.toMillis() : 0;
-            // 内容の更新。現在の内容と異なるときのみDOMを更新することで、不要なレンダリングを防ぐ
       const newText = postedAt < killTime.getTime() ? "" : (latest?.memo_text || "");
       if (memoDiv.textContent !== newText) {
         memoDiv.textContent = newText;
       }
       
-    }, 50); // 50ミリ秒程度の遅延 (この値は環境によって調整が必要かもしれません)
+    }, 50); // 50ミリ秒程度の遅延
   });
   // フォーカス時に編集中フラグを付与
   memoDiv.addEventListener("focus", () => {
     card.setAttribute("data-editing", "true");
+  });
+
+  // クリックイベントの伝播を停止
+  memoDiv.addEventListener("click", (e) => {
+    e.stopPropagation();
   });
   // blur では finalize を呼ばず、編集中フラグだけ解除
   memoDiv.addEventListener("blur", () => {
