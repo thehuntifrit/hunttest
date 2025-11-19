@@ -265,6 +265,9 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // MobごとのメモUI制御
+/**
+ * モブメモUIを初期化し、タップ時にモーダルを開くように設定する
+ */
 function setupMobMemoUI(mobNo, killTime) {
   const card = document.querySelector(`.mob-card[data-mob-no="${mobNo}"]`);
   if (!card) return;
@@ -275,24 +278,21 @@ function setupMobMemoUI(mobNo, killTime) {
   if (card.hasAttribute("data-memo-initialized")) return;
   card.setAttribute("data-memo-initialized", "true");
   
-  // contenteditable を常設
-  memoDiv.setAttribute("contenteditable", "true");
-  memoDiv.className = "memo-editable text-gray-300 text-sm w-full min-h-[1.5rem] px-2";
+  // contenteditable を削除し、表示専用の div に変更
+  memoDiv.removeAttribute("contenteditable"); 
+  memoDiv.className = "memo-editable text-gray-300 text-sm w-full min-h-[1.5rem] px-2 cursor-pointer"; // CSSクラスは適宜調整
   memoDiv.style.outline = "none";
   memoDiv.style.borderRadius = "4px";
 
-  // Firestore購読で最新メモを反映（編集中は更新しない）
+  // Firestore購読で最新メモを反映（表示内容は購読で常に最新に保つ）
   const unsub = subscribeMobMemos((data) => {
     setTimeout(() => {
-      if (card.getAttribute("data-editing") === "true") {
-        return;
-      } 
-
       const memos = data[mobNo] || [];
       const latest = memos[0];
       const postedAt = latest?.created_at?.toMillis ? latest.created_at.toMillis() : 0;
       const newText = postedAt < killTime.getTime() ? "" : (latest?.memo_text || "");
       
+      // テキスト内容の更新
       if (memoDiv.textContent !== newText) {
         memoDiv.textContent = newText;
       }
@@ -300,37 +300,88 @@ function setupMobMemoUI(mobNo, killTime) {
     }, 50);
   });
 
-  // フォーカス時に編集中フラグを付与
-  memoDiv.addEventListener("focus", () => {
-    card.setAttribute("data-editing", "true");
-  });
-
-  // タッチイベントの伝播を停止
-  memoDiv.addEventListener("touchstart", (e) => {
-    e.stopPropagation();
-  }, { passive: true });
-
-  // クリックイベントの伝播を停止
+  // クリックイベントをモーダルを開く処理に置き換え
   memoDiv.addEventListener("click", (e) => {
     e.stopPropagation();
-  });
-  
-  // blur では編集中フラグだけ解除
-  memoDiv.addEventListener("blur", () => {
-    card.removeAttribute("data-editing");
-  });
-
-  // Enterキーで確定
-  memoDiv.addEventListener("keydown", async (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      await submitMemo(mobNo, memoDiv.textContent);
-      card.removeAttribute("data-editing");
-      // 確定後、キーボードを閉じるためにblurを呼ぶ
-      memoDiv.blur(); 
-    }
+    // モーダルを開き、現在のメモ内容を渡す
+    openMemoModal(mobNo, memoDiv.textContent.trim()); 
   });
 }
+
+/**
+ * メモ編集モーダルを開き、データをセットする
+ */
+function openMemoModal(mobNo, currentText) {
+    const modal = document.getElementById('memo-modal-container');
+    const input = document.getElementById('modal-memo-input');
+    const mobNoHidden = document.getElementById('modal-mob-no');
+
+    if (!modal || !input || !mobNoHidden) return;
+
+    input.value = currentText;
+    mobNoHidden.value = mobNo;
+    
+    // モーダルを表示
+    modal.classList.remove('hidden'); 
+    
+    // モーダル表示後、入力欄にフォーカスを強制的に当てる
+    // モーダルが完全に描画されるのを待つことで、フォーカス成功率が向上する
+    setTimeout(() => {
+        input.focus();
+    }, 100); 
+}
+
+/**
+ * モーダル内のイベントハンドラーを設定する（ページロード時に一度だけ実行）
+ */
+function setupModalHandlers() {
+    const modal = document.getElementById('memo-modal-container');
+    const input = document.getElementById('modal-memo-input');
+    const submitBtn = document.getElementById('modal-memo-submit');
+    const cancelBtn = document.getElementById('modal-memo-cancel');
+    const mobNoHidden = document.getElementById('modal-mob-no');
+
+    const closeModal = () => {
+        modal.classList.add('hidden');
+    };
+
+    // キャンセルボタンでモーダルを閉じる
+    cancelBtn.addEventListener('click', closeModal);
+
+    // モーダルの背景クリックで閉じる
+    modal.addEventListener('click', (e) => {
+        if (e.target.id === 'memo-modal-container') {
+            closeModal();
+        }
+    });
+
+    // 保存ボタンでデータを送信し、モーダルを閉じる
+    submitBtn.addEventListener('click', async () => {
+        const mobNo = mobNoHidden.value;
+        const newText = input.value;
+        if (mobNo) {
+            await submitMemo(mobNo, newText);
+        }
+        closeModal();
+    });
+
+    // textarea内でEnterキーを押した際に保存・モーダルを閉じる
+    input.addEventListener('keydown', async (e) => {
+        // Shift + Enter は改行として残し、Enter 単独で確定とする
+        if (e.key === "Enter" && !e.shiftKey) { 
+            e.preventDefault();
+            const mobNo = mobNoHidden.value;
+            const newText = input.value;
+            if (mobNo) {
+                await submitMemo(mobNo, newText);
+            }
+            closeModal();
+        }
+    });
+}
+
+// アプリケーション起動時に一度だけイベントリスナーを設定
+setupModalHandlers();
 
 // 湧き潰し報告
 const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
