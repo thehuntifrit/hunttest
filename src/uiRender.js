@@ -243,39 +243,61 @@ function progressComparator(a, b) {
 }
 
 function filterAndRender({ isInitialLoad = false } = {}) {
-  const state = getState();
-  const filtered = filterMobsByRankAndArea(state.mobs);
-  (["S", "A", "FATE"].includes(state.filter.rank) ? filtered.sort(progressComparator) : filtered.sort(baseComparator));
+    const state = getState();
+    const filtered = filterMobsByRankAndArea(state.mobs);
+    // ソート順決定
+    const sortedMobs = (["S", "A", "FATE"].includes(state.filter.rank) ? filtered.sort(progressComparator) : filtered.sort(baseComparator));
 
-  const frag = document.createDocumentFragment();
-    filtered.forEach(mob => {
-  const existing = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
-    if (existing && existing.getAttribute("data-editing") === "true") {
-      frag.appendChild(existing); // 編集中は絶対に差し替えない
-    return;
-  }
-    const temp = document.createElement("div");
-    temp.innerHTML = createMobCard(mob);
-    const card = temp.firstElementChild;
-    updateProgressText(card, mob);
-    updateProgressBar(card, mob);
-    updateExpandablePanel(card, mob);
-    frag.appendChild(card);
-  });
+    const existingCards = new Map();
+    // 既存のカードをMapに格納し、DOMから一旦切り離す
+    DOM.masterContainer.querySelectorAll('.mob-card').forEach(card => {
+        const mobNo = card.getAttribute('data-mob-no');
+        existingCards.set(mobNo, card);
+        card.remove(); // DOMから一時的に除去
+    });
 
-  DOM.masterContainer.innerHTML = "";
-  DOM.masterContainer.appendChild(frag);
-  distributeCards();
-  attachLocationEvents();
-  // DOMに追加した後で呼ぶ
-  filtered.forEach(mob => {
-    const existing = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
-    if (existing && existing.getAttribute("data-editing") === "true") return;
-    const killTime = mob.last_kill_time ? new Date(mob.last_kill_time) : new Date();
-    setupMobMemoUI(String(mob.No), killTime);
-  });
+    const frag = document.createDocumentFragment();
 
-  if (isInitialLoad) updateProgressBars();
+    sortedMobs.forEach(mob => {
+        const mobNoStr = String(mob.No);
+        let card = existingCards.get(mobNoStr);
+      
+        if (card && card.getAttribute("data-editing") !== "true") {
+            updateProgressText(card, mob);
+            updateProgressBar(card, mob);
+            updateExpandablePanel(card, mob);
+        
+        } else if (!card) {
+            // カードが存在しない場合は新規作成
+            const temp = document.createElement("div");
+            temp.innerHTML = createMobCard(mob);
+            card = temp.firstElementChild;
+            updateProgressText(card, mob);
+            updateProgressBar(card, mob);
+            updateExpandablePanel(card, mob);
+        }
+      
+        if (card) {
+            frag.appendChild(card);
+        }
+    });
+
+    DOM.masterContainer.appendChild(frag); // 順序変更（既存要素の移動）
+
+    distributeCards();
+    attachLocationEvents();
+    
+    // DOMに追加した後で呼ぶ
+    sortedMobs.forEach(mob => {
+        const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
+        // 編集中でない、または新規作成されたカードのみUI初期化
+        if (card && card.getAttribute("data-memo-initialized") !== "true") {
+            const killTime = mob.last_kill_time ? new Date(mob.last_kill_time) : new Date();
+            setupMobMemoUI(String(mob.No), killTime);
+        }
+    });
+
+    if (isInitialLoad) updateProgressBars();
 }
 
 function distributeCards() {
