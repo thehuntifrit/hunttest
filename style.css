@@ -1,3 +1,4 @@
+
 /* モーダルの背景 */
 #report-modal {
     background-color: rgba(0, 0, 0, 0.9);
@@ -77,19 +78,20 @@ body {
   width: 100%;
 }
 
-.mob-memo-row {
-  display: block;
-  width: 100%;
+.mob-memo-row span:first-child {
+  flex: 0 0 auto;   /* Memo: ラベルは固定幅 */
+  margin-right: 0.5rem;
 }
+
 [data-last-memo],
 .memo-editable {
+  flex: 1 1 auto;   /* 横いっぱいに広げる */
   min-height: 1.5rem;
   padding: 2px 6px;
   box-sizing: border-box;
   background: transparent;
   cursor: text;
   display: block;
-  width: auto;
 }
 
 /* --- 進捗バー関連のスタイル定義 --- */
