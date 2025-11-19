@@ -352,28 +352,29 @@ function setupModalHandlers() {
     });
 
     // 保存ボタンでデータを送信し、モーダルを閉じる
-    submitBtn.addEventListener('click', async () => {
-        const mobNo = mobNoHidden.value;
-        const newText = input.value;
-        if (mobNo) {
-            await submitMemo(mobNo, newText);
-        }
-        closeModal();
-    });
+    submitBtn.addEventListener('click', async () => {
+    const mobNoString = mobNoHidden.value;
+    const mobNo = Number(mobNoString); // ★ 数値型に変換
+    const newText = input.value;
+        if (mobNo) {
+            await submitMemo(mobNo, newText);
+        }
+    closeModal();
+});
 
     // textarea内でEnterキーを押した際に保存・モーダルを閉じる
-    input.addEventListener('keydown', async (e) => {
-        // Shift + Enter は改行として残し、Enter 単独で確定とする
-        if (e.key === "Enter" && !e.shiftKey) { 
-            e.preventDefault();
-            const mobNo = mobNoHidden.value;
-            const newText = input.value;
-            if (mobNo) {
-                await submitMemo(mobNo, newText);
-            }
-            closeModal();
-        }
-    });
+    input.addEventListener('keydown', async (e) => {
+        if (e.key === "Enter" && !e.shiftKey) { 
+            e.preventDefault();
+        const mobNoString = mobNoHidden.value;
+        const mobNo = Number(mobNoString); // ★ 数値型に変換
+        const newText = input.value;
+            if (mobNo) {
+                await submitMemo(mobNo, newText);
+        }
+        closeModal();
+    }
+});
 }
 
 // アプリケーション起動時に一度だけイベントリスナーを設定
@@ -404,7 +405,7 @@ const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
         mob_id: mobNo.toString(),
         location_id: locationId.toString(),
         action: action,
-        report_time: reportTimeDate.toISOString(), // DateオブジェクトをISO形式で送信
+        report_time: reportTimeDate.toISOString(), 
     };
 
     try {
@@ -430,9 +431,8 @@ const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
 };
 
 // フォーム送信イベント (修正された起動処理で置き換え)
-document.addEventListener("DOMContentLoaded", async () => { // ★ 修正2: async を追加
+document.addEventListener("DOMContentLoaded", async () => {
 
-    // 【★ 修正3: モブデータロードを待つ】
     try {
         await loadBaseMobData(); 
         console.log("Mob Static Data Loaded successfully.");
@@ -443,11 +443,6 @@ document.addEventListener("DOMContentLoaded", async () => { // ★ 修正2: asyn
 
     // 認証を開始
     await initializeAuth();
-    
-    // Firestoreのリアルタイム購読を開始（startRealtime は dataManager.js にあると仮定し、ここでは呼び出さない）
-    // NOTE: startRealtime()は通常、認証後に呼び出しますが、dataManager.js内でstartRealtime()が定義されているため、
-    // ここで呼び出しを追加したい場合は、dataManager.jsから import してください。
-    // （今回はユーザーコードに startRealtime の import が無いため、起動処理の整合性を保つため一旦省略します）
     
     const reportForm = document.getElementById("report-form");
     if (reportForm) {
@@ -462,11 +457,8 @@ document.addEventListener("DOMContentLoaded", async () => { // ★ 修正2: asyn
         });
     }
 
-    // 【★ 修正4: モブデータロード後に UI を初期化】
-    // setupMobMemoUI は mobNoとkillTimeが必要です。killTimeはMobデータに依存します。
     const state = getState();
     state.mobs.forEach(mob => {
-        // killTime は Firestore購読で上書きされるため、ここでは初期値 (0) を使用
         const initialKillTime = new Date(mob.last_kill_time * 1000 || 0); 
         setupMobMemoUI(mob.No, initialKillTime);
     });
