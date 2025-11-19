@@ -103,9 +103,7 @@ function getEorzeaMoonInfo(date = new Date()) {
   const phase = (eorzeaTotalDays % 32) + 1; // 1〜33 の連続値として扱われる
 
   let label = null;
-  if (phase >= 32.5 |
-
-| phase < 4.5) label = "新月"; // 32日12:00〜4日12:00
+  if (phase >= 32.5 || phase < 4.5) label = "新月"; // 32日12:00〜4日12:00
   else if (phase >= 16.5 && phase < 20.5) label = "満月"; // 16日12:00〜20日12:00
 
   return { phase, label };
