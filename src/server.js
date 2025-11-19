@@ -210,12 +210,16 @@ const submitMemo = async (mobNo, memoText) => {
 
     if (!userId) {
         displayStatus("認証が完了していません。", "error");
+        const localMemoKey = `memo_mob_${mobNo}`;
+        localStorage.setItem(localMemoKey, memoText);
         return { success: false, error: "認証エラー" };
     }
 
     const mob = mobs.find(m => m.No === mobNo);
     if (!mob) {
         displayStatus("モブデータが見つかりません。", "error");
+        const localMemoKey = `memo_mob_${mobNo}`;
+        localStorage.setItem(localMemoKey, memoText);
         return { success: false, error: "Mobデータエラー" };
     }
     
@@ -226,48 +230,39 @@ const submitMemo = async (mobNo, memoText) => {
         memo_text: memoText
     };
 
+    let serverSuccess = false;
+
     try {
-        // Functionsへの呼び出し
         const response = await callPostMobMemo(data);
         const result = response.data;
         
         if (result?.success) {
             displayStatus(`メモを正常に投稿しました。`, "success");
+            serverSuccess = true;
             return { success: true };
         } else {
             const errorMessage = result?.error || "Functions内部でエラーが発生しました。";
-            console.error("メモ投稿エラー (Functions内部):", errorMessage);
+            console.error("メモ投稿エラー (Functions内部):", result); // 結果オブジェクト全体を出力
             displayStatus(`メモ投稿エラー: ${errorMessage}`, "error");
             return { success: false, error: errorMessage };
         }
     } catch (error) {
-        console.error("メモ投稿エラー (通信レベル):", error);
+        console.error("メモ投稿エラー (通信レベル - Functions呼び出し失敗):", error); // エラーオブジェクト全体を出力
         const userFriendlyError = error.message || "通信または認証に失敗しました。";
         displayStatus(`致命的な通信エラー: ${userFriendlyError}`, "error");
         return { success: false, error: userFriendlyError };
+    } finally {
+        
+        const localMemoKey = `memo_mob_${mobNo}`;
+        localStorage.setItem(localMemoKey, memoText);
+        
+        if (!serverSuccess) {
+            console.log(`[LOCAL SAVE] Mob ${mobNo} のメモをローカルに保存しました。`);
+        }
     }
 };
 
-// フォーム送信イベント (変更なし)
-document.addEventListener("DOMContentLoaded", () => {
-    const reportForm = document.getElementById("report-form");
-    if (reportForm) {
-        reportForm.addEventListener("submit", (e) => {
-            e.preventDefault();
-
-            const mobNo = Number(reportForm.dataset.mobNo);
-            const timeISO = document.getElementById("report-datetime").value;
-            const memo = document.getElementById("report-memo").value;
-
-            submitReport(mobNo, timeISO, memo);
-        });
-    }
-});
-
 // MobごとのメモUI制御
-/**
- * モブメモUIを初期化し、タップ時にモーダルを開くように設定する
- */
 function setupMobMemoUI(mobNo, killTime) {
   const card = document.querySelector(`.mob-card[data-mob-no="${mobNo}"]`);
   if (!card) return;
