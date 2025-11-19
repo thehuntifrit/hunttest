@@ -652,28 +652,48 @@ function checkMobSpawnCondition(mob, date) {
 
 // ===== 後方互換：次スポーン時刻（修正版） =====
 function findNextSpawnTime(mob, pointSec, minRepopSec, limitSec) {
-  const hasCondition = !!(
-    mob.moonPhase ||
-    mob.timeRange ||
-    mob.timeRanges ||
-    mob.weatherSeedRange ||
-    mob.weatherSeedRanges ||
-    mob.conditions
-  );
+  // 入力防御: pointSec/minRepopSec/limitSec は秒（number）で扱う
+  const nowSec = Math.floor(Date.now() / 1000);
+  // Normalize helpers
+  const toSec = (v, fallback = null) => {
+    if (v == null) return fallback;
+    if (typeof v === "number" && !Number.isNaN(v)) return Math.floor(v);
+    if (v instanceof Date) return Math.floor(v.getTime() / 1000);
+    const n = Number(v);
+    return Number.isNaN(n) ? fallback : Math.floor(n);
+  };
 
-  if (!hasCondition) return minRepopSec;
+  pointSec = toSec(pointSec, nowSec);
+  minRepopSec = toSec(minRepopSec, null);
+  limitSec = toSec(limitSec, nowSec + 20 * 24 * 3600);
 
-  let conditionResult = findNextConditionWindow(mob, pointSec, minRepopSec, limitSec);
+  const hasCondition = !!(
+    mob.moonPhase ||
+    mob.timeRange ||
+    mob.timeRanges ||
+    mob.weatherSeedRange ||
+    mob.weatherSeedRanges ||
+    mob.conditions
+  );
 
-  if (conditionResult) {
-    const { popTime } = conditionResult;
-    return popTime;
-  }
+  if (!hasCondition) return minRepopSec;
+  // Defensive: ensure findNextConditionWindow exists and returns expected shape
+  if (typeof findNextConditionWindow !== "function") return null;
 
-  return null;
+  const conditionResult = findNextConditionWindow(mob, pointSec, minRepopSec, limitSec);
+
+  if (conditionResult) {
+    const { popTime } = conditionResult;
+    // popTime expected to be seconds (number)
+    if (typeof popTime === "number" && !Number.isNaN(popTime)) return Math.floor(popTime);
+    if (popTime instanceof Date) return Math.floor(popTime.getTime() / 1000);
+    const n = Number(popTime);
+    if (!Number.isNaN(n)) return Math.floor(n);
+  }
+
+  return null;
 }
 
-// ===== エクスポート (変更なし) =====
 export {
   calculateRepop,
   checkMobSpawnCondition,
