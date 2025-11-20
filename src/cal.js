@@ -1,13 +1,12 @@
-// cal.js - 修正版 v7: カスケード（階層型）探索ロジック
+// cal.js - 修正版 v8: カスケード探索 + 基準点跨ぎ（バックトレース）対応
 
 const ET_HOUR_SEC = 175;
 const WEATHER_CYCLE_SEC = 1400;
 const ET_DAY_SEC = ET_HOUR_SEC * 24;
 const MOON_CYCLE_SEC = ET_DAY_SEC * 32;
 const MOON_PHASE_DURATION_SEC = ET_DAY_SEC * 4;
-// 探索リミット（カスケードなので回数は少なく済むが、念のため）
 const MAX_SEARCH_ITERATIONS = 5000;
-const LIMIT_DAYS = 60; // 月齢が絡むと30日以上先もあり得るため拡張
+const LIMIT_DAYS = 60;
 
 // --- ユーティリティ関数 ---
 
@@ -179,99 +178,141 @@ function calculateNextMoonStart(startSec, targetPhase) {
     return nextStartSec;
 }
 
-// --- カスケード探索用ヘルパー関数 ---
+// --- カスケード探索用ジェネレータ関数 ---
 
 /**
  * 指定された期間内で、天候条件を満たす区間を返す
- * 重要: 期間開始点(windowStart)以前からの連続性もチェックする
+ * ★修正点: windowStart 時点での「遡りチェック」を行い、基準点を跨ぐチェーンを特定する
  */
 function* getValidWeatherIntervals(mob, windowStart, windowEnd) {
   const requiredMinutes = mob.weatherDuration?.minutes || 0;
   const requiredSec = requiredMinutes > 0 ? requiredMinutes * 60 : 0;
   
-  // 天候条件がない場合は、期間全体を有効として返す
   if (!mob.weatherSeedRange && !mob.weatherSeedRanges) {
       yield [windowStart, windowEnd];
       return;
   }
 
-  // 探索開始位置: windowStartの直前の天候サイクル境界
-  // ただし、連続条件がある場合は、その分だけさらに過去からチェックが必要
-  // 「windowStartの時点で既に条件を満たしているか」を確認するため
+  // 探索カーソル: windowStart のサイクル境界
   let currentCursor = alignToWeatherCycle(windowStart);
+  let loopSafety = 0;
+
+  // ★重要: windowStart 時点で天候が合致している場合、
+  // それが「いつから続いているか」を過去に遡って特定する（バックトレース）
+  // これを行わないと、windowStartからのカウントとなり、連続条件がリセットされてしまう
   
-  // 遡りチェックの起点: 条件時間分 + マージン
-  // ここからチェーンを構築していく
-  let scanStart = currentCursor;
+  // 1. 現在位置のバックトレース（跨ぎ判定）
+  // ---------------------------------------------------
+  const currentSeed = getEorzeaWeatherSeed(new Date(currentCursor * 1000));
   
-  // もし連続条件があるなら、windowStartより前から続いている可能性があるため
-  // windowStart 時点でのチェーンを特定するために過去へ遡る
-  let chainStart = currentCursor;
-  while (true) {
-      const prevTime = chainStart - WEATHER_CYCLE_SEC;
-      // 探索しすぎ防止
-      if (windowStart - prevTime > LIMIT_DAYS * 24 * 3600) break; 
+  // 現在のサイクルが条件に合致する場合のみ、過去を掘る
+  if (checkWeatherInRange(mob, currentSeed)) {
+      let chainStart = currentCursor;
       
-      const seed = getEorzeaWeatherSeed(new Date(prevTime * 1000));
-      if (checkWeatherInRange(mob, seed)) {
-          chainStart = prevTime;
-      } else {
-          break; // 途切れた
+      // 過去へ遡る
+      while (true) {
+          // 安全装置
+          if (currentCursor - chainStart > LIMIT_DAYS * 24 * 3600) break;
+          
+          const prevTime = chainStart - WEATHER_CYCLE_SEC;
+          const seed = getEorzeaWeatherSeed(new Date(prevTime * 1000));
+          if (checkWeatherInRange(mob, seed)) {
+              chainStart = prevTime;
+          } else {
+              break; // 途切れた
+          }
       }
+      
+      // ここで chainStart は「現在続いている天候の真の開始点」
+      
+      // 未来へ伸ばして chainEnd を特定
+      let chainEnd = currentCursor + WEATHER_CYCLE_SEC;
+      let tempCursor = chainEnd;
+      while (tempCursor < windowEnd + LIMIT_DAYS * 24 * 3600) { // 少し余裕を持って伸ばす
+           if (loopSafety++ > MAX_SEARCH_ITERATIONS) break;
+
+           const seed = getEorzeaWeatherSeed(new Date(tempCursor * 1000));
+           if (checkWeatherInRange(mob, seed)) {
+               chainEnd += WEATHER_CYCLE_SEC;
+               tempCursor += WEATHER_CYCLE_SEC;
+           } else {
+               break;
+           }
+      }
+      
+      // チェーンの長さ判定
+      const duration = chainEnd - chainStart;
+      
+      // 単発(requiredSec=0)でも最低1サイクル
+      if (duration >= Math.max(requiredSec, WEATHER_CYCLE_SEC)) {
+          const validPopStart = chainStart + requiredSec;
+          
+          // クリップ処理:
+          // [windowStart, windowEnd] の範囲内で、かつ validPopStart 以降
+          // windowStart (基準点) を跨いでいる場合、maxにより windowStart が採用される
+          const intersectStart = Math.max(validPopStart, windowStart);
+          const intersectEnd = Math.min(chainEnd, windowEnd);
+          
+          if (intersectStart < intersectEnd) {
+              yield [intersectStart, intersectEnd];
+          }
+      }
+      
+      // 次の探索はチェーンの終わりから
+      currentCursor = chainEnd;
+  } else {
+      // 現在地点が不一致なら、次のサイクルから探索
+      currentCursor += WEATHER_CYCLE_SEC;
   }
-  
-  // チェーン探索のカーソル
-  let cursor = chainStart;
+
+  // 2. 未来方向への通常探索
+  // ---------------------------------------------------
+  let cursor = currentCursor;
   
   while (cursor < windowEnd) {
-    // チェーンの開始を探す（chainStart以降で）
-    let activeStart = null;
-    
-    // 非適合区間をスキップ
-    while (cursor < windowEnd + WEATHER_CYCLE_SEC) { // windowEndを少し超えてもチェック
-        const seed = getEorzeaWeatherSeed(new Date(cursor * 1000));
-        if (checkWeatherInRange(mob, seed)) {
-            activeStart = cursor;
-            break;
-        }
-        cursor += WEATHER_CYCLE_SEC;
-    }
-    
-    if (activeStart === null) break; // もう適合区間がない
+      if (loopSafety++ > MAX_SEARCH_ITERATIONS) break;
 
-    // チェーンの終了を探す
-    let activeEnd = activeStart + WEATHER_CYCLE_SEC;
-    let tempCursor = activeEnd;
-    while (true) { // 期間を超えても天候が続く限り伸ばす
-        const seed = getEorzeaWeatherSeed(new Date(tempCursor * 1000));
-        if (checkWeatherInRange(mob, seed)) {
-            activeEnd += WEATHER_CYCLE_SEC;
-            tempCursor += WEATHER_CYCLE_SEC;
-        } else {
-            break;
-        }
-    }
-    
-    // チェーン確定。条件判定
-    const duration = activeEnd - activeStart;
-    
-    // 単発(requiredSec=0)の場合は最低1サイクルあればOK
-    // 連続の場合は duration >= requiredSec
-    if (duration >= Math.max(requiredSec, WEATHER_CYCLE_SEC)) {
-        // 湧き有効開始時刻 = チェーン開始 + 必要時間
-        const validPopStart = activeStart + requiredSec;
-        
-        // この区間と [windowStart, windowEnd] の交差を取る
-        const intersectStart = Math.max(validPopStart, windowStart);
-        const intersectEnd = Math.min(activeEnd, windowEnd);
-        
-        if (intersectStart < intersectEnd) {
-            yield [intersectStart, intersectEnd];
-        }
-    }
-    
-    // 次の探索はチェーンの終わりから
-    cursor = activeEnd;
+      // 始点を探す
+      let activeStart = null;
+      while (cursor < windowEnd + WEATHER_CYCLE_SEC) {
+          const seed = getEorzeaWeatherSeed(new Date(cursor * 1000));
+          if (checkWeatherInRange(mob, seed)) {
+              activeStart = cursor;
+              break;
+          }
+          cursor += WEATHER_CYCLE_SEC;
+          // 安全装置
+          if (cursor - windowStart > LIMIT_DAYS * 24 * 3600) break;
+      }
+      
+      if (activeStart === null) break;
+
+      // 終点を探す
+      let activeEnd = activeStart + WEATHER_CYCLE_SEC;
+      let tempCursor = activeEnd;
+      while (true) {
+          const seed = getEorzeaWeatherSeed(new Date(tempCursor * 1000));
+          if (checkWeatherInRange(mob, seed)) {
+              activeEnd += WEATHER_CYCLE_SEC;
+              tempCursor += WEATHER_CYCLE_SEC;
+          } else {
+              break;
+          }
+      }
+      
+      // 長さ判定
+      const duration = activeEnd - activeStart;
+      if (duration >= Math.max(requiredSec, WEATHER_CYCLE_SEC)) {
+          const validPopStart = activeStart + requiredSec;
+          const intersectStart = Math.max(validPopStart, windowStart);
+          const intersectEnd = Math.min(activeEnd, windowEnd);
+          
+          if (intersectStart < intersectEnd) {
+              yield [intersectStart, intersectEnd];
+          }
+      }
+      
+      cursor = activeEnd;
   }
 }
 
@@ -284,18 +325,20 @@ function* getValidEtIntervals(mob, windowStart, windowEnd) {
       return;
   }
 
-  // windowStart を ET時間境界に揃える（繰り下げ）
-  // これにより windowStart が 10:30 とかでも 10:00-12:00 の枠を拾える
+  // windowStart を ET時間境界に揃える
   let cursor = alignToEtHour(windowStart);
+  let loopSafety = 0;
   
   while (cursor < windowEnd) {
+      if (loopSafety++ > MAX_SEARCH_ITERATIONS) break;
+
       if (checkEtCondition(mob, cursor)) {
           const start = cursor;
           let end = cursor + ET_HOUR_SEC;
           let tempCursor = end;
           
           // 連続するET区間を結合
-          while (tempCursor < windowEnd + ET_HOUR_SEC) { // 少し余分に見る
+          while (tempCursor < windowEnd + ET_HOUR_SEC) {
               if (checkEtCondition(mob, tempCursor)) {
                   end += ET_HOUR_SEC;
                   tempCursor += ET_HOUR_SEC;
@@ -304,7 +347,7 @@ function* getValidEtIntervals(mob, windowStart, windowEnd) {
               }
           }
           
-          // 交差を取る
+          // 交差を取る（windowStart以前はカット）
           const intersectStart = Math.max(start, windowStart);
           const intersectEnd = Math.min(end, windowEnd);
           
@@ -319,12 +362,10 @@ function* getValidEtIntervals(mob, windowStart, windowEnd) {
   }
 }
 
-
 // --- メイン探索ロジック（階層型） ---
 
 function findNextSpawn(mob, pointSec, searchLimit) {
     // 1. 月齢探索（第1層）
-    // ----------------------
     let moonPhases = [];
     if (!mob.moonPhase) {
         moonPhases.push([pointSec, searchLimit]);
@@ -333,17 +374,22 @@ function findNextSpawn(mob, pointSec, searchLimit) {
         const startPhase = getEorzeaMoonInfo(new Date(pointSec * 1000)).phase;
         
         // 現在(pointSec)がターゲットフェーズ内か？
+        // 天候探索でのバックトレース用に、フェーズ開始まで戻して登録
         if (
             (mob.moonPhase === "新月" && (startPhase >= 32.5 || startPhase < 4.5)) ||
             (mob.moonPhase === "満月" && (startPhase >= 16.5 && startPhase < 20.5))
         ) {
              let currentPhaseStart = pointSec - (startPhase - targetPhase) * ET_DAY_SEC;
              while (currentPhaseStart > pointSec) currentPhaseStart -= MOON_CYCLE_SEC;
-             // 過去すぎる開始点はpointSecに補正（探索効率のため）
-             moonPhases.push([Math.max(currentPhaseStart, pointSec), currentPhaseStart + MOON_PHASE_DURATION_SEC]);
+             
+             const currentPhaseEnd = currentPhaseStart + MOON_PHASE_DURATION_SEC;
+             
+             if (currentPhaseEnd > pointSec) {
+                 // 月齢フェーズ自体は「期間」として渡す
+                 moonPhases.push([pointSec, currentPhaseEnd]);
+             }
         }
         
-        // 未来のフェーズ
         let moonStart = calculateNextMoonStart(pointSec, targetPhase);
         while (moonStart < searchLimit) {
             moonPhases.push([moonStart, moonStart + MOON_PHASE_DURATION_SEC]);
@@ -352,38 +398,29 @@ function findNextSpawn(mob, pointSec, searchLimit) {
     }
 
     // 2. 天候探索（第2層：月齢区間内）
-    // ----------------------
     for (const [mStart, mEnd] of moonPhases) {
-        // この月齢区間内で有効な天候を探す
-        // ※ getValidWeatherIntervals 内部で「mStart以前からの天候継続」も考慮される
+        // mStart時点で天候が継続しているかのチェックを含め、有効区間を取得
         const weatherIterator = getValidWeatherIntervals(mob, mStart, mEnd);
         
         for (const [wStart, wEnd] of weatherIterator) {
             
             // 3. ET探索（第3層：天候区間内）
-            // ----------------------
             const etIterator = getValidEtIntervals(mob, wStart, wEnd);
             
             for (const [eStart, eEnd] of etIterator) {
                 
-                // 最終的な湧き区間: [eStart, eEnd]
-                // ただし、pointSec より未来である（または現在進行中である）必要がある
-                
-                // 湧き開始時刻: 計算上の開始時刻と pointSec の遅い方
+                // 最終チェック
                 const finalStart = Math.max(eStart, pointSec);
                 const finalEnd = eEnd;
                 
-                // 有効な区間か？
                 if (finalStart < finalEnd) {
                     return { start: finalStart, end: finalEnd };
                 }
             }
         }
     }
-    
     return null;
 }
-
 
 // --- メイン関数 ---
 
@@ -413,7 +450,6 @@ function calculateRepop(mob, maintenance) {
 
   const pointSec = Math.max(minRepop, now);
   const nextMinRepopDate = new Date(minRepop * 1000);
-  // 探索範囲を広めに
   const searchLimit = pointSec + LIMIT_DAYS * 24 * 3600;
 
   let status = "Unknown";
@@ -432,7 +468,6 @@ function calculateRepop(mob, maintenance) {
   );
 
   if (hasCondition) {
-    // カスケード探索を実行
     const result = findNextSpawn(mob, pointSec, searchLimit);
 
     if (result) {
@@ -444,12 +479,10 @@ function calculateRepop(mob, maintenance) {
       isInConditionWindow = (pointSec >= start && pointSec < end);
 
       if (isInConditionWindow) {
-        // Active時
         const remainingSec = end - pointSec;
         timeRemaining = `残り ${formatDurationHM(remainingSec)}`;
         status = "ConditionActive";
       } else {
-        // Next時
         const remainingSec = start - now;
         timeRemaining = `Next: ${formatDurationHM(remainingSec)}`;
         status = "NextCondition";
@@ -459,7 +492,7 @@ function calculateRepop(mob, maintenance) {
 
   let elapsedPercent = 0;
   
-  // MaxOver判定の優先度調整
+  // MaxOver優先度調整
   if (!isInConditionWindow) {
     if (status === "NextCondition") {
         // NextCondition優先
@@ -511,7 +544,6 @@ function calculateRepop(mob, maintenance) {
 
 function checkMobSpawnCondition(mob, date) {
   const pointSec = Math.floor(date.getTime() / 1000);
-  // 条件チェックロジックに変更なし
   if (mob.moonPhase) {
     const moonInfo = getEorzeaMoonInfo(date);
     if (moonInfo.label !== mob.moonPhase) return false;
