@@ -1,4 +1,4 @@
-// cal.js - 修正版 v11: NextCondition 日付表記対応
+// cal.js - 修正版 v9: 単発/連続分離と最適化
 
 const ET_HOUR_SEC = 175;
 const WEATHER_CYCLE_SEC = 1400; // 23分20秒
@@ -22,28 +22,6 @@ function formatDurationHM(seconds) {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   return `${String(h).padStart(2, "0")}h${String(m).padStart(2, "0")}m`;
-}
-
-// ★ 追加: NextCondition用の日付時刻フォーマット
-function formatNextTime(timestamp) {
-    const date = new Date(timestamp * 1000);
-    const options = {
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "Asia/Tokyo" 
-    };
-    const formatter = new Intl.DateTimeFormat("ja-JP", options);
-    const parts = formatter.formatToParts(date);
-    
-    // M/D HH:MM 形式を構築
-    const month = parts.find(p => p.type === 'month').value;
-    const day = parts.find(p => p.type === 'day').value;
-    const hour = parts.find(p => p.type === 'hour').value;
-    const minute = parts.find(p => p.type === 'minute').value;
-    
-    return `${month}/${day} ${hour}:${minute}`;
 }
 
 function debounce(func, wait) {
@@ -205,6 +183,7 @@ function calculateNextMoonStart(startSec, targetPhase) {
 
 /**
  * 指定された期間内で、天候条件を満たす区間を返す
+ * ★修正点: 単発/連続を分離し、単発では遡りを行わない
  */
 function* getValidWeatherIntervals(mob, windowStart, windowEnd) {
   const requiredMinutes = mob.weatherDuration?.minutes || 0;
@@ -279,7 +258,7 @@ function* getValidWeatherIntervals(mob, windowStart, windowEnd) {
           
       } else {
           // --- B. 単発天候 ($T_{Req} \le 1400$) ---
-          // 遡り不要。
+          // 遡り不要。ChainStartは currentCursorで十分
           chainStart = currentCursor; 
           
           // 未来へ伸ばして ChainEnd を特定
@@ -475,6 +454,7 @@ function findNextSpawn(mob, pointSec, searchLimit) {
 }
 
 // --- メイン関数 ---
+
 function calculateRepop(mob, maintenance) {
   const now = Date.now() / 1000;
   const lastKill = mob.last_kill_time || 0;
@@ -517,7 +497,7 @@ function calculateRepop(mob, maintenance) {
     mob.weatherSeedRanges ||
     mob.conditions
   );
-  // 1. 特殊条件の検索と情報の保持
+
   if (hasCondition) {
     const result = findNextSpawn(mob, pointSec, searchLimit);
 
@@ -528,32 +508,39 @@ function calculateRepop(mob, maintenance) {
       conditionWindowEnd = new Date(end * 1000);
       
       isInConditionWindow = (pointSec >= start && pointSec < end);
+
+      if (isInConditionWindow) {
+        const remainingSec = end - pointSec;
+        timeRemaining = `残り ${formatDurationHM(remainingSec)}`;
+        status = "ConditionActive";
+      } else {
+        const remainingSec = start - now;
+        timeRemaining = `Next: ${formatDurationHM(remainingSec)}`;
+        status = "NextCondition";
+      }
     }
   }
-  // 2. 一般ステータスの決定 (MaxOver / PopWindow / Next)
+
   let elapsedPercent = 0;
   
-  if (now >= maxRepop) {
+  // MaxOver優先度調整
+  if (!isInConditionWindow) {
+    if (status === "NextCondition") {
+        // NextCondition優先
+    } else if (now >= maxRepop) {
       status = "MaxOver";
       elapsedPercent = 100;
       timeRemaining = `Time Over (100%)`;
-  } else if (now >= minRepop) {
+    } else if (now < minRepop) {
+      if (status !== "NextCondition") {
+          status = "Next";
+          timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
+      }
+    } else if (status === "Unknown") {
       status = "PopWindow";
       elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
       timeRemaining = `残り ${formatDurationHM(maxRepop - now)} (${elapsedPercent.toFixed(0)}%)`;
-  } else { // now < minRepop
-      status = "Next";
-      timeRemaining = `Next: ${formatDurationHM(minRepop - now)}`;
-  }
-  
-  // 3. NextConditionによる上書き判定 (未来の条件は最優先で表示)
-  if (nextConditionSpawnDate && !isInConditionWindow) {
-      // 条件が見つかり、かつ現在の時間ではまだ条件が始まっていない場合
-      const start = nextConditionSpawnDate.getTime() / 1000;
-      
-      status = "NextCondition";
-      // ★ 修正: 日付と時刻の表記を適用
-      timeRemaining = `Next: ${formatNextTime(start)}`; 
+    }
   }
 
   const isMaintenanceStop = (now >= maintenanceStart && now < serverUp);
@@ -565,6 +552,7 @@ function calculateRepop(mob, maintenance) {
     timeRemaining,
     status,
     nextMinRepopDate,
+    nextConditionSpawnDate,
     conditionWindowEnd,
     isInConditionWindow,
     isMaintenanceStop
