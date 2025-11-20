@@ -224,127 +224,103 @@ function findWeatherRanges(mob, pointSec, searchLimit) {
   const ranges = [];
   const requiredMinutes = mob.weatherDuration?.minutes || 0;
   const requiredSec = requiredMinutes > 0 ? requiredMinutes * 60 : 0;
-  const requiredCycles = Math.ceil(requiredSec / WEATHER_CYCLE_SEC);
+  // 単発でも最低1サイクル(1400秒)はないと成立しないため、計算上確保
+  const minDuration = Math.max(requiredSec, WEATHER_CYCLE_SEC);
 
-  // 1. 基準点の整列
-  const currentCycleStart = alignToWeatherCycle(pointSec);
-  
-  let isActive = false;
-  let trueStart = null;
+  // 1. 現在地点(pointSec)を含む天候チェーンの特定
+  // -----------------------------------------------------
+  let currentCursor = alignToWeatherCycle(pointSec);
+  let chainStart = null;
+  let chainEnd = null;
 
-  // 2. アクティブ判定（現在進行形の確認）
-  const currentSeed = getEorzeaWeatherSeed(new Date(currentCycleStart * 1000));
-  
+  // まず、現在地点の天候が合致するか確認
+  const currentSeed = getEorzeaWeatherSeed(new Date(currentCursor * 1000));
   if (checkWeatherInRange(mob, currentSeed)) {
-      if (requiredCycles === 0) {
-          // 単発: 即座に条件成立
-          isActive = true;
-          trueStart = currentCycleStart;
-      } else {
-          // 連続: 現在のサイクルを含め、過去に向かって遡りチェック
-          // 必要なのは「現在のサイクル」+「過去(requiredCycles - 1)サイクル」
-          let consecutiveCycles = 1; // 現在のサイクルで1つ確保
-          let scanCursor = currentCycleStart - WEATHER_CYCLE_SEC; // 1つ前から遡る
-          let isChainValid = true;
+      // 合致する場合、このチェーンの「始点」と「終点」を探す
+      // A. 過去へ遡って始点を探す
+      let scanBack = currentCursor;
+      while (true) {
+          // 探索リミット（念のため）
+          if (currentCursor - scanBack > LIMIT_DAYS * 24 * 3600) break;
 
-          let iterations = 0;
-          // 残りの必要数分だけループ
-          while (consecutiveCycles < requiredCycles) {
-              if (iterations++ > MAX_SEARCH_ITERATIONS) { isChainValid = false; break; }
-              
-              const seed = getEorzeaWeatherSeed(new Date(scanCursor * 1000));
-              if (checkWeatherInRange(mob, seed)) {
-                  consecutiveCycles++;
-                  scanCursor -= WEATHER_CYCLE_SEC;
-              } else {
-                  isChainValid = false;
-                  break; 
-              }
-          }
-          
-          if (isChainValid) {
-              isActive = true;
-              // scanCursorはループ終了時に1つ余分に引かれているため、+WEATHER_CYCLE_SECが開始点
-              trueStart = scanCursor + WEATHER_CYCLE_SEC;
-          }
-      }
-  }
-
-  // 3. Active（条件成立）時の処理
-  if (isActive && trueStart !== null) {
-      let extendedEnd = currentCycleStart + WEATHER_CYCLE_SEC;
-      let extensionCursor = currentCycleStart + WEATHER_CYCLE_SEC;
-      let extIterations = 0;
-      
-      // 未来へ延長
-      while (extensionCursor <= searchLimit && extIterations++ < MAX_SEARCH_ITERATIONS) {
-          const seed = getEorzeaWeatherSeed(new Date(extensionCursor * 1000));
+          const prevTime = scanBack - WEATHER_CYCLE_SEC;
+          const seed = getEorzeaWeatherSeed(new Date(prevTime * 1000));
           if (checkWeatherInRange(mob, seed)) {
-              extendedEnd += WEATHER_CYCLE_SEC;
-              extensionCursor += WEATHER_CYCLE_SEC;
+              scanBack = prevTime;
           } else {
-              break;
+              break; // 途切れた
           }
       }
-      
-      // 開始時間を基準点(pointSec)に固定（クリッピング）
-      const clippedStart = Math.max(trueStart, pointSec);
-      ranges.push([clippedStart, extendedEnd]);
+      chainStart = scanBack;
+      // B. 未来へ進んで終点を探す
+      let scanForward = currentCursor + WEATHER_CYCLE_SEC;
+      let iterations = 0;
+      while (scanForward <= searchLimit && iterations++ < MAX_SEARCH_ITERATIONS) {
+          const seed = getEorzeaWeatherSeed(new Date(scanForward * 1000));
+          if (checkWeatherInRange(mob, seed)) {
+              scanForward += WEATHER_CYCLE_SEC;
+          } else {
+              break; // 途切れた
+          }
+      }
+      chainEnd = scanForward;
+            // C. チェーンが条件を満たすか判定
+      // チェーン全体の長さ
+      const totalDuration = chainEnd - chainStart;
+
+      if (totalDuration >= requiredSec) {
+          // 条件を満たす本来の湧き開始時間（チェーン開始 + 条件時間）
+          const validPopStart = chainStart + requiredSec;          
+          // クリップ処理: 
+          // 湧き開始時間が基準点より前なら、基準点を開始時間とする
+          // 湧き開始時間が基準点より後なら、その時間を開始時間とする
+          const clippedStart = Math.max(validPopStart, pointSec);
+          // クリップした開始時間が、チェーン終了より前であれば有効
+          if (clippedStart < chainEnd) {
+              ranges.push([clippedStart, chainEnd]);
+          }
+      }
   }
 
-  // 4. 未来探索の処理
-  let forwardCursor = ceilToWeatherCycle(pointSec);
-  if (ranges.length > 0) {
-    // アクティブで見つかった区間の終わりから探索再開
-    forwardCursor = Math.max(forwardCursor, ranges[0][1]);
-  }
+  // 2. 未来探索
+  let forwardCursor = chainEnd ? chainEnd : ceilToWeatherCycle(pointSec);
   
   let iterations = 0;
   while (forwardCursor <= searchLimit && iterations++ < MAX_SEARCH_ITERATIONS) {
-    let accumulatedCycles = 0;
-    let testCursor = forwardCursor;
-    let consecutiveStart = forwardCursor;
-    let satisfied = false;
+      
+      const seed = getEorzeaWeatherSeed(new Date(forwardCursor * 1000));
+      
+      if (checkWeatherInRange(mob, seed)) {
+          // 天候一致開始
+          let tempStart = forwardCursor;
+          let tempEnd = forwardCursor + WEATHER_CYCLE_SEC;
+          let tempCursor = tempEnd;
+          // 途切れるまで伸ばす（チェーンを作る）
+          while (tempCursor <= searchLimit) {
+              const s = getEorzeaWeatherSeed(new Date(tempCursor * 1000));
+              if (checkWeatherInRange(mob, s)) {
+                  tempEnd += WEATHER_CYCLE_SEC;
+                  tempCursor += WEATHER_CYCLE_SEC;
+              } else {
+                  break;
+              }
+          }          
+          // チェーン確定。長さチェック
+          const duration = tempEnd - tempStart;
+          if (duration >= requiredSec) {
+              // 条件成立。湧き時間は チェーン開始 + 条件時間
+              const popStart = tempStart + requiredSec;
+              ranges.push([popStart, tempEnd]);
+          }
+          // 次の探索はチェーンの終わりから
+          forwardCursor = tempEnd;
 
-    // 連続条件チェック
-    while (testCursor <= searchLimit) {
-      const seed = getEorzeaWeatherSeed(new Date(testCursor * 1000));
-      if (!checkWeatherInRange(mob, seed)) break;
-      
-      accumulatedCycles++;
-      testCursor += WEATHER_CYCLE_SEC;
-      
-      if ((requiredCycles === 0 && accumulatedCycles >= 1) || 
-          (requiredCycles > 0 && accumulatedCycles >= requiredCycles)) {
-          satisfied = true;
-          break;
+      } else {
+          // 天候不一致。次のサイクルへ
+          forwardCursor += WEATHER_CYCLE_SEC;
       }
-    }
-    
-    if (satisfied) {
-      let extendedEnd = testCursor;
-      let extensionCursor = extendedEnd;
-      let extIterations = 0;
-
-      // 延長
-      while (extensionCursor <= searchLimit && extIterations++ < MAX_SEARCH_ITERATIONS) {
-        const seed = getEorzeaWeatherSeed(new Date(extensionCursor * 1000));
-        if (checkWeatherInRange(mob, seed)) {
-          extendedEnd += WEATHER_CYCLE_SEC;
-          extensionCursor += WEATHER_CYCLE_SEC;
-        } else {
-          break;
-        }
-      }
-      
-      ranges.push([consecutiveStart, extendedEnd]);
-      forwardCursor = extendedEnd;
-    } else {
-      // 不適合なら次のサイクルへ
-      forwardCursor = ceilToWeatherCycle(testCursor);
-    }
   }
-
+  // ソートと重複排除
   ranges.sort((a, b) => a[0] - b[0]);
   return ranges.filter((range, index) => {
     if (index === 0) return true;
