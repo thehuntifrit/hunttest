@@ -120,10 +120,6 @@ function attachCardEvents() {
     DOM.colContainer.addEventListener("click", e => {
         const card = e.target.closest(".mob-card");
         if (!card) return;
-
-        // 編集中のカードはクリック処理を無効化
-        if (card.getAttribute("data-editing") === "true") return;
-
         const mobNo = parseInt(card.dataset.mobNo, 10);
         const rank = card.dataset.rank;
 
