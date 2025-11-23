@@ -93,7 +93,7 @@ function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_Last
     }
 
     const pointNumber = point.id.slice(-2);
-    const titleText = `${pointNumber}${isCulledFlag ? " (湧き潰し: 済)" : ""}`;
+    const titleText = `${pointNumber}${isCulledFlag ? " (済)" : ""}`;
 
     return `
     <div class="spawn-point ${colorClass}"
