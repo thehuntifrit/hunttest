@@ -1,23 +1,13 @@
 /* style.css */
 
-/* Tailwindの@tailwind directivesはHTML側でCDN読み込みしているため、
-   ここではカスタムCSSのみを記述します。 */
-
 :root {
-    --bg-dark: #0f172a;
-    /* Deep Slate */
-    --bg-card: rgba(40, 55, 80, 0.85);
-    /* Glassy Slate */
+    --bg-dark: #0f172a;    
+    --bg-card: rgba(40, 55, 80, 0.85);    
     --accent-cyan: #06b6d4;
-    /* Magitek Blue */
-    --accent-gold: #eab308;
-    /* Allagan Gold */
-    --accent-crimson: #ef4444;
-    /* Alert Red */
-    --text-primary: #f1f5f9;
-    /* Slate 100 */
-    --text-secondary: #94a3b8;
-    /* Slate 400 */
+    --accent-gold: #eab308;    
+    --accent-crimson: #ef4444;    
+    --text-primary: #f1f5f9;    
+    --text-secondary: #94a3b8;    
 
     --rank-s: #f59e0b;
     --rank-a: #306ef3;
@@ -27,14 +17,10 @@
     --progress-fill: linear-gradient(90deg, var(--accent-cyan), #3b82f6);
     --progress-max-over: linear-gradient(90deg, #2e3b75, #2e3b75);
 
-    --color-b1: #4494f7;
-    /* Soft Blue */
-    --color-b2: #fd5c5c;
-    /* Soft Red */
-    --color-culled: #dadada;
-    /* Slate 500 */
-    --color-lastone: #34d399;
-    /* Emerald */
+    --color-b1: #4494f7;    
+    --color-b2: #fd5c5c;    
+    --color-culled: #dadada;    
+    --color-lastone: #34d399;    
 }
 
 body {
@@ -47,7 +33,7 @@ body {
     background-attachment: fixed;
 }
 
-/* Glassmorphism Utilities */
+
 .glass-panel {
     background: rgba(15, 23, 42, 0.6);
     -webkit-backdrop-filter: blur(12px);
@@ -55,7 +41,7 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Card Styles */
+
 .mob-card {
     background: var(--bg-card);
     -webkit-backdrop-filter: blur(8px);
@@ -79,7 +65,7 @@ body {
     pointer-events: none;
 }
 
-/* Rank Badges */
+
 .rank-badge {
     font-weight: 700;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
@@ -87,8 +73,12 @@ body {
 
 .progress-bar-bg.max-over {
     background: linear-gradient(90deg, #7f1d1d, #b91c1c);
-    /* Red-900 to Red-700 */
     box-shadow: 0 0 10px rgba(185, 28, 28, 0.7);
+}
+
+.rank-s {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .rank-a {
@@ -100,7 +90,7 @@ body {
     background: linear-gradient(135deg, #8b5cf6, #7c3aed);
 }
 
-/* Progress Bars */
+
 .progress-bar-wrapper {
     background: var(--progress-bg);
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -119,18 +109,18 @@ body {
 
 .progress-text.text-pop {
     color: #ffffff;
-    /* Yellow-200 */
+    
     text-shadow: 0 0 5px rgb(255, 255, 255);
 }
 
 .progress-text.text-next {
     color: #ffffff;
-    /* Cyan-200 */
+    
 }
 
 .progress-text.max-over {
     color: #ffffff;
-    /* Red-300 */
+    
     animation: pulse-text 2s infinite;
 }
 
@@ -165,7 +155,7 @@ body {
     }
 }
 
-/* Blinking Border for Active Condition */
+
 .blink-border-white {
     animation: blink-white-border 1.5s infinite alternate;
     border-color: rgba(255, 255, 255, 0.8) !important;
@@ -184,7 +174,7 @@ body {
     }
 }
 
-/* Text Styles */
+
 .text-glow {
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
@@ -194,7 +184,7 @@ body {
     text-shadow: 0 0 5px rgba(234, 179, 8, 0.5);
 }
 
-/* Modal */
+
 #report-modal {
     background-color: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(4px);
@@ -218,7 +208,7 @@ body {
     box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
 }
 
-/* Expandable Panel */
+
 .expandable-panel {
     max-height: 0;
     overflow: hidden;
@@ -233,7 +223,7 @@ body {
     padding-bottom: 0.75rem !important;
 }
 
-/* Map Pins */
+
 .spawn-point {
     position: absolute;
     border-radius: 50%;
@@ -273,7 +263,7 @@ body {
     box-shadow: 0 0 10px var(--color-lastone);
 }
 
-/* B-rank only spawn points - Smaller and looks culled */
+
 .color-b1-only {
     background-color: var(--color-culled);
     border: 2px solid var(--color-b1);
