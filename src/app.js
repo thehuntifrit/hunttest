@@ -1,82 +1,65 @@
 // app.js
-
-import { getState, setFilter, loadBaseMobData, setOpenMobCardNo, FILTER_TO_DATA_RANK_MAP, setUserId, startRealtime } from "./dataManager.js";
-import { openReportModal, closeReportModal, initModal } from "./modal.js";
-import { attachLocationEvents } from "./location.js";
-import { submitReport, toggleCrushStatus, initializeAuth, getServerTimeUTC } from "./server.js";
+import { loadBaseMobData, startRealtime, setOpenMobCardNo, getState } from "./dataManager.js";
+import { initializeAuth, submitReport, getServerTimeUTC } from "./server.js";
+import { openReportModal, initModal, openMemoModal } from "./modal.js";
+import { renderRankTabs, handleAreaFilterClick, updateFilterUI } from "./filterUI.js";
+import { DOM, sortAndRedistribute } from "./uiRender.js";
 import { debounce } from "./cal.js";
-import { DOM, filterAndRender, sortAndRedistribute } from "./uiRender.js";
-import { renderRankTabs, renderAreaFilterPanel, updateFilterUI, handleAreaFilterClick } from "./filterUI.js";
 
-async function loadMaintenance() {
+async function initializeApp() {
     try {
-        const res = await fetch('./maintenance.json', { cache: 'no-store' });
-        if (!res.ok) return null;
-        const data = await res.json();
+        // 1. データロード
+        await loadBaseMobData();
+        console.log("Mob Data Loaded.");
 
-        const start = new Date(data.maintenance.start);
-        const end = new Date(data.maintenance.end);
-        const serverUp = new Date(data.maintenance.serverUp);
-        const now = new Date();
-
-        const showFrom = new Date(start.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const showUntil = new Date(end.getTime() + 4 * 24 * 60 * 60 * 1000);
-
-        if (now >= showFrom && now <= showUntil) {
-            renderStatusBar(start, end, serverUp);
+        // 2. 認証 & リアルタイム開始
+        const userId = await initializeAuth();
+        if (userId) {
+            console.log("Authenticated:", userId);
+            startRealtime();
         } else {
-            clearStatusBar();
+            console.warn("Authentication failed or anonymous.");
         }
 
-        // updateMobCardsに引数を追加し、メンテナンス期間外の有効化処理を追加
-        if (now >= start && now < serverUp) {
-            updateMobCards(true);
-        } else {
-            updateMobCards(false);
-        }
+        // 3. UI初期化
+        renderRankTabs();
+        updateFilterUI();
+        initModal();
 
-        return {
-            start,
-            end,
-            serverUp,
-            serverUpSec: serverUp.getTime() / 1000
-        };
+        // 4. メンテナンス表示 (dataManagerでロード済み)
+        renderMaintenanceStatus();
 
-    } catch (err) {
-        console.error('maintenance.json 読み込み失敗:', err);
-        return null;
+        // 5. イベントリスナー設定
+        attachGlobalEventListeners();
+
+    } catch (e) {
+        console.error("App initialization failed:", e);
     }
 }
 
-function renderStatusBar(start, end, serverUp) {
-    const el = document.getElementById("status-message-maintenance");
-    if (!el) return;
-    el.innerHTML = `
-   <div class="font-semibold text-yellow-300">
-    メンテナンス予定: ${formatDate(start)} ～ ${formatDate(end)}
-   </div>
-  `;
-    document.getElementById("status-message")?.classList.remove("hidden");
-}
+function renderMaintenanceStatus() {
+    const maintenance = getState().maintenance;
+    if (!maintenance) return;
 
-function clearStatusBar() {
-    const el = document.getElementById("status-message-maintenance");
-    if (!el) return;
-    el.innerHTML = "";
-    const tempEl = document.getElementById("status-message-temp");
-    if (!tempEl || tempEl.innerHTML.trim() === "") {
-        document.getElementById("status-message")?.classList.add("hidden");
-    }
-}
+    const start = new Date(maintenance.start);
+    const end = new Date(maintenance.end);
+    const serverUp = new Date(maintenance.serverUp);
+    const now = new Date();
 
-function updateMobCards(isDisabled) { // 引数を追加
-    document.querySelectorAll('.mob-card').forEach(card => {
-        if (isDisabled) {
-            card.classList.add('mob-card-disabled');
-        } else {
-            card.classList.remove('mob-card-disabled');
+    const showFrom = new Date(start.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const showUntil = new Date(end.getTime() + 4 * 24 * 60 * 60 * 1000);
+
+    if (now >= showFrom && now <= showUntil) {
+        const el = document.getElementById("status-message-maintenance");
+        if (el) {
+            el.innerHTML = `
+           <div class="font-semibold text-yellow-300">
+            メンテナンス予定: ${formatDate(start)} ～ ${formatDate(end)}
+           </div>
+          `;
+            document.getElementById("status-message")?.classList.remove("hidden");
         }
-    });
+    }
 }
 
 function formatDate(date) {
@@ -88,45 +71,36 @@ function formatDate(date) {
     return `${y}/${m}/${d} ${h}:${min}`;
 }
 
-function attachFilterEvents() {
-    const tabs = document.getElementById("rank-tabs");
-    if (!tabs) return;
+function attachGlobalEventListeners() {
+    // 1. Window Resize
+    window.addEventListener("resize", debounce(() => sortAndRedistribute(), 200));
 
-    tabs.addEventListener("click", (e) => {
-        const btn = e.target.closest(".tab-button");
-        if (!btn) return;
-
-        const newRank = btn.dataset.rank.toUpperCase();
-        const state = getState();
-
-        const nextAreaSets = { ...state.filter.areaSets };
-        if (!(nextAreaSets[newRank] instanceof Set)) {
-            nextAreaSets[newRank] = new Set();
+    // 2. Filter Clicks (Delegation)
+    document.addEventListener("click", (e) => {
+        // Rank Tabs
+        if (e.target.closest(".tab-button")) {
+            // filterUI.js でイベントハンドラを設定している場合は重複しないように注意
+            // 今回は filterUI.js の renderRankTabs 内で addEventListener しているので、ここでは不要
+            // ただし、filterUI.js を書き換えて delegation にするならここ
+            return;
         }
 
-        setFilter({
-            rank: newRank,
-            areaSets: nextAreaSets
-        });
-        filterAndRender();
+        // Area Filter
+        if (e.target.closest(".area-filter-btn")) {
+            handleAreaFilterClick(e);
+            return;
+        }
     });
 
-    document.getElementById("area-filter-panel-mobile")?.addEventListener("click", handleAreaFilterClick);
-    document.getElementById("area-filter-panel-desktop")?.addEventListener("click", handleAreaFilterClick);
-
-}
-
-function attachCardEvents() {
-    DOM.colContainer.addEventListener("click", e => {
+    // 3. Card Clicks (Delegation)
+    DOM.colContainer.addEventListener("click", (e) => {
         const card = e.target.closest(".mob-card");
         if (!card) return;
-
-
 
         const mobNo = parseInt(card.dataset.mobNo, 10);
         const rank = card.dataset.rank;
 
-        // 討伐報告ボタンの処理
+        // A. Report Button
         const reportBtn = e.target.closest("button[data-report-type]");
         if (reportBtn) {
             e.stopPropagation();
@@ -134,46 +108,65 @@ function attachCardEvents() {
             if (type === "modal") {
                 openReportModal(mobNo);
             } else if (type === "instant") {
-                getServerTimeUTC().then(serverDateUTC => {
-                    const iso = serverDateUTC.toISOString();
-                    submitReport(mobNo, iso, `${rank}ランク即時報告`);
-                }).catch(err => {
-                    console.error("サーバー時刻取得失敗、ローカル時刻で代用:", err);
-                    const fallbackIso = new Date().toISOString();
-                    submitReport(mobNo, fallbackIso, `${rank}ランク即時報告`);
-                });
+                handleInstantReport(mobNo, rank);
             }
             return;
         }
 
-        // カードヘッダーの開閉処理
+        // B. Memo Edit
+        const memoRow = e.target.closest("[data-action='edit-memo']");
+        if (memoRow) {
+            e.stopPropagation();
+            const currentText = memoRow.querySelector("[data-last-memo]")?.textContent || "";
+            openMemoModal(mobNo, currentText);
+            return;
+        }
+
+        // C. Card Expand/Collapse (S Rank)
         if (e.target.closest("[data-toggle='card-header']")) {
             if (rank === "S") {
-                const panel = card.querySelector(".expandable-panel");
-                if (panel) {
-                    if (!panel.classList.contains("open")) {
-                        document.querySelectorAll(".expandable-panel.open").forEach(p => {
-                            if (p.closest(".mob-card") !== card) p.classList.remove("open");
-                        });
-                        panel.classList.add("open");
-                        setOpenMobCardNo(mobNo);
-                    } else {
-                        panel.classList.remove("open");
-                        setOpenMobCardNo(null);
-                    }
-                }
+                toggleCardExpand(card, mobNo);
             }
         }
     });
+
+    // 4. Report Form Submit
+    if (DOM.reportForm) {
+        DOM.reportForm.addEventListener("submit", handleReportSubmit);
+    }
 }
 
-function attachWindowResizeEvents() {
-    window.addEventListener("resize", debounce(() => sortAndRedistribute(), 200));
+function toggleCardExpand(card, mobNo) {
+    const panel = card.querySelector(".expandable-panel");
+    if (panel) {
+        if (!panel.classList.contains("open")) {
+            // 他を閉じる
+            document.querySelectorAll(".expandable-panel.open").forEach(p => {
+                if (p.closest(".mob-card") !== card) p.classList.remove("open");
+            });
+            panel.classList.add("open");
+            setOpenMobCardNo(mobNo);
+        } else {
+            panel.classList.remove("open");
+            setOpenMobCardNo(null);
+        }
+    }
+}
+
+async function handleInstantReport(mobNo, rank) {
+    try {
+        const serverDateUTC = await getServerTimeUTC();
+        const iso = serverDateUTC.toISOString();
+        await submitReport(mobNo, iso, `${rank}ランク即時報告`);
+    } catch (err) {
+        console.error("Instant report failed:", err);
+        const fallbackIso = new Date().toISOString();
+        await submitReport(mobNo, fallbackIso, `${rank}ランク即時報告`);
+    }
 }
 
 async function handleReportSubmit(e) {
     e.preventDefault();
-
     const form = e.target;
     const mobNo = parseInt(form.dataset.mobNo, 10);
     const timeISO = form.elements["kill-time"].value;
@@ -182,41 +175,6 @@ async function handleReportSubmit(e) {
     await submitReport(mobNo, timeISO, memo);
 }
 
-function attachEventListeners() {
-    renderRankTabs();
-    attachFilterEvents();
-    attachCardEvents();
-    attachWindowResizeEvents();
-    attachLocationEvents();
+document.addEventListener('DOMContentLoaded', initializeApp);
 
-    if (DOM.reportForm) {
-        DOM.reportForm.addEventListener("submit", handleReportSubmit);
-    }
-}
-
-async function initializeAuthenticationAndRealtime() {
-    try {
-        const userId = await initializeAuth();
-        setUserId(userId);
-        startRealtime();
-        console.log("App: 認証とリアルタイム購読を開始しました。");
-    } catch (error) {
-        console.error("App: 認証処理中にエラーが発生しました。", error);
-        setUserId(null);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    initializeAuthenticationAndRealtime();
-    attachEventListeners?.();
-    loadBaseMobData?.();
-    initModal?.();
-    loadMaintenance();
-
-    const currentRank = JSON.parse(localStorage.getItem('huntFilterState'))?.rank || 'ALL';
-    DOM?.rankTabs?.querySelectorAll('.tab-button').forEach(btn => {
-        btn.dataset.clickCount = btn.dataset.rank === currentRank ? '1' : '0';
-    });
-});
-
-export { attachEventListeners, updateMobCards, loadMaintenance };
+export { initializeApp };
