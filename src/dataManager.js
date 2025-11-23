@@ -99,7 +99,7 @@ async function loadMaintenance() {
         ? data.maintenance
         : data;
     state.maintenance = maintenanceCache;
-    
+
     return maintenanceCache;
 }
 
@@ -120,7 +120,7 @@ async function loadBaseMobData() {
         REPOP_s: mob.repopSeconds,
         MAX_s: mob.maxRepopSeconds,
         moonPhase: mob.moonPhase,
-        conditions: mob.conditions,   
+        conditions: mob.conditions,
         timeRange: mob.timeRange,
         timeRanges: mob.timeRanges,
         weatherSeedRange: mob.weatherSeedRange,
@@ -174,8 +174,6 @@ function startRealtime() {
             });
 
             setMobs(merged);
-            // 編集中カードがある場合は再描画をスキップ
-            if (document.querySelector(".mob-card[data-editing='true']")) return;
 
             filterAndRender();
             updateProgressBars();
@@ -197,8 +195,7 @@ function startRealtime() {
             });
 
             setMobs(merged);
-            // 編集中カードがある場合は再描画をスキップ
-            if (document.querySelector(".mob-card[data-editing='true']")) return;
+
 
             filterAndRender();
             displayStatus("湧き潰しデータ更新完了。", "success");
