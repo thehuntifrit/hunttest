@@ -1,4 +1,5 @@
 // modal.js
+
 import { DOM } from "./uiRender.js";
 import { getState } from "./dataManager.js";
 import { submitMemo } from "./server.js";
