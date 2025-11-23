@@ -33,8 +33,7 @@ const renderRankTabs = () => {
       (isSelected ? "bg-green-500" : "bg-gray-500 hover:bg-gray-400");
     // --- クリックイベント ---
     btn.addEventListener("click", () => {
-      // 編集中カードがある場合は処理をスキップ
-      if (document.querySelector(".mob-card[data-editing='true']")) return;
+
 
       const currentState = getState();
       setFilter({
@@ -188,8 +187,7 @@ function handleAreaFilterClick(e) {
   const btn = e.target.closest(".area-filter-btn");
   if (!btn) return;
 
-  // 編集中カードがある場合は処理をスキップ
-  if (document.querySelector(".mob-card[data-editing='true']")) return;
+
 
   const state = getState();
   const uiRank = state.filter.rank;
