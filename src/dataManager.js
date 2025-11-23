@@ -1,12 +1,7 @@
 // dataManager.js
+
 import { calculateRepop } from "./cal.js";
 import { subscribeMobStatusDocs, subscribeMobLocations, subscribeMobMemos } from "./server.js";
-
-// 循環参照を避けるため、更新時のコールバックは外部から登録する形、
-// または app.js で調整するのが理想ですが、既存構造を維持しつつシンプルにします。
-// ここでは uiRender への直接依存を減らし、必要な関数は後で注入するか、
-// 単純に export された関数を使う形にします。
-// ただし、今回は既存の import を維持しつつ、ロジックを整理します。
 import { filterAndRender, updateProgressBars, displayStatus } from "./uiRender.js";
 
 const EXPANSION_MAP = { 1: "新生", 2: "蒼天", 3: "紅蓮", 4: "漆黒", 5: "暁月", 6: "黄金" };
@@ -223,8 +218,6 @@ function startRealtime() {
             const memos = memoData[m.No] || [];
             const latest = memos[0]; // 最新のメモ
 
-            // メモの更新日時チェックなどはここで行う
-            // 単純化のため、最新のメモがあればそれを適用
             const updatedMob = { ...m };
             if (latest) {
                 updatedMob.memo_text = latest.memo_text;
