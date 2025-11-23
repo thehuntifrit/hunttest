@@ -120,7 +120,7 @@ function subscribeMobLocations(onUpdate) {
 }
 
 // 討伐報告
-const submitReport = async (mobNo, timeISO, memo) => {
+const submitReport = async (mobNo, timeISO) => {
     const state = getState();
     const userId = state.userId;
     const mobs = state.mobs;
