@@ -1,4 +1,3 @@
-
 // cal.js - 修正版 v9: 単発/連続分離と最適化
 
 const ET_HOUR_SEC = 175;
