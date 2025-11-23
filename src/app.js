@@ -6,9 +6,13 @@ import { openReportModal, initModal, openMemoModal } from "./modal.js";
 import { renderRankTabs, handleAreaFilterClick, updateFilterUI } from "./filterUI.js";
 import { DOM, sortAndRedistribute } from "./uiRender.js";
 import { debounce } from "./cal.js";
+import { initTooltip } from "./tooltip.js";
 
 async function initializeApp() {
     try {
+        // 0. ツールチップ初期化
+        initTooltip();
+
         // 1. データロード
         await loadBaseMobData();
         console.log("Mob Data Loaded.");
