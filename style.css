@@ -1,13 +1,11 @@
-/* style.css */
-
 :root {
-    --bg-dark: #0f172a;    
-    --bg-card: rgba(40, 55, 80, 0.85);    
+    --bg-dark: #0f172a;
+    --bg-card: rgba(40, 55, 80, 0.85);
     --accent-cyan: #06b6d4;
-    --accent-gold: #eab308;    
-    --accent-crimson: #ef4444;    
-    --text-primary: #f1f5f9;    
-    --text-secondary: #94a3b8;    
+    --accent-gold: #eab308;
+    --accent-crimson: #ef4444;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
 
     --rank-s: #f59e0b;
     --rank-a: #306ef3;
@@ -17,10 +15,10 @@
     --progress-fill: linear-gradient(90deg, var(--accent-cyan), #3b82f6);
     --progress-max-over: linear-gradient(90deg, #2e3b75, #2e3b75);
 
-    --color-b1: #4494f7;    
-    --color-b2: #fd5c5c;    
-    --color-culled: #dadada;    
-    --color-lastone: #34d399;    
+    --color-b1: #4494f7;
+    --color-b2: #fd5c5c;
+    --color-culled: #dadada;
+    --color-lastone: #34d399;
 }
 
 body {
@@ -109,18 +107,16 @@ body {
 
 .progress-text.text-pop {
     color: #ffffff;
-    
-    text-shadow: 0 0 5px rgb(255, 255, 255);
 }
 
 .progress-text.text-next {
     color: #ffffff;
-    
+
 }
 
 .progress-text.max-over {
     color: #ffffff;
-    
+
     animation: pulse-text 2s infinite;
 }
 
