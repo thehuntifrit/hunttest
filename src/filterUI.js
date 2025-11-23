@@ -1,4 +1,5 @@
 // filterUI.js
+
 import { getState, EXPANSION_MAP, setFilter } from "./dataManager.js";
 import { filterAndRender } from "./uiRender.js";
 
