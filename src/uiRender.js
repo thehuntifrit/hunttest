@@ -1,4 +1,5 @@
 // uiRender.js
+
 import { calculateRepop, findNextSpawnTime, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime } from "./cal.js";
 import { drawSpawnPoint, isCulled, attachLocationEvents } from "./location.js";
 import { getState, RANK_COLORS, PROGRESS_CLASSES } from "./dataManager.js";
@@ -378,36 +379,56 @@ function updateProgressText(card, mob) {
     : "";
 
   // Right Side Logic
-  let rightStr = "";
+  let rightStrIn = "";
+  let rightStrNext = "";
+  let hasToggle = false;
+
   if (isInConditionWindow && mob.repopInfo.conditionRemaining) {
-    rightStr = mob.repopInfo.conditionRemaining;
-  } else if (status === "NextCondition" && nextConditionSpawnDate) {
-    try {
-      // Format: Next MM/DD HH:mm
-      const dateStr = new Intl.DateTimeFormat("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }).format(nextConditionSpawnDate);
-      rightStr = `Next ${dateStr}`;
-    } catch {
-      rightStr = "";
-    }
+    rightStrIn = mob.repopInfo.conditionRemaining;
+
   } else {
-    // Default: Min Repop Time
     if (nextMinRepopDate) {
       try {
-        // Format: in MM/DD HH:mm
         const dateStr = new Intl.DateTimeFormat("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }).format(nextMinRepopDate);
-        rightStr = `in ${dateStr}`;
+        rightStrIn = `in ${dateStr}`;
       } catch {
-        rightStr = "未確定";
+        rightStrIn = "未確定";
       }
     } else {
-      rightStr = "未確定";
+      rightStrIn = "未確定";
     }
+
+    // Prepare "Next" string (Condition)
+    if (nextConditionSpawnDate) {
+      try {
+        const dateStr = new Intl.DateTimeFormat("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }).format(nextConditionSpawnDate);
+        rightStrNext = `Next ${dateStr}`;
+        hasToggle = true;
+      } catch {
+        rightStrNext = "";
+      }
+    }
+  }
+
+  // If Active, rightStrIn holds the "@ n min".
+  // If not active, rightStrIn holds "in ...", rightStrNext holds "Next ...".
+
+  let rightContent = "";
+  if (isInConditionWindow && mob.repopInfo.conditionRemaining) {
+    rightContent = rightStrIn;
+  } else if (hasToggle) {
+    rightContent = `
+        <span class="label-in text-cyan-300">${rightStrIn}</span>
+        <span class="label-next" style="display:none; color: #eab308;">${rightStrNext}</span>
+      `;
+  } else {
+    rightContent = rightStrIn;
   }
 
   text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-xs font-bold" style="line-height:1;">
       <div class="pl-2 text-left truncate text-shadow-sm">${leftStr}${percentStr}</div>
-      <div class="pr-2 text-right truncate text-shadow-sm">${rightStr}</div>
+      <div class="pr-2 text-right truncate text-shadow-sm toggle-container">${rightContent}</div>
     </div>
   `;
 
@@ -416,6 +437,39 @@ function updateProgressText(card, mob) {
 
   if (minRepop - nowSec >= 3600) text.classList.add("long-wait");
   else text.classList.remove("long-wait");
+
+  // Toggle Logic
+  const toggleContainer = text.querySelector(".toggle-container");
+  if (hasToggle && toggleContainer && !toggleContainer.dataset.toggleStarted) {
+    startToggleInNext(toggleContainer);
+    toggleContainer.dataset.toggleStarted = "true";
+  }
+
+  // Blinking Border Logic
+  if (status === "ConditionActive") {
+    card.classList.add("blink-border-white");
+  } else {
+    card.classList.remove("blink-border-white");
+  }
+}
+
+function startToggleInNext(container) {
+  const inLabel = container.querySelector(".label-in");
+  const nextLabel = container.querySelector(".label-next");
+  let showingIn = true;
+
+  setInterval(() => {
+    if (!container.isConnected) return;
+
+    if (showingIn) {
+      if (inLabel) inLabel.style.display = "none";
+      if (nextLabel) nextLabel.style.display = "inline";
+    } else {
+      if (inLabel) inLabel.style.display = "inline";
+      if (nextLabel) nextLabel.style.display = "none";
+    }
+    showingIn = !showingIn;
+  }, 5000);
 }
 
 
