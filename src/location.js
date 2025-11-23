@@ -1,6 +1,5 @@
 // location.js
 
-// location.js
 import { toggleCrushStatus } from "./server.js";
 import { getState } from "./dataManager.js";
 
