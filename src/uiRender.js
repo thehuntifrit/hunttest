@@ -395,7 +395,7 @@ function updateProgressText(card, mob) {
   let rightContent = `<span>${rightStr}</span>`;
 
   text.innerHTML = `
-    <div class="w-full grid grid-cols-2 items-center text-sm font-bold" style="line-height:1;">
+    <div class="w-full grid grid-cols-2 items-center text-sm font-bold leading-none">
       <div class="pl-1 text-left truncate">${leftStr}${percentStr}</div>
       <div class="pr-1 text-right truncate">${rightContent}</div>
     </div>
