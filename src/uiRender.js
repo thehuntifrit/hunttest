@@ -149,9 +149,9 @@ function createMobCard(mob) {
     </div>
 
     <!-- Progress Bar -->
-    <div class="progress-bar-wrapper h-5 rounded relative overflow-hidden">
+    <div class="progress-bar-wrapper rounded relative overflow-hidden text-center">
         <div class="progress-bar-bg absolute left-0 top-0 h-full rounded transition-all duration-100 ease-linear" style="width: 0%"></div>
-        <div class="progress-text absolute inset-0 flex items-center justify-center text-xs font-bold tracking-wider z-10" style="line-height: 1;"></div>
+        <div class="progress-text relative z-10 py-0.5 text-xs font-bold tracking-wider" style="line-height: 1;"></div>
     </div>
 </div>
 `;
@@ -395,7 +395,7 @@ function updateProgressText(card, mob) {
   let rightContent = `<span>${rightStr}</span>`;
 
   text.innerHTML = `
-    <div class="w-full grid grid-cols-2 items-center text-sm font-bold" style="line-height:normal;">
+    <div class="w-full grid grid-cols-2 items-center text-sm font-bold" style="line-height:1;">
       <div class="pl-1 text-left truncate">${leftStr}${percentStr}</div>
       <div class="pr-1 text-right truncate">${rightContent}</div>
     </div>
