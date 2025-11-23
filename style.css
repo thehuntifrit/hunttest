@@ -282,3 +282,25 @@ body {
     transform: translate(-50%, -50%) scale(1.5);
     z-index: 20;
 }
+
+/* Custom Tooltip */
+.custom-tooltip {
+    position: fixed;
+    z-index: 9999;
+    background: rgba(15, 23, 42, 0.95);
+    color: #fff;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transform: translate(-50%, -100%); /* マウスの上に表示 */
+    transition: opacity 0.1s ease;
+}
+
+.custom-tooltip.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
