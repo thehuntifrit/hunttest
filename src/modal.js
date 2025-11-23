@@ -17,7 +17,6 @@ async function openReportModal(mobNo) {
     DOM.reportForm.dataset.mobNo = String(mobNo);
     DOM.modalMobName.textContent = `${mob.Name}`;
     DOM.modalTimeInput.value = localIso;
-    DOM.modalMemoInput.value = mob.last_kill_memo || "";
     DOM.modalMemoInput.placeholder = `任意`;
     DOM.modalStatus.textContent = "";
     DOM.reportModal.classList.remove("hidden");
@@ -28,7 +27,6 @@ function closeReportModal() {
     DOM.reportModal.classList.add("hidden");
     DOM.reportModal.classList.remove("flex");
     DOM.modalTimeInput.value = "";
-    DOM.modalMemoInput.value = "";
 }
 
 function setupModalCloseHandlers() {
