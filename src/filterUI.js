@@ -1,6 +1,5 @@
 // filterUI.js
-
-import { getState, EXPANSION_MAP, FILTER_TO_DATA_RANK_MAP, setFilter } from "./dataManager.js";
+import { getState, EXPANSION_MAP, setFilter } from "./dataManager.js";
 import { filterAndRender } from "./uiRender.js";
 
 const DOM = {
@@ -31,21 +30,24 @@ const renderRankTabs = () => {
     btn.className =
       `tab-button px-2 py-1 text-sm rounded font-semibold text-white text-center transition ` +
       (isSelected ? "bg-green-500" : "bg-gray-500 hover:bg-gray-400");
-    // --- クリックイベント ---
+
+    // イベントリスナー設定
     btn.addEventListener("click", () => {
-
-
-      const currentState = getState();
-      setFilter({
-        rank,
-        areaSets: currentState.filter.areaSets
-      });
-      filterAndRender();
-      updateFilterUI();
+      handleRankTabClick(rank);
     });
 
     container.appendChild(btn);
   });
+};
+
+const handleRankTabClick = (rank) => {
+  const currentState = getState();
+  setFilter({
+    rank,
+    areaSets: currentState.filter.areaSets
+  });
+  filterAndRender();
+  updateFilterUI();
 };
 
 const renderAreaFilterPanel = () => {
@@ -167,7 +169,7 @@ const updateFilterUI = () => {
           DOM.areaFilterPanelDesktop?.classList.add("hidden");
         } else {
           DOM.areaFilterPanelDesktop?.classList.remove("hidden");
-          DOM.areaFilterPanelDesktop?.classList.add("flex"); // ← 明示的に付与
+          DOM.areaFilterPanelDesktop?.classList.add("flex");
           DOM.areaFilterPanelMobile?.classList.add("hidden");
         }
 
@@ -186,8 +188,6 @@ const updateFilterUI = () => {
 function handleAreaFilterClick(e) {
   const btn = e.target.closest(".area-filter-btn");
   if (!btn) return;
-
-
 
   const state = getState();
   const uiRank = state.filter.rank;
@@ -249,7 +249,6 @@ function filterMobsByRankAndArea(mobs) {
     const filterKey = mobRankKey;
 
     if (uiRank === 'ALL') {
-      // ALL: S/A/F それぞれの保存済みエリア選択を合算して適用
       if (filterKey !== 'S' && filterKey !== 'A' && filterKey !== 'F') return false;
 
       const targetSet =
@@ -260,7 +259,6 @@ function filterMobsByRankAndArea(mobs) {
 
       return targetSet.has(mobExpansion);
     } else {
-      // 個別ランク
       const isRankMatch =
         (uiRank === 'S' && mobRank === 'S') ||
         (uiRank === 'A' && (mobRank === 'A' || mobRank.startsWith('B'))) ||
