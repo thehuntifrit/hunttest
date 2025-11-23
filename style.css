@@ -126,7 +126,7 @@ body {
 }
 
 .progress-text.max-over {
-    color: #ff7575;
+    color: #f75252;
     /* Red-300 */
     animation: pulse-text 2s infinite;
 }
