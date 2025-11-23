@@ -468,14 +468,14 @@ function calculateRepop(mob, maintenance) {
   if (now >= maxRepop) {
     status = "MaxOver";
     elapsedPercent = 100;
-    timeRemaining = `Time Over (100％)`;
+    timeRemaining = `Time Over (100%)`;
   } else if (now < minRepop) {
     status = "Next";
-    timeRemaining = `@ ${formatDurationHM(minRepop - now)}`;
+    timeRemaining = `🔜 ${formatDurationHM(minRepop - now)}`;
   } else {
     status = "PopWindow";
     elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
-    timeRemaining = `残り ${formatDurationHM(maxRepop - now)}`;
+    timeRemaining = `⏰️ ${formatDurationHM(maxRepop - now)}`;
   }
 
   if (isInConditionWindow && now >= minRepop) {
