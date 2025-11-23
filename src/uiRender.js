@@ -17,7 +17,7 @@ const DOM = {
   modalMobName: document.getElementById('modal-mob-name'),
   modalStatus: document.getElementById('modal-status'),
   modalTimeInput: document.getElementById('report-datetime'),
-  modalMemoInput: document.getElementById('report-memo'),
+
 };
 
 function updateEorzeaTime() {
@@ -459,8 +459,7 @@ function startToggleInNext(container) {
   const nextLabel = container.querySelector(".label-next");
   let showingIn = true;
 
-  // メモリリーク防止のため、要素がDOMから消えたら停止する仕組みが必要だが、
-  // ここでは簡易的に実装。
+  // メモリリーク防止のため、要素がDOMから消えたら停止する仕組みが必要だがここでは簡易的に実装。
   setInterval(() => {
     if (!container.isConnected) return; // DOMから外れていたら何もしない
 
@@ -482,13 +481,7 @@ function updateExpandablePanel(card, mob) {
   const elNext = card.querySelector("[data-next-time]");
   const elLast = card.querySelector("[data-last-kill]");
   const elMemo = card.querySelector("[data-last-memo]");
-
-  // elNext は createMobCard で生成されていない可能性があるためチェック
-  // (現在のHTML構造では data-next-time は存在しないかも？ createMobCardを確認)
-  // createMobCardには data-next-time は含まれていない。
-  // 必要なら追加するか、ここで処理しない。
-  // ここでは elLast と elMemo を更新する。
-
+  
   const lastStr = formatLastKillTime(mob.last_kill_time);
   if (elLast) elLast.textContent = `前回: ${lastStr}`;
 
@@ -528,4 +521,4 @@ setInterval(() => {
   updateProgressBars();
 }, 60000);
 
-export { filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, DOM, sortAndRedistribute, updateProgressBars };
+export { filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, DOM, sortAndRedistribute, onKillReportReceived, updateProgressBars };
