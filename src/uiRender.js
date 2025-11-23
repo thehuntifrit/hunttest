@@ -529,6 +529,6 @@ setInterval(() => {
 }, 60000);
 
 export {
-  filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, DOM,
-  renderAreaFilterPanel, renderRankTabs, sortAndRedistribute, updateFilterUI, onKillReportReceived, updateProgressBars
+  filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, 
+  DOM, renderRankTabs, sortAndRedistribute, updateFilterUI, onKillReportReceived, updateProgressBars
 };
