@@ -155,7 +155,6 @@ const submitReport = async (mobNo, timeISO, memo) => {
 
     let killTimeDate;
 
-    // 時刻解析ロジック
     if (timeISO && typeof timeISO === "string") {
         const m = timeISO.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
         if (m) {
@@ -166,6 +165,7 @@ const submitReport = async (mobNo, timeISO, memo) => {
             const hour = Number(h);
             const minute = Number(mi);
             const second = s ? Number(s) : 0;
+
             // ローカルタイムとして Date を生成
             killTimeDate = new Date(year, monthIndex, day, hour, minute, second, 0);
         } else {
@@ -191,6 +191,7 @@ const submitReport = async (mobNo, timeISO, memo) => {
             mob_id: mobNo.toString(),
             kill_time: killTimeDate, // Firestore では Timestamp として保存される
             reporter_uid: userId,
+            memo: memo,
             repop_seconds: mob.REPOP_s
         });
 
@@ -202,6 +203,22 @@ const submitReport = async (mobNo, timeISO, memo) => {
         displayStatus(`討伐報告エラー: ${error.message || "通信失敗"}`, "error");
     }
 };
+
+// フォーム送信イベント (変更なし)
+document.addEventListener("DOMContentLoaded", () => {
+    const reportForm = document.getElementById("report-form");
+    if (reportForm) {
+        reportForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+
+            const mobNo = Number(reportForm.dataset.mobNo);
+            const timeISO = document.getElementById("report-datetime").value;
+            const memo = document.getElementById("report-memo").value;
+
+            submitReport(mobNo, timeISO, memo);
+        });
+    }
+});
 
 // メモの投稿 (postMobMemoV1 Functions への呼び出し)
 const submitMemo = async (mobNo, memoText) => {
