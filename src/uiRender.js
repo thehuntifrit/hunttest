@@ -116,7 +116,7 @@ function createMobCard(mob) {
     : "";
 
   const memoIcon = mob.memo_text && mob.memo_text.trim() !== ""
-    ? ` <span title="${mob.memo_text}" class="cursor-help">📋️</span>`
+    ? ` <span data-tooltip="${mob.memo_text}" class="cursor-help">📋️</span>`
     : "";
 
   const mobNameHtml = `<span class="text-base flex items-baseline font-bold truncate text-gray-100">${mob.Name}${memoIcon}</span>`;
