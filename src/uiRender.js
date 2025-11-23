@@ -224,31 +224,29 @@ function baseComparator(a, b) {
 }
 
 function progressComparator(a, b) {
-  const nowSec = Date.now() / 1000;
+  // 1. Rank Priority
+  const pa = parseMobNo(a.No);
+  const pb = parseMobNo(b.No);
+  const rankDiff = rankPriority(pa.rankCode) - rankPriority(pb.rankCode);
+  if (rankDiff !== 0) return rankDiff;
+
+  // 2. Elapsed Percentage (Descending)
   const aInfo = a.repopInfo || {};
   const bInfo = b.repopInfo || {};
+  const aPercent = aInfo.elapsedPercent || 0;
+  const bPercent = bInfo.elapsedPercent || 0;
 
-  const aStopped = aInfo.isMaintenanceStop;
-  const bStopped = bInfo.isMaintenanceStop;
-  if (aStopped && !bStopped) return 1;
-  if (!aStopped && bStopped) return -1;
-
-  const aOver = (aInfo.status === "PopWindow" || aInfo.status === "MaxOver" || aInfo.status === "ConditionActive");
-  const bOver = (bInfo.status === "PopWindow" || bInfo.status === "MaxOver" || bInfo.status === "ConditionActive");
-
-  if (aOver && !bOver) return -1;
-  if (!aOver && bOver) return 1;
-
-  if (aOver && bOver) {
-    const diff = (bInfo.elapsedPercent || 0) - (aInfo.elapsedPercent || 0);
-    if (diff !== 0) return diff;
-  } else {
-    const aRemain = (aInfo.minRepop || 0) - nowSec;
-    const bRemain = (bInfo.minRepop || 0) - nowSec;
-    if (aRemain !== bRemain) return aRemain - bRemain;
+  // Use a small epsilon for float comparison if needed, but simple subtraction is usually fine for sort
+  if (Math.abs(aPercent - bPercent) > 0.001) {
+    return bPercent - aPercent;
   }
 
-  return baseComparator(a, b);
+  // 3. Expansion (Newer first)
+  if (pa.expansion !== pb.expansion) return pb.expansion - pa.expansion;
+
+  // 4. Fallback: ID (Stable sort)
+  if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
+  return pa.instance - pb.instance;
 }
 
 function filterAndRender({ isInitialLoad = false } = {}) {
@@ -401,7 +399,7 @@ function updateProgressText(card, mob) {
     }
   }
 
-  let rightContent = `<span class="${isNext ? 'text-yellow-400' : 'text-cyan-300'}">${rightStr}</span>`;
+  let rightContent = `<span>${rightStr}</span>`;
 
   text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-xs font-bold" style="line-height:1;">
