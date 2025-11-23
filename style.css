@@ -27,14 +27,14 @@
     --progress-fill: linear-gradient(90deg, var(--accent-cyan), #3b82f6);
     --progress-max-over: linear-gradient(90deg, #ef4444, #b91c1c);
 
-    --color-b1: #3b82f6;
-    /* Blue */
-    --color-b2: #8b5cf6;
-    /* Violet */
+    --color-b1: #60a5fa;
+    /* Soft Blue */
+    --color-b2: #f87171;
+    /* Soft Red */
     --color-culled: #64748b;
     /* Slate 500 */
-    --color-lastone: #eab308;
-    /* Yellow */
+    --color-lastone: #34d399;
+    /* Emerald */
 }
 
 body {
@@ -274,17 +274,21 @@ body {
     box-shadow: 0 0 10px var(--color-lastone);
 }
 
-/* B-rank only spawn points */
+/* B-rank only spawn points - Smaller and looks culled */
 .color-b1-only {
-    background-color: var(--color-b1);
-    border: 2px solid rgba(255, 255, 255, 0.7);
-    opacity: 0.8;
+    background-color: var(--color-culled);
+    border: 2px solid var(--color-b1);
+    width: 10px;
+    height: 10px;
+    opacity: 0.6;
 }
 
 .color-b2-only {
-    background-color: var(--color-b2);
-    border: 2px solid rgba(255, 255, 255, 0.7);
-    opacity: 0.8;
+    background-color: var(--color-culled);
+    border: 2px solid var(--color-b2);
+    width: 10px;
+    height: 10px;
+    opacity: 0.6;
 }
 
 .spawn-point:hover {
