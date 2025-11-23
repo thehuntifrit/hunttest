@@ -1,4 +1,5 @@
 // app.js
+
 import { loadBaseMobData, startRealtime, setOpenMobCardNo, getState } from "./dataManager.js";
 import { initializeAuth, submitReport, getServerTimeUTC } from "./server.js";
 import { openReportModal, initModal, openMemoModal } from "./modal.js";
@@ -79,9 +80,6 @@ function attachGlobalEventListeners() {
     document.addEventListener("click", (e) => {
         // Rank Tabs
         if (e.target.closest(".tab-button")) {
-            // filterUI.js でイベントハンドラを設定している場合は重複しないように注意
-            // 今回は filterUI.js の renderRankTabs 内で addEventListener しているので、ここでは不要
-            // ただし、filterUI.js を書き換えて delegation にするならここ
             return;
         }
 
