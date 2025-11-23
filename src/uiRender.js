@@ -114,8 +114,16 @@ function createMobCard(mob) {
     }).join("")
     : "";
 
-  const mobNameAndCountHtml = `<span class="text-base flex items-baseline font-bold truncate text-gray-100">${mob.Name}</span>
-                                <span class="text-sm flex items-baseline font-bold ml-2">${displayCountText}</span>`;
+  // Memo Icon Logic
+  const memoIcon = mob.memo_text && mob.memo_text.trim() !== "" ? " 📋️" : "";
+
+  const mobNameHtml = `<span class="text-base flex items-baseline font-bold truncate text-gray-100">${mob.Name}${memoIcon}</span>`;
+
+  // Area Info HTML (WITH count text if map exists)
+  let areaInfoHtml = `${mob.Area} <span class="opacity-50">|</span> ${mob.Expansion}`;
+  if (mob.Map && mob.spawn_points) {
+    areaInfoHtml += ` <span class="ml-1">📍</span>${displayCountText}`;
+  }
 
   // Magitek Card Header
   const cardHeaderHTML = `
@@ -125,8 +133,8 @@ function createMobCard(mob) {
         <span class="w-8 h-8 flex items-center justify-center rounded-md text-white text-sm rank-badge rank-${rank.toLowerCase()}">${rankLabel}</span>
 
         <div class="flex flex-col min-w-0">
-            <div class="flex items-baseline">${mobNameAndCountHtml}</div>
-            <span class="text-xs text-gray-400 truncate font-mono tracking-wide">${mob.Area} <span class="opacity-50">|</span> ${mob.Expansion}</span>
+            <div class="flex items-baseline">${mobNameHtml}</div>
+            <span class="text-xs text-gray-400 truncate font-mono tracking-wide">${areaInfoHtml}</span>
         </div>
 
         <div class="flex-shrink-0 flex items-center justify-end">
@@ -481,7 +489,7 @@ function updateExpandablePanel(card, mob) {
   const elNext = card.querySelector("[data-next-time]");
   const elLast = card.querySelector("[data-last-kill]");
   const elMemo = card.querySelector("[data-last-memo]");
-  
+
   const lastStr = formatLastKillTime(mob.last_kill_time);
   if (elLast) elLast.textContent = `前回: ${lastStr}`;
 
