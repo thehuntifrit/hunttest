@@ -269,26 +269,6 @@ function filterAndRender({ isInitialLoad = false } = {}) {
     let card = existingCards.get(mobNoStr);
 
     if (card) {
-      // 既存カードの更新
-      // DOM全体を書き換えると重いので、必要な部分だけ更新するアプローチもあるが、
-      // ここではシンプルに再生成せず、中身の更新を行う
-      // ただし、構造が変わる可能性がある（Expandableなど）場合は再生成が安全
-      // 今回はcreateMobCardで生成したHTMLで置換するのではなく、
-      // 既存要素に対して update 関数を呼ぶ形にする
-
-      // しかし、createMobCardはHTML文字列を返す設計なので、
-      // 中身を書き換えるには innerHTML をセットし直すか、
-      // update関数群でDOM操作するかのどちらか。
-      // パフォーマンスと状態維持（開閉状態など）のバランスを考えると、
-      // 既存カードがあるなら update 関数で値を更新し、
-      // 構造変化（Sランクの開閉など）は別途ハンドリングが必要。
-
-      // ここではシンプルに、既存カードがある場合は update 関数を呼び、
-      // ない場合は新規作成する。
-      // ただし、createMobCard の出力と整合性を取るため、
-      // 構造的な変更（例: Sランクの地図表示など）がある場合は再生成した方が良いかも知れない。
-      // 今回は update 関数で対応できる範囲とする。
-
       updateProgressText(card, mob);
       updateProgressBar(card, mob);
       updateExpandablePanel(card, mob);
@@ -370,7 +350,7 @@ function updateProgressBar(card, mob) {
   );
   wrapper.classList.remove(PROGRESS_CLASSES.BLINK_WHITE);
 
-  if (status === "PopWindow") {
+  if (status === "PopWindow" || status === "ConditionActive") {
     if (elapsedPercent > 90) {
       wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE);
     }
@@ -391,58 +371,43 @@ function updateProgressText(card, mob) {
   const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status, isInConditionWindow, timeRemaining
   } = mob.repopInfo || {};
 
-  const absFmt = { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" };
-
-  let inTimeStr = "未確定";
-  if (nextMinRepopDate) {
-    try {
-      inTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(nextMinRepopDate);
-    } catch {
-      inTimeStr = "未確定";
-    }
-  }
-
-  let nextTimeStr = "";
-  const hasCondition =
-    !!(mob.moonPhase || mob.timeRange || mob.timeRanges || mob.weatherSeedRange || mob.weatherSeedRanges || mob.conditions);
-
-  if (hasCondition) {
-    if (status === "ConditionActive") {
-      if (mob.repopInfo.conditionWindowEnd) {
-        try {
-          nextTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(mob.repopInfo.conditionWindowEnd);
-        } catch {
-          nextTimeStr = "";
-        }
-      }
-    } else if (status === "NextCondition" && nextConditionSpawnDate) {
-      try {
-        nextTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(nextConditionSpawnDate);
-      } catch {
-        nextTimeStr = "";
-      }
-    }
-  }
-
   const nowSec = Date.now() / 1000;
   let leftStr = timeRemaining || "未確定";
-  const percentStr = (status !== "MaxOver" && status !== "Unknown" && status !== "ConditionActive" && status !== "NextCondition")
+  const percentStr = (status === "PopWindow" || status === "ConditionActive" || status === "NextCondition")
     ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)`
     : "";
 
-  if (status === "Next") {
-    leftStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
-  } else if (status === "PopWindow") {
-    leftStr = `残り ${formatDurationHM(maxRepop - nowSec)}`;
+  // Right Side Logic
+  let rightStr = "";
+  if (isInConditionWindow && mob.repopInfo.conditionRemaining) {
+    rightStr = mob.repopInfo.conditionRemaining;
+  } else if (status === "NextCondition" && nextConditionSpawnDate) {
+    try {
+      // Format: Next MM/DD HH:mm
+      const dateStr = new Intl.DateTimeFormat("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }).format(nextConditionSpawnDate);
+      rightStr = `Next ${dateStr}`;
+    } catch {
+      rightStr = "";
+    }
+  } else {
+    // Default: Min Repop Time
+    if (nextMinRepopDate) {
+      try {
+        // Format: in MM/DD HH:mm
+        const dateStr = new Intl.DateTimeFormat("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }).format(nextMinRepopDate);
+        rightStr = `in ${dateStr}`;
+      } catch {
+        rightStr = "未確定";
+      }
+    } else {
+      rightStr = "未確定";
+    }
   }
 
   text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-xs font-bold" style="line-height:1;">
       <div class="pl-2 text-left truncate text-shadow-sm">${leftStr}${percentStr}</div>
-      <div class="pr-2 text-right toggle-container">
-        <span class="label-in text-cyan-300">in ${inTimeStr}</span>
-        <span class="label-next" style="display:none;">${nextTimeStr}</span>
-      </div>
+      <div class="pr-2 text-right truncate text-shadow-sm">${rightStr}</div>
     </div>
   `;
 
@@ -451,39 +416,9 @@ function updateProgressText(card, mob) {
 
   if (minRepop - nowSec >= 3600) text.classList.add("long-wait");
   else text.classList.remove("long-wait");
-
-  const toggleContainer = text.querySelector(".toggle-container");
-  const nextLabel = toggleContainer?.querySelector(".label-next");
-  const hasNextDisplay = !!(nextLabel && nextLabel.textContent && nextLabel.textContent.trim().length > 0);
-
-  if (hasNextDisplay && toggleContainer && !toggleContainer.dataset.toggleStarted) {
-    startToggleInNext(toggleContainer);
-    toggleContainer.dataset.toggleStarted = "true";
-  }
 }
 
-function startToggleInNext(container) {
-  const inLabel = container.querySelector(".label-in");
-  const nextLabel = container.querySelector(".label-next");
-  let showingIn = true;
 
-  // メモリリーク防止のため、要素がDOMから消えたら停止する仕組みが必要だがここでは簡易的に実装。
-  setInterval(() => {
-    if (!container.isConnected) return; // DOMから外れていたら何もしない
-
-    const hasNextText = nextLabel && nextLabel.textContent && nextLabel.textContent.trim().length > 0;
-    if (!hasNextText) return;
-
-    if (showingIn) {
-      inLabel.style.display = "none";
-      nextLabel.style.display = "inline";
-    } else {
-      inLabel.style.display = "inline";
-      nextLabel.style.display = "none";
-    }
-    showingIn = !showingIn;
-  }, 5000);
-}
 
 function updateExpandablePanel(card, mob) {
   const elNext = card.querySelector("[data-next-time]");
