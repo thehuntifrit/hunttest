@@ -1,4 +1,3 @@
-// uiRender.js
 
 import { calculateRepop, findNextSpawnTime, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime } from "./cal.js";
 import { drawSpawnPoint, isCulled, attachLocationEvents } from "./location.js";
@@ -115,18 +114,15 @@ function createMobCard(mob) {
     }).join("")
     : "";
 
-  // Memo Icon Logic
   const memoIcon = mob.memo_text && mob.memo_text.trim() !== "" ? " 📋️" : "";
 
   const mobNameHtml = `<span class="text-base flex items-baseline font-bold truncate text-gray-100">${mob.Name}${memoIcon}</span>`;
 
-  // Area Info HTML (WITH count text if map exists)
   let areaInfoHtml = `${mob.Area} <span class="opacity-50">|</span> ${mob.Expansion}`;
   if (mob.Map && mob.spawn_points) {
     areaInfoHtml += ` <span class="ml-1">📍</span>${displayCountText}`;
   }
 
-  // Magitek Card Header
   const cardHeaderHTML = `
 <div class="px-2 py-1 space-y-1 bg-transparent" data-toggle="card-header">
     <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-3">
@@ -224,27 +220,22 @@ function baseComparator(a, b) {
 }
 
 function progressComparator(a, b) {
-  // 1. Rank Priority
   const pa = parseMobNo(a.No);
   const pb = parseMobNo(b.No);
   const rankDiff = rankPriority(pa.rankCode) - rankPriority(pb.rankCode);
   if (rankDiff !== 0) return rankDiff;
 
-  // 2. Elapsed Percentage (Descending)
   const aInfo = a.repopInfo || {};
   const bInfo = b.repopInfo || {};
   const aPercent = aInfo.elapsedPercent || 0;
   const bPercent = bInfo.elapsedPercent || 0;
 
-  // Use a small epsilon for float comparison if needed, but simple subtraction is usually fine for sort
   if (Math.abs(aPercent - bPercent) > 0.001) {
     return bPercent - aPercent;
   }
 
-  // 3. Expansion (Newer first)
   if (pa.expansion !== pb.expansion) return pb.expansion - pa.expansion;
 
-  // 4. Fallback: ID (Stable sort)
   if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
   return pa.instance - pb.instance;
 }
@@ -272,7 +263,6 @@ function filterAndRender({ isInitialLoad = false } = {}) {
       updateProgressBar(card, mob);
       updateExpandablePanel(card, mob);
 
-      // メンテナンス状態のクラス更新
       const repopInfo = calculateRepop(mob, state.maintenance);
       if (repopInfo.isMaintenanceStop) {
         card.classList.add("opacity-50", "grayscale", "pointer-events-none");
@@ -376,7 +366,6 @@ function updateProgressText(card, mob) {
     ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)`
     : "";
 
-  // Right Side Logic
   let rightStr = "未確定";
   let isNext = false;
 
@@ -414,14 +403,12 @@ function updateProgressText(card, mob) {
   if (minRepop - nowSec >= 3600) text.classList.add("long-wait");
   else text.classList.remove("long-wait");
 
-  // Blinking Border Logic
   if (status === "ConditionActive") {
     card.classList.add("blink-border-white");
   } else {
     card.classList.remove("blink-border-white");
   }
 }
-
 
 function updateExpandablePanel(card, mob) {
   const elNext = card.querySelector("[data-next-time]");
@@ -439,7 +426,6 @@ function updateExpandablePanel(card, mob) {
 function updateProgressBars() {
   const state = getState();
   state.mobs.forEach((mob) => {
-    // Recalculate repop info to ensure up-to-date status/timers
     mob.repopInfo = calculateRepop(mob, state.maintenance);
 
     const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
