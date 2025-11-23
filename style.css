@@ -117,7 +117,7 @@ body {
 .progress-text.text-pop {
     color: #fef08a;
     /* Yellow-200 */
-    text-shadow: 0 0 5px rgba(234, 179, 8, 0.6);
+    text-shadow: 0 0 5px rgb(255, 255, 255);
 }
 
 .progress-text.text-next {
@@ -126,7 +126,7 @@ body {
 }
 
 .progress-text.max-over {
-    color: #fca5a5;
+    color: #acacac;
     /* Red-300 */
     animation: pulse-text 2s infinite;
 }
