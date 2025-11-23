@@ -1,467 +1,604 @@
-// uiRender.js
-import { calculateRepop, findNextSpawnTime, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime } from "./cal.js";
-import { drawSpawnPoint, isCulled, attachLocationEvents } from "./location.js";
-import { getState, RANK_COLORS, PROGRESS_CLASSES } from "./dataManager.js";
-import { filterMobsByRankAndArea } from "./filterUI.js";
+// cal.js - 修正版 v9: 単発/連続分離と最適化
 
-const DOM = {
-  masterContainer: document.getElementById('master-mob-container'),
-  colContainer: document.getElementById('column-container'),
-  cols: [document.getElementById('column-1'), document.getElementById('column-2'), document.getElementById('column-3')],
-  rankTabs: document.getElementById('rank-tabs'),
-  areaFilterWrapper: document.getElementById('area-filter-wrapper'),
-  areaFilterPanel: document.getElementById('area-filter-panel'),
-  statusMessage: document.getElementById('status-message'),
-  reportModal: document.getElementById('report-modal'),
-  reportForm: document.getElementById('report-form'),
-  modalMobName: document.getElementById('modal-mob-name'),
-  modalStatus: document.getElementById('modal-status'),
-  modalTimeInput: document.getElementById('report-datetime'),
+const ET_HOUR_SEC = 175;
+const WEATHER_CYCLE_SEC = 1400; // 23分20秒
+const ET_DAY_SEC = ET_HOUR_SEC * 24;
+const MOON_CYCLE_SEC = ET_DAY_SEC * 32;
+const MOON_PHASE_DURATION_SEC = ET_DAY_SEC * 4;
+const MAX_SEARCH_ITERATIONS = 5000;
+const LIMIT_DAYS = 60;
 
-};
+// --- ユーティリティ関数 ---
 
-function updateEorzeaTime() {
-  const et = getEorzeaTime(new Date());
-  const el = document.getElementById("eorzea-time");
-  if (el) {
-    el.textContent = `ET ${et.hours}:${et.minutes}`;
-  }
-}
-updateEorzeaTime();
-setInterval(updateEorzeaTime, 3000);
-
-function displayStatus(message, type = "info", duration = 5000) {
-  const el = document.getElementById("status-message-temp");
-  if (!el) return;
-
-  const color = {
-    info: "text-blue-300",
-    success: "text-green-300",
-    error: "text-red-300",
-    warning: "text-yellow-300"
-  }[type] || "text-white";
-
-  el.innerHTML = `<div class="${color} text-glow font-semibold">${message}</div>`;
-  document.getElementById("status-message")?.classList.remove("hidden");
-
-  setTimeout(() => {
-    el.innerHTML = "";
-    const persistent = document.getElementById("status-message-maintenance");
-    if (!persistent || persistent.innerHTML.trim() === "") {
-      document.getElementById("status-message")?.classList.add("hidden");
-    }
-  }, duration);
+function formatDuration(seconds) {
+  const totalMinutes = Math.floor(seconds / 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-function processText(text) {
-  if (typeof text !== "string" || !text) return "";
-  return text.replace(/\/\//g, "<br>");
+function formatDurationHM(seconds) {
+  if (seconds < 0) seconds = 0;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${String(h).padStart(2, "0")}h${String(m).padStart(2, "0")}m`;
 }
 
-function createMobCard(mob) {
-  const rank = mob.Rank;
-  const rankLabel = rank;
-
-  const isExpandable = rank === "S";
-  const { openMobCardNo } = getState();
-  const isOpen = isExpandable && mob.No === openMobCardNo;
-
-  const state = getState();
-  const mobLocationsData = state.mobLocations?.[mob.No];
-  const spawnCullStatus = mobLocationsData || mob.spawn_cull_status;
-
-  let isLastOne = false;
-  let validSpawnPoints = [];
-  let displayCountText = "";
-
-  if (mob.Map && mob.spawn_points) {
-    validSpawnPoints = (mob.spawn_points ?? []).filter(point => {
-      const isS_SpawnPoint = point.mob_ranks.includes("S");
-      if (!isS_SpawnPoint) return false;
-      const pointStatus = spawnCullStatus?.[point.id];
-      return !isCulled(pointStatus, mob.No);
-    });
-
-    const remainingCount = validSpawnPoints.length;
-
-    if (remainingCount === 1) {
-      isLastOne = true;
-      const pointId = validSpawnPoints[0]?.id || "";
-      const pointNumber = pointId.slice(-2);
-      displayCountText = ` <span class="text-yellow-400 font-bold text-glow">${pointNumber}番</span>`;
-    } else if (remainingCount > 1) {
-      isLastOne = false;
-      displayCountText = ` <span class="text-xs text-gray-400 relative -top-0.5">@</span>&nbsp;${remainingCount}<span class="text-xs relative -top-[0.04rem]">個</span>`;
-    }
-
-    isLastOne = remainingCount === 1;
-  }
-
-  const isS_LastOne = rank === "S" && isLastOne;
-  const spawnPointsHtml = (rank === "S" && mob.Map)
-    ? (mob.spawn_points ?? []).map(point => {
-      const isThisPointTheLastOne = isLastOne && point.id === validSpawnPoints[0]?.id;
-      return drawSpawnPoint(
-        point,
-        spawnCullStatus,
-        mob.No,
-        point.mob_ranks.includes("B2") ? "B2"
-          : point.mob_ranks.includes("B1") ? "B1"
-            : point.mob_ranks[0],
-        isThisPointTheLastOne,
-        isS_LastOne
-      );
-    }).join("")
-    : "";
-
-  // Memo Icon Logic
-  const memoIcon = mob.memo_text && mob.memo_text.trim() !== "" ? " 📋️" : "";
-
-  const mobNameHtml = `<span class="text-base flex items-baseline font-bold truncate text-gray-100">${mob.Name}${memoIcon}</span>`;
-
-  // Area Info HTML (WITH count text if map exists)
-  let areaInfoHtml = `${mob.Area} <span class="opacity-50">|</span> ${mob.Expansion}`;
-  if (mob.Map && mob.spawn_points) {
-    areaInfoHtml += ` <span class="ml-1">📍</span>${displayCountText}`;
-  }
-
-  // Magitek Card Header
-  const cardHeaderHTML = `
-<div class="px-3 py-2 space-y-2 bg-transparent" data-toggle="card-header">
-    <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-3">
-        <!-- Rank Badge -->
-        <span class="w-8 h-8 flex items-center justify-center rounded-md text-white text-sm rank-badge rank-${rank.toLowerCase()}">${rankLabel}</span>
-
-        <div class="flex flex-col min-w-0">
-            <div class="flex items-baseline">${mobNameHtml}</div>
-            <span class="text-xs text-gray-400 truncate font-mono tracking-wide">${areaInfoHtml}</span>
-        </div>
-
-        <div class="flex-shrink-0 flex items-center justify-end">
-            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center rounded transition text-center leading-tight hover:scale-110 active:scale-95">
-                <img src="./icon/reports.webp" alt="報告する" class="w-7 h-7 object-contain filter drop-shadow-lg" 
-                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <span style="display:none;" class="w-8 h-8 flex items-center justify-center text-[10px] rounded 
-                bg-green-600 hover:bg-green-500 text-white font-bold leading-tight whitespace-pre-line shadow-lg">報告</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- Progress Bar -->
-    <div class="progress-bar-wrapper h-4 rounded relative overflow-hidden">
-        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded transition-all duration-100 ease-linear" style="width: 0%"></div>
-        <div class="progress-text absolute inset-0 flex items-center justify-center text-xs font-bold tracking-wider z-10" style="line-height: 1;"></div>
-    </div>
-</div>
-`;
-
-  const expandablePanelHTML = isExpandable ? `
-<div class="expandable-panel ${isOpen ? 'open' : ''}">
-    <div class="px-3 py-2 text-sm space-y-2 border-t border-gray-700/50">
-        <div class="flex justify-between items-start flex-wrap gap-y-1">
-            <div class="w-full text-right text-xs text-gray-400 font-mono" data-last-kill></div>
-            <div class="mob-memo-row text-sm text-gray-300 bg-gray-800/50 rounded px-2 py-1 w-full mt-1 border border-gray-700 cursor-pointer hover:bg-gray-700/50 transition" data-action="edit-memo" data-mob-no="${mob.No}">
-                <span class="mr-2 text-cyan-400 font-bold">Memo:</span><span data-last-memo class="text-gray-200">${mob.memo_text || ""}</span>
-            </div>
-            
-            <div class="w-full mt-2">
-                <div class="font-semibold text-yellow-400 text-xs uppercase tracking-widest mb-1">Condition</div>
-                <div class="text-gray-300 text-xs leading-relaxed pl-2 border-l-2 border-yellow-600/50">${processText(mob.Condition)}</div>
-            </div>
-        </div>
-        ${mob.Map && rank === 'S' ? `
-        <div class="map-content mt-2 flex justify-center relative rounded overflow-hidden border border-gray-600 shadow-lg">
-            <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="mob-crush-map w-full h-auto opacity-90 hover:opacity-100 transition-opacity">
-            <div class="map-overlay absolute inset-0">${spawnPointsHtml}</div>
-        </div>
-        ` : ''}
-    </div>
-</div>
-` : '';
-
-  const repopInfo = calculateRepop(mob, state.maintenance);
-  const isStopped = repopInfo.isMaintenanceStop;
-  const stoppedClass = isStopped ? "opacity-50 grayscale pointer-events-none" : "";
-
-  return `
-<div class="mob-card rounded-lg shadow-xl cursor-pointer ${stoppedClass}"
-    data-mob-no="${mob.No}" data-rank="${rank}">
-    ${cardHeaderHTML}${expandablePanelHTML}
-</div>
-`;
-}
-
-function rankPriority(rankCode) {
-  switch (rankCode) {
-    case 2: return 0; // S
-    case 1: return 1; // A
-    case 3: return 2; // F
-    default: return 99;
-  }
-}
-
-function parseMobNo(no) {
-  const str = String(no).padStart(5, "0");
-  return {
-    expansion: parseInt(str[0], 10),
-    rankCode: parseInt(str[1], 10),
-    mobNo: parseInt(str.slice(2, 4), 10),
-    instance: parseInt(str[4], 10),
+function debounce(func, wait) {
+  let timeout;
+  return function executed(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
   };
 }
 
-function baseComparator(a, b) {
-  const pa = parseMobNo(a.No);
-  const pb = parseMobNo(b.No);
+function formatLastKillTime(timestamp) {
+  if (timestamp === 0) return "未報告";
+  const aligned = Math.floor(timestamp / 60) * 60;
+  const killTimeMs = aligned * 1000;
+  const nowMs = Date.now();
+  const diffSeconds = Math.floor((nowMs - killTimeMs) / 1000);
 
-  const rankDiff = rankPriority(pa.rankCode) - rankPriority(pb.rankCode);
-  if (rankDiff !== 0) return rankDiff;
-
-  if (pa.expansion !== pb.expansion) return pb.expansion - pa.expansion;
-  if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
-  return pa.instance - pb.instance;
-}
-
-function progressComparator(a, b) {
-  const nowSec = Date.now() / 1000;
-  const aInfo = a.repopInfo || {};
-  const bInfo = b.repopInfo || {};
-
-  const aStopped = aInfo.isMaintenanceStop;
-  const bStopped = bInfo.isMaintenanceStop;
-  if (aStopped && !bStopped) return 1;
-  if (!aStopped && bStopped) return -1;
-
-  const aOver = (aInfo.status === "PopWindow" || aInfo.status === "MaxOver");
-  const bOver = (bInfo.status === "PopWindow" || bInfo.status === "MaxOver");
-
-  if (aOver && !bOver) return -1;
-  if (!aOver && bOver) return 1;
-
-  if (aOver && bOver) {
-    const diff = (bInfo.elapsedPercent || 0) - (aInfo.elapsedPercent || 0);
-    if (diff !== 0) return diff;
-  } else {
-    const aRemain = (aInfo.minRepop || 0) - nowSec;
-    const bRemain = (bInfo.minRepop || 0) - nowSec;
-    if (aRemain !== bRemain) return aRemain - bRemain;
+  if (diffSeconds < 3600) {
+    if (diffSeconds < 60) return `Just now`;
+    const minutes = Math.floor(diffSeconds / 60);
+    return `${minutes}m ago`;
   }
 
-  return baseComparator(a, b);
+  const options = {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Tokyo"
+  };
+  const date = new Date(killTimeMs);
+  return new Intl.DateTimeFormat("ja-JP", options).format(date);
 }
 
-function filterAndRender({ isInitialLoad = false } = {}) {
-  const state = getState();
-  const filtered = filterMobsByRankAndArea(state.mobs);
-  const sortedMobs = (["S", "A", "FATE"].includes(state.filter.rank) ? filtered.sort(progressComparator) : filtered.sort(baseComparator));
+function getEorzeaTime(date = new Date()) {
+  const unixMs = date.getTime();
+  const REAL_MS_PER_ET_HOUR = ET_HOUR_SEC * 1000;
+  const ET_HOURS_PER_DAY = 24;
 
-  const existingCards = new Map();
-  DOM.masterContainer.querySelectorAll('.mob-card').forEach(card => {
-    const mobNo = card.getAttribute('data-mob-no');
-    existingCards.set(mobNo, card);
-    card.remove();
-  });
+  const eorzeaTotalHours = Math.floor(unixMs / REAL_MS_PER_ET_HOUR);
+  const hours = eorzeaTotalHours % ET_HOURS_PER_DAY;
 
-  const frag = document.createDocumentFragment();
+  const remainingMs = unixMs % REAL_MS_PER_ET_HOUR;
+  const REAL_MS_PER_ET_MINUTE = REAL_MS_PER_ET_HOUR / 60;
+  const minutes = Math.floor(remainingMs / REAL_MS_PER_ET_MINUTE);
 
-  sortedMobs.forEach(mob => {
-    const mobNoStr = String(mob.No);
-    let card = existingCards.get(mobNoStr);
+  return {
+    hours: hours.toString().padStart(2, "0"),
+    minutes: minutes.toString().padStart(2, "0")
+  };
+}
 
-    if (card) {
-      updateProgressText(card, mob);
-      updateProgressBar(card, mob);
-      updateExpandablePanel(card, mob);
+function getEtHourFromRealSec(realSec) {
+  const ticks = Math.floor(realSec / ET_HOUR_SEC);
+  return ticks % 24;
+}
 
-      // メンテナンス状態のクラス更新
-      const repopInfo = calculateRepop(mob, state.maintenance);
-      if (repopInfo.isMaintenanceStop) {
-        card.classList.add("opacity-50", "grayscale", "pointer-events-none");
+function alignToEtHour(realSec) {
+  return Math.floor(realSec / ET_HOUR_SEC) * ET_HOUR_SEC;
+}
+
+function alignToWeatherCycle(realSec) {
+  // 天候サイクル (1400秒) の開始時刻に合わせる
+  return Math.floor(realSec / WEATHER_CYCLE_SEC) * WEATHER_CYCLE_SEC;
+}
+
+function ceilToWeatherCycle(realSec) {
+  return Math.ceil(realSec / WEATHER_CYCLE_SEC) * WEATHER_CYCLE_SEC;
+}
+
+function getEorzeaMoonInfo(date = new Date()) {
+  const unixSeconds = date.getTime() / 1000;
+  const EORZEA_SPEED_RATIO = 20.57142857142857;
+  const eorzeaTotalDays = (unixSeconds * EORZEA_SPEED_RATIO) / 86400;
+  const phase = (eorzeaTotalDays % 32) + 1;
+
+  let label = null;
+  if (phase >= 32.5 || phase < 4.5) label = "新月";
+  else if (phase >= 16.5 && phase < 20.5) label = "満月";
+
+  return { phase, label };
+}
+
+function getEorzeaWeatherSeed(date = new Date()) {
+  const unixSeconds = Math.floor(date.getTime() / 1000);
+  const eorzeanHours = Math.floor(unixSeconds / ET_HOUR_SEC);
+  const eorzeanDays = Math.floor(eorzeanHours / 24);
+
+  let timeChunk = (eorzeanHours % 24) - (eorzeanHours % 8);
+  timeChunk = (timeChunk + 8) % 24;
+
+  const seed = eorzeanDays * 100 + timeChunk;
+  const step1 = (seed << 11) ^ seed;
+  const step2 = ((step1 >>> 8) ^ step1) >>> 0;
+  return step2 % 100;
+}
+
+function checkWeatherInRange(mob, seed) {
+  if (mob.weatherSeedRange) {
+    const [min, max] = mob.weatherSeedRange;
+    return seed >= min && seed <= max;
+  }
+  if (mob.weatherSeedRanges) {
+    return mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max);
+  }
+  return false;
+}
+
+function checkTimeRange(timeRange, realSec) {
+  const etHour = getEtHourFromRealSec(realSec);
+  const { start, end } = timeRange;
+
+  if (start < end) return etHour >= start && etHour < end;
+  return etHour >= start || etHour < end;
+}
+
+function checkEtCondition(mob, realSec) {
+  const { phase } = getEorzeaMoonInfo(new Date(realSec * 1000));
+
+  if (mob.conditions) {
+    const { firstNight, otherNights } = mob.conditions;
+    if (firstNight?.timeRange && (isFirstNightPhase(phase) || mob.moonPhase === "新月")) {
+      return checkTimeRange(firstNight.timeRange, realSec);
+    }
+    if (otherNights?.timeRange && (isOtherNightsPhase(phase) || mob.moonPhase === "満月")) {
+      return checkTimeRange(otherNights.timeRange, realSec);
+    }
+    return false;
+  }
+
+  if (mob.timeRange) return checkTimeRange(mob.timeRange, realSec);
+  if (mob.timeRanges) return mob.timeRanges.some(tr => checkTimeRange(tr, realSec));
+
+  return true;
+}
+
+function isFirstNightPhase(phase) {
+  return phase >= 32.5 || phase < 1.5;
+}
+
+function isOtherNightsPhase(phase) {
+  return phase >= 1.5 && phase < 4.5;
+}
+
+function calculateNextMoonStart(startSec, targetPhase) {
+  const startPhase = getEorzeaMoonInfo(new Date(startSec * 1000)).phase;
+  let phaseDiff = targetPhase - startPhase;
+  if (phaseDiff < 0) phaseDiff += 32;
+
+  let nextStartSec = startSec + phaseDiff * ET_DAY_SEC;
+
+  if (nextStartSec < startSec) {
+    nextStartSec += MOON_CYCLE_SEC;
+  }
+  return nextStartSec;
+}
+
+// --- カスケード探索用ジェネレータ関数 ---
+
+/**
+ * 指定された期間内で、天候条件を満たす区間を返す
+ * ★修正点: 単発/連続を分離し、単発では遡りを行わない
+ */
+function* getValidWeatherIntervals(mob, windowStart, windowEnd) {
+  const requiredMinutes = mob.weatherDuration?.minutes || 0;
+  const requiredSec = requiredMinutes * 60;
+  // 連続天候判定: 1サイクル(1400秒)を超える継続時間が必要か
+  const isContinuous = requiredSec > WEATHER_CYCLE_SEC;
+
+  if (!mob.weatherSeedRange && !mob.weatherSeedRanges) {
+    yield [windowStart, windowEnd];
+    return;
+  }
+
+  // 探索カーソルを windowStart のサイクル境界に合わせる
+  let currentCursor = alignToWeatherCycle(windowStart);
+  let loopSafety = 0;
+
+  // 1. 基準点を含む天候サイクルのチェック (跨ぎ判定)
+  // 現在のサイクルが条件に合致する場合
+  if (checkWeatherInRange(mob, getEorzeaWeatherSeed(new Date(currentCursor * 1000)))) {
+    let chainStart = currentCursor;
+    let chainEnd = 0;
+
+    if (isContinuous) {
+      // --- A. 連続天候 ($T_{Req} > 1400$) ---
+      // 過去へ遡り、ChainStartを特定
+      // 最適化(searchBackLimit)を削除し、確実に遡るように変更
+      const searchBackLimit = windowStart - LIMIT_DAYS * 24 * 3600;
+      while (true) {
+        const prevTime = chainStart - WEATHER_CYCLE_SEC;
+        if (prevTime < searchBackLimit) break;
+
+        const seed = getEorzeaWeatherSeed(new Date(prevTime * 1000));
+        if (checkWeatherInRange(mob, seed)) {
+          chainStart = prevTime;
+        } else {
+          break;
+        }
+      }
+
+      // 未来へ伸ばして ChainEnd を特定
+      let tempCursor = currentCursor;
+      while (true) {
+        if (loopSafety++ > MAX_SEARCH_ITERATIONS) break;
+
+        const nextTime = tempCursor + WEATHER_CYCLE_SEC;
+        const seed = getEorzeaWeatherSeed(new Date(nextTime * 1000));
+
+        if (checkWeatherInRange(mob, seed)) {
+          tempCursor = nextTime;
+        } else {
+          chainEnd = nextTime; // 不一致のサイクルの開始が ChainEnd
+          break;
+        }
+      }
+
+      const duration = chainEnd - chainStart;
+
+      if (duration >= requiredSec) {
+        const validPopStart = chainStart + requiredSec;
+        // 基準点を跨いでいる場合、maxにより windowStart が採用される
+        const intersectStart = Math.max(validPopStart, windowStart);
+        const intersectEnd = Math.min(chainEnd, windowEnd);
+
+        if (intersectStart < intersectEnd) {
+          yield [intersectStart, intersectEnd];
+        }
+      }
+
+      // 次の探索はチェーンの終わりから
+      currentCursor = chainEnd;
+
+    } else {
+      // --- B. 単発天候 ($T_{Req} \le 1400$) ---
+      // 遡り不要。ChainStartは currentCursorで十分
+      chainStart = currentCursor;
+
+      // 未来へ伸ばして ChainEnd を特定
+      let tempCursor = currentCursor;
+      while (true) {
+        if (loopSafety++ > MAX_SEARCH_ITERATIONS) break;
+
+        const nextTime = tempCursor + WEATHER_CYCLE_SEC;
+        const seed = getEorzeaWeatherSeed(new Date(nextTime * 1000));
+
+        if (checkWeatherInRange(mob, seed)) {
+          tempCursor = nextTime;
+        } else {
+          chainEnd = nextTime;
+          break;
+        }
+      }
+
+      // 単発の場合、常に windowStart が開始時間
+      const intersectStart = windowStart;
+      const intersectEnd = Math.min(chainEnd, windowEnd);
+
+      if (intersectStart < intersectEnd) {
+        yield [intersectStart, intersectEnd];
+      }
+
+      // 次の探索はチェーンの終わりから
+      currentCursor = chainEnd;
+    }
+
+  } else {
+    // 現在地点が不一致なら、次のサイクルから探索
+    currentCursor += WEATHER_CYCLE_SEC;
+  }
+
+  // 2. 未来方向への通常探索 (この時点で currentCursor は次の探索開始点)
+  let cursor = currentCursor;
+
+  while (cursor < windowEnd) {
+    if (loopSafety++ > MAX_SEARCH_ITERATIONS) break;
+
+    // 始点を探す
+    let activeStart = null;
+    while (cursor < windowEnd + WEATHER_CYCLE_SEC) {
+      const seed = getEorzeaWeatherSeed(new Date(cursor * 1000));
+      if (checkWeatherInRange(mob, seed)) {
+        activeStart = cursor;
+        break;
+      }
+      cursor += WEATHER_CYCLE_SEC;
+      if (cursor - windowStart > LIMIT_DAYS * 24 * 3600) break;
+    }
+
+    if (activeStart === null) break;
+
+    // 終点を探す
+    let activeEnd = activeStart;
+    let tempCursor = activeStart;
+    while (true) {
+      if (loopSafety++ > MAX_SEARCH_ITERATIONS) break;
+
+      const nextTime = tempCursor + WEATHER_CYCLE_SEC;
+      const seed = getEorzeaWeatherSeed(new Date(nextTime * 1000));
+
+      if (checkWeatherInRange(mob, seed)) {
+        tempCursor = nextTime;
+        activeEnd = nextTime;
       } else {
-        card.classList.remove("opacity-50", "grayscale", "pointer-events-none");
+        activeEnd = nextTime; // 不一致のサイクルの開始が ActiveEnd
+        break;
+      }
+    }
+
+    // 長さ判定
+    const duration = activeEnd - activeStart;
+    if (duration >= requiredSec) {
+      const validPopStart = isContinuous ? activeStart + requiredSec : activeStart;
+
+      const intersectStart = Math.max(validPopStart, windowStart);
+      const intersectEnd = Math.min(activeEnd, windowEnd);
+
+      if (intersectStart < intersectEnd) {
+        yield [intersectStart, intersectEnd];
+      }
+    }
+
+    cursor = activeEnd;
+  }
+}
+
+function* getValidEtIntervals(mob, windowStart, windowEnd) {
+  if (!mob.timeRange && !mob.timeRanges && !mob.conditions) {
+    yield [windowStart, windowEnd];
+    return;
+  }
+  // windowStart を ET時間境界に揃える
+  let cursor = alignToEtHour(windowStart);
+  let loopSafety = 0;
+
+  while (cursor < windowEnd) {
+    if (loopSafety++ > MAX_SEARCH_ITERATIONS) break;
+
+    if (checkEtCondition(mob, cursor)) {
+      const start = cursor;
+      let end = cursor + ET_HOUR_SEC;
+      let tempCursor = end;
+      // 連続するET区間を結合
+      while (tempCursor < windowEnd + ET_HOUR_SEC) {
+        if (checkEtCondition(mob, tempCursor)) {
+          end += ET_HOUR_SEC;
+          tempCursor += ET_HOUR_SEC;
+        } else {
+          break;
+        }
+      }
+      // 交差を取る（windowStart以前はカット）
+      const intersectStart = Math.max(start, windowStart);
+      const intersectEnd = Math.min(end, windowEnd);
+
+      if (intersectStart < intersectEnd) {
+        yield [intersectStart, intersectEnd];
       }
 
+      cursor = end;
     } else {
-      const temp = document.createElement("div");
-      temp.innerHTML = createMobCard(mob);
-      card = temp.firstElementChild;
-      updateProgressText(card, mob);
-      updateProgressBar(card, mob);
-      updateExpandablePanel(card, mob);
+      cursor += ET_HOUR_SEC;
     }
-
-    if (card) {
-      frag.appendChild(card);
-    }
-  });
-
-  DOM.masterContainer.appendChild(frag);
-
-  distributeCards();
-  attachLocationEvents();
-
-  if (isInitialLoad) updateProgressBars();
-}
-
-function distributeCards() {
-  const width = window.innerWidth;
-  const md = 768;
-  const lg = 1024;
-  let cols = 1;
-  if (width >= lg) {
-    cols = 3;
-    DOM.cols[2].classList.remove("hidden");
-  } else if (width >= md) {
-    cols = 2;
-    DOM.cols[2].classList.add("hidden");
-  } else {
-    cols = 1;
-    DOM.cols[2].classList.add("hidden");
-  }
-
-  DOM.cols.forEach(col => (col.innerHTML = ""));
-  const cards = Array.from(DOM.masterContainer.children);
-  cards.forEach((card, idx) => {
-    const target = idx % cols;
-    DOM.cols[target].appendChild(card);
-  });
-}
-
-function updateProgressBar(card, mob) {
-  const bar = card.querySelector(".progress-bar-bg");
-  const wrapper = bar?.parentElement;
-  const text = card.querySelector(".progress-text");
-  if (!bar || !wrapper || !text) return;
-
-  const { elapsedPercent, status } = mob.repopInfo;
-
-  bar.style.transition = "width linear 60s";
-  bar.style.width = `${elapsedPercent}%`;
-
-  bar.classList.remove(
-    PROGRESS_CLASSES.P0_60,
-    PROGRESS_CLASSES.P60_80,
-    PROGRESS_CLASSES.P80_100,
-    PROGRESS_CLASSES.MAX_OVER
-  );
-  text.classList.remove(
-    PROGRESS_CLASSES.TEXT_NEXT,
-    PROGRESS_CLASSES.TEXT_POP
-  );
-  wrapper.classList.remove(PROGRESS_CLASSES.BLINK_WHITE);
-
-  if (status === "PopWindow" || status === "ConditionActive") {
-    if (elapsedPercent > 90) {
-      wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE);
-    }
-    text.classList.add(PROGRESS_CLASSES.TEXT_POP);
-
-  } else if (status === "MaxOver") {
-    bar.classList.add(PROGRESS_CLASSES.MAX_OVER);
-    text.classList.add(PROGRESS_CLASSES.TEXT_POP);
-  } else {
-    text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
   }
 }
 
-function updateProgressText(card, mob) {
-  const text = card.querySelector(".progress-text");
-  if (!text) return;
-
-  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status, isInConditionWindow, timeRemaining
-  } = mob.repopInfo || {};
-
-  const nowSec = Date.now() / 1000;
-  let leftStr = timeRemaining || "未確定";
-  const percentStr = (status === "PopWindow" || status === "ConditionActive" || status === "NextCondition")
-    ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)`
-    : "";
-
-  // Right Side Logic
-  let rightStr = "";
-  if (isInConditionWindow && mob.repopInfo.conditionRemaining) {
-    rightStr = mob.repopInfo.conditionRemaining;
-  } else if (status === "NextCondition" && nextConditionSpawnDate) {
-    try {
-      // Format: Next MM/DD HH:mm
-      const dateStr = new Intl.DateTimeFormat("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }).format(nextConditionSpawnDate);
-      rightStr = `Next ${dateStr}`;
-    } catch {
-      rightStr = "";
-    }
+// --- メイン探索ロジック（階層型） ---
+function findNextSpawn(mob, pointSec, searchLimit) {
+  // 1. 月齢探索（第1層）
+  let moonPhases = [];
+  if (!mob.moonPhase) {
+    moonPhases.push([pointSec, searchLimit]);
   } else {
-    // Default: Min Repop Time
-    if (nextMinRepopDate) {
-      try {
-        // Format: in MM/DD HH:mm
-        const dateStr = new Intl.DateTimeFormat("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }).format(nextMinRepopDate);
-        rightStr = `in ${dateStr}`;
-      } catch {
-        rightStr = "未確定";
+    let targetPhase = mob.moonPhase === "新月" ? 32.5 : 16.5;
+    const startPhase = getEorzeaMoonInfo(new Date(pointSec * 1000)).phase;
+
+    // 現在(pointSec)がターゲットフェーズ内か？
+    if (
+      (mob.moonPhase === "新月" && (startPhase >= 32.5 || startPhase < 4.5)) ||
+      (mob.moonPhase === "満月" && (startPhase >= 16.5 && startPhase < 20.5))
+    ) {
+      let currentPhaseStart = pointSec - (startPhase - targetPhase) * ET_DAY_SEC;
+      while (currentPhaseStart > pointSec) currentPhaseStart -= MOON_CYCLE_SEC;
+
+      const currentPhaseEnd = currentPhaseStart + MOON_PHASE_DURATION_SEC;
+
+      if (currentPhaseEnd > pointSec) {
+        moonPhases.push([pointSec, currentPhaseEnd]);
       }
-    } else {
-      rightStr = "未確定";
+    }
+
+    let moonStart = calculateNextMoonStart(pointSec, targetPhase);
+    while (moonStart < searchLimit) {
+      moonPhases.push([moonStart, moonStart + MOON_PHASE_DURATION_SEC]);
+      moonStart += MOON_CYCLE_SEC;
+    }
+  }
+  // 2. 天候探索（第2層：月齢区間内）
+  for (const [mStart, mEnd] of moonPhases) {
+    const weatherIterator = getValidWeatherIntervals(mob, mStart, mEnd);
+
+    for (const [wStart, wEnd] of weatherIterator) {
+      // 3. ET探索（第3層：天候区間内）
+      const etIterator = getValidEtIntervals(mob, wStart, wEnd);
+
+      for (const [eStart, eEnd] of etIterator) {
+        // 最終チェック
+        const finalStart = Math.max(eStart, pointSec);
+        const finalEnd = eEnd;
+
+        if (finalStart < finalEnd) {
+          return { start: finalStart, end: finalEnd };
+        }
+      }
+    }
+  }
+  return null;
+}
+
+// --- メイン関数 ---
+function calculateRepop(mob, maintenance) {
+  const now = Date.now() / 1000;
+  const lastKill = mob.last_kill_time || 0;
+  const repopSec = mob.REPOP_s;
+  const maxSec = mob.MAX_s;
+
+  let maint = maintenance;
+  if (maint && typeof maint === "object" && "maintenance" in maint && maint.maintenance) {
+    maint = maint.maintenance;
+  }
+  if (!maint || !maint.serverUp || !maint.start) return baseResult("Unknown");
+
+  const serverUp = new Date(maint.serverUp).getTime() / 1000;
+  const maintenanceStart = new Date(maint.start).getTime() / 1000;
+
+  let minRepop, maxRepop;
+  if (lastKill === 0 || lastKill <= serverUp) {
+    minRepop = serverUp + repopSec * 0.6;
+    maxRepop = serverUp + maxSec * 0.6;
+  } else {
+    minRepop = lastKill + repopSec;
+    maxRepop = lastKill + maxSec;
+  }
+
+  const pointSec = Math.max(minRepop, now);
+  const nextMinRepopDate = new Date(minRepop * 1000);
+  const searchLimit = pointSec + LIMIT_DAYS * 24 * 3600;
+
+  let status = "Unknown";
+  let timeRemaining = "Unknown"; // Left Side (Standard)
+  let conditionRemaining = null; // Right Side (Condition Active)
+  let nextConditionSpawnDate = null;
+  let conditionWindowEnd = null;
+  let isInConditionWindow = false;
+
+  const hasCondition = !!(
+    mob.moonPhase ||
+    mob.timeRange ||
+    mob.timeRanges ||
+    mob.weatherSeedRange ||
+    mob.weatherSeedRanges ||
+    mob.conditions
+  );
+
+  if (hasCondition) {
+    const result = findNextSpawn(mob, pointSec, searchLimit);
+
+    if (result) {
+      const { start, end } = result;
+
+      nextConditionSpawnDate = new Date(start * 1000);
+      conditionWindowEnd = new Date(end * 1000);
+
+      isInConditionWindow = (pointSec >= start && pointSec < end);
+
+      if (isInConditionWindow) {
+        const remainingSec = end - pointSec;
+        conditionRemaining = `@ ${Math.ceil(remainingSec / 60)}分`;
+      }
     }
   }
 
-  text.innerHTML = `
-    <div class="w-full grid grid-cols-2 items-center text-xs font-bold" style="line-height:1;">
-      <div class="pl-2 text-left truncate text-shadow-sm">${leftStr}${percentStr}</div>
-      <div class="pr-2 text-right truncate text-shadow-sm">${rightStr}</div>
-    </div>
-  `;
+  let elapsedPercent = 0;
 
-  if (status === "MaxOver") text.classList.add("max-over");
-  else text.classList.remove("max-over");
+  if (now >= maxRepop) {
+    status = "MaxOver";
+    elapsedPercent = 100;
+    timeRemaining = `Time Over (100％)`;
+  } else if (now < minRepop) {
+    status = "Next";
+    timeRemaining = `@ ${formatDurationHM(minRepop - now)}`;
+  } else {
+    // In Window
+    status = "PopWindow";
+    elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
+    timeRemaining = `残り${formatDurationHM(maxRepop - now)}`;
+  }
 
-  if (minRepop - nowSec >= 3600) text.classList.add("long-wait");
-  else text.classList.remove("long-wait");
-}
+  if (isInConditionWindow) {
+    status = "ConditionActive";
+  } else if (hasCondition && nextConditionSpawnDate && now < nextConditionSpawnDate.getTime() / 1000 && status !== "MaxOver") {
+    status = "NextCondition";
+  }
 
+  const isMaintenanceStop = (now >= maintenanceStart && now < serverUp);
 
+  return {
+    minRepop,
+    maxRepop,
+    elapsedPercent,
+    timeRemaining,
+    conditionRemaining,
+    status,
+    nextMinRepopDate,
+    nextConditionSpawnDate,
+    conditionWindowEnd,
+    isInConditionWindow,
+    isMaintenanceStop
+  };
 
-function updateExpandablePanel(card, mob) {
-  const elNext = card.querySelector("[data-next-time]");
-  const elLast = card.querySelector("[data-last-kill]");
-  const elMemo = card.querySelector("[data-last-memo]");
-
-  const lastStr = formatLastKillTime(mob.last_kill_time);
-  if (elLast) elLast.textContent = `前回: ${lastStr}`;
-
-  if (elMemo) {
-    elMemo.textContent = mob.memo_text || "";
+  function baseResult(status) {
+    return {
+      minRepop: null,
+      maxRepop: null,
+      elapsedPercent: 0,
+      timeRemaining: "未確定",
+      status,
+      nextMinRepopDate: null,
+      conditionWindowEnd: null,
+      isInConditionWindow: false,
+      isMaintenanceStop: false
+    };
   }
 }
 
-function updateProgressBars() {
-  const state = getState();
-  state.mobs.forEach((mob) => {
-    const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
-    if (card) {
-      updateProgressText(card, mob);
-      updateProgressBar(card, mob);
-    }
-  });
-}
-
-const sortAndRedistribute = debounce(() => filterAndRender(), 200);
-
-function onKillReportReceived(mobId, kill_time) {
-  const mob = getState().mobs.find(m => m.No === mobId);
-  if (!mob) return;
-
-  mob.last_kill_time = Number(kill_time);
-  mob.repopInfo = calculateRepop(mob, getState().maintenance);
-
-  const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
-  if (card) {
-    updateProgressText(card, mob);
-    updateProgressBar(card, mob);
+function checkMobSpawnCondition(mob, date) {
+  const pointSec = Math.floor(date.getTime() / 1000);
+  if (mob.moonPhase) {
+    const moonInfo = getEorzeaMoonInfo(date);
+    if (moonInfo.label !== mob.moonPhase) return false;
   }
+  if (mob.weatherSeedRange || mob.weatherSeedRanges) {
+    const seed = getEorzeaWeatherSeed(date);
+    if (!checkWeatherInRange(mob, seed)) return false;
+  }
+  if (!checkEtCondition(mob, pointSec)) return false;
+  return true;
 }
 
-setInterval(() => {
-  updateProgressBars();
-}, 60000);
+function findNextSpawnTime(mob, pointSec, minRepopSec, limitSec) {
+  const hasCondition = !!(
+    mob.moonPhase ||
+    mob.timeRange ||
+    mob.timeRanges ||
+    mob.weatherSeedRange ||
+    mob.weatherSeedRanges ||
+    mob.conditions
+  );
 
-export { filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, DOM, sortAndRedistribute, onKillReportReceived, updateProgressBars };
+  if (!hasCondition) return minRepopSec;
+
+  const searchLimit = pointSec + LIMIT_DAYS * 24 * 3600;
+  const result = findNextSpawn(mob, pointSec, searchLimit);
+
+  if (result) {
+    return result.start;
+  }
+  return null;
+}
+
+export {
+  calculateRepop,
+  checkMobSpawnCondition,
+  findNextSpawnTime,
+  getEorzeaTime,
+  formatDuration,
+  formatDurationHM,
+  debounce,
+  formatLastKillTime
+};
