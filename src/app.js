@@ -170,9 +170,8 @@ async function handleReportSubmit(e) {
     const form = e.target;
     const mobNo = parseInt(form.dataset.mobNo, 10);
     const timeISO = form.elements["kill-time"].value;
-    const memo = form.elements["kill-memo"].value;
 
-    await submitReport(mobNo, timeISO, memo);
+    await submitReport(mobNo, timeISO);
 }
 
 document.addEventListener('DOMContentLoaded', initializeApp);
