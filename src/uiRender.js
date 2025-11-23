@@ -268,7 +268,7 @@ function filterAndRender({ isInitialLoad = false } = {}) {
     const mobNoStr = String(mob.No);
     let card = existingCards.get(mobNoStr);
 
-    if (card && card.getAttribute("data-editing") !== "true") {
+    if (card) {
       updateProgressText(card, mob);
       updateProgressBar(card, mob);
       updateExpandablePanel(card, mob);
