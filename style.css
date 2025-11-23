@@ -116,18 +116,18 @@ body {
 }
 
 .progress-text.text-pop {
-    color: #fef08a;
+    color: #c9b735;
     /* Yellow-200 */
     text-shadow: 0 0 5px rgb(255, 255, 255);
 }
 
 .progress-text.text-next {
-    color: #a5f3fc;
+    color: #ffffff;
     /* Cyan-200 */
 }
 
 .progress-text.max-over {
-    color: #f75252;
+    color: #ffffff;
     /* Red-300 */
     animation: pulse-text 2s infinite;
 }
