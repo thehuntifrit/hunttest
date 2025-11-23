@@ -1,20 +1,21 @@
 // modal.js
 import { DOM } from "./uiRender.js";
 import { getState } from "./dataManager.js";
-import { getServerTimeUTC, submitMemo } from "./server.js";
+import { submitMemo } from "./server.js";
 
 async function openReportModal(mobNo) {
     const mob = getState().mobs.find(m => m.No === mobNo);
     if (!mob) return;
 
-    // サーバーUTC時刻を取得
-    const serverDateUTC = await getServerTimeUTC();
-    const localIso = new Date(serverDateUTC.getTime() - serverDateUTC.getTimezoneOffset() * 60000)
+    // 現在時刻（クライアント）を取得
+    const now = new Date();
+    const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
         .toISOString()
         .slice(0, 16); // "YYYY-MM-DDTHH:mm"
 
     DOM.reportForm.dataset.mobNo = String(mobNo);
     DOM.modalMobName.textContent = `${mob.Name}`;
+    DOM.modalTimeInput.value = localIso;
 
     DOM.reportModal.classList.remove("hidden");
     DOM.reportModal.classList.add("flex");
@@ -28,7 +29,6 @@ function closeReportModal() {
 }
 
 // --- Memo Modal ---
-
 function openMemoModal(mobNo, currentText) {
     const modal = document.getElementById('memo-modal-container');
     const input = document.getElementById('modal-memo-input');
