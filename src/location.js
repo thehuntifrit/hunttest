@@ -98,7 +98,7 @@ function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_Last
     return `
     <div class="spawn-point ${colorClass}"
         style="left:${point.x}%; top:${point.y}%;"
-        title="${titleText}"
+        data-tooltip="${titleText}"
         data-location-id="${point.id}"
         data-mob-no="${mobNo}"
         data-rank="${rank}"
@@ -134,7 +134,8 @@ function updateCrushUI(mobNo, locationId, isCulled) {
 
     marker.dataset.isCulled = isCulled.toString();
     const pointNumber = locationId.slice(-2);
-    marker.title = `${pointNumber} (湧き潰し: ${isCulled ? "済" : "未"})`;
+    marker.setAttribute("data-tooltip", `${pointNumber} (湧き潰し: ${isCulled ? "済" : "未"})`);
+    marker.removeAttribute("title"); // 既存のtitle属性があれば削除
 }
 
 function attachLocationEvents() {
