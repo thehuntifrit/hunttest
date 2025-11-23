@@ -45,7 +45,7 @@ function displayStatus(message, type = "info", duration = 5000) {
     error: "text-red-300"
   }[type] || "text-white";
 
-  el.innerHTML = `<div class="${color}">${message}</div>`;
+  el.innerHTML = `<div class="${color} text-glow font-semibold">${message}</div>`;
   document.getElementById("status-message")?.classList.remove("hidden");
 
   setTimeout(() => {
@@ -64,8 +64,8 @@ function processText(text) {
 
 function createMobCard(mob) {
   const rank = mob.Rank;
-  const rankConfig = RANK_COLORS[rank] || RANK_COLORS.A;
-  const rankLabel = rankConfig.label || rank;
+  // Rank colors are now handled by CSS classes, but we keep this for compatibility if needed
+  const rankLabel = rank;
 
   const isExpandable = rank === "S";
   const { openMobCardNo } = getState();
@@ -93,7 +93,7 @@ function createMobCard(mob) {
       isLastOne = true;
       const pointId = validSpawnPoints[0]?.id || "";
       const pointNumber = pointId.slice(-2);
-      displayCountText = ` <span class="text-yellow-600">${pointNumber}番</span>`;
+      displayCountText = ` <span class="text-yellow-400 font-bold text-glow">${pointNumber}番</span>`;
     } else if (remainingCount > 1) {
       isLastOne = false;
       displayCountText = ` <span class="text-xs text-gray-400 relative -top-0.5">@</span>&nbsp;${remainingCount}<span class="text-xs relative -top-[0.04rem]">個</span>`;
@@ -105,61 +105,68 @@ function createMobCard(mob) {
   const isS_LastOne = rank === "S" && isLastOne;
   const spawnPointsHtml = (rank === "S" && mob.Map)
     ? (mob.spawn_points ?? []).map(point => {
-        const isThisPointTheLastOne = isLastOne && point.id === validSpawnPoints[0]?.id;
-        return drawSpawnPoint(
-          point,
-          spawnCullStatus,
-          mob.No,
-          point.mob_ranks.includes("B2") ? "B2"
-            : point.mob_ranks.includes("B1") ? "B1"
-              : point.mob_ranks[0],
-          isThisPointTheLastOne,
-          isS_LastOne
-        );
-      }).join("")
+      const isThisPointTheLastOne = isLastOne && point.id === validSpawnPoints[0]?.id;
+      return drawSpawnPoint(
+        point,
+        spawnCullStatus,
+        mob.No,
+        point.mob_ranks.includes("B2") ? "B2"
+          : point.mob_ranks.includes("B1") ? "B1"
+            : point.mob_ranks[0],
+        isThisPointTheLastOne,
+        isS_LastOne
+      );
+    }).join("")
     : "";
 
-  const mobNameAndCountHtml = `<span class="text-base flex items-baseline font-bold truncate">${mob.Name}</span>
-                                <span class="text-sm flex items-baseline font-bold">${displayCountText}</span>`;
+  const mobNameAndCountHtml = `<span class="text-base flex items-baseline font-bold truncate text-gray-100">${mob.Name}</span>
+                                <span class="text-sm flex items-baseline font-bold ml-2">${displayCountText}</span>`;
+
+  // Magitek Card Header
   const cardHeaderHTML = `
-<div class="px-2 py-1 space-y-1 bg-gray-800/70" data-toggle="card-header">
-    <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
-        <span class="w-6 h-6 flex items-center justify-center rounded-full text-white text-sm font-bold ${rankConfig.bg}">${rankLabel}</span>
+<div class="px-3 py-2 space-y-2 bg-transparent" data-toggle="card-header">
+    <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-3">
+        <!-- Rank Badge -->
+        <span class="w-8 h-8 flex items-center justify-center rounded-md text-white text-sm rank-badge rank-${rank.toLowerCase()}">${rankLabel}</span>
 
         <div class="flex flex-col min-w-0">
-            <div class="flex items-baseline space-x-1">${mobNameAndCountHtml}</div>
-            <span class="text-xs text-gray-400 truncate">${mob.Area} (${mob.Expansion})</span>
+            <div class="flex items-baseline">${mobNameAndCountHtml}</div>
+            <span class="text-xs text-gray-400 truncate font-mono tracking-wide">${mob.Area} <span class="opacity-50">|</span> ${mob.Expansion}</span>
         </div>
 
         <div class="flex-shrink-0 flex items-center justify-end">
-            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center rounded transition text-center leading-tight">
-                <img src="./icon/reports.webp" alt="報告する" class="w-8 h-8 object-contain transition hover:brightness-125 focus:brightness-125 active:brightness-150" 
+            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center rounded transition text-center leading-tight hover:scale-110 active:scale-95">
+                <img src="./icon/reports.webp" alt="報告する" class="w-7 h-7 object-contain filter drop-shadow-lg" 
                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <span style="display:none;" class="w-8 h-8 flex items-center justify-center text-[12px] rounded 
-                bg-green-600 hover:bg-green-400 selected:bg-green-800 text-white font-semibold leading-tight whitespace-pre-line">報告<br>する</span>
+                <span style="display:none;" class="w-8 h-8 flex items-center justify-center text-[10px] rounded 
+                bg-green-600 hover:bg-green-500 text-white font-bold leading-tight whitespace-pre-line shadow-lg">報告</span>
             </button>
         </div>
     </div>
 
-    <div class="progress-bar-wrapper h-5 rounded-lg relative overflow-hidden transition-all duration-100 ease-linear">
-        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded-lg transition-all duration-100 ease-linear" style="width: 0%"></div>
-        <div class="progress-text absolute inset-0 flex items-center justify-center text-sm font-semibold" style="line-height: 1;"></div>
+    <!-- Progress Bar -->
+    <div class="progress-bar-wrapper h-4 rounded relative overflow-hidden">
+        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded transition-all duration-100 ease-linear" style="width: 0%"></div>
+        <div class="progress-text absolute inset-0 flex items-center justify-center text-xs font-bold tracking-wider z-10" style="line-height: 1;"></div>
     </div>
 </div>
 `;
 
   const expandablePanelHTML = isExpandable ? `
-<div class="expandable-panel bg-gray-800/70 ${isOpen ? 'open' : ''}">
-    <div class="px-2 py-0 text-sm space-y-0.5">
-        <div class="flex justify-between items-start flex-wrap">
-            <div class="w-full text-right text-xs text-gray-400 pt-1" data-last-kill></div>
-            <div class="mob-memo-row text-sm text-gray-300"><span class="mr-1">Memo:</span><span data-last-memo></span></div>
-            <div class="w-full font-semibold text-yellow-300 border-t border-gray-600">抽選条件</div>
-            <div class="w-full text-gray-300 text-xs mt-1">${processText(mob.Condition)}</div>
+<div class="expandable-panel ${isOpen ? 'open' : ''}">
+    <div class="px-3 py-2 text-sm space-y-2 border-t border-gray-700/50">
+        <div class="flex justify-between items-start flex-wrap gap-y-1">
+            <div class="w-full text-right text-xs text-gray-400 font-mono" data-last-kill></div>
+            <div class="mob-memo-row text-sm text-gray-300 bg-gray-800/50 rounded px-2 py-1 w-full mt-1 border border-gray-700"><span class="mr-2 text-cyan-400 font-bold">Memo:</span><span data-last-memo class="text-gray-200"></span></div>
+            
+            <div class="w-full mt-2">
+                <div class="font-semibold text-yellow-400 text-xs uppercase tracking-widest mb-1">Condition</div>
+                <div class="text-gray-300 text-xs leading-relaxed pl-2 border-l-2 border-yellow-600/50">${processText(mob.Condition)}</div>
+            </div>
         </div>
         ${mob.Map && rank === 'S' ? `
-        <div class="map-content py-0.5 flex justify-center relative">
-            <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="mob-crush-map w-full h-auto rounded shadow-lg border border-gray-600">
+        <div class="map-content mt-2 flex justify-center relative rounded overflow-hidden border border-gray-600 shadow-lg">
+            <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="mob-crush-map w-full h-auto opacity-90 hover:opacity-100 transition-opacity">
             <div class="map-overlay absolute inset-0">${spawnPointsHtml}</div>
         </div>
         ` : ''}
@@ -172,8 +179,7 @@ function createMobCard(mob) {
   const stoppedClass = isStopped ? "opacity-50 grayscale pointer-events-none" : "";
 
   return `
-<div class="mob-card bg-gray-700 rounded-lg shadow-xl overflow-hidden cursor-pointer transition duration-150 ${stoppedClass}"
-    style="border: 0.5px solid ${rankConfig.rgbaBorder};"
+<div class="mob-card rounded-lg shadow-xl cursor-pointer ${stoppedClass}"
     data-mob-no="${mob.No}" data-rank="${rank}">
     ${cardHeaderHTML}${expandablePanelHTML}
 </div>
@@ -243,61 +249,61 @@ function progressComparator(a, b) {
 }
 
 function filterAndRender({ isInitialLoad = false } = {}) {
-    const state = getState();
-    const filtered = filterMobsByRankAndArea(state.mobs);
-    // ソート順決定
-    const sortedMobs = (["S", "A", "FATE"].includes(state.filter.rank) ? filtered.sort(progressComparator) : filtered.sort(baseComparator));
+  const state = getState();
+  const filtered = filterMobsByRankAndArea(state.mobs);
+  // ソート順決定
+  const sortedMobs = (["S", "A", "FATE"].includes(state.filter.rank) ? filtered.sort(progressComparator) : filtered.sort(baseComparator));
 
-    const existingCards = new Map();
-    // 既存のカードをMapに格納し、DOMから一旦切り離す
-    DOM.masterContainer.querySelectorAll('.mob-card').forEach(card => {
-        const mobNo = card.getAttribute('data-mob-no');
-        existingCards.set(mobNo, card);
-        card.remove(); // DOMから一時的に除去
-    });
+  const existingCards = new Map();
+  // 既存のカードをMapに格納し、DOMから一旦切り離す
+  DOM.masterContainer.querySelectorAll('.mob-card').forEach(card => {
+    const mobNo = card.getAttribute('data-mob-no');
+    existingCards.set(mobNo, card);
+    card.remove(); // DOMから一時的に除去
+  });
 
-    const frag = document.createDocumentFragment();
+  const frag = document.createDocumentFragment();
 
-    sortedMobs.forEach(mob => {
-        const mobNoStr = String(mob.No);
-        let card = existingCards.get(mobNoStr);
-      
-        if (card && card.getAttribute("data-editing") !== "true") {
-            updateProgressText(card, mob);
-            updateProgressBar(card, mob);
-            updateExpandablePanel(card, mob);
-        
-        } else if (!card) {
-            // カードが存在しない場合は新規作成
-            const temp = document.createElement("div");
-            temp.innerHTML = createMobCard(mob);
-            card = temp.firstElementChild;
-            updateProgressText(card, mob);
-            updateProgressBar(card, mob);
-            updateExpandablePanel(card, mob);
-        }
-      
-        if (card) {
-            frag.appendChild(card);
-        }
-    });
+  sortedMobs.forEach(mob => {
+    const mobNoStr = String(mob.No);
+    let card = existingCards.get(mobNoStr);
 
-    DOM.masterContainer.appendChild(frag); // 順序変更（既存要素の移動）
+    if (card && card.getAttribute("data-editing") !== "true") {
+      updateProgressText(card, mob);
+      updateProgressBar(card, mob);
+      updateExpandablePanel(card, mob);
 
-    distributeCards();
-    attachLocationEvents();
-    
-    // DOMに追加した後で呼ぶ
-    sortedMobs.forEach(mob => {
-        const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
-        // 編集中でない、または新規作成されたカードのみUI初期化
-        if (card && card.getAttribute("data-memo-initialized") !== "true") {
-            const killTime = mob.last_kill_time ? new Date(mob.last_kill_time) : new Date();
-            setupMobMemoUI(String(mob.No), killTime);
-        }
-    });
+    } else if (!card) {
+      // カードが存在しない場合は新規作成
+      const temp = document.createElement("div");
+      temp.innerHTML = createMobCard(mob);
+      card = temp.firstElementChild;
+      updateProgressText(card, mob);
+      updateProgressBar(card, mob);
+      updateExpandablePanel(card, mob);
+    }
 
-    if (isInitialLoad) updateProgressBars();
+    if (card) {
+      frag.appendChild(card);
+    }
+  });
+
+  DOM.masterContainer.appendChild(frag); // 順序変更（既存要素の移動）
+
+  distributeCards();
+  attachLocationEvents();
+
+  // DOMに追加した後で呼ぶ
+  sortedMobs.forEach(mob => {
+    const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
+    // 編集中でない、または新規作成されたカードのみUI初期化
+    if (card && card.getAttribute("data-memo-initialized") !== "true") {
+      const killTime = mob.last_kill_time ? new Date(mob.last_kill_time) : new Date();
+      setupMobMemoUI(String(mob.No), killTime);
+    }
+  });
+
+  if (isInitialLoad) updateProgressBars();
 }
 
 function distributeCards() {
@@ -348,15 +354,12 @@ function updateProgressBar(card, mob) {
   );
   wrapper.classList.remove(PROGRESS_CLASSES.BLINK_WHITE);
 
+  // Magitek Theme Colors
+  // P0_60 etc are defined in style.css now, but we can add specific color classes if needed.
+  // For now, style.css handles the base colors.
+
   if (status === "PopWindow") {
-    if (elapsedPercent <= 40) {
-      bar.classList.add(PROGRESS_CLASSES.P0_60);
-    } else if (elapsedPercent <= 80) {
-      bar.classList.add(PROGRESS_CLASSES.P60_80);
-    } else if (elapsedPercent <= 90) {
-      bar.classList.add(PROGRESS_CLASSES.P80_100);
-    } else {
-      bar.classList.add(PROGRESS_CLASSES.P80_100);
+    if (elapsedPercent > 90) {
       wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE);
     }
     text.classList.add(PROGRESS_CLASSES.TEXT_POP);
@@ -377,7 +380,7 @@ function updateProgressText(card, mob) {
   } = mob.repopInfo || {};
 
   const absFmt = { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" };
-    
+
   // 右側：最短REPOP時刻
   let inTimeStr = "未確定";
   if (nextMinRepopDate) {
@@ -388,7 +391,7 @@ function updateProgressText(card, mob) {
       inTimeStr = "未確定";
     }
   }
- // 右側：特殊条件 Next/Active の時刻（トグル対象）
+  // 右側：特殊条件 Next/Active の時刻（トグル対象）
   let nextTimeStr = "";
   const hasCondition =
     !!(mob.moonPhase || mob.timeRange || mob.timeRanges || mob.weatherSeedRange || mob.weatherSeedRanges || mob.conditions);
@@ -412,14 +415,14 @@ function updateProgressText(card, mob) {
       }
     }
   }
-  
+
   // 左側：進捗状態
   const nowSec = Date.now() / 1000;
   let leftStr = timeRemaining || "未確定"; // timeRemaining を初期値として利用
   // 補足: timeRemaining は calculateRepop で既にフォーマットされているため、
   // ここで再計算するのではなく、statusに応じて % 表示を調整する
-  const percentStr = (status !== "MaxOver" && status !== "Unknown" && status !== "ConditionActive" && status !== "NextCondition") 
-    ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)` 
+  const percentStr = (status !== "MaxOver" && status !== "Unknown" && status !== "ConditionActive" && status !== "NextCondition")
+    ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)`
     : "";
   // Next ステータス（条件なし）の場合、時間と % を結合
   if (status === "Next") {
@@ -429,15 +432,15 @@ function updateProgressText(card, mob) {
   }
 
   text.innerHTML = `
-    <div class="w-full grid grid-cols-2 items-center text-sm font-semibold" style="line-height:1;">
-      <div class="pl-2 text-left">${leftStr}${percentStr}</div>
-      <div class="pr-1 text-right toggle-container">
-        <span class="label-in">in ${inTimeStr}</span>
+    <div class="w-full grid grid-cols-2 items-center text-xs font-bold" style="line-height:1;">
+      <div class="pl-2 text-left truncate text-shadow-sm">${leftStr}${percentStr}</div>
+      <div class="pr-2 text-right toggle-container">
+        <span class="label-in text-cyan-300">in ${inTimeStr}</span>
         <span class="label-next" style="display:none;">${nextTimeStr}</span>
       </div>
     </div>
   `;
-  
+
   // --- 状態に応じたクラス付与 ---
   if (status === "MaxOver") text.classList.add("max-over");
   else text.classList.remove("max-over");
@@ -454,8 +457,8 @@ function updateProgressText(card, mob) {
   if (hasNextDisplay && toggleContainer && !toggleContainer.dataset.toggleStarted) {
     // startToggleInNext 関数が定義されていることを前提とする
     if (typeof startToggleInNext === 'function') {
-        startToggleInNext(toggleContainer);
-        toggleContainer.dataset.toggleStarted = "true";
+      startToggleInNext(toggleContainer);
+      toggleContainer.dataset.toggleStarted = "true";
     }
   }
 }
