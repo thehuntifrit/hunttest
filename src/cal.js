@@ -489,6 +489,7 @@ function calculateRepop(mob, maintenance) {
       if (isInConditionWindow) {
         const remainingSec = end - now; // Use 'now' for accurate remaining time if active
         conditionRemaining = `@ ${Math.ceil(remainingSec / 60)}分`;
+        
       } else {
       }
     }
@@ -526,6 +527,7 @@ function calculateRepop(mob, maintenance) {
     conditionRemaining,
     status,
     nextMinRepopDate,
+    nextConditionSpawnDate,
     conditionWindowEnd,
     isInConditionWindow,
     isMaintenanceStop
