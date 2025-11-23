@@ -149,7 +149,7 @@ function createMobCard(mob) {
     </div>
 
     <!-- Progress Bar -->
-    <div class="progress-bar-wrapper h-4 rounded relative overflow-hidden">
+    <div class="progress-bar-wrapper h-5 rounded relative overflow-hidden">
         <div class="progress-bar-bg absolute left-0 top-0 h-full rounded transition-all duration-100 ease-linear" style="width: 0%"></div>
         <div class="progress-text absolute inset-0 flex items-center justify-center text-xs font-bold tracking-wider z-10" style="line-height: 1;"></div>
     </div>
@@ -410,9 +410,6 @@ function updateProgressText(card, mob) {
     }
   }
 
-  // If Active, rightStrIn holds the "@ n min".
-  // If not active, rightStrIn holds "in ...", rightStrNext holds "Next ...".
-
   let rightContent = "";
   if (isInConditionWindow && mob.repopInfo.conditionRemaining) {
     rightContent = rightStrIn;
@@ -490,6 +487,9 @@ function updateExpandablePanel(card, mob) {
 function updateProgressBars() {
   const state = getState();
   state.mobs.forEach((mob) => {
+    // Recalculate repop info to ensure up-to-date status/timers
+    mob.repopInfo = calculateRepop(mob, state.maintenance);
+
     const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
     if (card) {
       updateProgressText(card, mob);
