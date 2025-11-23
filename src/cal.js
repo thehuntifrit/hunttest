@@ -9,7 +9,6 @@ const MAX_SEARCH_ITERATIONS = 5000;
 const LIMIT_DAYS = 60;
 
 // --- ユーティリティ関数 ---
-
 function formatDuration(seconds) {
   const totalMinutes = Math.floor(seconds / 60);
   const h = Math.floor(totalMinutes / 60);
@@ -180,11 +179,6 @@ function calculateNextMoonStart(startSec, targetPhase) {
 }
 
 // --- カスケード探索用ジェネレータ関数 ---
-
-/**
- * 指定された期間内で、天候条件を満たす区間を返す
- * ★修正点: 単発/連続を分離し、単発では遡りを行わない
- */
 function* getValidWeatherIntervals(mob, windowStart, windowEnd) {
   const requiredMinutes = mob.weatherDuration?.minutes || 0;
   const requiredSec = requiredMinutes * 60;
@@ -208,8 +202,6 @@ function* getValidWeatherIntervals(mob, windowStart, windowEnd) {
 
     if (isContinuous) {
       // --- A. 連続天候 ($T_{Req} > 1400$) ---
-      // 過去へ遡り、ChainStartを特定
-      // 最適化(searchBackLimit)を削除し、確実に遡るように変更
       const searchBackLimit = windowStart - LIMIT_DAYS * 24 * 3600;
       while (true) {
         const prevTime = chainStart - WEATHER_CYCLE_SEC;
@@ -257,9 +249,7 @@ function* getValidWeatherIntervals(mob, windowStart, windowEnd) {
 
     } else {
       // --- B. 単発天候 ($T_{Req} \le 1400$) ---
-      // 遡り不要。ChainStartは currentCursorで十分
       chainStart = currentCursor;
-
       // 未来へ伸ばして ChainEnd を特定
       let tempCursor = currentCursor;
       while (true) {
@@ -330,7 +320,6 @@ function* getValidWeatherIntervals(mob, windowStart, windowEnd) {
         break;
       }
     }
-
     // 長さ判定
     const duration = activeEnd - activeStart;
     if (duration >= requiredSec) {
