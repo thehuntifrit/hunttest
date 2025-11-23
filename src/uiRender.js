@@ -128,7 +128,7 @@ function createMobCard(mob) {
 
   // Magitek Card Header
   const cardHeaderHTML = `
-<div class="px-3 py-2 space-y-2 bg-transparent" data-toggle="card-header">
+<div class="px-2 py-1 space-y-1 bg-transparent" data-toggle="card-header">
     <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-3">
         <!-- Rank Badge -->
         <span class="w-8 h-8 flex items-center justify-center rounded-md text-white text-sm rank-badge rank-${rank.toLowerCase()}">${rankLabel}</span>
@@ -158,7 +158,7 @@ function createMobCard(mob) {
 
   const expandablePanelHTML = isExpandable ? `
 <div class="expandable-panel ${isOpen ? 'open' : ''}">
-    <div class="px-3 py-2 text-sm space-y-2 border-t border-gray-700/50">
+    <div class="px-2 py-1 text-sm space-y-1 border-t border-gray-700/50">
         <div class="flex justify-between items-start flex-wrap gap-y-1">
             <div class="w-full text-right text-xs text-gray-400 font-mono" data-last-kill></div>
             <div class="mob-memo-row text-sm text-gray-300 bg-gray-800/50 rounded px-2 py-1 w-full mt-1 border border-gray-700 cursor-pointer hover:bg-gray-700/50 transition" data-action="edit-memo" data-mob-no="${mob.No}">
@@ -233,8 +233,8 @@ function progressComparator(a, b) {
   if (aStopped && !bStopped) return 1;
   if (!aStopped && bStopped) return -1;
 
-  const aOver = (aInfo.status === "PopWindow" || aInfo.status === "MaxOver");
-  const bOver = (bInfo.status === "PopWindow" || bInfo.status === "MaxOver");
+  const aOver = (aInfo.status === "PopWindow" || aInfo.status === "MaxOver" || aInfo.status === "ConditionActive");
+  const bOver = (bInfo.status === "PopWindow" || bInfo.status === "MaxOver" || bInfo.status === "ConditionActive");
 
   if (aOver && !bOver) return -1;
   if (!aOver && bOver) return 1;
