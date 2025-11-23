@@ -1,3 +1,4 @@
+
 // cal.js - 修正版 v9: 単発/連続分離と最適化
 
 const ET_HOUR_SEC = 175;
@@ -484,11 +485,12 @@ function calculateRepop(mob, maintenance) {
       nextConditionSpawnDate = new Date(start * 1000);
       conditionWindowEnd = new Date(end * 1000);
 
-      isInConditionWindow = (pointSec >= start && pointSec < end);
+      isInConditionWindow = (now >= start && now < end);
 
       if (isInConditionWindow) {
-        const remainingSec = end - pointSec;
+        const remainingSec = end - now; // Use 'now' for accurate remaining time if active
         conditionRemaining = `@ ${Math.ceil(remainingSec / 60)}分`;
+      } else {
       }
     }
   }
@@ -509,7 +511,7 @@ function calculateRepop(mob, maintenance) {
     timeRemaining = `残り${formatDurationHM(maxRepop - now)}`;
   }
 
-  if (isInConditionWindow) {
+  if (isInConditionWindow && now >= minRepop) {
     status = "ConditionActive";
   } else if (hasCondition && nextConditionSpawnDate && now < nextConditionSpawnDate.getTime() / 1000 && status !== "MaxOver") {
     status = "NextCondition";
@@ -525,7 +527,6 @@ function calculateRepop(mob, maintenance) {
     conditionRemaining,
     status,
     nextMinRepopDate,
-    nextConditionSpawnDate,
     conditionWindowEnd,
     isInConditionWindow,
     isMaintenanceStop
