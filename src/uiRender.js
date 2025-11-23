@@ -416,7 +416,7 @@ function updateProgressText(card, mob) {
   } else if (hasToggle) {
     rightContent = `
         <span class="label-in text-cyan-300">${rightStrIn}</span>
-        <span class="label-next" style="display:none; color: #eab308;">${rightStrNext}</span>
+        <span class="label-next" style="color: #eab308;">${rightStrNext}</span>
       `;
   } else {
     rightContent = rightStrIn;
@@ -436,10 +436,10 @@ function updateProgressText(card, mob) {
   else text.classList.remove("long-wait");
 
   // Toggle Logic
+  // Removed per-card interval. Toggling is now handled by global CSS class on body.
   const toggleContainer = text.querySelector(".toggle-container");
-  if (hasToggle && toggleContainer && !toggleContainer.dataset.toggleStarted) {
-    startToggleInNext(toggleContainer);
-    toggleContainer.dataset.toggleStarted = "true";
+  if (hasToggle && toggleContainer) {
+    toggleContainer.classList.add("has-toggle");
   }
 
   // Blinking Border Logic
@@ -450,24 +450,10 @@ function updateProgressText(card, mob) {
   }
 }
 
-function startToggleInNext(container) {
-  const inLabel = container.querySelector(".label-in");
-  const nextLabel = container.querySelector(".label-next");
-  let showingIn = true;
-
-  setInterval(() => {
-    if (!container.isConnected) return;
-
-    if (showingIn) {
-      if (inLabel) inLabel.style.display = "none";
-      if (nextLabel) nextLabel.style.display = "inline";
-    } else {
-      if (inLabel) inLabel.style.display = "inline";
-      if (nextLabel) nextLabel.style.display = "none";
-    }
-    showingIn = !showingIn;
-  }, 5000);
-}
+// Global Toggle Interval
+setInterval(() => {
+  document.body.classList.toggle("show-next-info");
+}, 5000);
 
 
 
