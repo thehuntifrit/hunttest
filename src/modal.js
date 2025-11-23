@@ -15,9 +15,7 @@ async function openReportModal(mobNo) {
 
     DOM.reportForm.dataset.mobNo = String(mobNo);
     DOM.modalMobName.textContent = `${mob.Name}`;
-    DOM.modalTimeInput.value = localIso;
-    DOM.modalMemoInput.placeholder = `任意`;
-    DOM.modalStatus.textContent = "";
+
     DOM.reportModal.classList.remove("hidden");
     DOM.reportModal.classList.add("flex");
 }
