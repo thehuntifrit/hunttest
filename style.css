@@ -20,18 +20,18 @@
     /* Slate 400 */
 
     --rank-s: #f59e0b;
-    --rank-a: #ef4444;
-    --rank-b: #3b82f6;
+    --rank-a: #306ef3;
+    --rank-b: #3bf63b;
 
     --progress-bg: rgba(0, 0, 0, 0.5);
     --progress-fill: linear-gradient(90deg, var(--accent-cyan), #3b82f6);
     --progress-max-over: linear-gradient(90deg, #ef4444, #b91c1c);
 
-    --color-b1: #60a5fa;
+    --color-b1: #4494f7;
     /* Soft Blue */
-    --color-b2: #f87171;
+    --color-b2: #fd5c5c;
     /* Soft Red */
-    --color-culled: #8d8f92;
+    --color-culled: #ffffff;
     /* Slate 500 */
     --color-lastone: #34d399;
     /* Emerald */
