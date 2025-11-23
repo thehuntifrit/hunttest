@@ -37,9 +37,33 @@ async function initializeApp() {
         // 5. イベントリスナー設定
         attachGlobalEventListeners();
 
+        // 6. ヘッダー高さ監視 (パディング調整)
+        initHeaderObserver();
+
     } catch (e) {
         console.error("App initialization failed:", e);
     }
+}
+
+function initHeaderObserver() {
+    const header = document.getElementById("main-header");
+    const main = document.querySelector("main");
+    if (!header || !main) return;
+
+    const adjustPadding = () => {
+        const headerHeight = header.offsetHeight;
+        // 少し余裕を持たせる (+10px)
+        main.style.paddingTop = `${headerHeight + 10}px`;
+    };
+
+    // 初回実行
+    adjustPadding();
+
+    // 監視開始
+    const resizeObserver = new ResizeObserver(() => {
+        adjustPadding();
+    });
+    resizeObserver.observe(header);
 }
 
 function renderMaintenanceStatus() {
