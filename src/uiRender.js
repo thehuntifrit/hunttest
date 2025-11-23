@@ -379,53 +379,34 @@ function updateProgressText(card, mob) {
     : "";
 
   // Right Side Logic
-  let rightStrIn = "";
-  let rightStrNext = "";
-  let hasToggle = false;
+  let rightStr = "未確定";
+  let isNext = false;
 
   if (isInConditionWindow && mob.repopInfo.conditionRemaining) {
-    rightStrIn = mob.repopInfo.conditionRemaining;
-
-  } else {
-    if (nextMinRepopDate) {
-      try {
-        const dateStr = new Intl.DateTimeFormat("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }).format(nextMinRepopDate);
-        rightStrIn = `in ${dateStr}`;
-      } catch {
-        rightStrIn = "未確定";
-      }
-    } else {
-      rightStrIn = "未確定";
+    rightStr = mob.repopInfo.conditionRemaining;
+  } else if (nextConditionSpawnDate) {
+    try {
+      const dateStr = new Intl.DateTimeFormat("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }).format(nextConditionSpawnDate);
+      rightStr = `Next ${dateStr}`;
+      isNext = true;
+    } catch {
+      rightStr = "未確定";
     }
-
-    // Prepare "Next" string (Condition)
-    if (nextConditionSpawnDate) {
-      try {
-        const dateStr = new Intl.DateTimeFormat("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }).format(nextConditionSpawnDate);
-        rightStrNext = `Next ${dateStr}`;
-        hasToggle = true;
-      } catch {
-        rightStrNext = "";
-      }
+  } else if (nextMinRepopDate) {
+    try {
+      const dateStr = new Intl.DateTimeFormat("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }).format(nextMinRepopDate);
+      rightStr = `in ${dateStr}`;
+    } catch {
+      rightStr = "未確定";
     }
   }
 
-  let rightContent = "";
-  if (isInConditionWindow && mob.repopInfo.conditionRemaining) {
-    rightContent = rightStrIn;
-  } else if (hasToggle) {
-    rightContent = `
-        <span class="label-in text-cyan-300">${rightStrIn}</span>
-        <span class="label-next" style="color: #eab308;">${rightStrNext}</span>
-      `;
-  } else {
-    rightContent = rightStrIn;
-  }
+  let rightContent = `<span class="${isNext ? 'text-yellow-400' : 'text-cyan-300'}">${rightStr}</span>`;
 
   text.innerHTML = `
     <div class="w-full grid grid-cols-2 items-center text-xs font-bold" style="line-height:1;">
       <div class="pl-2 text-left truncate text-shadow-sm">${leftStr}${percentStr}</div>
-      <div class="pr-2 text-right truncate text-shadow-sm toggle-container">${rightContent}</div>
+      <div class="pr-2 text-right truncate text-shadow-sm">${rightContent}</div>
     </div>
   `;
 
@@ -435,13 +416,6 @@ function updateProgressText(card, mob) {
   if (minRepop - nowSec >= 3600) text.classList.add("long-wait");
   else text.classList.remove("long-wait");
 
-  // Toggle Logic
-  // Removed per-card interval. Toggling is now handled by global CSS class on body.
-  const toggleContainer = text.querySelector(".toggle-container");
-  if (hasToggle && toggleContainer) {
-    toggleContainer.classList.add("has-toggle");
-  }
-
   // Blinking Border Logic
   if (status === "ConditionActive") {
     card.classList.add("blink-border-white");
@@ -449,12 +423,6 @@ function updateProgressText(card, mob) {
     card.classList.remove("blink-border-white");
   }
 }
-
-// Global Toggle Interval
-setInterval(() => {
-  document.body.classList.toggle("show-next-info");
-}, 5000);
-
 
 
 function updateExpandablePanel(card, mob) {
