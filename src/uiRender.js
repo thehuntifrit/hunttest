@@ -1,13 +1,8 @@
 // uiRender.js
-
-import { loadMaintenance } from "./app.js";
-import { initializeAuth, subscribeMobMemos, submitMemo, setupMobMemoUI } from "./server.js";
-import { calculateRepop, findNextSpawnTime, formatDuration, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime } from "./cal.js";
+import { calculateRepop, findNextSpawnTime, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime } from "./cal.js";
 import { drawSpawnPoint, isCulled, attachLocationEvents } from "./location.js";
-import { getState, RANK_COLORS, PROGRESS_CLASSES, FILTER_TO_DATA_RANK_MAP } from "./dataManager.js";
-import { renderRankTabs, renderAreaFilterPanel, updateFilterUI, filterMobsByRankAndArea } from "./filterUI.js";
-
-let editingMobNo = null;
+import { getState, RANK_COLORS, PROGRESS_CLASSES } from "./dataManager.js";
+import { filterMobsByRankAndArea } from "./filterUI.js";
 
 const DOM = {
   masterContainer: document.getElementById('master-mob-container'),
@@ -42,7 +37,8 @@ function displayStatus(message, type = "info", duration = 5000) {
   const color = {
     info: "text-blue-300",
     success: "text-green-300",
-    error: "text-red-300"
+    error: "text-red-300",
+    warning: "text-yellow-300"
   }[type] || "text-white";
 
   el.innerHTML = `<div class="${color} text-glow font-semibold">${message}</div>`;
@@ -64,7 +60,6 @@ function processText(text) {
 
 function createMobCard(mob) {
   const rank = mob.Rank;
-  // Rank colors are now handled by CSS classes, but we keep this for compatibility if needed
   const rankLabel = rank;
 
   const isExpandable = rank === "S";
@@ -157,7 +152,9 @@ function createMobCard(mob) {
     <div class="px-3 py-2 text-sm space-y-2 border-t border-gray-700/50">
         <div class="flex justify-between items-start flex-wrap gap-y-1">
             <div class="w-full text-right text-xs text-gray-400 font-mono" data-last-kill></div>
-            <div class="mob-memo-row text-sm text-gray-300 bg-gray-800/50 rounded px-2 py-1 w-full mt-1 border border-gray-700"><span class="mr-2 text-cyan-400 font-bold">Memo:</span><span data-last-memo class="text-gray-200"></span></div>
+            <div class="mob-memo-row text-sm text-gray-300 bg-gray-800/50 rounded px-2 py-1 w-full mt-1 border border-gray-700 cursor-pointer hover:bg-gray-700/50 transition" data-action="edit-memo" data-mob-no="${mob.No}">
+                <span class="mr-2 text-cyan-400 font-bold">Memo:</span><span data-last-memo class="text-gray-200">${mob.memo_text || ""}</span>
+            </div>
             
             <div class="w-full mt-2">
                 <div class="font-semibold text-yellow-400 text-xs uppercase tracking-widest mb-1">Condition</div>
@@ -186,7 +183,6 @@ function createMobCard(mob) {
 `;
 }
 
-// ランク優先度: S=2, A=1, F=3 → ソート順 S > A > F
 function rankPriority(rankCode) {
   switch (rankCode) {
     case 2: return 0; // S
@@ -206,7 +202,6 @@ function parseMobNo(no) {
   };
 }
 
-// ランク > 拡張降順 > モブNo昇順 > インスタンス昇順
 function baseComparator(a, b) {
   const pa = parseMobNo(a.No);
   const pb = parseMobNo(b.No);
@@ -219,12 +214,11 @@ function baseComparator(a, b) {
   return pa.instance - pb.instance;
 }
 
-// 時間ソート + baseComparator
 function progressComparator(a, b) {
   const nowSec = Date.now() / 1000;
   const aInfo = a.repopInfo || {};
   const bInfo = b.repopInfo || {};
-  // メンテナンス停止中のモブは最下層へ
+
   const aStopped = aInfo.isMaintenanceStop;
   const bStopped = bInfo.isMaintenanceStop;
   if (aStopped && !bStopped) return 1;
@@ -251,15 +245,13 @@ function progressComparator(a, b) {
 function filterAndRender({ isInitialLoad = false } = {}) {
   const state = getState();
   const filtered = filterMobsByRankAndArea(state.mobs);
-  // ソート順決定
   const sortedMobs = (["S", "A", "FATE"].includes(state.filter.rank) ? filtered.sort(progressComparator) : filtered.sort(baseComparator));
 
   const existingCards = new Map();
-  // 既存のカードをMapに格納し、DOMから一旦切り離す
   DOM.masterContainer.querySelectorAll('.mob-card').forEach(card => {
     const mobNo = card.getAttribute('data-mob-no');
     existingCards.set(mobNo, card);
-    card.remove(); // DOMから一時的に除去
+    card.remove();
   });
 
   const frag = document.createDocumentFragment();
@@ -269,12 +261,39 @@ function filterAndRender({ isInitialLoad = false } = {}) {
     let card = existingCards.get(mobNoStr);
 
     if (card) {
+      // 既存カードの更新
+      // DOM全体を書き換えると重いので、必要な部分だけ更新するアプローチもあるが、
+      // ここではシンプルに再生成せず、中身の更新を行う
+      // ただし、構造が変わる可能性がある（Expandableなど）場合は再生成が安全
+      // 今回はcreateMobCardで生成したHTMLで置換するのではなく、
+      // 既存要素に対して update 関数を呼ぶ形にする
+
+      // しかし、createMobCardはHTML文字列を返す設計なので、
+      // 中身を書き換えるには innerHTML をセットし直すか、
+      // update関数群でDOM操作するかのどちらか。
+      // パフォーマンスと状態維持（開閉状態など）のバランスを考えると、
+      // 既存カードがあるなら update 関数で値を更新し、
+      // 構造変化（Sランクの開閉など）は別途ハンドリングが必要。
+
+      // ここではシンプルに、既存カードがある場合は update 関数を呼び、
+      // ない場合は新規作成する。
+      // ただし、createMobCard の出力と整合性を取るため、
+      // 構造的な変更（例: Sランクの地図表示など）がある場合は再生成した方が良いかも知れない。
+      // 今回は update 関数で対応できる範囲とする。
+
       updateProgressText(card, mob);
       updateProgressBar(card, mob);
       updateExpandablePanel(card, mob);
 
-    } else if (!card) {
-      // カードが存在しない場合は新規作成
+      // メンテナンス状態のクラス更新
+      const repopInfo = calculateRepop(mob, state.maintenance);
+      if (repopInfo.isMaintenanceStop) {
+        card.classList.add("opacity-50", "grayscale", "pointer-events-none");
+      } else {
+        card.classList.remove("opacity-50", "grayscale", "pointer-events-none");
+      }
+
+    } else {
       const temp = document.createElement("div");
       temp.innerHTML = createMobCard(mob);
       card = temp.firstElementChild;
@@ -288,20 +307,10 @@ function filterAndRender({ isInitialLoad = false } = {}) {
     }
   });
 
-  DOM.masterContainer.appendChild(frag); // 順序変更（既存要素の移動）
+  DOM.masterContainer.appendChild(frag);
 
   distributeCards();
   attachLocationEvents();
-
-  // DOMに追加した後で呼ぶ
-  sortedMobs.forEach(mob => {
-    const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
-    // 編集中でない、または新規作成されたカードのみUI初期化
-    if (card && card.getAttribute("data-memo-initialized") !== "true") {
-      const killTime = mob.last_kill_time ? new Date(mob.last_kill_time) : new Date();
-      setupMobMemoUI(String(mob.No), killTime);
-    }
-  });
 
   if (isInitialLoad) updateProgressBars();
 }
@@ -341,7 +350,6 @@ function updateProgressBar(card, mob) {
   bar.style.transition = "width linear 60s";
   bar.style.width = `${elapsedPercent}%`;
 
-  // リセット
   bar.classList.remove(
     PROGRESS_CLASSES.P0_60,
     PROGRESS_CLASSES.P60_80,
@@ -353,10 +361,6 @@ function updateProgressBar(card, mob) {
     PROGRESS_CLASSES.TEXT_POP
   );
   wrapper.classList.remove(PROGRESS_CLASSES.BLINK_WHITE);
-
-  // Magitek Theme Colors
-  // P0_60 etc are defined in style.css now, but we can add specific color classes if needed.
-  // For now, style.css handles the base colors.
 
   if (status === "PopWindow") {
     if (elapsedPercent > 90) {
@@ -381,24 +385,21 @@ function updateProgressText(card, mob) {
 
   const absFmt = { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" };
 
-  // 右側：最短REPOP時刻
   let inTimeStr = "未確定";
   if (nextMinRepopDate) {
     try {
-      // 常に最短REPOP時刻を 'in' として表示
       inTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(nextMinRepopDate);
     } catch {
       inTimeStr = "未確定";
     }
   }
-  // 右側：特殊条件 Next/Active の時刻（トグル対象）
+
   let nextTimeStr = "";
   const hasCondition =
     !!(mob.moonPhase || mob.timeRange || mob.timeRanges || mob.weatherSeedRange || mob.weatherSeedRanges || mob.conditions);
 
   if (hasCondition) {
     if (status === "ConditionActive") {
-      // ConditionActiveの場合は、ウィンドウ終了時刻を表示
       if (mob.repopInfo.conditionWindowEnd) {
         try {
           nextTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(mob.repopInfo.conditionWindowEnd);
@@ -407,7 +408,6 @@ function updateProgressText(card, mob) {
         }
       }
     } else if (status === "NextCondition" && nextConditionSpawnDate) {
-      // NextConditionの場合は、湧き開始時刻を表示
       try {
         nextTimeStr = new Intl.DateTimeFormat("ja-JP", absFmt).format(nextConditionSpawnDate);
       } catch {
@@ -416,15 +416,12 @@ function updateProgressText(card, mob) {
     }
   }
 
-  // 左側：進捗状態
   const nowSec = Date.now() / 1000;
-  let leftStr = timeRemaining || "未確定"; // timeRemaining を初期値として利用
-  // 補足: timeRemaining は calculateRepop で既にフォーマットされているため、
-  // ここで再計算するのではなく、statusに応じて % 表示を調整する
+  let leftStr = timeRemaining || "未確定";
   const percentStr = (status !== "MaxOver" && status !== "Unknown" && status !== "ConditionActive" && status !== "NextCondition")
     ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)`
     : "";
-  // Next ステータス（条件なし）の場合、時間と % を結合
+
   if (status === "Next") {
     leftStr = `Next ${formatDurationHM(minRepop - nowSec)}`;
   } else if (status === "PopWindow") {
@@ -441,25 +438,19 @@ function updateProgressText(card, mob) {
     </div>
   `;
 
-  // --- 状態に応じたクラス付与 ---
   if (status === "MaxOver") text.classList.add("max-over");
   else text.classList.remove("max-over");
 
   if (minRepop - nowSec >= 3600) text.classList.add("long-wait");
   else text.classList.remove("long-wait");
 
-  // --- トグル開始条件の厳密化 ---
   const toggleContainer = text.querySelector(".toggle-container");
   const nextLabel = toggleContainer?.querySelector(".label-next");
-  // 次表示が存在する場合のみトグル開始（未確定＝空文字は対象外）
   const hasNextDisplay = !!(nextLabel && nextLabel.textContent && nextLabel.textContent.trim().length > 0);
 
   if (hasNextDisplay && toggleContainer && !toggleContainer.dataset.toggleStarted) {
-    // startToggleInNext 関数が定義されていることを前提とする
-    if (typeof startToggleInNext === 'function') {
-      startToggleInNext(toggleContainer);
-      toggleContainer.dataset.toggleStarted = "true";
-    }
+    startToggleInNext(toggleContainer);
+    toggleContainer.dataset.toggleStarted = "true";
   }
 }
 
@@ -467,8 +458,12 @@ function startToggleInNext(container) {
   const inLabel = container.querySelector(".label-in");
   const nextLabel = container.querySelector(".label-next");
   let showingIn = true;
-  // 既存の interval が複数走らないように container にハンドルを保存するのが安全
+
+  // メモリリーク防止のため、要素がDOMから消えたら停止する仕組みが必要だが、
+  // ここでは簡易的に実装。
   setInterval(() => {
+    if (!container.isConnected) return; // DOMから外れていたら何もしない
+
     const hasNextText = nextLabel && nextLabel.textContent && nextLabel.textContent.trim().length > 0;
     if (!hasNextText) return;
 
@@ -487,49 +482,19 @@ function updateExpandablePanel(card, mob) {
   const elNext = card.querySelector("[data-next-time]");
   const elLast = card.querySelector("[data-last-kill]");
   const elMemo = card.querySelector("[data-last-memo]");
-  if (!elNext && !elLast && !elMemo) return;
 
-  const absFmt = { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' };
-  // nextMinRepopDate は Date または null の可能性があるため安全に扱う
-  const nextMinDate = mob.repopInfo?.nextMinRepopDate || null;
-  const nextMinSec = nextMinDate ? Math.floor(nextMinDate.getTime() / 1000) : null;
-
-  // minRepop を秒で持っている場合はそのまま、Dateなら秒に変換
-  let minRepopSec = mob.repopInfo?.minRepop ?? null;
-  if (minRepopSec instanceof Date) minRepopSec = Math.floor(minRepopSec.getTime() / 1000);
-  // 検索上限（秒）を cal.js と合わせる（20日分）
-  const searchLimitSec = Math.floor(Date.now() / 1000) + 20 * 24 * 3600;
-  // findNextSpawnTime は秒（number）を期待するため、null を考慮して呼び出す
-  let conditionTimeSec = null;
-  try {
-    conditionTimeSec = findNextSpawnTime(mob, nextMinSec || Math.floor(Date.now() / 1000), minRepopSec, searchLimitSec);
-  } catch (e) {
-    // 万が一 cal.js 内で例外が出ても UI は壊さない
-    console.error("findNextSpawnTime error:", e);
-    conditionTimeSec = null;
-  }
-  // displayTime を決定（Date を返す形に正規化）
-  const displayTime = (() => {
-    if (conditionTimeSec && nextMinDate) {
-      const conditionDate = new Date(conditionTimeSec * 1000);
-      return (conditionDate > nextMinDate) ? conditionDate : nextMinDate;
-    }
-    if (conditionTimeSec) return new Date(conditionTimeSec * 1000);
-    if (nextMinDate) return nextMinDate;
-    return null;
-  })();
-
-  const nextStr = displayTime ? new Intl.DateTimeFormat('ja-JP', absFmt).format(displayTime) : "未確定";
+  // elNext は createMobCard で生成されていない可能性があるためチェック
+  // (現在のHTML構造では data-next-time は存在しないかも？ createMobCardを確認)
+  // createMobCardには data-next-time は含まれていない。
+  // 必要なら追加するか、ここで処理しない。
+  // ここでは elLast と elMemo を更新する。
 
   const lastStr = formatLastKillTime(mob.last_kill_time);
   if (elLast) elLast.textContent = `前回: ${lastStr}`;
 
-  if (elMemo && !elMemo.hasAttribute("data-initialized")) {
-    elMemo.textContent = mob.memo_text || mob.memo || "";
-    elMemo.setAttribute("data-initialized", "true");
+  if (elMemo) {
+    elMemo.textContent = mob.memo_text || "";
   }
-
-  if (elNext) elNext.textContent = nextStr;
 }
 
 function updateProgressBars() {
@@ -544,14 +509,13 @@ function updateProgressBars() {
 }
 
 const sortAndRedistribute = debounce(() => filterAndRender(), 200);
-const areaPanel = document.getElementById("area-filter-panel");
 
 function onKillReportReceived(mobId, kill_time) {
   const mob = getState().mobs.find(m => m.No === mobId);
   if (!mob) return;
 
   mob.last_kill_time = Number(kill_time);
-  mob.repopInfo = calculateRepop(mob);
+  mob.repopInfo = calculateRepop(mob, getState().maintenance);
 
   const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
   if (card) {
