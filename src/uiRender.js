@@ -151,7 +151,7 @@ function createMobCard(mob) {
     <!-- Progress Bar -->
     <div class="progress-bar-wrapper rounded relative overflow-hidden text-center">
         <div class="progress-bar-bg absolute left-0 top-0 h-full rounded transition-all duration-100 ease-linear" style="width: 0%"></div>
-        <div class="progress-text relative z-10 py-0.5 text-xs font-bold tracking-wider" style="line-height: 1;"></div>
+        <div class="progress-text relative z-10 py-0.5 text-xs font-bold tracking-wider"></div>
     </div>
 </div>
 `;
@@ -215,20 +215,20 @@ function baseComparator(a, b) {
   const pa = parseMobNo(a.No);
   const pb = parseMobNo(b.No);
 
+  // 1. Rank (S > A > F)
   const rankDiff = rankPriority(pa.rankCode) - rankPriority(pb.rankCode);
   if (rankDiff !== 0) return rankDiff;
 
+  // 2. Expansion (Descending: Golden > ... > ARR)
   if (pa.expansion !== pb.expansion) return pb.expansion - pa.expansion;
+
+  // 3. MobNo (Ascending)
   if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
-  return pa.instance - pb.instance;
-}
 
-function progressComparator(a, b) {
-  const pa = parseMobNo(a.No);
-  const pb = parseMobNo(b.No);
-  const rankDiff = rankPriority(pa.rankCode) - rankPriority(pb.rankCode);
-  if (rankDiff !== 0) return rankDiff;
+  // 4. Instance (Ascending)
+  if (pa.instance !== pb.instance) return pa.instance - pb.instance;
 
+  // 5. % Rate (Descending)
   const aInfo = a.repopInfo || {};
   const bInfo = b.repopInfo || {};
   const aPercent = aInfo.elapsedPercent || 0;
@@ -238,16 +238,17 @@ function progressComparator(a, b) {
     return bPercent - aPercent;
   }
 
-  if (pa.expansion !== pb.expansion) return pb.expansion - pa.expansion;
-
-  if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
-  return pa.instance - pb.instance;
+  // 6. Time (Ascending - sooner is smaller timestamp)
+  const aTime = aInfo.minRepop || 0;
+  const bTime = bInfo.minRepop || 0;
+  return aTime - bTime;
 }
 
 function filterAndRender({ isInitialLoad = false } = {}) {
   const state = getState();
   const filtered = filterMobsByRankAndArea(state.mobs);
-  const sortedMobs = (["S", "A", "FATE"].includes(state.filter.rank) ? filtered.sort(progressComparator) : filtered.sort(baseComparator));
+  // Always use baseComparator
+  const sortedMobs = filtered.sort(baseComparator);
 
   const existingCards = new Map();
   DOM.masterContainer.querySelectorAll('.mob-card').forEach(card => {
