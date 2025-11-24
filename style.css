@@ -79,12 +79,12 @@ body {
 }
 
 .rank-a {
-    background: linear-gradient(135deg, #3966fc, #3966fc);
+    background: linear-gradient(135deg, #00a63e, #00a63e);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .rank-f {
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    background: linear-gradient(135deg, #9810fa, #9810fa);
 }
 
 .progress-bar-wrapper {
