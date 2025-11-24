@@ -192,37 +192,48 @@ function createMobCard(mob) {
 `;
 }
 
-function rankPriority(rankCode) {
-  switch (rankCode) {
-    case 2: return 0; // S
-    case 1: return 1; // A
-    case 3: return 2; // F
+function rankPriority(rank) {
+  switch (rank) {
+    case "S": return 0;
+    case "A": return 1;
+    case "F": return 2;
     default: return 99;
   }
 }
 
-function parseMobNo(no) {
+function getExpansionPriority(expansionName) {
+  switch (expansionName) {
+    case "黄金": return 6;
+    case "暁月": return 5;
+    case "漆黒": return 4;
+    case "紅蓮": return 3;
+    case "蒼天": return 2;
+    case "新生": return 1;
+    default: return 0;
+  }
+}
+
+function parseMobIdParts(no) {
   const str = String(no).padStart(5, "0");
   return {
-    expansion: parseInt(str[0], 10),
-    rankCode: parseInt(str[1], 10),
     mobNo: parseInt(str.slice(2, 4), 10),
     instance: parseInt(str[4], 10),
   };
 }
 
 function baseComparator(a, b) {
-  const pa = parseMobNo(a.No);
-  const pb = parseMobNo(b.No);
-
   // 1. Rank (S > A > F)
-  const rankDiff = rankPriority(pa.rankCode) - rankPriority(pb.rankCode);
+  const rankDiff = rankPriority(a.Rank) - rankPriority(b.Rank);
   if (rankDiff !== 0) return rankDiff;
 
   // 2. Expansion (Descending: Golden > ... > ARR)
-  if (pa.expansion !== pb.expansion) return pb.expansion - pa.expansion;
+  const expA = getExpansionPriority(a.Expansion);
+  const expB = getExpansionPriority(b.Expansion);
+  if (expA !== expB) return expB - expA;
 
   // 3. MobNo (Ascending)
+  const pa = parseMobIdParts(a.No);
+  const pb = parseMobIdParts(b.No);
   if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
 
   // 4. Instance (Ascending)
