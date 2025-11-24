@@ -151,7 +151,7 @@ function createMobCard(mob) {
     <!-- Progress Bar -->
     <div class="progress-bar-wrapper rounded relative overflow-hidden text-center">
         <div class="progress-bar-bg absolute left-0 top-0 h-full rounded transition-all duration-100 ease-linear" style="width: 0%"></div>
-        <div class="progress-text relative z-10 py-0.5 text-xs font-bold tracking-wider"></div>
+        <div class="progress-text relative z-10 py-0.5 text-xs font-bold"></div>
     </div>
 </div>
 `;
