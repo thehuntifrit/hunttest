@@ -31,28 +31,7 @@ function updateEorzeaTime() {
 updateEorzeaTime();
 setInterval(updateEorzeaTime, 3000);
 
-function displayStatus(message, type = "info", duration = 5000) {
-  const el = document.getElementById("status-message-temp");
-  if (!el) return;
 
-  const color = {
-    info: "text-blue-300",
-    success: "text-green-300",
-    error: "text-red-300",
-    warning: "text-yellow-300"
-  }[type] || "text-white";
-
-  el.innerHTML = `<div class="${color} text-glow font-semibold">${message}</div>`;
-  document.getElementById("status-message")?.classList.remove("hidden");
-
-  setTimeout(() => {
-    el.innerHTML = "";
-    const persistent = document.getElementById("status-message-maintenance");
-    if (!persistent || persistent.innerHTML.trim() === "") {
-      document.getElementById("status-message")?.classList.add("hidden");
-    }
-  }, duration);
-}
 
 function processText(text) {
   if (typeof text !== "string" || !text) return "";
@@ -489,8 +468,6 @@ function updateProgressText(card, mob) {
   // 2. Gray out if blocked by maintenance
   if (isBlockedByMaintenance) {
     card.classList.add("grayscale", "opacity-50");
-    // Ensure it overrides the opacity-60 if both apply (opacity-50 is stronger/similar)
-    // Actually grayscale is the key here.
   } else {
     card.classList.remove("grayscale", "opacity-50");
   }
@@ -588,4 +565,4 @@ setInterval(() => {
   updateProgressBars();
 }, 60000);
 
-export { filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, displayStatus, DOM, sortAndRedistribute, onKillReportReceived, updateProgressBars };
+export { filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, DOM, sortAndRedistribute, onKillReportReceived, updateProgressBars };
