@@ -1,6 +1,6 @@
 // uiRender.js
 
-import { calculateRepop, findNextSpawnTime, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime } from "./cal.js";
+import { calculateRepop, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime } from "./cal.js";
 import { drawSpawnPoint, isCulled, attachLocationEvents } from "./location.js";
 import { getState, RANK_COLORS, PROGRESS_CLASSES } from "./dataManager.js";
 import { filterMobsByRankAndArea } from "./filterUI.js";
