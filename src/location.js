@@ -1,151 +1,335 @@
-// location.js
+// filterUI.js
 
-import { toggleCrushStatus } from "./server.js";
-import { getState } from "./dataManager.js";
+import { getState, EXPANSION_MAP, setFilter } from "./dataManager.js";
+import { filterAndRender } from "./uiRender.js";
 
-function handleCrushToggle(e) {
-    const point = e.target.closest(".spawn-point");
-    if (!point) return;
-    if (point.dataset.isInteractive !== "true") return;
-    if (point.dataset.isLastone === "true") return;
+const FilterDOM = {
+  rankTabs: document.getElementById('rank-tabs'),
+  areaFilterPanelMobile: document.getElementById('area-filter-panel-mobile'),
+  areaFilterPanelDesktop: document.getElementById('area-filter-panel-desktop')
+};
 
-    const card = e.target.closest(".mob-card");
-    if (!card) {
-        console.error("FATAL: Mob card (.mob-card) not found for interactive spawn point click.");
-        return;
-    }
+const getAllAreas = () => {
+  return Array.from(new Set(Object.values(EXPANSION_MAP)));
+};
 
-    e.preventDefault();
-    e.stopPropagation();
+const renderRankTabs = () => {
+  const state = getState();
+  const rankList = ["ALL", "S", "A", "FATE"];
+  const container = FilterDOM.rankTabs;
+  if (!container) return;
 
-    const mobNo = parseInt(card.dataset.mobNo, 10);
-    const locationId = point.dataset.locationId;
-    const isCurrentlyCulled = point.dataset.isCulled === "true";
-    const nextCulled = !isCurrentlyCulled;
+  container.innerHTML = "";
+  container.className = "grid grid-cols-4 gap-2";
 
-    toggleCrushStatus(mobNo, locationId, nextCulled);
-    updateCrushUI(mobNo, locationId, nextCulled); // UI即時反映
-}
+  rankList.forEach(rank => {
+    const isSelected = state.filter.rank === rank;
+    const btn = document.createElement("button");
+    btn.dataset.rank = rank;
+    btn.textContent = rank;
 
-function isCulled(pointStatus, mobNo) {
-    const state = getState();
-    const mob = state.mobs.find(m => m.No === mobNo);
-    const mobLastKillTime = mob?.last_kill_time || 0;
-    // メンテ情報を取得
-    const serverUpSec = state.maintenance?.serverUp
-        ? new Date(state.maintenance.serverUp).getTime()
-        : 0;
-    // Firestore Timestampの安全取り扱い
-    const culledMs = pointStatus?.culled_at && typeof pointStatus.culled_at.toMillis === "function"
-        ? pointStatus.culled_at.toMillis()
-        : 0;
+    btn.className =
+      `tab-button px-2 py-1 text-sm rounded font-semibold text-white text-center transition ` +
+      (isSelected ? "bg-green-500" : "bg-gray-500 hover:bg-gray-400");
 
-    const uncullMs = pointStatus?.uncull_at && typeof pointStatus.uncull_at.toMillis === "function"
-        ? pointStatus.uncull_at.toMillis()
-        : 0;
-    // last_kill_time は秒を想定、ミリ秒に変換
-    const lastKillMs = typeof mobLastKillTime === "number" ? mobLastKillTime * 1000 : 0;
-    // サーバー再起動より前の湧き潰しイベントは無効化
-    const validCulledMs = culledMs > serverUpSec ? culledMs : 0;
-    const validUnculledMs = uncullMs > serverUpSec ? uncullMs : 0;
-    // どちらも無ければ未湧き潰し
-    if (validCulledMs === 0 && validUnculledMs === 0) return false;
-
-    const culledAfterKill = validCulledMs > lastKillMs;
-    const unculledAfterKill = validUnculledMs > lastKillMs;
-    // 最も新しい有効イベントを採用
-    if (culledAfterKill && (!unculledAfterKill || validCulledMs >= validUnculledMs)) return true;
-    if (unculledAfterKill && (!culledAfterKill || validUnculledMs >= validCulledMs)) return false;
-
-    return false;
-}
-
-function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_LastOne) {
-
-    const pointStatus = spawnCullStatus?.[point.id];
-    const isCulledFlag = isCulled(pointStatus, mobNo);
-
-    const isS_A_Cullable = point.mob_ranks.some(r => r === "S" || r === "A");
-    const isB_Only = point.mob_ranks.every(r => r.startsWith("B"));
-
-    let colorClass = "";
-    let dataIsInteractive = "false";
-
-    // ラストワンの場合は最優先で処理を決定する
-    if (isLastOne) {
-        colorClass = "color-lastone";
-        // 操作を不可にする
-        dataIsInteractive = "false";
-    } else if (isS_A_Cullable) {
-        // 通常の湧き潰し可能な点（ラストワンではない）
-        const rankB = point.mob_ranks.find(r => r.startsWith("B"));
-        if (isCulledFlag) {
-            colorClass = rankB === "B1" ? "color-b1-culled" : "color-b2-culled";
-        } else {
-            colorClass = rankB === "B1" ? "color-b1" : "color-b2";
-        }
-        dataIsInteractive = "true";
-    } else if (isB_Only) {
-        // Bモブ専用の点
-        const rankB = point.mob_ranks[0];
-        colorClass = rankB === "B1" ? "color-b1-only" : "color-b2-only";
-        dataIsInteractive = "false";
-    }
-
-    const pointNumber = point.id.slice(-2);
-    const titleText = `${pointNumber}${isCulledFlag ? " (済)" : ""}`;
-
-    return `
-    <div class="spawn-point ${colorClass}"
-        style="left:${point.x}%; top:${point.y}%;"
-        data-tooltip="${titleText}"
-        data-location-id="${point.id}"
-        data-mob-no="${mobNo}"
-        data-rank="${rank}"
-        data-is-culled="${isCulledFlag}"
-        data-is-lastone="${isLastOne ? "true" : "false"}"
-        data-is-interactive="${dataIsInteractive}"
-        tabindex="0">
-    </div>
-    `;
-}
-
-function updateCrushUI(mobNo, locationId, isCulled) {
-    const marker = document.querySelector(
-        `.spawn-point[data-mob-no="${mobNo}"][data-location-id="${locationId}"]`
-    );
-    if (!marker) return;
-
-    const rank = marker.dataset.rank;
-    const isInteractive = marker.dataset.isInteractive === "true";
-    const isLastOne = marker.dataset.isLastone === "true";
-    // 湧き潰し可能なマーカーのみを対象にする
-    const isS_A_Cullable = isInteractive && !isLastOne;
-
-    if (isS_A_Cullable) {
-        if (isCulled) {
-            marker.classList.remove("color-b1", "color-b2");
-            marker.classList.add(rank === "B1" ? "color-b1-culled" : "color-b2-culled");
-        } else {
-            marker.classList.remove("color-b1-culled", "color-b2-culled");
-            marker.classList.add(rank === "B1" ? "color-b1" : "color-b2");
-        }
-    }
-
-    marker.dataset.isCulled = isCulled.toString();
-    const pointNumber = locationId.slice(-2);
-    marker.setAttribute("data-tooltip", `${pointNumber} (湧き潰し: ${isCulled ? "済" : "未"})`);
-    marker.removeAttribute("title"); // 既存のtitle属性があれば削除
-}
-
-function attachLocationEvents() {
-    const overlayContainers = document.querySelectorAll(".map-overlay");
-    if (!overlayContainers.length) return;
-
-    overlayContainers.forEach(overlay => {
-        overlay.removeEventListener("click", handleCrushToggle, { capture: true });
-        overlay.addEventListener("click", handleCrushToggle, { capture: true });
+    // イベントリスナー設定
+    btn.addEventListener("click", () => {
+      handleRankTabClick(rank);
     });
+
+    container.appendChild(btn);
+  });
+};
+
+const renderAreaFilterPanel = () => {
+  const state = getState();
+  const uiRank = state.filter.rank;
+  const targetRankKey = uiRank === 'FATE' ? 'F' : uiRank;
+
+  let items = [];
+  let currentSet = new Set();
+  let isAllSelected = false;
+
+  if (uiRank === 'ALL') {
+    items = ["S", "A", "F"];
+    currentSet = state.filter.allRankSet instanceof Set ? state.filter.allRankSet : new Set();
+    isAllSelected = items.length > 0 && currentSet.size === items.length;
+  } else {
+    items = getAllAreas();
+    currentSet =
+      state.filter.areaSets[targetRankKey] instanceof Set
+        ? state.filter.areaSets[targetRankKey]
+        : new Set();
+    isAllSelected = items.length > 0 && currentSet.size === items.length;
+
+    items.sort((a, b) => {
+      const indexA = Object.values(EXPANSION_MAP).indexOf(a);
+      const indexB = Object.values(EXPANSION_MAP).indexOf(b);
+      return indexB - indexA;
+    });
+  }
+
+  const createButton = (label, isAll, isSelected, isDesktop) => {
+    const btn = document.createElement("button");
+    btn.textContent = label;
+
+    let btnClass = 'py-1 px-2 text-sm rounded font-semibold text-white text-center transition';
+
+    if (uiRank === 'ALL' && !isAll) {
+      // Desktop: w-12 (approx 2/3 of w-16), Mobile: w-auto
+      if (isDesktop) btnClass += ' w-12';
+      else btnClass += ' w-auto';
+    } else {
+      btnClass += ' w-auto';
+    }
+
+    if (isAll) {
+      btn.className = `area-filter-btn ${btnClass} ${isAllSelected ? "bg-red-500" : "bg-gray-500 hover:bg-gray-400"}`;
+      btn.dataset.value = "ALL";
+    } else {
+      btn.className = `area-filter-btn ${btnClass} ${isSelected ? "bg-green-500" : "bg-gray-500 hover:bg-gray-400"}`;
+      btn.dataset.value = label;
+    }
+    return btn;
+  };
+
+  const createPanelContent = (isDesktop) => {
+    const panel = document.createDocumentFragment();
+    const allBtn = createButton(isAllSelected ? "全解除" : "全選択", true, false, isDesktop);
+    panel.appendChild(allBtn);
+
+    if (!isDesktop) {
+      const dummy = document.createElement("div");
+      dummy.className = "w-full";
+      panel.appendChild(dummy);
+    }
+
+    items.forEach(item => {
+      const isSelected = currentSet.has(item);
+      panel.appendChild(createButton(item, false, isSelected, isDesktop));
+    });
+
+    return panel;
+  };
+
+  const mobilePanel = FilterDOM.areaFilterPanelMobile?.querySelector('div');
+  const desktopPanel = FilterDOM.areaFilterPanelDesktop?.querySelector('div');
+
+  if (mobilePanel) {
+    mobilePanel.innerHTML = "";
+    mobilePanel.appendChild(createPanelContent(false));
+  }
+  if (desktopPanel) {
+    desktopPanel.innerHTML = "";
+    desktopPanel.appendChild(createPanelContent(true));
+  }
+};
+
+const updateFilterUI = () => {
+  const state = getState();
+  const rankTabs = FilterDOM.rankTabs;
+  if (!rankTabs) return;
+
+  const stored = JSON.parse(localStorage.getItem("huntUIState")) || {};
+  const clickStep = stored.clickStep || 1;
+  const isMobile = window.matchMedia("(max-width: 1023px)").matches;
+
+  rankTabs.querySelectorAll(".tab-button").forEach(btn => {
+    const btnRank = btn.dataset.rank;
+    const isCurrent = btnRank === state.filter.rank;
+
+    btn.classList.remove(
+      "bg-rose-800", "bg-amber-800", "bg-green-800", "bg-purple-800",
+      "bg-gray-500", "hover:bg-gray-400", "bg-green-500", "bg-gray-800",
+      "bg-rose-600", "bg-amber-600", "bg-green-600", "bg-purple-600"
+    );
+
+    if (isCurrent) {
+      btn.classList.add(
+        btnRank === "ALL" ? "bg-rose-600"
+          : btnRank === "S" ? "bg-amber-600"
+            : btnRank === "A" ? "bg-green-600"
+              : btnRank === "FATE" ? "bg-purple-600"
+                : "bg-gray-800"
+      );
+
+      const panels = [FilterDOM.areaFilterPanelMobile, FilterDOM.areaFilterPanelDesktop];
+      if (clickStep === 1 || clickStep === 3) {
+        panels.forEach(p => p?.classList.add("hidden"));
+      } else if (clickStep === 2) {
+        renderAreaFilterPanel();
+        if (isMobile) {
+          FilterDOM.areaFilterPanelMobile?.classList.remove("hidden");
+          FilterDOM.areaFilterPanelDesktop?.classList.add("hidden");
+        } else {
+          FilterDOM.areaFilterPanelDesktop?.classList.remove("hidden");
+          FilterDOM.areaFilterPanelDesktop?.classList.add("flex");
+          FilterDOM.areaFilterPanelMobile?.classList.add("hidden");
+        }
+      }
+    } else {
+      btn.classList.add("bg-gray-500", "hover:bg-gray-400");
+    }
+  });
+};
+
+const handleRankTabClick = (rank) => {
+  const state = getState();
+  const prevRank = state.filter.rank;
+
+  const stored = JSON.parse(localStorage.getItem("huntUIState")) || {};
+  let clickStep = stored.clickStep || 1;
+
+  // Toggle Logic
+  if (prevRank !== rank) {
+    clickStep = 1;
+  } else {
+    if (clickStep === 1) clickStep = 2;
+    else if (clickStep === 2) clickStep = 3;
+    else clickStep = 2;
+  }
+
+  // Update State
+  setFilter({
+    rank,
+    areaSets: state.filter.areaSets
+  });
+
+  // Save UI State
+  localStorage.setItem("huntUIState", JSON.stringify({
+    rank,
+    clickStep
+  }));
+
+  filterAndRender();
+  updateFilterUI();
+};
+
+function handleAreaFilterClick(e) {
+  const btn = e.target.closest(".area-filter-btn");
+  if (!btn) return;
+
+  const state = getState();
+  const uiRank = state.filter.rank;
+
+  // Handle ALL tab rank filtering
+  if (uiRank === 'ALL') {
+    const currentSet = state.filter.allRankSet instanceof Set ? state.filter.allRankSet : new Set();
+    const nextSet = new Set(currentSet);
+    const val = btn.dataset.value; // Use generic 'value'
+
+    if (val === "ALL") {
+      if (currentSet.size === 3) { // S, A, F
+        nextSet.clear();
+      } else {
+        nextSet.add("S").add("A").add("F");
+      }
+    } else {
+      if (nextSet.has(val)) nextSet.delete(val);
+      else nextSet.add(val);
+    }
+
+    setFilter({
+      rank: uiRank,
+      allRankSet: nextSet
+    });
+
+    filterAndRender();
+    renderAreaFilterPanel();
+    return;
+  }
+
+  // Handle other tabs area filtering
+  const targetRankKey = uiRank === 'FATE' ? 'F' : uiRank;
+  const allAreas = getAllAreas();
+
+  const currentSet =
+    state.filter.areaSets[targetRankKey] instanceof Set
+      ? state.filter.areaSets[targetRankKey]
+      : new Set();
+
+  const nextAreaSets = { ...state.filter.areaSets };
+  const val = btn.dataset.value || btn.dataset.area; // Fallback for safety
+
+  if (val === "ALL") {
+    if (currentSet.size === allAreas.length) {
+      nextAreaSets[targetRankKey] = new Set();
+    } else {
+      nextAreaSets[targetRankKey] = new Set(allAreas);
+    }
+  } else {
+    const area = val;
+    const next = new Set(currentSet);
+    if (next.has(area)) next.delete(area);
+    else next.add(area);
+    nextAreaSets[targetRankKey] = next;
+  }
+
+  setFilter({
+    rank: uiRank,
+    areaSets: nextAreaSets
+  });
+
+  filterAndRender();
+  renderAreaFilterPanel();
 }
 
-export { isCulled, drawSpawnPoint, handleCrushToggle, updateCrushUI, attachLocationEvents };
+function filterMobsByRankAndArea(mobs) {
+  const filter = getState().filter;
+  const uiRank = filter.rank;
+  const areaSets = filter.areaSets;
+  const allRankSet = filter.allRankSet;
+  const allExpansions = getAllAreas().length;
+
+  const getMobRankKey = (rank) => {
+    if (rank === 'S' || rank === 'A') return rank;
+    if (rank === 'F') return 'F';
+    if (rank.startsWith('B')) return 'A';
+    return null;
+  };
+
+  return mobs.filter(m => {
+    const mobRank = m.Rank;
+    const mobExpansion = m.Expansion;
+    const mobRankKey = getMobRankKey(mobRank);
+
+    if (!mobRankKey) return false;
+
+    const filterKey = mobRankKey;
+
+    if (uiRank === 'ALL') {
+      if (filterKey !== 'S' && filterKey !== 'A' && filterKey !== 'F') return false;
+
+      // Rank Filter for ALL tab
+      if (allRankSet && allRankSet.size > 0 && allRankSet.size < 3) {
+
+        if (!allRankSet.has(filterKey)) return false;
+      }
+
+      const targetSet =
+        areaSets?.[filterKey] instanceof Set ? areaSets[filterKey] : new Set();
+
+      if (targetSet.size === 0) return true;
+      if (targetSet.size === allExpansions) return true;
+
+      return targetSet.has(mobExpansion);
+    } else {
+      const isRankMatch =
+        (uiRank === 'S' && mobRank === 'S') ||
+        (uiRank === 'A' && (mobRank === 'A' || mobRank.startsWith('B'))) ||
+        (uiRank === 'FATE' && mobRank === 'F');
+
+      if (!isRankMatch) return false;
+
+      const targetSet =
+        areaSets?.[filterKey] instanceof Set ? areaSets[filterKey] : new Set();
+
+      if (targetSet.size === 0) return true;
+      if (targetSet.size === allExpansions) return true;
+
+      return targetSet.has(mobExpansion);
+    }
+  });
+}
+
+export { renderRankTabs, renderAreaFilterPanel, updateFilterUI, handleAreaFilterClick, filterMobsByRankAndArea };
