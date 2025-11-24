@@ -3,7 +3,7 @@
 import { getState, EXPANSION_MAP, setFilter } from "./dataManager.js";
 import { filterAndRender } from "./uiRender.js";
 
-const DOM = {
+const FilterDOM = {
   rankTabs: document.getElementById('rank-tabs'),
   areaFilterPanelMobile: document.getElementById('area-filter-panel-mobile'),
   areaFilterPanelDesktop: document.getElementById('area-filter-panel-desktop')
@@ -16,7 +16,7 @@ const getAllAreas = () => {
 const renderRankTabs = () => {
   const state = getState();
   const rankList = ["ALL", "S", "A", "FATE"];
-  const container = DOM.rankTabs;
+  const container = FilterDOM.rankTabs;
   if (!container) return;
 
   container.innerHTML = "";
@@ -112,8 +112,8 @@ const renderAreaFilterPanel = () => {
     return panel;
   };
 
-  const mobilePanel = DOM.areaFilterPanelMobile?.querySelector('div');
-  const desktopPanel = DOM.areaFilterPanelDesktop?.querySelector('div');
+  const mobilePanel = FilterDOM.areaFilterPanelMobile?.querySelector('div');
+  const desktopPanel = FilterDOM.areaFilterPanelDesktop?.querySelector('div');
 
   if (mobilePanel) {
     mobilePanel.innerHTML = "";
@@ -127,7 +127,7 @@ const renderAreaFilterPanel = () => {
 
 const updateFilterUI = () => {
   const state = getState();
-  const rankTabs = DOM.rankTabs;
+  const rankTabs = FilterDOM.rankTabs;
   if (!rankTabs) return;
 
   const stored = JSON.parse(localStorage.getItem("huntUIState")) || {};
@@ -153,18 +153,18 @@ const updateFilterUI = () => {
                 : "bg-gray-800"
       );
 
-      const panels = [DOM.areaFilterPanelMobile, DOM.areaFilterPanelDesktop];
+      const panels = [FilterDOM.areaFilterPanelMobile, FilterDOM.areaFilterPanelDesktop];
       if (clickStep === 1 || clickStep === 3) {
         panels.forEach(p => p?.classList.add("hidden"));
       } else if (clickStep === 2) {
         renderAreaFilterPanel();
         if (isMobile) {
-          DOM.areaFilterPanelMobile?.classList.remove("hidden");
-          DOM.areaFilterPanelDesktop?.classList.add("hidden");
+          FilterDOM.areaFilterPanelMobile?.classList.remove("hidden");
+          FilterDOM.areaFilterPanelDesktop?.classList.add("hidden");
         } else {
-          DOM.areaFilterPanelDesktop?.classList.remove("hidden");
-          DOM.areaFilterPanelDesktop?.classList.add("flex");
-          DOM.areaFilterPanelMobile?.classList.add("hidden");
+          FilterDOM.areaFilterPanelDesktop?.classList.remove("hidden");
+          FilterDOM.areaFilterPanelDesktop?.classList.add("flex");
+          FilterDOM.areaFilterPanelMobile?.classList.add("hidden");
         }
       }
     } else {
