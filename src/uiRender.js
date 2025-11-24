@@ -445,6 +445,11 @@ function updateProgressBar(card, mob) {
   } else if (status === "MaxOver") {
     bar.classList.add(PROGRESS_CLASSES.MAX_OVER);
     text.classList.add(PROGRESS_CLASSES.TEXT_POP);
+
+    // Fix: Add white border if MaxOver AND in condition window
+    if (mob.repopInfo.isInConditionWindow) {
+      wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE);
+    }
   } else {
     text.classList.add(PROGRESS_CLASSES.TEXT_NEXT);
   }
@@ -518,7 +523,7 @@ function updateProgressText(card, mob) {
   if (minRepop - nowSec >= 3600) text.classList.add("long-wait");
   else text.classList.remove("long-wait");
 
-  if (status === "ConditionActive") {
+  if (status === "ConditionActive" || (status === "MaxOver" && isInConditionWindow)) {
     card.classList.add("blink-border-white");
   } else {
     card.classList.remove("blink-border-white");
