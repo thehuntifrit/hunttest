@@ -266,33 +266,28 @@ function allTabComparator(a, b) {
   const isBMaxOver = bStatus === "MaxOver";
 
   if (isAMaxOver && isBMaxOver) {
-    // Both are MaxOver: Sort by Expansion > Rank > MobNo > Instance
+    // Both are MaxOver: Sort by Expansion > MobNo > Instance > Rank
 
     // 1. Expansion (Descending: Golden > ... > ARR)
     const expA = getExpansionPriority(a.Expansion);
     const expB = getExpansionPriority(b.Expansion);
     if (expA !== expB) return expB - expA;
 
-    // 2. Rank (S > A > F)
-    const rankDiff = rankPriority(a.Rank) - rankPriority(b.Rank);
-    if (rankDiff !== 0) return rankDiff;
-
-    // 3. MobNo (Ascending)
+    // 2. MobNo (Ascending)
     const pa = parseMobIdParts(a.No);
     const pb = parseMobIdParts(b.No);
     if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
 
-    // 4. Instance (Ascending)
-    return pa.instance - pb.instance;
+    // 3. Instance (Ascending)
+    if (pa.instance !== pb.instance) return pa.instance - pb.instance;
+
+    // 4. Rank (S > A > F)
+    const rankDiff = rankPriority(a.Rank) - rankPriority(b.Rank);
+    return rankDiff;
   }
 
-  // If one is MaxOver and the other isn't, MaxOver should come first (highest %)
-  // This is naturally handled by the % Rate check below, assuming MaxOver has > 100% or high %.
-  // But let's be explicit to be safe.
   if (isAMaxOver && !isBMaxOver) return -1;
   if (!isAMaxOver && isBMaxOver) return 1;
-
-  // Standard ALL tab sort for non-MaxOver (or mixed if logic above failed, but it won't)
 
   // 1. % Rate (Descending)
   const aPercent = aInfo.elapsedPercent || 0;
@@ -482,7 +477,7 @@ function updateProgressText(card, mob) {
   let rightContent = `<span>${rightStr}</span>`;
 
   text.innerHTML = `
-    <div class="w-full grid grid-cols-2 items-center text-sm font-bold leading-none">
+    <div class="w-full h-full grid grid-cols-2 items-center text-sm font-bold">
       <div class="pl-1 text-left truncate">${leftStr}${percentStr}</div>
       <div class="pr-1 text-right truncate">${rightContent}</div>
     </div>
