@@ -107,7 +107,7 @@ function createMobCard(mob) {
   areaInfoHtml += `</span>`;
 
   const cardHeaderHTML = `
-<div class="px-2 py-1 space-y-1 bg-transparent" data-toggle="card-header">
+<div class="mob-card-header space-y-1" data-toggle="card-header">
     <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-3">
         <!-- Rank Badge -->
         <span class="w-8 h-8 flex items-center justify-center rounded-md text-white text-sm rank-badge rank-${rank.toLowerCase()}">${rankLabel}</span>
@@ -285,8 +285,6 @@ function allTabComparator(a, b) {
   // If one is MaxOver and the other isn't, MaxOver should come first (highest %)
   if (isAMaxOver && !isBMaxOver) return -1;
   if (!isAMaxOver && isBMaxOver) return 1;
-
-  // Standard ALL tab sort for non-MaxOver
 
   // 1. % Rate (Descending)
   const aPercent = aInfo.elapsedPercent || 0;
