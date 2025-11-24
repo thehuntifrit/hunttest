@@ -2,7 +2,7 @@
 
 import { DOM as UiDOM } from "./uiRender.js";
 import { getState } from "./dataManager.js";
-import { submitMemo } from "./server.js";
+
 
 async function openReportModal(mobNo) {
     const mob = getState().mobs.find(m => m.No === mobNo);
