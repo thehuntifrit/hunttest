@@ -8,13 +8,6 @@ const MOON_PHASE_DURATION_SEC = ET_DAY_SEC * 4;
 const MAX_SEARCH_ITERATIONS = 5000;
 const LIMIT_DAYS = 60;
 
-function formatDuration(seconds) {
-  const totalMinutes = Math.floor(seconds / 60);
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-
 function formatDurationHM(seconds) {
   if (seconds < 0) seconds = 0;
   const h = Math.floor(seconds / 3600);
@@ -540,33 +533,10 @@ function checkMobSpawnCondition(mob, date) {
   return true;
 }
 
-function findNextSpawnTime(mob, pointSec, minRepopSec, limitSec) {
-  const hasCondition = !!(
-    mob.moonPhase ||
-    mob.timeRange ||
-    mob.timeRanges ||
-    mob.weatherSeedRange ||
-    mob.weatherSeedRanges ||
-    mob.conditions
-  );
-
-  if (!hasCondition) return minRepopSec;
-
-  const searchLimit = pointSec + LIMIT_DAYS * 24 * 3600;
-  const result = findNextSpawn(mob, pointSec, searchLimit);
-
-  if (result) {
-    return result.start;
-  }
-  return null;
-}
-
 export {
   calculateRepop,
   checkMobSpawnCondition,
-  findNextSpawnTime,
   getEorzeaTime,
-  formatDuration,
   formatDurationHM,
   debounce,
   formatLastKillTime
