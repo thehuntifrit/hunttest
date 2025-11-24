@@ -29,6 +29,58 @@ function closeReportModal() {
     DOM.modalStatus.textContent = "";
 }
 
+function initModal() {
+    // Report Modal Handlers
+    const cancelReportBtn = document.getElementById("cancel-report");
+    if (cancelReportBtn) {
+        cancelReportBtn.addEventListener("click", closeReportModal);
+    }
+    DOM.reportModal.addEventListener("click", (e) => {
+        if (e.target === DOM.reportModal) {
+            closeReportModal();
+        }
+    });
+
+    // Global Keydown
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            if (!DOM.reportModal.classList.contains("hidden")) closeReportModal();
+        }
+    });
+}
+
+export { openReportModal, closeReportModal, initModal };
+// modal.js
+
+import { DOM } from "./uiRender.js";
+import { getState } from "./dataManager.js";
+import { submitMemo } from "./server.js";
+
+async function openReportModal(mobNo) {
+    const mob = getState().mobs.find(m => m.No === mobNo);
+    if (!mob) return;
+
+    // 現在時刻（クライアント）を取得
+    const now = new Date();
+    const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16); // "YYYY-MM-DDTHH:mm"
+
+    DOM.reportForm.dataset.mobNo = String(mobNo);
+    DOM.modalMobName.textContent = `${mob.Name}`;
+    DOM.modalTimeInput.value = localIso;
+
+    DOM.reportModal.classList.remove("hidden");
+    DOM.reportModal.classList.add("flex");
+}
+
+function closeReportModal() {
+    DOM.reportModal.classList.add("hidden");
+    DOM.reportModal.classList.remove("flex");
+    DOM.modalTimeInput.value = "";
+    DOM.modalStatus.textContent = "";
+}
+
 // --- Memo Modal ---
 function openMemoModal(mobNo, currentText) {
     const modal = document.getElementById('memo-modal-container');
