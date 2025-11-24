@@ -41,16 +41,6 @@ const renderRankTabs = () => {
   });
 };
 
-const handleRankTabClick = (rank) => {
-  const currentState = getState();
-  setFilter({
-    rank,
-    areaSets: currentState.filter.areaSets
-  });
-  filterAndRender();
-  updateFilterUI();
-};
-
 const renderAreaFilterPanel = () => {
   const state = getState();
   const uiRank = state.filter.rank;
@@ -61,12 +51,10 @@ const renderAreaFilterPanel = () => {
   let isAllSelected = false;
 
   if (uiRank === 'ALL') {
-    // For ALL tab, items are Ranks
     items = ["S", "A", "F"];
     currentSet = state.filter.allRankSet instanceof Set ? state.filter.allRankSet : new Set();
     isAllSelected = items.length > 0 && currentSet.size === items.length;
   } else {
-    // For other tabs, items are Areas
     items = getAllAreas();
     currentSet =
       state.filter.areaSets[targetRankKey] instanceof Set
@@ -74,7 +62,6 @@ const renderAreaFilterPanel = () => {
         : new Set();
     isAllSelected = items.length > 0 && currentSet.size === items.length;
 
-    // Sort areas
     items.sort((a, b) => {
       const indexA = Object.values(EXPANSION_MAP).indexOf(a);
       const indexB = Object.values(EXPANSION_MAP).indexOf(b);
@@ -82,34 +69,33 @@ const renderAreaFilterPanel = () => {
     });
   }
 
-  const createButton = (label, isAll, isSelected) => {
+  const createButton = (label, isAll, isSelected, isDesktop) => {
     const btn = document.createElement("button");
     btn.textContent = label;
 
-    // Default class
     let btnClass = 'py-1 px-2 text-sm rounded font-semibold text-white text-center transition';
 
-    // Apply width based on context
     if (uiRank === 'ALL' && !isAll) {
-      // For S, A, F buttons in ALL tab, make them wider (approx double)
-      btnClass += ' w-16';
+      // Desktop: w-12 (approx 2/3 of w-16), Mobile: w-auto
+      if (isDesktop) btnClass += ' w-12';
+      else btnClass += ' w-auto';
     } else {
       btnClass += ' w-auto';
     }
 
     if (isAll) {
       btn.className = `area-filter-btn ${btnClass} ${isAllSelected ? "bg-red-500" : "bg-gray-500 hover:bg-gray-400"}`;
-      btn.dataset.value = "ALL"; // Use generic 'value'
+      btn.dataset.value = "ALL";
     } else {
       btn.className = `area-filter-btn ${btnClass} ${isSelected ? "bg-green-500" : "bg-gray-500 hover:bg-gray-400"}`;
-      btn.dataset.value = label; // Use generic 'value'
+      btn.dataset.value = label;
     }
     return btn;
   };
 
   const createPanelContent = (isDesktop) => {
     const panel = document.createDocumentFragment();
-    const allBtn = createButton(isAllSelected ? "全解除" : "全選択", true, false);
+    const allBtn = createButton(isAllSelected ? "全解除" : "全選択", true, false, isDesktop);
     panel.appendChild(allBtn);
 
     if (!isDesktop) {
@@ -120,7 +106,7 @@ const renderAreaFilterPanel = () => {
 
     items.forEach(item => {
       const isSelected = currentSet.has(item);
-      panel.appendChild(createButton(item, false, isSelected));
+      panel.appendChild(createButton(item, false, isSelected, isDesktop));
     });
 
     return panel;
@@ -145,9 +131,7 @@ const updateFilterUI = () => {
   if (!rankTabs) return;
 
   const stored = JSON.parse(localStorage.getItem("huntUIState")) || {};
-  const prevRank = stored.rank;
-  let clickStep = stored.clickStep || 1;
-
+  const clickStep = stored.clickStep || 1;
   const isMobile = window.matchMedia("(max-width: 1023px)").matches;
 
   rankTabs.querySelectorAll(".tab-button").forEach(btn => {
@@ -160,16 +144,7 @@ const updateFilterUI = () => {
       "bg-rose-600", "bg-amber-600", "bg-green-600", "bg-purple-600"
     );
 
-
     if (isCurrent) {
-      if (!prevRank || prevRank !== btnRank) {
-        clickStep = 1;
-      } else {
-        if (clickStep === 1) clickStep = 2;
-        else if (clickStep === 2) clickStep = 3;
-        else clickStep = 2;
-      }
-
       btn.classList.add(
         btnRank === "ALL" ? "bg-rose-600"
           : btnRank === "S" ? "bg-amber-600"
@@ -191,17 +166,43 @@ const updateFilterUI = () => {
           DOM.areaFilterPanelDesktop?.classList.add("flex");
           DOM.areaFilterPanelMobile?.classList.add("hidden");
         }
-
       }
-
-      localStorage.setItem("huntUIState", JSON.stringify({
-        rank: btnRank,
-        clickStep
-      }));
     } else {
       btn.classList.add("bg-gray-500", "hover:bg-gray-400");
     }
   });
+};
+
+const handleRankTabClick = (rank) => {
+  const state = getState();
+  const prevRank = state.filter.rank;
+
+  const stored = JSON.parse(localStorage.getItem("huntUIState")) || {};
+  let clickStep = stored.clickStep || 1;
+
+  // Toggle Logic
+  if (prevRank !== rank) {
+    clickStep = 1;
+  } else {
+    if (clickStep === 1) clickStep = 2;
+    else if (clickStep === 2) clickStep = 3;
+    else clickStep = 2;
+  }
+
+  // Update State
+  setFilter({
+    rank,
+    areaSets: state.filter.areaSets
+  });
+
+  // Save UI State
+  localStorage.setItem("huntUIState", JSON.stringify({
+    rank,
+    clickStep
+  }));
+
+  filterAndRender();
+  updateFilterUI();
 };
 
 function handleAreaFilterClick(e) {
