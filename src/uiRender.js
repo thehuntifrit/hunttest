@@ -266,28 +266,39 @@ function allTabComparator(a, b) {
   const isBMaxOver = bStatus === "MaxOver";
 
   if (isAMaxOver && isBMaxOver) {
-    // Both are MaxOver: Sort by Expansion > MobNo > Instance > Rank
+    // Both are MaxOver: Sort by Rank (S > F > A) > Expansion > MobNo > Instance
 
-    // 1. Expansion (Descending: Golden > ... > ARR)
+    // Helper for MaxOver Rank Priority (S=0, F=1, A=2)
+    const getMaxOverRankPriority = (r) => {
+      if (r === 'S') return 0;
+      if (r === 'F') return 1;
+      if (r === 'A') return 2;
+      return 99;
+    };
+
+    // 1. Rank (S > F > A)
+    const rankDiff = getMaxOverRankPriority(a.Rank) - getMaxOverRankPriority(b.Rank);
+    if (rankDiff !== 0) return rankDiff;
+
+    // 2. Expansion (Descending: Golden > ... > ARR)
     const expA = getExpansionPriority(a.Expansion);
     const expB = getExpansionPriority(b.Expansion);
     if (expA !== expB) return expB - expA;
 
-    // 2. MobNo (Ascending)
+    // 3. MobNo (Ascending)
     const pa = parseMobIdParts(a.No);
     const pb = parseMobIdParts(b.No);
     if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
 
-    // 3. Instance (Ascending)
-    if (pa.instance !== pb.instance) return pa.instance - pb.instance;
-
-    // 4. Rank (S > A > F)
-    const rankDiff = rankPriority(a.Rank) - rankPriority(b.Rank);
-    return rankDiff;
+    // 4. Instance (Ascending)
+    return pa.instance - pb.instance;
   }
 
+  // If one is MaxOver and the other isn't, MaxOver should come first (highest %)
   if (isAMaxOver && !isBMaxOver) return -1;
   if (!isAMaxOver && isBMaxOver) return 1;
+
+  // Standard ALL tab sort for non-MaxOver
 
   // 1. % Rate (Descending)
   const aPercent = aInfo.elapsedPercent || 0;
