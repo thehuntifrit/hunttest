@@ -2,7 +2,7 @@
 
 import { calculateRepop } from "./cal.js";
 import { subscribeMobStatusDocs, subscribeMobLocations, subscribeMobMemos } from "./server.js";
-import { filterAndRender, updateProgressBars, displayStatus } from "./uiRender.js";
+import { filterAndRender, updateProgressBars } from "./uiRender.js";
 
 const EXPANSION_MAP = { 1: "新生", 2: "蒼天", 3: "紅蓮", 4: "漆黒", 5: "暁月", 6: "黄金" };
 
@@ -175,7 +175,7 @@ async function loadBaseMobData() {
 
     } catch (e) {
         console.error("Failed to load base data:", e);
-        displayStatus("データの読み込みに失敗しました。", "error");
+        console.error("データの読み込みに失敗しました。");
     }
 }
 
