@@ -54,10 +54,6 @@ const handleRankTabClick = (rank) => {
 const renderAreaFilterPanel = () => {
   const state = getState();
   const uiRank = state.filter.rank;
-
-  // ALL tab now has filters too (Rank filters)
-  // if (uiRank === 'ALL') return; // Removed this check
-
   const targetRankKey = uiRank === 'FATE' ? 'F' : uiRank;
 
   let items = [];
@@ -305,36 +301,12 @@ function filterMobsByRankAndArea(mobs) {
 
       // Rank Filter for ALL tab
       if (allRankSet && allRankSet.size > 0 && allRankSet.size < 3) {
-        // If allRankSet is empty or full, show all ranks.
-        // If it has specific selections, filter by them.
-        // Wait, usually if empty -> show all? Or if empty -> show none?
-        // Standard behavior: Empty = Show All (or Show None depending on UX).
-        // Let's assume: If nothing selected, show ALL. If something selected, show ONLY selected.
-        // Actually, in the area filter logic: "if (targetSet.size === 0) return true;" -> Empty means Show All.
-        // Let's follow that pattern.
-
-        // However, "S", "A", "F" are the keys.
-        // mobRankKey maps B ranks to A.
-        // So if 'A' is selected, we show A and B ranks.
 
         if (!allRankSet.has(filterKey)) return false;
       }
 
       const targetSet =
         areaSets?.[filterKey] instanceof Set ? areaSets[filterKey] : new Set();
-
-      // For ALL tab, we currently don't filter by area (or do we?)
-      // The original code checked areaSets for the specific rank key.
-      // "ALL" tab shows everything, but it seems it respected the area filters set in other tabs?
-      // Let's check original code:
-      // if (uiRank === 'ALL') {
-      //   ...
-      //   const targetSet = areaSets?.[filterKey] ...
-      //   if (targetSet.size === 0) return true;
-      //   return targetSet.has(mobExpansion);
-      // }
-      // Yes, it respected the area filters of the individual ranks!
-      // So we must keep that logic.
 
       if (targetSet.size === 0) return true;
       if (targetSet.size === allExpansions) return true;
