@@ -54,35 +54,46 @@ const handleRankTabClick = (rank) => {
 const renderAreaFilterPanel = () => {
   const state = getState();
   const uiRank = state.filter.rank;
-  if (uiRank === 'ALL') return;
 
   const targetRankKey = uiRank === 'FATE' ? 'F' : uiRank;
-  const areas = getAllAreas();
 
-  const currentSet =
-    state.filter.areaSets[targetRankKey] instanceof Set
-      ? state.filter.areaSets[targetRankKey]
-      : new Set();
+  let items = [];
+  let currentSet = new Set();
+  let isAllSelected = false;
 
-  const isAllSelected = areas.length > 0 && currentSet.size === areas.length;
+  if (uiRank === 'ALL') {
+    // For ALL tab, items are Ranks
+    items = ["S", "A", "F"];
+    currentSet = state.filter.allRankSet instanceof Set ? state.filter.allRankSet : new Set();
+    isAllSelected = items.length > 0 && currentSet.size === items.length;
+  } else {
+    // For other tabs, items are Areas
+    items = getAllAreas();
+    currentSet =
+      state.filter.areaSets[targetRankKey] instanceof Set
+        ? state.filter.areaSets[targetRankKey]
+        : new Set();
+    isAllSelected = items.length > 0 && currentSet.size === items.length;
 
-  const sortedAreas = areas.sort((a, b) => {
-    const indexA = Object.values(EXPANSION_MAP).indexOf(a);
-    const indexB = Object.values(EXPANSION_MAP).indexOf(b);
-    return indexB - indexA;
-  });
+    // Sort areas
+    items.sort((a, b) => {
+      const indexA = Object.values(EXPANSION_MAP).indexOf(a);
+      const indexB = Object.values(EXPANSION_MAP).indexOf(b);
+      return indexB - indexA;
+    });
+  }
 
-  const createButton = (area, isAll, isSelected) => {
+  const createButton = (label, isAll, isSelected) => {
     const btn = document.createElement("button");
-    btn.textContent = area;
+    btn.textContent = label;
     const btnClass = 'py-1 px-2 text-sm rounded font-semibold text-white text-center transition w-auto';
 
     if (isAll) {
       btn.className = `area-filter-btn ${btnClass} ${isAllSelected ? "bg-red-500" : "bg-gray-500 hover:bg-gray-400"}`;
-      btn.dataset.area = "ALL";
+      btn.dataset.value = "ALL"; // Use generic 'value'
     } else {
       btn.className = `area-filter-btn ${btnClass} ${isSelected ? "bg-green-500" : "bg-gray-500 hover:bg-gray-400"}`;
-      btn.dataset.area = area;
+      btn.dataset.value = label; // Use generic 'value'
     }
     return btn;
   };
@@ -98,9 +109,9 @@ const renderAreaFilterPanel = () => {
       panel.appendChild(dummy);
     }
 
-    sortedAreas.forEach(area => {
-      const isSelected = currentSet.has(area);
-      panel.appendChild(createButton(area, false, isSelected));
+    items.forEach(item => {
+      const isSelected = currentSet.has(item);
+      panel.appendChild(createButton(item, false, isSelected));
     });
 
     return panel;
@@ -142,9 +153,7 @@ const updateFilterUI = () => {
 
 
     if (isCurrent) {
-      if (btnRank === "ALL") {
-        clickStep = 1;
-      } else if (!prevRank || prevRank !== btnRank) {
+      if (!prevRank || prevRank !== btnRank) {
         clickStep = 1;
       } else {
         if (clickStep === 1) clickStep = 2;
@@ -161,7 +170,7 @@ const updateFilterUI = () => {
       );
 
       const panels = [DOM.areaFilterPanelMobile, DOM.areaFilterPanelDesktop];
-      if (btnRank === "ALL" || clickStep === 1 || clickStep === 3) {
+      if (clickStep === 1 || clickStep === 3) {
         panels.forEach(p => p?.classList.add("hidden"));
       } else if (clickStep === 2) {
         renderAreaFilterPanel();
@@ -192,10 +201,37 @@ function handleAreaFilterClick(e) {
 
   const state = getState();
   const uiRank = state.filter.rank;
+
+  // Handle ALL tab rank filtering
+  if (uiRank === 'ALL') {
+    const currentSet = state.filter.allRankSet instanceof Set ? state.filter.allRankSet : new Set();
+    const nextSet = new Set(currentSet);
+    const val = btn.dataset.value; // Use generic 'value'
+
+    if (val === "ALL") {
+      if (currentSet.size === 3) { // S, A, F
+        nextSet.clear();
+      } else {
+        nextSet.add("S").add("A").add("F");
+      }
+    } else {
+      if (nextSet.has(val)) nextSet.delete(val);
+      else nextSet.add(val);
+    }
+
+    setFilter({
+      rank: uiRank,
+      allRankSet: nextSet
+    });
+
+    filterAndRender();
+    renderAreaFilterPanel();
+    return;
+  }
+
+  // Handle other tabs area filtering
   const targetRankKey = uiRank === 'FATE' ? 'F' : uiRank;
   const allAreas = getAllAreas();
-
-  if (uiRank === 'ALL') return;
 
   const currentSet =
     state.filter.areaSets[targetRankKey] instanceof Set
@@ -203,15 +239,16 @@ function handleAreaFilterClick(e) {
       : new Set();
 
   const nextAreaSets = { ...state.filter.areaSets };
+  const val = btn.dataset.value || btn.dataset.area; // Fallback for safety
 
-  if (btn.dataset.area === "ALL") {
+  if (val === "ALL") {
     if (currentSet.size === allAreas.length) {
       nextAreaSets[targetRankKey] = new Set();
     } else {
       nextAreaSets[targetRankKey] = new Set(allAreas);
     }
   } else {
-    const area = btn.dataset.area;
+    const area = val;
     const next = new Set(currentSet);
     if (next.has(area)) next.delete(area);
     else next.add(area);
@@ -231,6 +268,7 @@ function filterMobsByRankAndArea(mobs) {
   const filter = getState().filter;
   const uiRank = filter.rank;
   const areaSets = filter.areaSets;
+  const allRankSet = filter.allRankSet;
   const allExpansions = getAllAreas().length;
 
   const getMobRankKey = (rank) => {
@@ -251,6 +289,11 @@ function filterMobsByRankAndArea(mobs) {
 
     if (uiRank === 'ALL') {
       if (filterKey !== 'S' && filterKey !== 'A' && filterKey !== 'F') return false;
+
+      // Rank Filter for ALL tab
+      if (allRankSet && allRankSet.size > 0 && allRankSet.size < 3) {
+        if (!allRankSet.has(filterKey)) return false;
+      }
 
       const targetSet =
         areaSets?.[filterKey] instanceof Set ? areaSets[filterKey] : new Set();
