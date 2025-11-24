@@ -488,6 +488,17 @@ function calculateRepop(mob, maintenance) {
 
   const isMaintenanceStop = (now >= maintenanceStart && now < serverUp);
 
+  // Check if next spawn is blocked by maintenance
+  let isBlockedByMaintenance = false;
+  const nextTime = nextConditionSpawnDate ? (nextConditionSpawnDate.getTime() / 1000) : minRepop;
+
+  // If maintenance is scheduled (start > now) and next spawn is after start
+  // OR if we are currently in maintenance (isMaintenanceStop) - though usually that's handled by isMaintenanceStop flag
+  // The user specifically asked: "If next time ... exceeds maintenance start"
+  if (maintenanceStart && nextTime >= maintenanceStart) {
+    isBlockedByMaintenance = true;
+  }
+
   return {
     minRepop,
     maxRepop,
@@ -499,7 +510,8 @@ function calculateRepop(mob, maintenance) {
     nextConditionSpawnDate,
     conditionWindowEnd,
     isInConditionWindow,
-    isMaintenanceStop
+    isMaintenanceStop,
+    isBlockedByMaintenance
   };
 
   function baseResult(status) {
