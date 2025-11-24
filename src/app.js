@@ -27,6 +27,13 @@ async function initializeApp() {
         }
 
         // 3. UI初期化
+        // Reset clickStep to 1 to ensure filters are closed on reload
+        const storedUI = JSON.parse(localStorage.getItem("huntUIState")) || {};
+        if (storedUI.clickStep !== 1) {
+            storedUI.clickStep = 1;
+            localStorage.setItem("huntUIState", JSON.stringify(storedUI));
+        }
+
         renderRankTabs();
         updateFilterUI();
         initModal();
