@@ -11,7 +11,7 @@
 
     --rank-s: #f59e0b;
     --rank-a: #306ef3;
-    --rank-b: #3bf63b;
+    --rank-f: #16b47f;
 
     --progress-bg: rgba(0, 0, 0, 0.5);
     --progress-fill: linear-gradient(90deg, var(--accent-cyan), #3b82f6);
@@ -115,12 +115,10 @@ body {
 
 .progress-text.text-next {
     color: #ffffff;
-
 }
 
 .progress-text.max-over {
     color: #ffffff;
-
     animation: pulse-text 3s infinite;
 }
 
