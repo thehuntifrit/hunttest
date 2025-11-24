@@ -27,7 +27,6 @@ const DEFAULT_FUNCTIONS_REGION = "us-central1";
 const functionsInstance = getFunctions(app, DEFAULT_FUNCTIONS_REGION);
 const analytics = getAnalytics(app);
 
-const callGetServerTime = httpsCallable(functionsInstance, 'getServerTimeV1');
 const callMobCullUpdater = httpsCallable(functionsInstance, 'mobCullUpdaterV1');
 const callPostMobMemo = httpsCallable(functionsInstance, 'postMobMemoV1');
 
@@ -50,22 +49,6 @@ async function initializeAuth() {
             }
         });
     });
-}
-
-// サーバーUTC取得
-async function getServerTimeUTC() {
-    try {
-        const response = await callGetServerTime();
-        if (response.data && typeof response.data.serverTimeMs === 'number') {
-            return new Date(response.data.serverTimeMs);
-        } else {
-            console.error("サーバー時刻取得エラー: serverTimeMs が不正です。", response.data);
-            return new Date();
-        }
-    } catch (error) {
-        console.error("サーバー時刻取得失敗:", error);
-        return new Date();
-    }
 }
 
 // データ購読 (Mob Status)
@@ -152,7 +135,7 @@ const submitReport = async (mobNo, timeISO) => {
     }
 
     if (!killTimeDate) {
-        killTimeDate = await getServerTimeUTC();
+        killTimeDate = new Date();
     }
 
     const modalStatusEl = document.querySelector("#modal-status");
@@ -275,6 +258,5 @@ export {
     subscribeMobMemos,
     submitReport,
     submitMemo,
-    toggleCrushStatus,
-    getServerTimeUTC
+    toggleCrushStatus
 };
