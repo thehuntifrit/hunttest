@@ -458,7 +458,7 @@ function calculateRepop(mob, maintenance) {
 
       if (isInConditionWindow) {
         const remainingSec = end - now;
-        conditionRemaining = `@ ${Math.ceil(remainingSec / 60)}分`;
+        conditionRemaining = `残り ${Math.ceil(remainingSec / 60)}分`;
       }
     }
   }
@@ -475,7 +475,7 @@ function calculateRepop(mob, maintenance) {
   } else {
     status = "PopWindow";
     elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
-    timeRemaining = `⏰️ ${formatDurationHM(maxRepop - now)}`;
+    timeRemaining = `🆙 ${formatDurationHM(maxRepop - now)}`;
   }
 
   if (isInConditionWindow && now >= minRepop) {
