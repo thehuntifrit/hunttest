@@ -8,7 +8,6 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase
 
 import { getState } from "./dataManager.js";
 import { closeReportModal } from "./modal.js";
-import { displayStatus } from "./uiRender.js";
 import { updateCrushUI } from "./location.js";
 
 const FIREBASE_CONFIG = {
@@ -110,13 +109,13 @@ const submitReport = async (mobNo, timeISO) => {
     const mobs = state.mobs;
 
     if (!userId) {
-        displayStatus("認証が完了していません。ページをリロードしてください。", "error");
+        console.error("認証が完了していません。ページをリロードしてください。");
         return;
     }
 
     const mob = mobs.find(m => m.No === mobNo);
     if (!mob) {
-        displayStatus("モブデータが見つかりません。", "error");
+        console.error("モブデータが見つかりません。");
         return;
     }
 
@@ -140,7 +139,6 @@ const submitReport = async (mobNo, timeISO) => {
 
     const modalStatusEl = document.querySelector("#modal-status");
     if (modalStatusEl) modalStatusEl.textContent = "送信中...";
-    displayStatus(`${mob.Name} 討伐時間報告中...`);
 
     try {
         await addDoc(collection(db, "reports"), {
@@ -151,11 +149,9 @@ const submitReport = async (mobNo, timeISO) => {
         });
 
         closeReportModal();
-        displayStatus("報告が完了しました。データ反映を待っています。", "success");
     } catch (error) {
         console.error("レポート送信エラー:", error);
         if (modalStatusEl) modalStatusEl.textContent = "送信エラー: " + (error.message || "通信失敗");
-        displayStatus(`討伐報告エラー: ${error.message || "通信失敗"}`, "error");
     }
 };
 
@@ -166,17 +162,15 @@ const submitMemo = async (mobNo, memoText) => {
     const mobs = state.mobs;
 
     if (!userId) {
-        displayStatus("認証が完了していません。", "error");
+        console.error("認証が完了していません。");
         return { success: false, error: "認証エラー" };
     }
 
     const mob = mobs.find(m => m.No === mobNo);
     if (!mob) {
-        displayStatus("モブデータが見つかりません。", "error");
+        console.error("モブデータが見つかりません。");
         return { success: false, error: "Mobデータエラー" };
     }
-
-    displayStatus(`${mob.Name} のメモを投稿中...`, "warning");
 
     const data = {
         mob_id: mobNo.toString(),
@@ -188,18 +182,15 @@ const submitMemo = async (mobNo, memoText) => {
         const result = response.data;
 
         if (result?.success) {
-            displayStatus(`メモを正常に投稿しました。`, "success");
             return { success: true };
         } else {
             const errorMessage = result?.error || "Functions内部でエラーが発生しました。";
             console.error("メモ投稿エラー:", result);
-            displayStatus(`メモ投稿エラー: ${errorMessage}`, "error");
             return { success: false, error: errorMessage };
         }
     } catch (error) {
         console.error("メモ投稿エラー:", error);
         const userFriendlyError = error.message || "通信または認証に失敗しました。";
-        displayStatus(`致命的な通信エラー: ${userFriendlyError}`, "error");
         return { success: false, error: userFriendlyError };
     }
 };
@@ -211,17 +202,12 @@ const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
     const mobs = state.mobs;
 
     if (!userId) {
-        displayStatus("認証が完了していません。", "error");
+        console.error("認証が完了していません。");
         return;
     }
     const action = nextCulled ? "CULL" : "UNCULL";
     const mob = mobs.find(m => m.No === mobNo);
     if (!mob) return;
-
-    displayStatus(
-        `${mob.Name} (${locationId}) ${nextCulled ? "湧き潰し" : "解除"}報告中...`,
-        "warning"
-    );
 
     const reportTimeDate = new Date();
     const data = {
@@ -236,18 +222,15 @@ const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
         const result = response.data;
 
         if (result?.success) {
-            displayStatus(`${mob.Name} の状態を更新しました。`, "success");
             updateCrushUI(mobNo, locationId, nextCulled);
         } else {
             const errorMessage = result?.error || "Functions内部でエラーが発生しました。";
             console.error("湧き潰し報告エラー:", errorMessage);
-            displayStatus(`湧き潰し報告エラー: ${errorMessage}`, "error");
         }
 
     } catch (error) {
         console.error("湧き潰し報告エラー:", error);
         const userFriendlyError = error.message || "通信または認証に失敗しました。";
-        displayStatus(`致命的な通信エラー: ${userFriendlyError}`, "error");
     }
 };
 
