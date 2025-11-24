@@ -109,8 +109,15 @@ function formatDate(date) {
 }
 
 function attachGlobalEventListeners() {
-    // 1. Window Resize
-    window.addEventListener("resize", debounce(() => sortAndRedistribute(), 200));
+    // 1. Window Resize (Width only to avoid keyboard close on mobile)
+    let prevWidth = window.innerWidth;
+    window.addEventListener("resize", debounce(() => {
+        const currentWidth = window.innerWidth;
+        if (currentWidth !== prevWidth) {
+            prevWidth = currentWidth;
+            sortAndRedistribute();
+        }
+    }, 200));
 
     // 2. Filter Clicks (Delegation)
     document.addEventListener("click", (e) => {
