@@ -255,11 +255,50 @@ function baseComparator(a, b) {
   return aTime - bTime;
 }
 
+function allTabComparator(a, b) {
+  // 1. % Rate (Descending)
+  const aInfo = a.repopInfo || {};
+  const bInfo = b.repopInfo || {};
+  const aPercent = aInfo.elapsedPercent || 0;
+  const bPercent = bInfo.elapsedPercent || 0;
+
+  if (Math.abs(aPercent - bPercent) > 0.001) {
+    return bPercent - aPercent;
+  }
+
+  // 2. Time (Ascending - sooner is smaller timestamp)
+  const aTime = aInfo.minRepop || 0;
+  const bTime = bInfo.minRepop || 0;
+  if (aTime !== bTime) return aTime - bTime;
+
+  // 3. Rank (S > A > F)
+  const rankDiff = rankPriority(a.Rank) - rankPriority(b.Rank);
+  if (rankDiff !== 0) return rankDiff;
+
+  // 4. Expansion (Descending: Golden > ... > ARR)
+  const expA = getExpansionPriority(a.Expansion);
+  const expB = getExpansionPriority(b.Expansion);
+  if (expA !== expB) return expB - expA;
+
+  // 5. MobNo (Ascending)
+  const pa = parseMobIdParts(a.No);
+  const pb = parseMobIdParts(b.No);
+  if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
+
+  // 6. Instance (Ascending)
+  return pa.instance - pb.instance;
+}
+
 function filterAndRender({ isInitialLoad = false } = {}) {
   const state = getState();
   const filtered = filterMobsByRankAndArea(state.mobs);
-  // Always use baseComparator
-  const sortedMobs = filtered.sort(baseComparator);
+
+  let sortedMobs;
+  if (state.filter.rank === 'ALL') {
+    sortedMobs = filtered.sort(allTabComparator);
+  } else {
+    sortedMobs = filtered.sort(baseComparator);
+  }
 
   const existingCards = new Map();
   DOM.masterContainer.querySelectorAll('.mob-card').forEach(card => {
