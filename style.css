@@ -102,10 +102,11 @@ body {
     color: #ffffff;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
     font-size: 13px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-family: 'Inter', sans-serif;
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0;
-    /* Override tracking-wider if needed, or adjust */
+    font-feature-settings: "tnum";
+    letter-spacing: 0.02em;
+    /* Slight spacing for readability */
 }
 
 .progress-text.text-pop {
