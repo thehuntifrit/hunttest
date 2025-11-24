@@ -454,14 +454,32 @@ function updateProgressText(card, mob) {
   const text = card.querySelector(".progress-text");
   if (!text) return;
 
-  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status, isInConditionWindow, timeRemaining
+  const { elapsedPercent, nextMinRepopDate, nextConditionSpawnDate, minRepop, maxRepop, status, isInConditionWindow, timeRemaining, isBlockedByMaintenance
   } = mob.repopInfo || {};
 
   const nowSec = Date.now() / 1000;
   let leftStr = timeRemaining || "未確定";
-  const percentStr = (status === "PopWindow" || status === "ConditionActive" || status === "NextCondition")
+  // Removed status === "NextCondition"
+  const percentStr = (status === "PopWindow" || status === "ConditionActive")
     ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)`
     : "";
+
+  // Visual Styles
+  // 1. Dim Pre-Repop (Next / NextCondition)
+  if (status === "Next" || status === "NextCondition") {
+    card.classList.add("opacity-60");
+  } else {
+    card.classList.remove("opacity-60");
+  }
+
+  // 2. Gray out if blocked by maintenance
+  if (isBlockedByMaintenance) {
+    card.classList.add("grayscale", "opacity-50");
+    // Ensure it overrides the opacity-60 if both apply (opacity-50 is stronger/similar)
+    // Actually grayscale is the key here.
+  } else {
+    card.classList.remove("grayscale", "opacity-50");
+  }
 
   let rightStr = "未確定";
   let isNext = false;
