@@ -1,6 +1,6 @@
 // app.js
 
-import { loadBaseMobData, startRealtime, setOpenMobCardNo, getState } from "./dataManager.js";
+import { loadBaseMobData, startRealtime, setOpenMobCardNo, getState, setUserId } from "./dataManager.js";
 import { initializeAuth, submitReport, getServerTimeUTC, submitMemo } from "./server.js";
 import { openReportModal, initModal } from "./modal.js";
 import { renderRankTabs, handleAreaFilterClick, updateFilterUI } from "./filterUI.js";
@@ -21,6 +21,7 @@ async function initializeApp() {
         const userId = await initializeAuth();
         if (userId) {
             console.log("Authenticated:", userId);
+            setUserId(userId);
             startRealtime();
         } else {
             console.warn("Authentication failed or anonymous.");
@@ -166,7 +167,7 @@ function attachGlobalEventListeners() {
             const input = e.target;
             const mobNo = parseInt(input.dataset.mobNo, 10);
             const text = input.value;
-            
+
             await submitMemo(mobNo, text);
         }
     });
