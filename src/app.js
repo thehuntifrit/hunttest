@@ -1,8 +1,8 @@
 // app.js
 
 import { loadBaseMobData, startRealtime, setOpenMobCardNo, getState } from "./dataManager.js";
-import { initializeAuth, submitReport, getServerTimeUTC } from "./server.js";
-import { openReportModal, initModal, openMemoModal } from "./modal.js";
+import { initializeAuth, submitReport, getServerTimeUTC, submitMemo } from "./server.js";
+import { openReportModal, initModal } from "./modal.js";
 import { renderRankTabs, handleAreaFilterClick, updateFilterUI } from "./filterUI.js";
 import { DOM, sortAndRedistribute } from "./uiRender.js";
 import { debounce } from "./cal.js";
@@ -146,15 +146,6 @@ function attachGlobalEventListeners() {
             return;
         }
 
-        // B. Memo Edit
-        const memoRow = e.target.closest("[data-action='edit-memo']");
-        if (memoRow) {
-            e.stopPropagation();
-            const currentText = memoRow.querySelector("[data-last-memo]")?.textContent || "";
-            openMemoModal(mobNo, currentText);
-            return;
-        }
-
         // C. Card Expand/Collapse (S Rank)
         if (e.target.closest("[data-toggle='card-header']")) {
             if (rank === "S") {
@@ -167,6 +158,33 @@ function attachGlobalEventListeners() {
     if (DOM.reportForm) {
         DOM.reportForm.addEventListener("submit", handleReportSubmit);
     }
+
+    // 5. Memo Input (Delegation)
+    // Save on change (blur or enter)
+    document.addEventListener("change", async (e) => {
+        if (e.target.matches("input[data-action='save-memo']")) {
+            const input = e.target;
+            const mobNo = parseInt(input.dataset.mobNo, 10);
+            const text = input.value;
+            
+            await submitMemo(mobNo, text);
+        }
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.target.matches("input[data-action='save-memo']")) {
+            if (e.key === "Enter") {
+                e.target.blur(); // Trigger change event
+            }
+            e.stopPropagation(); // Prevent card collapse/expand if Enter is pressed?
+        }
+    });
+
+    document.addEventListener("click", (e) => {
+        if (e.target.matches("input[data-action='save-memo']")) {
+            e.stopPropagation(); // Prevent card click
+        }
+    });
 }
 
 function toggleCardExpand(card, mobNo) {
