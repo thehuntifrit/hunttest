@@ -161,8 +161,17 @@ function createMobCard(mob) {
     <div class="px-2 py-1 text-sm space-y-1 border-t border-gray-700/50">
         <div class="flex justify-between items-start flex-wrap gap-y-1">
             <div class="w-full text-right text-xs text-gray-400 font-mono" data-last-kill></div>
-            <div class="mob-memo-row text-sm text-gray-300 bg-gray-800/50 rounded px-2 py-1 w-full mt-1 border border-gray-700 cursor-pointer hover:bg-gray-700/50 transition" data-action="edit-memo" data-mob-no="${mob.No}">
-                <span class="mr-2 text-cyan-400 font-bold">Memo:</span><span data-last-memo class="text-gray-200">${mob.memo_text || ""}</span>
+            <div class="mob-memo-row w-full mt-1">
+                <div class="flex items-center bg-gray-800/50 rounded px-2 py-1 border border-gray-700 hover:bg-gray-700/50 transition">
+                    <span class="mr-2 text-cyan-400 font-bold text-xs">Memo:</span>
+                    <input type="text" 
+                        class="bg-transparent text-gray-200 text-sm w-full outline-none placeholder-gray-500"
+                        placeholder="メモを入力 (全角30文字)"
+                        maxlength="30"
+                        value="${mob.memo_text || ""}"
+                        data-action="save-memo"
+                        data-mob-no="${mob.No}">
+                </div>
             </div>
             
             <div class="w-full mt-2">
@@ -533,13 +542,16 @@ function updateProgressText(card, mob) {
 function updateExpandablePanel(card, mob) {
   const elNext = card.querySelector("[data-next-time]");
   const elLast = card.querySelector("[data-last-kill]");
-  const elMemo = card.querySelector("[data-last-memo]");
+  const elMemoInput = card.querySelector("input[data-action='save-memo']");
 
   const lastStr = formatLastKillTime(mob.last_kill_time);
   if (elLast) elLast.textContent = `前回: ${lastStr}`;
 
-  if (elMemo) {
-    elMemo.textContent = mob.memo_text || "";
+  if (elMemoInput) {
+    // Only update if not currently focused to avoid overwriting user input while typing
+    if (document.activeElement !== elMemoInput) {
+      elMemoInput.value = mob.memo_text || "";
+    }
   }
 }
 
