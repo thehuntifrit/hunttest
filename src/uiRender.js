@@ -256,9 +256,45 @@ function baseComparator(a, b) {
 }
 
 function allTabComparator(a, b) {
-  // 1. % Rate (Descending)
   const aInfo = a.repopInfo || {};
   const bInfo = b.repopInfo || {};
+  const aStatus = aInfo.status;
+  const bStatus = bInfo.status;
+
+  // Special handling for MaxOver
+  const isAMaxOver = aStatus === "MaxOver";
+  const isBMaxOver = bStatus === "MaxOver";
+
+  if (isAMaxOver && isBMaxOver) {
+    // Both are MaxOver: Sort by Expansion > Rank > MobNo > Instance
+
+    // 1. Expansion (Descending: Golden > ... > ARR)
+    const expA = getExpansionPriority(a.Expansion);
+    const expB = getExpansionPriority(b.Expansion);
+    if (expA !== expB) return expB - expA;
+
+    // 2. Rank (S > A > F)
+    const rankDiff = rankPriority(a.Rank) - rankPriority(b.Rank);
+    if (rankDiff !== 0) return rankDiff;
+
+    // 3. MobNo (Ascending)
+    const pa = parseMobIdParts(a.No);
+    const pb = parseMobIdParts(b.No);
+    if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
+
+    // 4. Instance (Ascending)
+    return pa.instance - pb.instance;
+  }
+
+  // If one is MaxOver and the other isn't, MaxOver should come first (highest %)
+  // This is naturally handled by the % Rate check below, assuming MaxOver has > 100% or high %.
+  // But let's be explicit to be safe.
+  if (isAMaxOver && !isBMaxOver) return -1;
+  if (!isAMaxOver && isBMaxOver) return 1;
+
+  // Standard ALL tab sort for non-MaxOver (or mixed if logic above failed, but it won't)
+
+  // 1. % Rate (Descending)
   const aPercent = aInfo.elapsedPercent || 0;
   const bPercent = bInfo.elapsedPercent || 0;
 
@@ -429,7 +465,7 @@ function updateProgressText(card, mob) {
   } else if (nextConditionSpawnDate) {
     try {
       const dateStr = new Intl.DateTimeFormat("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }).format(nextConditionSpawnDate);
-      rightStr = `Next ${dateStr}`;
+      rightStr = `🔔 ${dateStr}`;
       isNext = true;
     } catch {
       rightStr = "未確定";
