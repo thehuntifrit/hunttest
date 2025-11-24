@@ -1,7 +1,7 @@
 // app.js
 
 import { loadBaseMobData, startRealtime, setOpenMobCardNo, getState, setUserId } from "./dataManager.js";
-import { initializeAuth, submitReport, getServerTimeUTC, submitMemo } from "./server.js";
+import { initializeAuth, submitReport, submitMemo } from "./server.js";
 import { openReportModal, initModal } from "./modal.js";
 import { renderRankTabs, handleAreaFilterClick, updateFilterUI } from "./filterUI.js";
 import { DOM, sortAndRedistribute } from "./uiRender.js";
@@ -207,13 +207,13 @@ function toggleCardExpand(card, mobNo) {
 
 async function handleInstantReport(mobNo, rank) {
     try {
-        const serverDateUTC = await getServerTimeUTC();
-        const iso = serverDateUTC.toISOString();
-        await submitReport(mobNo, iso, `${rank}ランク即時報告`);
+        const now = new Date();
+        const iso = now.toISOString();
+        await submitReport(mobNo, iso);
     } catch (err) {
         console.error("Instant report failed:", err);
         const fallbackIso = new Date().toISOString();
-        await submitReport(mobNo, fallbackIso, `${rank}ランク即時報告`);
+        await submitReport(mobNo, fallbackIso);
     }
 }
 
