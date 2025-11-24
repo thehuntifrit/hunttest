@@ -1,573 +1,275 @@
-// cal.js
+// dataManager.js
 
-const ET_HOUR_SEC = 175;
-const WEATHER_CYCLE_SEC = 1400;
-const ET_DAY_SEC = ET_HOUR_SEC * 24;
-const MOON_CYCLE_SEC = ET_DAY_SEC * 32;
-const MOON_PHASE_DURATION_SEC = ET_DAY_SEC * 4;
-const MAX_SEARCH_ITERATIONS = 5000;
-const LIMIT_DAYS = 60;
+import { calculateRepop } from "./cal.js";
+import { subscribeMobStatusDocs, subscribeMobLocations, subscribeMobMemos } from "./server.js";
+import { filterAndRender, updateProgressBars, displayStatus } from "./uiRender.js";
 
-function formatDuration(seconds) {
-  const totalMinutes = Math.floor(seconds / 60);
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
+const EXPANSION_MAP = { 1: "新生", 2: "蒼天", 3: "紅蓮", 4: "漆黒", 5: "暁月", 6: "黄金" };
 
-function formatDurationHM(seconds) {
-  if (seconds < 0) seconds = 0;
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return `${String(h).padStart(2, "0")}h${String(m).padStart(2, "0")}m`;
-}
+const state = {
+    userId: localStorage.getItem("user_uuid") || null,
+    baseMobData: [],
+    mobs: [],
+    mobLocations: {},
+    maintenance: null, // メンテナンス情報を保持
 
-function debounce(func, wait) {
-  let timeout;
-  return function executed(...args) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
+    filter: JSON.parse(localStorage.getItem("huntFilterState")) || {
+        rank: "ALL",
+        areaSets: {
+            S: new Set(),
+            A: new Set(),
+            F: new Set(),
+            ALL: new Set()
+        },
+        allRankSet: new Set() // For ALL tab rank filtering
+    },
+    openMobCardNo: localStorage.getItem("openMobCardNo")
+        ? parseInt(localStorage.getItem("openMobCardNo"), 10)
+        : null
+};
 
-function formatLastKillTime(timestamp) {
-  if (timestamp === 0) return "未報告";
-  const aligned = Math.floor(timestamp / 60) * 60;
-  const killTimeMs = aligned * 1000;
-  const nowMs = Date.now();
-  const diffSeconds = Math.floor((nowMs - killTimeMs) / 1000);
-
-  if (diffSeconds < 3600) {
-    if (diffSeconds < 60) return `Just now`;
-    const minutes = Math.floor(diffSeconds / 60);
-    return `${minutes}m ago`;
-  }
-
-  const options = {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Asia/Tokyo"
-  };
-  const date = new Date(killTimeMs);
-  return new Intl.DateTimeFormat("ja-JP", options).format(date);
-}
-
-function getEorzeaTime(date = new Date()) {
-  const unixMs = date.getTime();
-  const REAL_MS_PER_ET_HOUR = ET_HOUR_SEC * 1000;
-  const ET_HOURS_PER_DAY = 24;
-
-  const eorzeaTotalHours = Math.floor(unixMs / REAL_MS_PER_ET_HOUR);
-  const hours = eorzeaTotalHours % ET_HOURS_PER_DAY;
-
-  const remainingMs = unixMs % REAL_MS_PER_ET_HOUR;
-  const REAL_MS_PER_ET_MINUTE = REAL_MS_PER_ET_HOUR / 60;
-  const minutes = Math.floor(remainingMs / REAL_MS_PER_ET_MINUTE);
-
-  return {
-    hours: hours.toString().padStart(2, "0"),
-    minutes: minutes.toString().padStart(2, "0")
-  };
-}
-
-function getEtHourFromRealSec(realSec) {
-  const ticks = Math.floor(realSec / ET_HOUR_SEC);
-  return ticks % 24;
-}
-
-function alignToEtHour(realSec) {
-  return Math.floor(realSec / ET_HOUR_SEC) * ET_HOUR_SEC;
-}
-
-function alignToWeatherCycle(realSec) {
-  return Math.floor(realSec / WEATHER_CYCLE_SEC) * WEATHER_CYCLE_SEC;
-}
-
-function ceilToWeatherCycle(realSec) {
-  return Math.ceil(realSec / WEATHER_CYCLE_SEC) * WEATHER_CYCLE_SEC;
-}
-
-function getEorzeaMoonInfo(date = new Date()) {
-  const unixSeconds = date.getTime() / 1000;
-  const EORZEA_SPEED_RATIO = 20.57142857142857;
-  const eorzeaTotalDays = (unixSeconds * EORZEA_SPEED_RATIO) / 86400;
-  const phase = (eorzeaTotalDays % 32) + 1;
-
-  let label = null;
-  if (phase >= 32.5 || phase < 4.5) label = "新月";
-  else if (phase >= 16.5 && phase < 20.5) label = "満月";
-
-  return { phase, label };
-}
-
-function getEorzeaWeatherSeed(date = new Date()) {
-  const unixSeconds = Math.floor(date.getTime() / 1000);
-  const eorzeanHours = Math.floor(unixSeconds / ET_HOUR_SEC);
-  const eorzeanDays = Math.floor(eorzeanHours / 24);
-
-  let timeChunk = (eorzeanHours % 24) - (eorzeanHours % 8);
-  timeChunk = (timeChunk + 8) % 24;
-
-  const seed = eorzeanDays * 100 + timeChunk;
-  const step1 = (seed << 11) ^ seed;
-  const step2 = ((step1 >>> 8) ^ step1) >>> 0;
-  return step2 % 100;
-}
-
-function checkWeatherInRange(mob, seed) {
-  if (mob.weatherSeedRange) {
-    const [min, max] = mob.weatherSeedRange;
-    return seed >= min && seed <= max;
-  }
-  if (mob.weatherSeedRanges) {
-    return mob.weatherSeedRanges.some(([min, max]) => seed >= min && seed <= max);
-  }
-  return false;
-}
-
-function checkTimeRange(timeRange, realSec) {
-  const etHour = getEtHourFromRealSec(realSec);
-  const { start, end } = timeRange;
-
-  if (start < end) return etHour >= start && etHour < end;
-  return etHour >= start || etHour < end;
-}
-
-function checkEtCondition(mob, realSec) {
-  const { phase } = getEorzeaMoonInfo(new Date(realSec * 1000));
-
-  if (mob.conditions) {
-    const { firstNight, otherNights } = mob.conditions;
-    if (firstNight?.timeRange && (isFirstNightPhase(phase) || mob.moonPhase === "新月")) {
-      return checkTimeRange(firstNight.timeRange, realSec);
-    }
-    if (otherNights?.timeRange && (isOtherNightsPhase(phase) || mob.moonPhase === "満月")) {
-      return checkTimeRange(otherNights.timeRange, realSec);
-    }
-    return false;
-  }
-
-  if (mob.timeRange) return checkTimeRange(mob.timeRange, realSec);
-  if (mob.timeRanges) return mob.timeRanges.some(tr => checkTimeRange(tr, realSec));
-
-  return true;
-}
-
-function isFirstNightPhase(phase) {
-  return phase >= 32.5 || phase < 1.5;
-}
-
-function isOtherNightsPhase(phase) {
-  return phase >= 1.5 && phase < 4.5;
-}
-
-function calculateNextMoonStart(startSec, targetPhase) {
-  const startPhase = getEorzeaMoonInfo(new Date(startSec * 1000)).phase;
-  let phaseDiff = targetPhase - startPhase;
-  if (phaseDiff < 0) phaseDiff += 32;
-
-  let nextStartSec = startSec + phaseDiff * ET_DAY_SEC;
-
-  if (nextStartSec < startSec) {
-    nextStartSec += MOON_CYCLE_SEC;
-  }
-  return nextStartSec;
-}
-
-function* getValidWeatherIntervals(mob, windowStart, windowEnd) {
-  const requiredMinutes = mob.weatherDuration?.minutes || 0;
-  const requiredSec = requiredMinutes * 60;
-  const isContinuous = requiredSec > WEATHER_CYCLE_SEC;
-
-  if (!mob.weatherSeedRange && !mob.weatherSeedRanges) {
-    yield [windowStart, windowEnd];
-    return;
-  }
-
-  let currentCursor = alignToWeatherCycle(windowStart);
-  let loopSafety = 0;
-
-  if (checkWeatherInRange(mob, getEorzeaWeatherSeed(new Date(currentCursor * 1000)))) {
-    let chainStart = currentCursor;
-    let chainEnd = 0;
-
-    if (isContinuous) {
-      const searchBackLimit = windowStart - LIMIT_DAYS * 24 * 3600;
-      while (true) {
-        const prevTime = chainStart - WEATHER_CYCLE_SEC;
-        if (prevTime < searchBackLimit) break;
-
-        const seed = getEorzeaWeatherSeed(new Date(prevTime * 1000));
-        if (checkWeatherInRange(mob, seed)) {
-          chainStart = prevTime;
-        } else {
-          break;
+// Setの復元 (Robust Restoration)
+if (state.filter.areaSets) {
+    for (const k in state.filter.areaSets) {
+        const v = state.filter.areaSets[k];
+        if (Array.isArray(v)) {
+            state.filter.areaSets[k] = new Set(v);
+        } else if (!(v instanceof Set)) {
+            // If it's an object (from older JSON stringify) or null/undefined
+            state.filter.areaSets[k] = new Set();
         }
-      }
-
-      let tempCursor = currentCursor;
-      while (true) {
-        if (loopSafety++ > MAX_SEARCH_ITERATIONS) break;
-
-        const nextTime = tempCursor + WEATHER_CYCLE_SEC;
-        const seed = getEorzeaWeatherSeed(new Date(nextTime * 1000));
-
-        if (checkWeatherInRange(mob, seed)) {
-          tempCursor = nextTime;
-        } else {
-          chainEnd = nextTime;
-          break;
-        }
-      }
-
-      const duration = chainEnd - chainStart;
-
-      if (duration >= requiredSec) {
-        const validPopStart = chainStart + requiredSec;
-        const intersectStart = Math.max(validPopStart, windowStart);
-        const intersectEnd = Math.min(chainEnd, windowEnd);
-
-        if (intersectStart < intersectEnd) {
-          yield [intersectStart, intersectEnd];
-        }
-      }
-
-      currentCursor = chainEnd;
-
-    } else {
-      chainStart = currentCursor;
-      let tempCursor = currentCursor;
-      while (true) {
-        if (loopSafety++ > MAX_SEARCH_ITERATIONS) break;
-
-        const nextTime = tempCursor + WEATHER_CYCLE_SEC;
-        const seed = getEorzeaWeatherSeed(new Date(nextTime * 1000));
-
-        if (checkWeatherInRange(mob, seed)) {
-          tempCursor = nextTime;
-        } else {
-          chainEnd = nextTime;
-          break;
-        }
-      }
-
-      const intersectStart = windowStart;
-      const intersectEnd = Math.min(chainEnd, windowEnd);
-
-      if (intersectStart < intersectEnd) {
-        yield [intersectStart, intersectEnd];
-      }
-
-      currentCursor = chainEnd;
     }
-
-  } else {
-    currentCursor += WEATHER_CYCLE_SEC;
-  }
-
-  let cursor = currentCursor;
-
-  while (cursor < windowEnd) {
-    if (loopSafety++ > MAX_SEARCH_ITERATIONS) break;
-
-    let activeStart = null;
-    while (cursor < windowEnd + WEATHER_CYCLE_SEC) {
-      const seed = getEorzeaWeatherSeed(new Date(cursor * 1000));
-      if (checkWeatherInRange(mob, seed)) {
-        activeStart = cursor;
-        break;
-      }
-      cursor += WEATHER_CYCLE_SEC;
-      if (cursor - windowStart > LIMIT_DAYS * 24 * 3600) break;
-    }
-
-    if (activeStart === null) break;
-
-    let activeEnd = activeStart;
-    let tempCursor = activeStart;
-    while (true) {
-      if (loopSafety++ > MAX_SEARCH_ITERATIONS) break;
-
-      const nextTime = tempCursor + WEATHER_CYCLE_SEC;
-      const seed = getEorzeaWeatherSeed(new Date(nextTime * 1000));
-
-      if (checkWeatherInRange(mob, seed)) {
-        tempCursor = nextTime;
-        activeEnd = nextTime;
-      } else {
-        activeEnd = nextTime;
-        break;
-      }
-    }
-    const duration = activeEnd - activeStart;
-    if (duration >= requiredSec) {
-      const validPopStart = isContinuous ? activeStart + requiredSec : activeStart;
-
-      const intersectStart = Math.max(validPopStart, windowStart);
-      const intersectEnd = Math.min(activeEnd, windowEnd);
-
-      if (intersectStart < intersectEnd) {
-        yield [intersectStart, intersectEnd];
-      }
-    }
-
-    cursor = activeEnd;
-  }
-}
-
-function* getValidEtIntervals(mob, windowStart, windowEnd) {
-  if (!mob.timeRange && !mob.timeRanges && !mob.conditions) {
-    yield [windowStart, windowEnd];
-    return;
-  }
-  let cursor = alignToEtHour(windowStart);
-  let loopSafety = 0;
-
-  while (cursor < windowEnd) {
-    if (loopSafety++ > MAX_SEARCH_ITERATIONS) break;
-
-    if (checkEtCondition(mob, cursor)) {
-      const start = cursor;
-      let end = cursor + ET_HOUR_SEC;
-      let tempCursor = end;
-      while (tempCursor < windowEnd + ET_HOUR_SEC) {
-        if (checkEtCondition(mob, tempCursor)) {
-          end += ET_HOUR_SEC;
-          tempCursor += ET_HOUR_SEC;
-        } else {
-          break;
-        }
-      }
-      const intersectStart = Math.max(start, windowStart);
-      const intersectEnd = Math.min(end, windowEnd);
-
-      if (intersectStart < intersectEnd) {
-        yield [intersectStart, intersectEnd];
-      }
-
-      cursor = end;
-    } else {
-      cursor += ET_HOUR_SEC;
-    }
-  }
-}
-
-function findNextSpawn(mob, pointSec, searchLimit) {
-  let moonPhases = [];
-  if (!mob.moonPhase) {
-    moonPhases.push([pointSec, searchLimit]);
-  } else {
-    let targetPhase = mob.moonPhase === "新月" ? 32.5 : 16.5;
-    const startPhase = getEorzeaMoonInfo(new Date(pointSec * 1000)).phase;
-
-    if (
-      (mob.moonPhase === "新月" && (startPhase >= 32.5 || startPhase < 4.5)) ||
-      (mob.moonPhase === "満月" && (startPhase >= 16.5 && startPhase < 20.5))
-    ) {
-      let currentPhaseStart = pointSec - (startPhase - targetPhase) * ET_DAY_SEC;
-      while (currentPhaseStart > pointSec) currentPhaseStart -= MOON_CYCLE_SEC;
-
-      const currentPhaseEnd = currentPhaseStart + MOON_PHASE_DURATION_SEC;
-
-      if (currentPhaseEnd > pointSec) {
-        moonPhases.push([pointSec, currentPhaseEnd]);
-      }
-    }
-
-    let moonStart = calculateNextMoonStart(pointSec, targetPhase);
-    while (moonStart < searchLimit) {
-      moonPhases.push([moonStart, moonStart + MOON_PHASE_DURATION_SEC]);
-      moonStart += MOON_CYCLE_SEC;
-    }
-  }
-  for (const [mStart, mEnd] of moonPhases) {
-    const weatherIterator = getValidWeatherIntervals(mob, mStart, mEnd);
-
-    for (const [wStart, wEnd] of weatherIterator) {
-      const etIterator = getValidEtIntervals(mob, wStart, wEnd);
-
-      for (const [eStart, eEnd] of etIterator) {
-        const finalStart = Math.max(eStart, pointSec);
-        const finalEnd = eEnd;
-
-        if (finalStart < finalEnd) {
-          return { start: finalStart, end: finalEnd };
-        }
-      }
-    }
-  }
-  return null;
-}
-
-function calculateRepop(mob, maintenance) {
-  const now = Date.now() / 1000;
-  const lastKill = mob.last_kill_time || 0;
-  const repopSec = mob.REPOP_s;
-  const maxSec = mob.MAX_s;
-
-  let maint = maintenance;
-  if (maint && typeof maint === "object" && "maintenance" in maint && maint.maintenance) {
-    maint = maint.maintenance;
-  }
-  if (!maint || !maint.serverUp || !maint.start) return baseResult("Unknown");
-
-  const serverUp = new Date(maint.serverUp).getTime() / 1000;
-  const maintenanceStart = new Date(maint.start).getTime() / 1000;
-
-  let minRepop, maxRepop;
-  if (lastKill === 0 || lastKill <= serverUp) {
-    minRepop = serverUp + repopSec * 0.6;
-    maxRepop = serverUp + maxSec * 0.6;
-  } else {
-    minRepop = lastKill + repopSec;
-    maxRepop = lastKill + maxSec;
-  }
-
-  const pointSec = Math.max(minRepop, now);
-  const nextMinRepopDate = new Date(minRepop * 1000);
-  const searchLimit = pointSec + LIMIT_DAYS * 24 * 3600;
-
-  let status = "Unknown";
-  let timeRemaining = "Unknown";
-  let conditionRemaining = null;
-  let nextConditionSpawnDate = null;
-  let conditionWindowEnd = null;
-  let isInConditionWindow = false;
-
-  const hasCondition = !!(
-    mob.moonPhase ||
-    mob.timeRange ||
-    mob.timeRanges ||
-    mob.weatherSeedRange ||
-    mob.weatherSeedRanges ||
-    mob.conditions
-  );
-
-  if (hasCondition) {
-    const result = findNextSpawn(mob, pointSec, searchLimit);
-
-    if (result) {
-      const { start, end } = result;
-
-      nextConditionSpawnDate = new Date(start * 1000);
-      conditionWindowEnd = new Date(end * 1000);
-
-      isInConditionWindow = (now >= start && now < end);
-
-      if (isInConditionWindow) {
-        const remainingSec = end - now;
-        conditionRemaining = `残り ${Math.ceil(remainingSec / 60)}分`;
-      }
-    }
-  }
-
-  let elapsedPercent = 0;
-
-  if (now >= maxRepop) {
-    status = "MaxOver";
-    elapsedPercent = 100;
-    timeRemaining = `Time Over (100%)`;
-  } else if (now < minRepop) {
-    status = "Next";
-    timeRemaining = `🔜 ${formatDurationHM(minRepop - now)}`;
-  } else {
-    status = "PopWindow";
-    elapsedPercent = Math.min(((now - minRepop) / (maxRepop - minRepop)) * 100, 100);
-    timeRemaining = `⏰️ ${formatDurationHM(maxRepop - now)}`;
-  }
-
-  if (isInConditionWindow && now >= minRepop) {
-    if (status !== "MaxOver") {
-      status = "ConditionActive";
-    }
-  } else if (hasCondition && nextConditionSpawnDate && now < nextConditionSpawnDate.getTime() / 1000 && status !== "MaxOver") {
-    status = "NextCondition";
-  }
-
-  const isMaintenanceStop = (now >= maintenanceStart && now < serverUp);
-
-  // Check if next spawn is blocked by maintenance
-  let isBlockedByMaintenance = false;
-  const nextTime = nextConditionSpawnDate ? (nextConditionSpawnDate.getTime() / 1000) : minRepop;
-
-  if (maintenanceStart && nextTime >= maintenanceStart && now < maintenanceStart) {
-    isBlockedByMaintenance = true;
-  }
-
-  return {
-    minRepop,
-    maxRepop,
-    elapsedPercent,
-    timeRemaining,
-    conditionRemaining,
-    status,
-    nextMinRepopDate,
-    nextConditionSpawnDate,
-    conditionWindowEnd,
-    isInConditionWindow,
-    isMaintenanceStop,
-    isBlockedByMaintenance
-  };
-
-  function baseResult(status) {
-    return {
-      minRepop: null,
-      maxRepop: null,
-      elapsedPercent: 0,
-      timeRemaining: "未確定",
-      status,
-      nextMinRepopDate: null,
-      conditionWindowEnd: null,
-      isInConditionWindow: false,
-      isMaintenanceStop: false
+} else {
+    // Fallback if areaSets is missing entirely
+    state.filter.areaSets = {
+        S: new Set(),
+        A: new Set(),
+        F: new Set(),
+        ALL: new Set()
     };
-  }
 }
 
-function checkMobSpawnCondition(mob, date) {
-  const pointSec = Math.floor(date.getTime() / 1000);
-  if (mob.moonPhase) {
-    const moonInfo = getEorzeaMoonInfo(date);
-    if (moonInfo.label !== mob.moonPhase) return false;
-  }
-  if (mob.weatherSeedRange || mob.weatherSeedRanges) {
-    const seed = getEorzeaWeatherSeed(date);
-    if (!checkWeatherInRange(mob, seed)) return false;
-  }
-  if (!checkEtCondition(mob, pointSec)) return false;
-  return true;
+// allRankSetの復元
+if (Array.isArray(state.filter.allRankSet)) {
+    state.filter.allRankSet = new Set(state.filter.allRankSet);
+} else if (!(state.filter.allRankSet instanceof Set)) {
+    state.filter.allRankSet = new Set();
 }
 
-function findNextSpawnTime(mob, pointSec, minRepopSec, limitSec) {
-  const hasCondition = !!(
-    mob.moonPhase ||
-    mob.timeRange ||
-    mob.timeRanges ||
-    mob.weatherSeedRange ||
-    mob.weatherSeedRanges ||
-    mob.conditions
-  );
+const getState = () => state;
+const getMobByNo = no => state.mobs.find(m => m.No === no);
 
-  if (!hasCondition) return minRepopSec;
+function setUserId(uid) {
+    state.userId = uid;
+    localStorage.setItem("user_uuid", uid);
+}
 
-  const searchLimit = pointSec + LIMIT_DAYS * 24 * 3600;
-  const result = findNextSpawn(mob, pointSec, searchLimit);
+function setMobs(data) {
+    state.mobs = data;
+}
 
-  if (result) {
-    return result.start;
-  }
-  return null;
+function setFilter(partial) {
+    state.filter = { ...state.filter, ...partial };
+    const serialized = {
+        ...state.filter,
+        areaSets: Object.keys(state.filter.areaSets).reduce((acc, key) => {
+            const v = state.filter.areaSets[key];
+            acc[key] = v instanceof Set ? Array.from(v) : v;
+            return acc;
+        }, {}),
+        allRankSet: Array.from(state.filter.allRankSet || [])
+    };
+    localStorage.setItem("huntFilterState", JSON.stringify(serialized));
+}
+
+function setOpenMobCardNo(no) {
+    state.openMobCardNo = no;
+    if (no === null) {
+        localStorage.removeItem("openMobCardNo");
+    } else {
+        localStorage.setItem("openMobCardNo", no);
+    }
+}
+
+const RANK_COLORS = {
+    S: { bg: 'bg-amber-600', hover: 'hover:bg-amber-700', text: 'text-amber-600', rgbaBorder: 'rgba(217, 119, 6, 0.8)', label: 'S' },
+    A: { bg: 'bg-green-600', hover: 'hover:bg-green-700', text: 'text-green-600', rgbaBorder: 'rgba(22, 163, 74, 0.8)', label: 'A' },
+    F: { bg: 'bg-purple-600', hover: 'hover:bg-purple-700', text: 'text-purple-600', rgbaBorder: 'rgba(147, 51, 234, 0.8)', label: 'F' },
+};
+
+const PROGRESS_CLASSES = {
+    P0_60: "progress-p0-60",
+    P60_80: "progress-p60-80",
+    P80_100: "progress-p80-100",
+    MAX_OVER: "progress-max-over",
+    TEXT_NEXT: "text-next",
+    TEXT_POP: "text-pop",
+    BLINK_WHITE: "progress-blink-white"
+};
+
+const FILTER_TO_DATA_RANK_MAP = { FATE: 'F', ALL: 'ALL', S: 'S', A: 'A' };
+
+const MOB_DATA_URL = "./mob_data.json";
+const MAINTENANCE_URL = "./maintenance.json";
+
+async function loadMaintenance() {
+    try {
+        const res = await fetch(MAINTENANCE_URL);
+        if (!res.ok) throw new Error("Maintenance data failed to load.");
+        const data = await res.json();
+        state.maintenance = (data && data.maintenance) ? data.maintenance : data;
+        return state.maintenance;
+    } catch (e) {
+        console.error("Maintenance load error:", e);
+        return null;
+    }
+}
+
+async function loadBaseMobData() {
+    try {
+        const [mobRes, maintenance] = await Promise.all([
+            fetch(MOB_DATA_URL),
+            loadMaintenance()
+        ]);
+
+        if (!mobRes.ok) throw new Error("Mob data failed to load.");
+        const data = await mobRes.json();
+
+        const baseMobData = Object.entries(data.mobs).map(([no, mob]) => ({
+            No: parseInt(no, 10),
+            Rank: mob.rank,
+            Name: mob.name,
+            Area: mob.area,
+            Condition: mob.condition || "",
+            Expansion: EXPANSION_MAP[Math.floor(no / 10000)] || "Unknown",
+            REPOP_s: mob.repopSeconds,
+            MAX_s: mob.maxRepopSeconds,
+            moonPhase: mob.moonPhase || null,
+            conditions: mob.conditions || null,
+            timeRange: mob.timeRange || null,
+            timeRanges: mob.timeRanges || null,
+            weatherSeedRange: mob.weatherSeedRange || null,
+            weatherSeedRanges: mob.weatherSeedRanges || null,
+            weatherDuration: mob.weatherDuration || null,
+            Map: mob.mapImage || "",
+            spawn_points: mob.locations || [],
+            last_kill_time: 0,
+            prev_kill_time: 0,
+            spawn_cull_status: {},
+            // メモ機能用フィールド
+            memo_text: "",
+            memo_updated_at: 0,
+
+            repopInfo: calculateRepop({
+                REPOP_s: mob.repopSeconds,
+                MAX_s: mob.maxRepopSeconds,
+                last_kill_time: 0,
+            }, maintenance)
+        }));
+
+        state.baseMobData = baseMobData;
+        setMobs([...baseMobData]);
+
+        // 初回描画
+        filterAndRender({ isInitialLoad: true });
+
+    } catch (e) {
+        console.error("Failed to load base data:", e);
+        displayStatus("データの読み込みに失敗しました。", "error");
+    }
+}
+
+let unsubscribes = [];
+
+function startRealtime() {
+    // 既存の購読を解除
+    unsubscribes.forEach(fn => fn && fn());
+    unsubscribes = [];
+
+    // 1. Mob Status (Last Kill Time)
+    const unsubStatus = subscribeMobStatusDocs(mobStatusDataMap => {
+        const current = state.mobs;
+        const map = new Map();
+
+        Object.values(mobStatusDataMap).forEach(docData => {
+            Object.entries(docData).forEach(([mobId, mobData]) => {
+                const mobNo = parseInt(mobId, 10);
+                map.set(mobNo, {
+                    last_kill_time: mobData.last_kill_time?.seconds || 0,
+                    prev_kill_time: mobData.prev_kill_time?.seconds || 0,
+                });
+            });
+        });
+
+        const merged = current.map(m => {
+            const dyn = map.get(m.No);
+            if (!dyn) return m;
+
+            const updatedMob = { ...m, ...dyn };
+            updatedMob.repopInfo = calculateRepop(updatedMob, state.maintenance);
+            return updatedMob;
+        });
+
+        setMobs(merged);
+        filterAndRender();
+        updateProgressBars();
+    });
+    unsubscribes.push(unsubStatus);
+
+    // 2. Mob Locations (Spawn Cull Status)
+    const unsubLoc = subscribeMobLocations(locationsMap => {
+        const current = state.mobs;
+        state.mobLocations = locationsMap;
+
+        const merged = current.map(m => {
+            const dyn = locationsMap[m.No];
+            const updatedMob = { ...m };
+            updatedMob.spawn_cull_status = dyn || {};
+            return updatedMob;
+        });
+
+        setMobs(merged);
+        filterAndRender();
+    });
+    unsubscribes.push(unsubLoc);
+
+    // 3. Mob Memos
+    const unsubMemo = subscribeMobMemos(memoData => {
+        const current = state.mobs;
+
+        const merged = current.map(m => {
+            const memos = memoData[m.No] || [];
+            const latest = memos[0]; // 最新のメモ
+
+            const updatedMob = { ...m };
+            if (latest) {
+                updatedMob.memo_text = latest.memo_text;
+                updatedMob.memo_updated_at = latest.created_at?.seconds || 0;
+            } else {
+                updatedMob.memo_text = "";
+            }
+            return updatedMob;
+        });
+
+        setMobs(merged);
+        filterAndRender();
+    });
+    unsubscribes.push(unsubMemo);
 }
 
 export {
-  calculateRepop,
-  checkMobSpawnCondition,
-  findNextSpawnTime,
-  getEorzeaTime,
-  formatDuration,
-  formatDurationHM,
-  debounce,
-  formatLastKillTime
+    state,
+    EXPANSION_MAP,
+    getState,
+    getMobByNo,
+    setUserId,
+    setMobs,
+    loadBaseMobData,
+    startRealtime,
+    setFilter,
+    setOpenMobCardNo,
+    RANK_COLORS,
+    PROGRESS_CLASSES,
+    FILTER_TO_DATA_RANK_MAP,
+    loadMaintenance
 };
