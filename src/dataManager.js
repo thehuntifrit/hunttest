@@ -20,7 +20,8 @@ const state = {
             A: new Set(),
             F: new Set(),
             ALL: new Set()
-        }
+        },
+        allRankSet: new Set() // For ALL tab rank filtering
     },
     openMobCardNo: localStorage.getItem("openMobCardNo")
         ? parseInt(localStorage.getItem("openMobCardNo"), 10)
@@ -32,6 +33,12 @@ for (const k in state.filter.areaSets) {
     const v = state.filter.areaSets[k];
     if (Array.isArray(v)) state.filter.areaSets[k] = new Set(v);
     else if (!(v instanceof Set)) state.filter.areaSets[k] = new Set();
+}
+// allRankSetの復元
+if (Array.isArray(state.filter.allRankSet)) {
+    state.filter.allRankSet = new Set(state.filter.allRankSet);
+} else if (!(state.filter.allRankSet instanceof Set)) {
+    state.filter.allRankSet = new Set();
 }
 
 const getState = () => state;
@@ -54,7 +61,8 @@ function setFilter(partial) {
             const v = state.filter.areaSets[key];
             acc[key] = v instanceof Set ? Array.from(v) : v;
             return acc;
-        }, {})
+        }, {}),
+        allRankSet: Array.from(state.filter.allRankSet || [])
     };
     localStorage.setItem("huntFilterState", JSON.stringify(serialized));
 }
