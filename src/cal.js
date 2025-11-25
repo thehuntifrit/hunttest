@@ -533,11 +533,4 @@ function checkMobSpawnCondition(mob, date) {
   return true;
 }
 
-export {
-  calculateRepop,
-  checkMobSpawnCondition,
-  getEorzeaTime,
-  formatDurationHM,
-  debounce,
-  formatLastKillTime
-};
+export { calculateRepop, checkMobSpawnCondition, getEorzeaTime, formatDurationHM, debounce, formatLastKillTime };
