@@ -69,7 +69,7 @@ function createMobCard(mob) {
       displayCountText = ` <span class="text-xs text-yellow-400 font-bold text-glow">${pointNumber}番</span>`;
     } else if (remainingCount > 1) {
       isLastOne = false;
-      displayCountText = ` <span class="text-xs text-gray-400 relative -top-[0.09rem]">&nbsp;@</span><span class="text-xs text-gray-400 relative top-[0.02rem]">${remainingCount}</span>`;
+      displayCountText = ` <span class="text-xs text-gray-400 relative -top-[0.09rem]">&nbsp;@</span><span class="text-sm text-gray-400 relative top-[0.02rem]">${remainingCount}</span>`;
     }
 
     isLastOne = remainingCount === 1;
