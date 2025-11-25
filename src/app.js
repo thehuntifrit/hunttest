@@ -12,11 +12,9 @@ async function initializeApp() {
     try {
         // 0. ツールチップ初期化
         initTooltip();
-
         // 1. データロード
         await loadBaseMobData();
         console.log("Mob Data Loaded.");
-
         // 2. 認証 & リアルタイム開始
         const userId = await initializeAuth();
         if (userId) {
@@ -26,7 +24,6 @@ async function initializeApp() {
         } else {
             console.warn("Authentication failed or anonymous.");
         }
-
         // 3. UI初期化
         // Reset clickStep to 1 to ensure filters are closed on reload
         const storedUI = JSON.parse(localStorage.getItem("huntUIState")) || {};
@@ -38,13 +35,10 @@ async function initializeApp() {
         renderRankTabs();
         updateFilterUI();
         initModal();
-
         // 4. メンテナンス表示 (dataManagerでロード済み)
         renderMaintenanceStatus();
-
         // 5. イベントリスナー設定
         attachGlobalEventListeners();
-
         // 6. ヘッダー高さ監視 (パディング調整)
         initHeaderObserver();
 
@@ -63,10 +57,8 @@ function initHeaderObserver() {
         // 少し余裕を持たせる (+10px)
         main.style.paddingTop = `${headerHeight + 10}px`;
     };
-
     // 初回実行
     adjustPadding();
-
     // 監視開始
     const resizeObserver = new ResizeObserver(() => {
         adjustPadding();
@@ -125,7 +117,6 @@ function attachGlobalEventListeners() {
         if (e.target.closest(".tab-button")) {
             return;
         }
-
         // Area Filter
         if (e.target.closest(".area-filter-btn")) {
             handleAreaFilterClick(e);
