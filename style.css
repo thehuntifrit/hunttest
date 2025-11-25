@@ -95,7 +95,7 @@ body {
 
 .mob-card-header {
     background: var(--bg-card);
-    padding: 0.125rem 0.5rem;
+    padding: 0.5rem;
 }
 
 .progress-bar-bg {
