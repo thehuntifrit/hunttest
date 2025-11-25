@@ -90,7 +90,7 @@ body {
 .progress-bar-wrapper {
     background: var(--progress-bg);
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
-    min-height: 1rem;
+    min-height: 0.8rem;
 }
 
 .mob-card-header {
