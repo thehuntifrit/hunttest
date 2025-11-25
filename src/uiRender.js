@@ -66,10 +66,10 @@ function createMobCard(mob) {
       isLastOne = true;
       const pointId = validSpawnPoints[0]?.id || "";
       const pointNumber = pointId.slice(-2);
-      displayCountText = ` <span class="text-sm text-yellow-400 font-bold text-glow">${pointNumber}</span><span class="text-xs text-yellow-400 font-bold text-glow">番</span>`;
+      displayCountText = ` <span class="text-xm text-yellow-400 font-bold text-glow">${pointNumber}番</span>`;
     } else if (remainingCount > 1) {
       isLastOne = false;
-      displayCountText = ` <span class="text-xs text-gray-400 relative -top-[0.05rem]">@</span>&nbsp;<span class="text-sm -top-[0.01rem]">${remainingCount}</span><span class="text-xs">個</span>`;
+      displayCountText = ` <span class="text-xs text-gray-400 relative -top-[0.06rem]">@</span>&nbsp;<span class="text-xs">${remainingCount}個</span>`;
     }
 
     isLastOne = remainingCount === 1;
@@ -92,7 +92,12 @@ function createMobCard(mob) {
     }).join("")
     : "";
 
-  const memoIcon = mob.memo_text && mob.memo_text.trim() !== ""
+  const hasMemo = mob.memo_text && mob.memo_text.trim() !== "";
+  const isMemoNewer = (mob.memo_updated_at || 0) > (mob.last_kill_time || 0);
+  // last_kill_timeが0の場合は常に表示 (未討伐扱い)
+  const shouldShowMemo = hasMemo && (isMemoNewer || (mob.last_kill_time || 0) === 0);
+
+  const memoIcon = shouldShowMemo
     ? ` <span data-tooltip="${mob.memo_text}" class="cursor-help">📋️</span>`
     : "";
 
