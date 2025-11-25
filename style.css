@@ -90,12 +90,12 @@ body {
 .progress-bar-wrapper {
     background: var(--progress-bg);
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
-    min-height: 1.2rem;
+    min-height: 1rem;
 }
 
 .mob-card-header {
     background: var(--bg-card);
-    padding: 0.25rem;
+    padding: 0.15rem;
 }
 
 .progress-bar-bg {
@@ -111,7 +111,6 @@ body {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
     letter-spacing: 0.02em;
-    /* Slight spacing for readability */
 }
 
 .progress-text.text-pop {
@@ -216,7 +215,7 @@ body {
 }
 
 .expandable-panel.open {
-    max-height: 2000px;
+    max-height: 1000px;
     padding-top: 2px !important;
     padding-bottom: 0.5rem !important;
 }
