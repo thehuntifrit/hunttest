@@ -88,6 +88,78 @@
         </div>
     </div>
 
+    <template id="mob-card-template">
+        <div class="mob-card rounded-lg shadow-xl cursor-pointer">
+            <div class="mob-card-header space-y-1" data-toggle="card-header">
+                <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-3">
+                    <!-- Rank Badge -->
+                    <span
+                        class="rank-badge w-8 h-8 flex items-center justify-center rounded-md text-white text-sm"></span>
+
+                    <div class="flex flex-col min-w-0">
+                        <div class="flex items-baseline mob-name-container"></div>
+                        <div
+                            class="area-info-container text-xs text-gray-400 truncate font-numeric tracking-wide h-5 flex items-center -mt-1">
+                        </div>
+                    </div>
+
+                    <div class="flex-shrink-0 flex items-center justify-end">
+                        <button
+                            class="report-btn w-8 h-8 flex items-center justify-center rounded transition text-center leading-tight hover:scale-110 active:scale-95">
+                            <img src="./icon/reports.webp" alt="報告する"
+                                class="report-icon w-8 h-8 object-contain filter drop-shadow-lg"
+                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <span
+                                class="report-text w-8 h-8 flex items-center justify-center text-[10px] rounded 
+                            bg-green-600 hover:bg-green-500 text-white font-bold leading-tight whitespace-pre-line shadow-lg"
+                                style="display:none;">報告</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress-bar-wrapper rounded relative overflow-hidden text-center">
+                    <div class="progress-bar-bg absolute left-0 top-0 h-full rounded transition-all duration-100 ease-linear"
+                        style="width: 0%"></div>
+                    <div class="progress-text relative z-10 text-xs font-bold"></div>
+                </div>
+            </div>
+
+            <div class="expandable-panel">
+                <div class="px-2 py-1 text-sm space-y-1">
+                    <div class="flex justify-between items-start flex-wrap gap-y-1">
+                        <div class="last-kill-time w-full text-right text-xs text-gray-400 font-mono" data-last-kill>
+                        </div>
+                        <div class="mob-memo-row w-full mt-1">
+                            <div
+                                class="flex items-center bg-gray-800/50 rounded px-2 py-1 border border-gray-700 hover:bg-gray-700/50 transition">
+                                <span class="mr-2 text-cyan-400 font-bold text-xs">Memo:</span>
+                                <input type="text"
+                                    class="memo-input bg-transparent text-gray-200 text-sm w-full outline-none placeholder-gray-500"
+                                    placeholder="メモを入力 (全角30文字)" maxlength="30" data-action="save-memo">
+                            </div>
+                        </div>
+
+                        <div class="w-full mt-2">
+                            <div class="font-semibold text-yellow-400 text-xs uppercase tracking-widest mb-1">Condition
+                            </div>
+                            <div
+                                class="condition-text text-gray-300 text-xs leading-relaxed pl-2 border-l-2 border-yellow-600/50">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="map-container map-content mt-2 flex justify-center relative rounded overflow-hidden border border-gray-600 shadow-lg">
+                        <img
+                            class="mob-map-img mob-crush-map w-full h-auto opacity-90 hover:opacity-100 transition-opacity">
+                        <div class="map-overlay absolute inset-0"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <script type="module" src="./src/cal.js"></script>
     <script type="module" src="./src/uiRender.js"></script>
     <script type="module" src="./src/filterUI.js"></script>
