@@ -37,9 +37,12 @@ function processText(text) {
 }
 
 function createMobCard(mob) {
+  const template = document.getElementById('mob-card-template');
+  const clone = template.content.cloneNode(true);
+  const card = clone.querySelector('.mob-card');
+
   const rank = mob.Rank;
   const rankLabel = rank;
-
   const isExpandable = rank === "S";
   const { openMobCardNo } = getState();
   const isOpen = isExpandable && mob.No === openMobCardNo;
@@ -48,6 +51,7 @@ function createMobCard(mob) {
   const mobLocationsData = state.mobLocations?.[mob.No];
   const spawnCullStatus = mobLocationsData || mob.spawn_cull_status;
 
+  // --- Data Preparation (Same as before) ---
   let isLastOne = false;
   let validSpawnPoints = [];
   let displayCountText = "";
@@ -71,7 +75,6 @@ function createMobCard(mob) {
       isLastOne = false;
       displayCountText = ` <span class="text-xs text-gray-400 relative -top-[0.09rem]">@</span><span class="text-sm text-gray-400 relative top-[0.02rem]">${remainingCount}</span>`;
     }
-
     isLastOne = remainingCount === 1;
   }
 
@@ -94,93 +97,82 @@ function createMobCard(mob) {
 
   const hasMemo = mob.memo_text && mob.memo_text.trim() !== "";
   const isMemoNewer = (mob.memo_updated_at || 0) > (mob.last_kill_time || 0);
-  // last_kill_timeが0の場合は常に表示 (未討伐扱い)
   const shouldShowMemo = hasMemo && (isMemoNewer || (mob.last_kill_time || 0) === 0);
 
   const memoIcon = shouldShowMemo
     ? ` <span data-tooltip="${mob.memo_text}" class="cursor-help">📋️</span>`
     : "";
 
-  const mobNameHtml = `<span class="text-base flex items-baseline font-bold truncate text-gray-100">${mob.Name}${memoIcon}</span>`;
+  // --- Populate Template ---
 
+  // Card Attributes
+  card.dataset.mobNo = mob.No;
+  card.dataset.rank = rank;
+  const repopInfo = calculateRepop(mob, state.maintenance);
+  if (repopInfo.isMaintenanceStop) {
+    card.classList.add("opacity-50", "grayscale", "pointer-events-none");
+  }
+
+  // Rank Badge
+  const rankBadge = card.querySelector('.rank-badge');
+  rankBadge.classList.add(`rank-${rank.toLowerCase()}`);
+  rankBadge.textContent = rankLabel;
+
+  // Mob Name
+  const mobNameContainer = card.querySelector('.mob-name-container');
+  mobNameContainer.innerHTML = `<span class="text-base flex items-baseline font-bold truncate text-gray-100">${mob.Name}${memoIcon}</span>`;
+
+  // Area Info
+  const areaInfoContainer = card.querySelector('.area-info-container');
   let areaInfoHtml = `<span class="flex items-center gap-1"><span>${mob.Area}</span><span class="opacity-50">|</span><span>${mob.Expansion}</span>`;
   if (mob.Map && mob.spawn_points) {
     areaInfoHtml += `<span class="flex items-center ml-1">📍 ${displayCountText}</span>`;
   }
   areaInfoHtml += `</span>`;
+  areaInfoContainer.innerHTML = areaInfoHtml;
 
-  const cardHeaderHTML = `
-<div class="mob-card-header space-y-1" data-toggle="card-header">
-    <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-3">
-        <!-- Rank Badge -->
-        <span class="w-8 h-8 flex items-center justify-center rounded-md text-white text-sm rank-badge rank-${rank.toLowerCase()}">${rankLabel}</span>
+  // Report Button
+  const reportBtn = card.querySelector('.report-btn');
+  reportBtn.dataset.reportType = rank === 'A' ? 'instant' : 'modal';
+  reportBtn.dataset.mobNo = mob.No;
 
-        <div class="flex flex-col min-w-0">
-            <div class="flex items-baseline">${mobNameHtml}</div>
-            <div class="text-xs text-gray-400 truncate font-numeric tracking-wide h-5 flex items-center -mt-1">${areaInfoHtml}</div>
-        </div>
+  // Expandable Panel
+  const expandablePanel = card.querySelector('.expandable-panel');
+  if (isExpandable) {
+    if (isOpen) {
+      expandablePanel.classList.add('open');
+    }
 
-        <div class="flex-shrink-0 flex items-center justify-end">
-            <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center rounded transition text-center leading-tight hover:scale-110 active:scale-95">
-                <img src="./icon/reports.webp" alt="報告する" class="w-8 h-8 object-contain filter drop-shadow-lg" 
-                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <span style="display:none;" class="w-8 h-8 flex items-center justify-center text-[10px] rounded 
-                bg-green-600 hover:bg-green-500 text-white font-bold leading-tight whitespace-pre-line shadow-lg">報告</span>
-            </button>
-        </div>
-    </div>
+    // Last Kill
+    // Note: This is updated by updateExpandablePanel later, but we can set initial here or leave empty
+    // The original code called updateExpandablePanel immediately after creation, so it's fine.
 
-    <!-- Progress Bar -->
-    <div class="progress-bar-wrapper rounded relative overflow-hidden text-center">
-        <div class="progress-bar-bg absolute left-0 top-0 h-full rounded transition-all duration-100 ease-linear" style="width: 0%"></div>
-        <div class="progress-text relative z-10 text-xs font-bold"></div>
-    </div>
-</div>
-`;
+    // Memo Input
+    const memoInput = card.querySelector('.memo-input');
+    memoInput.value = mob.memo_text || "";
+    memoInput.dataset.mobNo = mob.No;
 
-  const expandablePanelHTML = isExpandable ? `
-<div class="expandable-panel ${isOpen ? 'open' : ''}">
-    <div class="px-2 py-1 text-sm space-y-1">
-        <div class="flex justify-between items-start flex-wrap gap-y-1">
-            <div class="w-full text-right text-xs text-gray-400 font-mono" data-last-kill></div>
-            <div class="mob-memo-row w-full mt-1">
-                <div class="flex items-center bg-gray-800/50 rounded px-2 py-1 border border-gray-700 hover:bg-gray-700/50 transition">
-                    <span class="mr-2 text-cyan-400 font-bold text-xs">Memo:</span>
-                    <input type="text" 
-                        class="bg-transparent text-gray-200 text-sm w-full outline-none placeholder-gray-500"
-                        placeholder="メモを入力 (全角30文字)"
-                        maxlength="30"
-                        value="${mob.memo_text || ""}"
-                        data-action="save-memo"
-                        data-mob-no="${mob.No}">
-                </div>
-            </div>
-            
-            <div class="w-full mt-2">
-                <div class="font-semibold text-yellow-400 text-xs uppercase tracking-widest mb-1">Condition</div>
-                <div class="text-gray-300 text-xs leading-relaxed pl-2 border-l-2 border-yellow-600/50">${processText(mob.Condition)}</div>
-            </div>
-        </div>
-        ${mob.Map && rank === 'S' ? `
-        <div class="map-content mt-2 flex justify-center relative rounded overflow-hidden border border-gray-600 shadow-lg">
-            <img src="./maps/${mob.Map}" alt="${mob.Area} Map" class="mob-crush-map w-full h-auto opacity-90 hover:opacity-100 transition-opacity">
-            <div class="map-overlay absolute inset-0">${spawnPointsHtml}</div>
-        </div>
-        ` : ''}
-    </div>
-</div>
-` : '';
+    // Condition
+    const conditionText = card.querySelector('.condition-text');
+    conditionText.innerHTML = processText(mob.Condition);
 
-  const repopInfo = calculateRepop(mob, state.maintenance);
-  const isStopped = repopInfo.isMaintenanceStop;
-  const stoppedClass = isStopped ? "opacity-50 grayscale pointer-events-none" : "";
+    // Map
+    const mapContainer = card.querySelector('.map-container');
+    if (mob.Map && rank === 'S') {
+      const mapImg = mapContainer.querySelector('.mob-map-img');
+      mapImg.src = `./maps/${mob.Map}`;
+      mapImg.alt = `${mob.Area} Map`;
+      const mapOverlay = mapContainer.querySelector('.map-overlay');
+      mapOverlay.innerHTML = spawnPointsHtml;
+    } else {
+      mapContainer.remove();
+    }
 
-  return `
-<div class="mob-card rounded-lg shadow-xl cursor-pointer ${stoppedClass}"
-    data-mob-no="${mob.No}" data-rank="${rank}">
-    ${cardHeaderHTML}${expandablePanelHTML}
-</div>
-`;
+  } else {
+    expandablePanel.remove();
+  }
+
+  return card;
 }
 
 function rankPriority(rank) {
@@ -357,9 +349,7 @@ function filterAndRender({ isInitialLoad = false } = {}) {
       }
 
     } else {
-      const temp = document.createElement("div");
-      temp.innerHTML = createMobCard(mob);
-      card = temp.firstElementChild;
+      card = createMobCard(mob);
       updateProgressText(card, mob);
       updateProgressBar(card, mob);
       updateExpandablePanel(card, mob);
@@ -566,4 +556,5 @@ setInterval(() => {
   updateProgressBars();
 }, 60000);
 
-export { filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, DOM, sortAndRedistribute, onKillReportReceived, updateProgressBars };
+export { filterAndRender, distributeCards, updateProgressText, updateProgressBar, 
+  createMobCard, DOM, sortAndRedistribute, onKillReportReceived, updateProgressBars };
