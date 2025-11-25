@@ -69,7 +69,7 @@ function createMobCard(mob) {
       displayCountText = ` <span class="text-xs text-yellow-400 font-bold text-glow">${pointNumber}番</span>`;
     } else if (remainingCount > 1) {
       isLastOne = false;
-      displayCountText = ` <span class="text-xs text-gray-400 relative -top-[0.09rem]">&nbsp;@</span><span class="text-sm text-gray-400 relative top-[0.02rem]">${remainingCount}</span>`;
+      displayCountText = ` <span class="text-xs text-gray-400 relative -top-[0.09rem]">@</span><span class="text-sm text-gray-400 relative top-[0.02rem]">${remainingCount}</span>`;
     }
 
     isLastOne = remainingCount === 1;
@@ -105,7 +105,7 @@ function createMobCard(mob) {
 
   let areaInfoHtml = `<span class="flex items-center gap-1"><span>${mob.Area}</span><span class="opacity-50">|</span><span>${mob.Expansion}</span>`;
   if (mob.Map && mob.spawn_points) {
-    areaInfoHtml += `<span class="flex items-center ml-1">📍${displayCountText}</span>`;
+    areaInfoHtml += `<span class="flex items-center ml-1">📍 ${displayCountText}</span>`;
   }
   areaInfoHtml += `</span>`;
 
@@ -122,7 +122,7 @@ function createMobCard(mob) {
 
         <div class="flex-shrink-0 flex items-center justify-end">
             <button data-report-type="${rank === 'A' ? 'instant' : 'modal'}" data-mob-no="${mob.No}" class="w-8 h-8 flex items-center justify-center rounded transition text-center leading-tight hover:scale-110 active:scale-95">
-                <img src="./icon/reports.webp" alt="報告する" class="w-7 h-7 object-contain filter drop-shadow-lg" 
+                <img src="./icon/reports.webp" alt="報告する" class="w-8 h-8 object-contain filter drop-shadow-lg" 
                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <span style="display:none;" class="w-8 h-8 flex items-center justify-center text-[10px] rounded 
                 bg-green-600 hover:bg-green-500 text-white font-bold leading-tight whitespace-pre-line shadow-lg">報告</span>
