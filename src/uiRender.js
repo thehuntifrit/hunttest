@@ -31,8 +31,6 @@ function updateEorzeaTime() {
 updateEorzeaTime();
 setInterval(updateEorzeaTime, 3000);
 
-
-
 function processText(text) {
   if (typeof text !== "string" || !text) return "";
   return text.replace(/\/\//g, "<br>");
@@ -114,7 +112,7 @@ function createMobCard(mob) {
 
         <div class="flex flex-col min-w-0">
             <div class="flex items-baseline">${mobNameHtml}</div>
-            <div class="text-xs text-gray-400 truncate font-mono tracking-wide h-5 flex items-center">${areaInfoHtml}</div>
+            <div class="text-xs text-gray-400 truncate font-numeric tracking-wide h-5 flex items-center">${areaInfoHtml}</div>
         </div>
 
         <div class="flex-shrink-0 flex items-center justify-end">
