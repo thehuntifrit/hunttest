@@ -117,7 +117,7 @@ function createMobCard(mob) {
 
         <div class="flex flex-col min-w-0">
             <div class="flex items-baseline">${mobNameHtml}</div>
-            <div class="text-xs text-gray-400 truncate font-numeric tracking-wide h-5 flex items-center">${areaInfoHtml}</div>
+            <div class="text-xs text-gray-400 truncate font-numeric tracking-wide h-5 flex items-center -mt-1">${areaInfoHtml}</div>
         </div>
 
         <div class="flex-shrink-0 flex items-center justify-end">
