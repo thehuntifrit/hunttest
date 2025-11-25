@@ -119,8 +119,11 @@ function createMobCard(mob) {
   rankBadge.textContent = rankLabel;
 
   // Mob Name
-  const mobNameContainer = card.querySelector('.mob-name-container');
-  mobNameContainer.innerHTML = `<span class="text-base flex items-baseline font-bold truncate text-gray-100">${mob.Name}${memoIcon}</span>`;
+  const mobNameEl = card.querySelector('.mob-name');
+  mobNameEl.textContent = mob.Name;
+
+  const memoIconContainer = card.querySelector('.memo-icon-container');
+  memoIconContainer.innerHTML = memoIcon;
 
   // Area Info
   const areaInfoContainer = card.querySelector('.area-info-container');
@@ -142,10 +145,6 @@ function createMobCard(mob) {
     if (isOpen) {
       expandablePanel.classList.add('open');
     }
-
-    // Last Kill
-    // Note: This is updated by updateExpandablePanel later, but we can set initial here or leave empty
-    // The original code called updateExpandablePanel immediately after creation, so it's fine.
 
     // Memo Input
     const memoInput = card.querySelector('.memo-input');
@@ -208,20 +207,16 @@ function baseComparator(a, b) {
   // 1. Rank (S > A > F)
   const rankDiff = rankPriority(a.Rank) - rankPriority(b.Rank);
   if (rankDiff !== 0) return rankDiff;
-
   // 2. Expansion (Descending: Golden > ... > ARR)
   const expA = getExpansionPriority(a.Expansion);
   const expB = getExpansionPriority(b.Expansion);
   if (expA !== expB) return expB - expA;
-
   // 3. MobNo (Ascending)
   const pa = parseMobIdParts(a.No);
   const pb = parseMobIdParts(b.No);
   if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
-
   // 4. Instance (Ascending)
   if (pa.instance !== pb.instance) return pa.instance - pb.instance;
-
   // 5. % Rate (Descending)
   const aInfo = a.repopInfo || {};
   const bInfo = b.repopInfo || {};
@@ -231,7 +226,6 @@ function baseComparator(a, b) {
   if (Math.abs(aPercent - bPercent) > 0.001) {
     return bPercent - aPercent;
   }
-
   // 6. Time (Ascending - sooner is smaller timestamp)
   const aTime = aInfo.minRepop || 0;
   const bTime = bInfo.minRepop || 0;
@@ -243,7 +237,6 @@ function allTabComparator(a, b) {
   const bInfo = b.repopInfo || {};
   const aStatus = aInfo.status;
   const bStatus = bInfo.status;
-
   // Special handling for MaxOver
   const isAMaxOver = aStatus === "MaxOver";
   const isBMaxOver = bStatus === "MaxOver";
@@ -262,17 +255,14 @@ function allTabComparator(a, b) {
     // 1. Rank (S > F > A)
     const rankDiff = getMaxOverRankPriority(a.Rank) - getMaxOverRankPriority(b.Rank);
     if (rankDiff !== 0) return rankDiff;
-
     // 2. Expansion (Descending: Golden > ... > ARR)
     const expA = getExpansionPriority(a.Expansion);
     const expB = getExpansionPriority(b.Expansion);
     if (expA !== expB) return expB - expA;
-
     // 3. MobNo (Ascending)
     const pa = parseMobIdParts(a.No);
     const pb = parseMobIdParts(b.No);
     if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
-
     // 4. Instance (Ascending)
     return pa.instance - pb.instance;
   }
@@ -288,26 +278,21 @@ function allTabComparator(a, b) {
   if (Math.abs(aPercent - bPercent) > 0.001) {
     return bPercent - aPercent;
   }
-
   // 2. Time (Ascending - sooner is smaller timestamp)
   const aTime = aInfo.minRepop || 0;
   const bTime = bInfo.minRepop || 0;
   if (aTime !== bTime) return aTime - bTime;
-
   // 3. Rank (S > A > F)
   const rankDiff = rankPriority(a.Rank) - rankPriority(b.Rank);
   if (rankDiff !== 0) return rankDiff;
-
   // 4. Expansion (Descending: Golden > ... > ARR)
   const expA = getExpansionPriority(a.Expansion);
   const expB = getExpansionPriority(b.Expansion);
   if (expA !== expB) return expB - expA;
-
   // 5. MobNo (Ascending)
   const pa = parseMobIdParts(a.No);
   const pb = parseMobIdParts(b.No);
   if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
-
   // 6. Instance (Ascending)
   return pa.instance - pb.instance;
 }
@@ -490,7 +475,7 @@ function updateProgressText(card, mob) {
   text.innerHTML = `
     <div class="w-full h-full grid grid-cols-2 items-center text-sm font-bold">
       <div class="pl-2 text-left truncate">${leftStr}${percentStr}</div>
-      <div class="pr-1 text-right truncate">${rightContent}</div>
+      <div class="pr-2 text-right truncate">${rightContent}</div>
     </div>
   `;
 
@@ -556,5 +541,7 @@ setInterval(() => {
   updateProgressBars();
 }, 60000);
 
-export { filterAndRender, distributeCards, updateProgressText, updateProgressBar, 
-  createMobCard, DOM, sortAndRedistribute, onKillReportReceived, updateProgressBars };
+export {
+  filterAndRender, distributeCards, updateProgressText, updateProgressBar,
+  createMobCard, DOM, sortAndRedistribute, onKillReportReceived, updateProgressBars
+};
