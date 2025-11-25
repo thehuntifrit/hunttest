@@ -95,7 +95,7 @@ body {
 
 .mob-card-header {
     background: var(--bg-card);
-    padding: 0.15rem;
+    padding: 0.25rem;
 }
 
 .progress-bar-bg {
@@ -215,7 +215,7 @@ body {
 }
 
 .expandable-panel.open {
-    max-height: 1000px;
+    max-height: 2000px;
     padding-top: 2px !important;
     padding-bottom: 0.5rem !important;
 }
