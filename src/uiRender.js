@@ -128,7 +128,7 @@ function createMobCard(mob) {
   const areaInfoContainer = card.querySelector('.area-info-container');
   let areaInfoHtml = `<span class="flex items-center gap-1"><span>${mob.Area}</span><span class="opacity-50">|</span><span>${mob.Expansion}</span>`;
   if (mob.Map && mob.spawn_points) {
-    areaInfoHtml += `<span class="flex items-center ml-1">📍 ${displayCountText}</span>`;
+    areaInfoHtml += `<span class="flex items-center ml-1 font-stretch-condensed">📍 ${displayCountText}</span>`;
   }
   areaInfoHtml += `</span>`;
   areaInfoContainer.innerHTML = areaInfoHtml;
