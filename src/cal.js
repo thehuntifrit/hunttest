@@ -439,8 +439,32 @@ function calculateRepop(mob, maintenance) {
   );
 
   if (hasCondition) {
-    const result = findNextSpawn(mob, pointSec, searchLimit);
+    // --- Caching Logic Start ---
+    const cacheKey = `${lastKill}_${maintenanceStart || 0}`;
+    let useCache = false;
 
+    if (mob._spawnCache && mob._spawnCache.key === cacheKey) {
+      if (mob._spawnCache.result) {
+        if (now < mob._spawnCache.result.end) {
+          useCache = true;
+        }
+      } else {
+        useCache = true;
+      }
+    }
+
+    let result = null;
+    if (useCache) {
+      result = mob._spawnCache.result;
+    } else {
+      result = findNextSpawn(mob, pointSec, searchLimit);
+      mob._spawnCache = {
+        key: cacheKey,
+        result: result
+      };
+    }
+    // --- Caching Logic End ---
+    
     if (result) {
       const { start, end } = result;
 
