@@ -538,7 +538,7 @@ function onKillReportReceived(mobId, kill_time) {
 
 setInterval(() => {
   updateProgressBars();
-}, 60000);
+}, 2917);
 
 export {
   filterAndRender, distributeCards, updateProgressText, updateProgressBar,
