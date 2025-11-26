@@ -28,7 +28,7 @@ function updateEorzeaTime() {
   }
 }
 updateEorzeaTime();
-setInterval(updateEorzeaTime, 3000);
+setInterval(updateEorzeaTime, 2917);
 
 function processText(text) {
   if (typeof text !== "string" || !text) return "";
