@@ -139,7 +139,46 @@ const submitReport = async (mobNo, timeISO) => {
     }
 
     const modalStatusEl = document.querySelector("#modal-status");
-    if (modalStatusEl) modalStatusEl.textContent = "送信中...";
+    const forceSubmitEl = document.querySelector("#report-force-submit");
+    const isForceSubmit = forceSubmitEl ? forceSubmitEl.checked : false;
+
+    // --- バリデーション開始 ---
+    if (!isForceSubmit && mob.last_kill_time) {
+        // メンテナンス情報の取得
+        const maintenance = state.maintenance;
+        const isMaintenance = maintenance && maintenance.is_maintenance;
+
+        // 最短Repop時間の計算 (秒)
+        let repopSeconds = mob.REPOP_s;
+        if (isMaintenance) {
+            repopSeconds = repopSeconds * 0.6; // メンテナンス時は0.6倍
+        }
+
+        // 基準時刻の計算: 前回討伐時刻 + 最短Repop - 5分(300秒)
+        const lastKillTimeMs = mob.last_kill_time * 1000;
+        const minRepopTimeMs = lastKillTimeMs + (repopSeconds * 1000);
+        const allowedTimeMs = minRepopTimeMs - (300 * 1000); // 5分前倒し
+
+        if (killTimeDate.getTime() < allowedTimeMs) {
+            const allowedDate = new Date(allowedTimeMs);
+            const timeStr = allowedDate.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+
+            const msg = `まだ湧き時間になっていません。\n最短でも ${timeStr} 以降である必要があります。\n(強制送信する場合はチェックを入れてください)`;
+            console.warn(msg);
+            if (modalStatusEl) {
+                modalStatusEl.textContent = msg;
+                modalStatusEl.style.color = "#ef4444"; // Red color
+                modalStatusEl.style.whiteSpace = "pre-wrap";
+            }
+            return; // 送信中断
+        }
+    }
+    // --- バリデーション終了 ---
+
+    if (modalStatusEl) {
+        modalStatusEl.textContent = "送信中...";
+        modalStatusEl.style.color = ""; // Reset color
+    }
 
     try {
         // V2関数を呼び出し (reportsコレクションへの書き込みは廃止)
