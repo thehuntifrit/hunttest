@@ -18,6 +18,7 @@ const DOM = {
   modalMobName: document.getElementById('modal-mob-name'),
   modalStatus: document.getElementById('modal-status'),
   modalTimeInput: document.getElementById('report-datetime'),
+  modalForceSubmit: document.getElementById('report-force-submit'), // 追加
 };
 
 function updateEorzeaTime() {
