@@ -22,12 +22,13 @@ const FIREBASE_CONFIG = {
 const app = initializeApp(FIREBASE_CONFIG);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const DEFAULT_FUNCTIONS_REGION = "us-central1";
+const DEFAULT_FUNCTIONS_REGION = "asia-northeast1"; // 東京リージョンに変更
 const functionsInstance = getFunctions(app, DEFAULT_FUNCTIONS_REGION);
 const analytics = getAnalytics(app);
 
-const callMobCullUpdater = httpsCallable(functionsInstance, 'mobCullUpdaterV1');
-const callPostMobMemo = httpsCallable(functionsInstance, 'postMobMemoV1');
+const callMobCullUpdater = httpsCallable(functionsInstance, 'mobCullUpdaterV2');
+const callPostMobMemo = httpsCallable(functionsInstance, 'postMobMemoV2');
+const callUpdateMobStatus = httpsCallable(functionsInstance, 'updateMobStatusV2');
 
 // 認証
 async function initializeAuth() {
@@ -102,7 +103,7 @@ function subscribeMobLocations(onUpdate) {
     return unsub;
 }
 
-// 討伐報告
+// 討伐報告 (V2対応: 直接Functionsを呼び出す)
 const submitReport = async (mobNo, timeISO) => {
     const state = getState();
     const userId = state.userId;
@@ -141,14 +142,19 @@ const submitReport = async (mobNo, timeISO) => {
     if (modalStatusEl) modalStatusEl.textContent = "送信中...";
 
     try {
-        await addDoc(collection(db, "reports"), {
+        // V2関数を呼び出し (reportsコレクションへの書き込みは廃止)
+        const response = await callUpdateMobStatus({
             mob_id: mobNo.toString(),
-            kill_time: killTimeDate,
-            reporter_uid: userId,
-            repop_seconds: mob.REPOP_s
+            kill_time: killTimeDate.toISOString()
         });
 
-        closeReportModal();
+        const result = response.data;
+        if (result?.success) {
+            closeReportModal();
+        } else {
+            throw new Error(result?.message || "不明なエラー");
+        }
+
     } catch (error) {
         console.error("レポート送信エラー:", error);
         if (modalStatusEl) modalStatusEl.textContent = "送信エラー: " + (error.message || "通信失敗");
@@ -234,5 +240,7 @@ const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
     }
 };
 
-export { initializeAuth, subscribeMobStatusDocs, subscribeMobLocations, 
-    subscribeMobMemos, submitReport, submitMemo, toggleCrushStatus };
+export {
+    initializeAuth, subscribeMobStatusDocs, subscribeMobLocations, subscribeMobMemos,
+    submitReport, submitMemo, toggleCrushStatus
+};
