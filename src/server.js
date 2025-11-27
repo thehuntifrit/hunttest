@@ -145,18 +145,29 @@ const submitReport = async (mobNo, timeISO) => {
     // --- バリデーション開始 ---
     if (!isForceSubmit && mob.last_kill_time) {
         // メンテナンス情報の取得
-        const maintenance = state.maintenance;
-        const isMaintenance = maintenance && maintenance.is_maintenance;
+        let maintenance = state.maintenance;
+        if (maintenance && maintenance.maintenance) {
+            maintenance = maintenance.maintenance;
+        }
 
         // 最短Repop時間の計算 (秒)
         let repopSeconds = mob.REPOP_s;
-        if (isMaintenance) {
-            repopSeconds = repopSeconds * 0.6; // メンテナンス時は0.6倍
+        let baseTimeMs = mob.last_kill_time * 1000;
+
+        // メンテナンス明け初回湧きの判定 (cal.js準拠)
+        if (maintenance && maintenance.serverUp) {
+            const serverUpMs = new Date(maintenance.serverUp).getTime();
+            const serverUpSec = serverUpMs / 1000;
+
+            // 前回討伐がメンテ明け前なら、基準はメンテ明け時刻 & 0.6倍
+            if (mob.last_kill_time <= serverUpSec) {
+                repopSeconds = repopSeconds * 0.6;
+                baseTimeMs = serverUpMs; // 基準時刻もメンテ明け時刻になる
+            }
         }
 
-        // 基準時刻の計算: 前回討伐時刻 + 最短Repop - 5分(300秒)
-        const lastKillTimeMs = mob.last_kill_time * 1000;
-        const minRepopTimeMs = lastKillTimeMs + (repopSeconds * 1000);
+        // 基準時刻の計算: (前回討伐 or メンテ明け) + 最短Repop - 5分(300秒)
+        const minRepopTimeMs = baseTimeMs + (repopSeconds * 1000);
         const allowedTimeMs = minRepopTimeMs - (300 * 1000); // 5分前倒し
 
         if (killTimeDate.getTime() < allowedTimeMs) {
