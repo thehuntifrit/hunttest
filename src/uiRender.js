@@ -74,7 +74,7 @@ function createMobCard(mob) {
     } else if (remainingCount > 1) {
       isLastOne = false;
       displayCountText = ` <span class="text-xs text-gray-400 relative -top-[0.09rem]">@</span><span class="text-sm text-gray-400 relative top-[0.02rem]">${remainingCount}</span>`;
-    } 
+    }
     isLastOne = remainingCount === 1;
   }
 
