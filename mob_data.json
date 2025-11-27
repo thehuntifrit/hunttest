@@ -103,7 +103,7 @@
       "locations": [] 
     },
       "12011": {"rank": "S", "name":"クロック・ミテーヌ", "area": "中央ラノシア",
-      "condition": "「ラノシアンソイルG3」を採掘 (抽選)//※ ET 19:00～22:00",
+      "condition": "「ラノシアンソイルG3」を採掘 （抽選）//※ ET 19:00～22:00",
       "repopSeconds": 234000, "maxRepopSeconds": 270000,
       "timeRange": { "start": 19, "end": 22 },
       "mapImage": "",
@@ -118,7 +118,7 @@
       "locations": []
     },
       "12031": {"rank": "S", "name":"ガーロック", "area": "東ラノシア",
-      "condition": "LT 200分間 (3時間20分) 雨が降らない",
+      "condition": "LT 200分間 （3時間20分） 雨が降らない",
       "repopSeconds": 151200, "maxRepopSeconds": 172800,
       "weatherSeedRange": [0, 89],
       "weatherDuration": { "minutes": 200 },
@@ -126,7 +126,7 @@
       "locations": []
     },
       "12041": {"rank": "S", "name":"ボナコン", "area": "西ラノシア",
-      "condition": "「ラノシアリーキ」を採集 (抽選)//※ ET 8:00～10:59",
+      "condition": "「ラノシアリーキ」を採集 （抽選）//※ ET 8:00～11:00",
       "repopSeconds": 234000, "maxRepopSeconds": 270000,
       "timeRange": { "start": 8, "end": 11 },
       "mapImage": "",
@@ -157,7 +157,7 @@
       ]
     },
       "12061": {"rank": "S", "name":"チェルノボーグ", "area": "外地ラノシア",
-      "condition": "プレイヤーが戦闘不能になる (抽選)",
+      "condition": "プレイヤーが戦闘不能になる （抽選）",
       "repopSeconds": 234000, "maxRepopSeconds": 255600,
       "mapImage": "",
       "locations": [] 
@@ -171,7 +171,7 @@
       "locations": []
     },
       "12081": {"rank": "S", "name":"ウルガル", "area": "東部森林",
-      "condition": "傭兵 or 双蛇党リーヴを開始する (抽選)",
+      "condition": "傭兵 or 双蛇党リーヴを開始する （抽選）",
       "repopSeconds": 241200, "maxRepopSeconds": 280800,
       "mapImage": "",
       "locations": [] 
@@ -185,14 +185,14 @@
       "locations": []    
     },
       "12101": {"rank": "S", "name":"サウザンドキャスト・セダ", "area": "北部森林",
-      "condition": "フォールゴウド秋瓜湖畔で「ジャッジレイ」を釣り上げる (抽選) //※ ET 17:00～20:59 餌: フェザントフライ",
+      "condition": "フォールゴウド秋瓜湖畔で「ジャッジレイ」を釣り上げる （抽選） //※ ET 17:00～21:00 餌: フェザントフライ",
       "repopSeconds": 205200, "maxRepopSeconds": 230400,
       "timeRange": { "start": 17, "end": 21 },
       "mapImage": "",
       "locations": []
     },
       "12111": {"rank": "S", "name":"ゾーナ・シーカー", "area": "西ザナラーン",
-      "condition": "ノフィカの井戸で銅鏡を釣り上げる(抽選)//※「晴れ or 快晴」 餌: バターワーム",
+      "condition": "ノフィカの井戸で「銅鏡」を釣り上げる（抽選）//※「晴れ or 快晴」 餌: バターワーム",
       "repopSeconds": 205200, "maxRepopSeconds": 230400,
       "weatherSeedRange": [0, 59], 
       "mapImage": "",
@@ -229,7 +229,7 @@
       ]
     },
       "12131": {"rank": "S", "name":"バルウール", "area": "東ザナラーン",
-      "condition": "傭兵 or 不滅隊リーヴを開始する (抽選)",
+      "condition": "傭兵 or 不滅隊リーヴを開始する （抽選）",
       "repopSeconds": 241200, "maxRepopSeconds": 280800,
       "mapImage": "",
       "locations": [] 
@@ -247,13 +247,13 @@
       "locations": [] 
     },
       "12161": {"rank": "S", "name":"サファト", "area": "クルザス中央高地",
-      "condition": "高所から落下してHPが1になる (抽選)",
+      "condition": "高所から落下してHPが1になる （抽選）",
       "repopSeconds": 216000, "maxRepopSeconds": 302400,
       "mapImage": "",
       "locations": [] 
     },
       "12171": {"rank": "S", "name":"アグリッパ", "area": "モードゥナ",
-      "condition": "モードゥナの宝の地図を開ける (抽選)//古ぼけた地図G5 / 隠された地図G1 / 謎めいた地図",
+      "condition": "モードゥナの宝の地図を開ける （抽選）//古ぼけた地図G5 / 隠された地図G1 / 謎めいた地図",
       "repopSeconds": 216000, "maxRepopSeconds": 302400,
       "mapImage": "",
       "locations": [] 
@@ -374,13 +374,13 @@
       ]
     },
       "22021": {"rank": "S", "name":"極楽鳥", "area": "アバラシア雲海",
-      "condition": "Bモブ「スクオンク」の「チャープ」発動時 (抽選)",
+      "condition": "Bモブ「スクオンク」の「チャープ」発動時 （抽選）",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "",
       "locations": [] 
     },
       "22031": {"rank": "S", "name":"ガンダルヴァ", "area": "ドラヴァニア雲海",
-      "condition": "「皇金鉱 (ET 2:00～4:00 / 14:00～16:00)」//「アストラルフラワー (ET 4:00～6:00 / 16:00～18:00)」を各50回採集",
+      "condition": "「皇金鉱 （ET 2:00～4:00 / 14:00～16:00）」//「アストラルフラワー （ET 4:00～6:00 / 16:00～18:00）」を各50回採集",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "timeRanges": [{ "start": 2, "end": 6 },{ "start": 14, "end": 18 }],
       "mapImage": "",
@@ -393,7 +393,7 @@
       "locations": [] 
     },
       "22051": {"rank": "S", "name":"ペイルライダー", "area": "低地ドラヴァニア",
-      "condition": "低地ドラヴァニアの宝箱を開ける (抽選)//※ 宝の地図G7 (古ぼけた地図G7)",
+      "condition": "低地ドラヴァニアの宝箱を開ける （抽選）//※ 宝の地図G7 （古ぼけた地図G7）",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "",
       "locations": [] 
@@ -669,7 +669,7 @@
       "locations": [] 
     },
       "42031": {"rank": "S", "name":"タルキア", "area": "アム・アレーン",
-      "condition": "青魔導士のスキル「自爆」をPOP地点で使う//※ プレイヤーが死亡時にPOP",
+      "condition": "青魔導士のスキル「自爆」をPOP地点で使う//※ 「自爆」後プレイヤーが死亡時にPOP",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "Amh_Araeng.webp",
       "locations": [
@@ -748,7 +748,7 @@
       "locations": [] 
     },
       "42061": {"rank": "S", "name":"グニット", "area": "テンペスト",
-      "condition": "クリオニッドの「最大化」バフがついた「バッカルコーン」をプレイヤーが受ける。バリア有効。 (抽選)//※ 「最大化」バフはディープシーリーチを3匹捕食で付与。",
+      "condition": "クリオニッドの「最大化」バフがついた「バッカルコーン」をプレイヤーが受ける（バリア有効。抽選）//※ 「最大化」バフはディープシーリーチを3匹捕食で付与",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "",
       "locations": [] 
@@ -864,7 +864,7 @@
       "locations": [] 
     },
       "52031": {"rank": "S", "name":"アームストロング", "area": "ガレマルド",
-      "condition": "「リペアド・インペリアルショートローブ」//「リペアド・インペリアルポットヘルム」を装備して//POP地点で戦闘不能になる(自爆も可)",
+      "condition": "「リペアド・インペリアルショートローブ」//「リペアド・インペリアルポットヘルム」を装備して//POP地点で戦闘不能になる（自爆も可）",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "Garlemald.webp",
       "locations": [
