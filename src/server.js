@@ -30,7 +30,6 @@ const callMobCullUpdater = httpsCallable(functionsInstance, 'mobCullUpdaterV2');
 const callPostMobMemo = httpsCallable(functionsInstance, 'postMobMemoV2');
 const callUpdateMobStatus = httpsCallable(functionsInstance, 'updateMobStatusV2');
 
-// 認証
 async function initializeAuth() {
     return new Promise((resolve) => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -51,7 +50,6 @@ async function initializeAuth() {
     });
 }
 
-// データ購読 (Mob Status)
 function subscribeMobStatusDocs(onUpdate) {
     const docIds = ["s_latest", "a_latest", "f_latest"];
     const mobStatusDataMap = {};
@@ -65,7 +63,6 @@ function subscribeMobStatusDocs(onUpdate) {
     return () => unsubs.forEach(u => u());
 }
 
-// データ購読 (shared_data/memo)
 function subscribeMobMemos(onUpdate) {
     const memoDocRef = doc(db, "shared_data", "memo");
     const unsub = onSnapshot(memoDocRef, snap => {
@@ -75,7 +72,6 @@ function subscribeMobMemos(onUpdate) {
     return unsub;
 }
 
-// Mob Location関連
 function normalizePoints(data) {
     const result = {};
     for (const [key, value] of Object.entries(data)) {
@@ -88,7 +84,6 @@ function normalizePoints(data) {
     return result;
 }
 
-// データ購読 (Mob Locations)
 function subscribeMobLocations(onUpdate) {
     const unsub = onSnapshot(collection(db, "mob_locations"), snapshot => {
         const map = {};
@@ -103,7 +98,6 @@ function subscribeMobLocations(onUpdate) {
     return unsub;
 }
 
-// 討伐報告 (V2対応: 直接Functionsを呼び出す)
 const submitReport = async (mobNo, timeISO) => {
     const state = getState();
     const userId = state.userId;
@@ -142,7 +136,6 @@ const submitReport = async (mobNo, timeISO) => {
     const forceSubmitEl = document.querySelector("#report-force-submit");
     const isForceSubmit = forceSubmitEl ? forceSubmitEl.checked : false;
 
-    // --- バリデーション開始 ---
     if (!isForceSubmit && mob.last_kill_time) {
         // メンテナンス情報の取得
         let maintenance = state.maintenance;
@@ -184,7 +177,6 @@ const submitReport = async (mobNo, timeISO) => {
             return; // 送信中断
         }
     }
-    // --- バリデーション終了 ---
 
     if (modalStatusEl) {
         modalStatusEl.textContent = "送信中...";
@@ -211,7 +203,6 @@ const submitReport = async (mobNo, timeISO) => {
     }
 };
 
-// メモの投稿
 const submitMemo = async (mobNo, memoText) => {
     const state = getState();
     const userId = state.userId;
@@ -251,7 +242,6 @@ const submitMemo = async (mobNo, memoText) => {
     }
 };
 
-// 湧き潰し報告
 const toggleCrushStatus = async (mobNo, locationId, nextCulled) => {
     const state = getState();
     const userId = state.userId;
