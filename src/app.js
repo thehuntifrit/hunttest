@@ -25,7 +25,6 @@ async function initializeApp() {
             console.warn("Authentication failed or anonymous.");
         }
         // 3. UI初期化
-        // Reset clickStep to 1 to ensure filters are closed on reload
         const storedUI = JSON.parse(localStorage.getItem("huntUIState")) || {};
         if (storedUI.clickStep !== 1) {
             storedUI.clickStep = 1;
@@ -159,7 +158,6 @@ function attachGlobalEventListeners() {
     }
 
     // 5. Memo Input (Delegation)
-    // Save on change (blur or enter)
     document.addEventListener("change", async (e) => {
         if (e.target.matches("input[data-action='save-memo']")) {
             const input = e.target;
@@ -173,15 +171,15 @@ function attachGlobalEventListeners() {
     document.addEventListener("keydown", (e) => {
         if (e.target.matches("input[data-action='save-memo']")) {
             if (e.key === "Enter") {
-                e.target.blur(); // Trigger change event
+                e.target.blur();
             }
-            e.stopPropagation(); // Prevent card collapse/expand if Enter is pressed?
+            e.stopPropagation();
         }
     });
 
     document.addEventListener("click", (e) => {
         if (e.target.matches("input[data-action='save-memo']")) {
-            e.stopPropagation(); // Prevent card click
+            e.stopPropagation();
         }
     });
 }
@@ -190,7 +188,6 @@ function toggleCardExpand(card, mobNo) {
     const panel = card.querySelector(".expandable-panel");
     if (panel) {
         if (!panel.classList.contains("open")) {
-            // 他を閉じる
             document.querySelectorAll(".expandable-panel.open").forEach(p => {
                 if (p.closest(".mob-card") !== card) p.classList.remove("open");
             });
