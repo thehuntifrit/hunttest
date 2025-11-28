@@ -1,6 +1,6 @@
 // uiRender.js
 
-import { calculateRepop, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime } from "./cal.js";
+import { calculateRepop, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime, EORZEA_MINUTE_MS } from "./cal.js";
 import { drawSpawnPoint, isCulled, attachLocationEvents } from "./location.js";
 import { getState, RANK_COLORS, PROGRESS_CLASSES } from "./dataManager.js";
 import { filterMobsByRankAndArea } from "./filterUI.js";
@@ -29,7 +29,7 @@ function updateEorzeaTime() {
   }
 }
 updateEorzeaTime();
-setInterval(updateEorzeaTime, 2917);
+setInterval(updateEorzeaTime, EORZEA_MINUTE_MS);
 
 function processText(text) {
   if (typeof text !== "string" || !text) return "";
@@ -51,7 +51,6 @@ function createMobCard(mob) {
   const mobLocationsData = state.mobLocations?.[mob.No];
   const spawnCullStatus = mobLocationsData || mob.spawn_cull_status;
 
-  // --- Data Preparation (Same as before) ---
   let isLastOne = false;
   let validSpawnPoints = [];
   let displayCountText = "";
@@ -102,8 +101,6 @@ function createMobCard(mob) {
   const memoIcon = shouldShowMemo
     ? ` <span data-tooltip="${mob.memo_text}" class="cursor-help">📝</span>`
     : "";
-
-  // --- Populate Template ---
 
   // Card Attributes
   card.dataset.mobNo = mob.No;
@@ -217,7 +214,7 @@ function baseComparator(a, b) {
   if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
   // 4. Instance (Ascending)
   if (pa.instance !== pb.instance) return pa.instance - pb.instance;
-  // 5. % Rate (Descending)
+
   const aInfo = a.repopInfo || {};
   const bInfo = b.repopInfo || {};
   const aPercent = aInfo.elapsedPercent || 0;
@@ -226,7 +223,7 @@ function baseComparator(a, b) {
   if (Math.abs(aPercent - bPercent) > 0.001) {
     return bPercent - aPercent;
   }
-  // 6. Time (Ascending - sooner is smaller timestamp)
+
   const aTime = aInfo.minRepop || 0;
   const bTime = bInfo.minRepop || 0;
   return aTime - bTime;
@@ -433,15 +430,12 @@ function updateProgressText(card, mob) {
     ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)`
     : "";
 
-  // Visual Styles
-  // 1. Dim Pre-Repop (Next / NextCondition)
   if (status === "Next" || status === "NextCondition") {
     card.classList.add("opacity-60");
   } else {
     card.classList.remove("opacity-60");
   }
 
-  // 2. Gray out if blocked by maintenance
   if (isBlockedByMaintenance) {
     card.classList.add("grayscale", "opacity-50");
   } else {
@@ -543,7 +537,7 @@ function onKillReportReceived(mobId, kill_time) {
 
 setInterval(() => {
   updateProgressBars();
-}, 2917);
+}, EORZEA_MINUTE_MS);
 
 export {
   filterAndRender, distributeCards, updateProgressText, updateProgressBar,
