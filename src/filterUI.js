@@ -76,7 +76,6 @@ const renderAreaFilterPanel = () => {
     let btnClass = 'py-1 px-2 text-sm rounded font-semibold text-white text-center transition';
 
     if (uiRank === 'ALL' && !isAll) {
-      // Desktop: w-12 (approx 2/3 of w-16), Mobile: w-auto
       if (isDesktop) btnClass += ' w-12';
       else btnClass += ' w-auto';
     } else {
