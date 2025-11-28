@@ -30,13 +30,10 @@ function handleCrushToggle(e) {
         const now = Date.now();
         const timeDiff = now - lastClickTime;
 
-        // 同じ場所を1.0秒以内にタップした場合のみ実行
         if (locationId === lastClickLocationId && timeDiff < 1000) {
-            // ダブルタップ成立 -> 実行
             lastClickTime = 0; // リセット
             lastClickLocationId = null;
         } else {
-            // 1回目のタップ (または時間が空いた) -> 記録して終了
             lastClickTime = now;
             lastClickLocationId = locationId;
             return;
