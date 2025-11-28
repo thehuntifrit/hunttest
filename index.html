@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="./icon/The_Hunt.png">
     <title>The Hunt</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -59,6 +60,20 @@
             <div id="column-3" class="flex flex-col gap-4"></div>
         </div>
     </main>
+
+    <footer class="max-w-6xl mx-auto px-4 py-8 text-center">
+        <button id="toggle-readme-btn" class="text-gray-400 hover:text-cyan-400 transition text-sm font-semibold flex items-center justify-center mx-auto gap-2">
+            <span>📖</span> ユーザーマニュアルを表示
+        </button>
+        
+        <div id="readme-container" class="hidden mt-8 text-left bg-slate-900/80 p-6 rounded-xl border border-gray-700 shadow-2xl prose prose-invert prose-sm max-w-none">
+            <!-- README content will be loaded here -->
+        </div>
+        
+        <div class="mt-8 text-xs text-gray-600">
+            &copy; 2025 The Hunt
+        </div>
+    </footer>
 
     <div id="report-modal" class="fixed inset-0 hidden items-center justify-center p-4 z-50">
         <div
@@ -180,6 +195,7 @@
     <script type="module" src="./src/server.js"></script>
     <script type="module" src="./src/dataManager.js"></script>
     <script type="module" src="./src/app.js"></script>
+    <script type="module" src="./src/readme.js"></script>
 
 </body>
 
