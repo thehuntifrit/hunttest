@@ -439,7 +439,6 @@ function calculateRepop(mob, maintenance) {
   );
 
   if (hasCondition) {
-    // --- Caching Logic Start ---
     const cacheKey = `${lastKill}_${maintenanceStart || 0}`;
     let useCache = false;
 
@@ -464,7 +463,7 @@ function calculateRepop(mob, maintenance) {
       };
     }
     // --- Caching Logic End ---
-    
+
     if (result) {
       const { start, end } = result;
 
