@@ -451,13 +451,17 @@ function updateProgressText(card, mob) {
   let rightStr = "未確定";
   let isNext = false;
 
+  let isSpecialCondition = false;
+
   if (isInConditionWindow && mob.repopInfo.conditionRemaining) {
     rightStr = mob.repopInfo.conditionRemaining;
+    isSpecialCondition = true;
   } else if (nextConditionSpawnDate) {
     try {
       const dateStr = new Intl.DateTimeFormat("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }).format(nextConditionSpawnDate);
       rightStr = `🔔 ${dateStr}`;
       isNext = true;
+      isSpecialCondition = true;
     } catch {
       rightStr = "未確定";
     }
@@ -470,7 +474,7 @@ function updateProgressText(card, mob) {
     }
   }
 
-  let rightContent = `<span>${rightStr}</span>`;
+  let rightContent = `<span class="${isSpecialCondition ? 'label-next' : ''}">${rightStr}</span>`;
 
   text.innerHTML = `
     <div class="w-full h-full grid grid-cols-2 items-center text-sm font-bold">
