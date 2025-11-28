@@ -3,6 +3,9 @@
 import { toggleCrushStatus } from "./server.js";
 import { getState } from "./dataManager.js";
 
+let lastClickTime = 0;
+let lastClickLocationId = null;
+
 function handleCrushToggle(e) {
     const point = e.target.closest(".spawn-point");
     if (!point) return;
@@ -20,6 +23,26 @@ function handleCrushToggle(e) {
 
     const mobNo = parseInt(card.dataset.mobNo, 10);
     const locationId = point.dataset.locationId;
+
+    // スマホ (ホバーできない端末) 向けのダブルタップ判定
+    const isTouchDevice = window.matchMedia("(hover: none)").matches;
+    if (isTouchDevice) {
+        const now = Date.now();
+        const timeDiff = now - lastClickTime;
+
+        // 同じ場所を1.0秒以内にタップした場合のみ実行
+        if (locationId === lastClickLocationId && timeDiff < 1000) {
+            // ダブルタップ成立 -> 実行
+            lastClickTime = 0; // リセット
+            lastClickLocationId = null;
+        } else {
+            // 1回目のタップ (または時間が空いた) -> 記録して終了
+            lastClickTime = now;
+            lastClickLocationId = locationId;
+            return;
+        }
+    }
+
     const isCurrentlyCulled = point.dataset.isCulled === "true";
     const nextCulled = !isCurrentlyCulled;
 
