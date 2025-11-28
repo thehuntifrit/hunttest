@@ -7,6 +7,7 @@ const MOON_CYCLE_SEC = ET_DAY_SEC * 32;
 const MOON_PHASE_DURATION_SEC = ET_DAY_SEC * 4;
 const MAX_SEARCH_ITERATIONS = 5000;
 const LIMIT_DAYS = 60;
+export const EORZEA_MINUTE_MS = 2917;
 
 function formatDurationHM(seconds) {
   if (seconds < 0) seconds = 0;
@@ -462,7 +463,6 @@ function calculateRepop(mob, maintenance) {
         result: result
       };
     }
-    // --- Caching Logic End ---
 
     if (result) {
       const { start, end } = result;
