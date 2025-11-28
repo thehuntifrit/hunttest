@@ -28,19 +28,16 @@ const state = {
         : null
 };
 
-// Setの復元 (Robust Restoration)
 if (state.filter.areaSets) {
     for (const k in state.filter.areaSets) {
         const v = state.filter.areaSets[k];
         if (Array.isArray(v)) {
             state.filter.areaSets[k] = new Set(v);
         } else if (!(v instanceof Set)) {
-            // If it's an object (from older JSON stringify) or null/undefined
             state.filter.areaSets[k] = new Set();
         }
     }
 } else {
-    // Fallback if areaSets is missing entirely
     state.filter.areaSets = {
         S: new Set(),
         A: new Set(),
@@ -49,7 +46,6 @@ if (state.filter.areaSets) {
     };
 }
 
-// allRankSetの復元
 if (Array.isArray(state.filter.allRankSet)) {
     state.filter.allRankSet = new Set(state.filter.allRankSet);
 } else if (!(state.filter.allRankSet instanceof Set)) {
@@ -163,10 +159,8 @@ function processMobData(rawMobData, maintenance) {
 }
 
 async function loadBaseMobData() {
-    // 1. メンテナンス情報の取得 (これは毎回取得するが、軽量なのでOK)
     const maintenance = await loadMaintenance();
 
-    // 2. キャッシュがあれば即座に表示 (Stale-While-Revalidate)
     const cachedDataStr = localStorage.getItem(MOB_DATA_CACHE_KEY);
     let cachedData = null;
     if (cachedDataStr) {
@@ -182,14 +176,12 @@ async function loadBaseMobData() {
         }
     }
 
-    // 3. ネットワークから最新データを取得
     try {
         const mobRes = await fetch(MOB_DATA_URL);
         if (!mobRes.ok) throw new Error("Mob data failed to load.");
 
         const freshData = await mobRes.json();
 
-        // 4. キャッシュと異なる場合のみ更新
         const freshDataStr = JSON.stringify(freshData);
         if (freshDataStr !== cachedDataStr) {
             console.log("Updating mob data from network");
@@ -223,11 +215,9 @@ async function loadBaseMobData() {
 let unsubscribes = [];
 
 function startRealtime() {
-    // 既存の購読を解除
     unsubscribes.forEach(fn => fn && fn());
     unsubscribes = [];
 
-    // 1. Mob Status (Last Kill Time)
     const unsubStatus = subscribeMobStatusDocs(mobStatusDataMap => {
         const current = state.mobs;
         const map = new Map();
@@ -257,7 +247,8 @@ function startRealtime() {
     });
     unsubscribes.push(unsubStatus);
 
-    // 2. Mob Locations (Spawn Cull Status)
+    unsubscribes.push(unsubStatus);
+
     const unsubLoc = subscribeMobLocations(locationsMap => {
         const current = state.mobs;
         state.mobLocations = locationsMap;
@@ -274,7 +265,8 @@ function startRealtime() {
     });
     unsubscribes.push(unsubLoc);
 
-    // 3. Mob Memos
+    unsubscribes.push(unsubLoc);
+
     const unsubMemo = subscribeMobMemos(memoData => {
         const current = state.mobs;
 
