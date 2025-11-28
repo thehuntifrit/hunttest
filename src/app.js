@@ -10,12 +10,10 @@ import { initTooltip } from "./tooltip.js";
 
 async function initializeApp() {
     try {
-        // 0. ツールチップ初期化
         initTooltip();
-        // 1. データロード
         await loadBaseMobData();
         console.log("Mob Data Loaded.");
-        // 2. 認証 & リアルタイム開始
+
         const userId = await initializeAuth();
         if (userId) {
             console.log("Authenticated:", userId);
@@ -24,7 +22,7 @@ async function initializeApp() {
         } else {
             console.warn("Authentication failed or anonymous.");
         }
-        // 3. UI初期化
+
         const storedUI = JSON.parse(localStorage.getItem("huntUIState")) || {};
         if (storedUI.clickStep !== 1) {
             storedUI.clickStep = 1;
@@ -34,11 +32,8 @@ async function initializeApp() {
         renderRankTabs();
         updateFilterUI();
         initModal();
-        // 4. メンテナンス表示 (dataManagerでロード済み)
         renderMaintenanceStatus();
-        // 5. イベントリスナー設定
         attachGlobalEventListeners();
-        // 6. ヘッダー高さ監視 (パディング調整)
         initHeaderObserver();
 
     } catch (e) {
@@ -53,12 +48,9 @@ function initHeaderObserver() {
 
     const adjustPadding = () => {
         const headerHeight = header.offsetHeight;
-        // 少し余裕を持たせる (+10px)
         main.style.paddingTop = `${headerHeight + 10}px`;
     };
-    // 初回実行
     adjustPadding();
-    // 監視開始
     const resizeObserver = new ResizeObserver(() => {
         adjustPadding();
     });
@@ -100,7 +92,6 @@ function formatDate(date) {
 }
 
 function attachGlobalEventListeners() {
-    // 1. Window Resize (Width only to avoid keyboard close on mobile)
     let prevWidth = window.innerWidth;
     window.addEventListener("resize", debounce(() => {
         const currentWidth = window.innerWidth;
@@ -110,20 +101,16 @@ function attachGlobalEventListeners() {
         }
     }, 200));
 
-    // 2. Filter Clicks (Delegation)
     document.addEventListener("click", (e) => {
-        // Rank Tabs
         if (e.target.closest(".tab-button")) {
             return;
         }
-        // Area Filter
         if (e.target.closest(".area-filter-btn")) {
             handleAreaFilterClick(e);
             return;
         }
     });
 
-    // 3. Card Clicks (Delegation)
     DOM.colContainer.addEventListener("click", (e) => {
         const card = e.target.closest(".mob-card");
         if (!card) return;
@@ -131,7 +118,6 @@ function attachGlobalEventListeners() {
         const mobNo = parseInt(card.dataset.mobNo, 10);
         const rank = card.dataset.rank;
 
-        // A. Report Button
         const reportBtn = e.target.closest("button[data-report-type]");
         if (reportBtn) {
             e.stopPropagation();
@@ -144,7 +130,6 @@ function attachGlobalEventListeners() {
             return;
         }
 
-        // C. Card Expand/Collapse (S Rank)
         if (e.target.closest("[data-toggle='card-header']")) {
             if (rank === "S") {
                 toggleCardExpand(card, mobNo);
@@ -152,12 +137,10 @@ function attachGlobalEventListeners() {
         }
     });
 
-    // 4. Report Form Submit
     if (DOM.reportForm) {
         DOM.reportForm.addEventListener("submit", handleReportSubmit);
     }
 
-    // 5. Memo Input (Delegation)
     document.addEventListener("change", async (e) => {
         if (e.target.matches("input[data-action='save-memo']")) {
             const input = e.target;
