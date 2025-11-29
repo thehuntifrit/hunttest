@@ -104,7 +104,7 @@ body {
 }
 
 .progress-text {
-    color: #ffffff;
+    color: #dadada;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
     font-size: 13px;
     font-family: 'Inter', sans-serif;
@@ -121,15 +121,15 @@ body {
 }
 
 .progress-text.text-pop {
-    color: #ffffff;
+    color: #dadada;
 }
 
 .progress-text.text-next {
-    color: #ffffff;
+    color: #dadada;
 }
 
 .progress-text.max-over {
-    color: #ffffff;
+    color: #dadada;
     animation: pulse-text 3s infinite;
 }
 
@@ -188,7 +188,7 @@ body {
 
 .label-next {
     color: var(--accent-gold);
-    text-shadow: 0 0 5px rgba(234, 179, 8, 0.5);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8), 0 0 5px rgba(234, 179, 8, 0.5);
 }
 
 #report-modal {
