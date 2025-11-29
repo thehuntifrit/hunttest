@@ -177,7 +177,7 @@
       "locations": [] 
     },
       "12091": {"rank": "S", "name":"マインドフレア", "area": "南部森林",
-      "condition": "新月最初のET0:00以降にPOP地点を踏む//※ 以降は新月中のET 17:00～3:00",
+      "condition": "新月IN最初のET0:00以降にPOP地点を踏む//※ 以降は新月中のET 17:00～3:00",
       "repopSeconds": 180000, "maxRepopSeconds": 180000,
       "moonPhase": "新月",
       "conditions": {"firstNight": { "timeRange": { "start": 0, "end": 3 } },"otherNights": { "timeRange": { "start": 17, "end": 3 } }},
@@ -669,7 +669,7 @@
       "locations": [] 
     },
       "42031": {"rank": "S", "name":"タルキア", "area": "アム・アレーン",
-      "condition": "青魔導士のスキル「自爆」をPOP地点で使う//※ 「自爆」後プレイヤーが死亡時にPOP",
+      "condition": "青魔導士のスキル「自爆」をPOP地点で使い、プレイヤーが戦闘不能になる",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "Amh_Araeng.webp",
       "locations": [
@@ -748,7 +748,7 @@
       "locations": [] 
     },
       "42061": {"rank": "S", "name":"グニット", "area": "テンペスト",
-      "condition": "クリオニッドの「最大化」バフがついた「バッカルコーン」をプレイヤーが受ける（バリア有効。抽選）//※ 「最大化」バフはディープシーリーチを3匹捕食で付与",
+      "condition": "クリオニッドの「最大化」バフがついた「バッカルコーン」をプレイヤーが受ける（抽選）//※ 「最大化」はディープシーリーチを3匹捕食させることで付く//※ 「最大化+バッカルコーン」はプレイヤーの最大HP分のダメージを受けるためバリア系スキルで戦闘不能を避ける",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "",
       "locations": [] 
