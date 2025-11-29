@@ -2,6 +2,7 @@
 
 import { toggleCrushStatus } from "./server.js";
 import { getState } from "./dataManager.js";
+import { hideTooltip } from "./tooltip.js";
 
 let lastClickTime = 0;
 let lastClickLocationId = null;
@@ -33,6 +34,7 @@ function handleCrushToggle(e) {
         if (locationId === lastClickLocationId && timeDiff < 1000) {
             lastClickTime = 0; // リセット
             lastClickLocationId = null;
+            hideTooltip(); // ダブルタップ成功時にツールチップを消す
         } else {
             lastClickTime = now;
             lastClickLocationId = locationId;
@@ -154,7 +156,7 @@ function updateCrushUI(mobNo, locationId, isCulled) {
 
     marker.dataset.isCulled = isCulled.toString();
     const pointNumber = locationId.slice(-2);
-    marker.setAttribute("data-tooltip", `${pointNumber} (湧き潰し: ${isCulled ? "済" : "未"})`);
+    marker.setAttribute("data-tooltip", `${pointNumber} (${isCulled ? "済" : ""})`);
     marker.removeAttribute("title"); // 既存のtitle属性があれば削除
 }
 
