@@ -110,7 +110,7 @@
       "locations": []
     },
       "12021": {"rank": "S", "name":"ケロゲロス", "area": "低地ラノシア",
-      "condition": "満月直後のET17:00にPOP地点を踏む//※ 以降は満月中のET 17:00～3:00",
+      "condition": "満月IN最初のET17:00にPOP地点を踏む//※ 以降は満月中のET 17:00～3:00",
       "repopSeconds": 180000, "maxRepopSeconds": 180000,
       "moonPhase": "満月",
       "timeRange": { "start": 17, "end": 3 },
