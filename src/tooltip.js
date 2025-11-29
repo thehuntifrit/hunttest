@@ -1,13 +1,14 @@
 // tooltip.js
 
+let tooltip = null;
+let currentTarget = null;
+
 export function initTooltip() {
     // ツールチップ要素を作成
-    const tooltip = document.createElement("div");
+    tooltip = document.createElement("div");
     tooltip.id = "custom-tooltip";
     tooltip.className = "custom-tooltip hidden";
     document.body.appendChild(tooltip);
-
-    let currentTarget = null;
 
     // マウス移動時の処理
     document.addEventListener("mousemove", (e) => {
@@ -48,4 +49,11 @@ export function initTooltip() {
             tooltip.classList.add("hidden");
         }
     });
+}
+
+export function hideTooltip() {
+    if (tooltip) {
+        tooltip.classList.add("hidden");
+    }
+    currentTarget = null;
 }
