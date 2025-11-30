@@ -73,7 +73,7 @@ function createMobCard(mob) {
       displayCountText = ` <span class="text-xs text-yellow-400 font-bold text-glow">${pointNumber}番</span>`;
     } else if (remainingCount > 1) {
       isLastOne = false;
-      displayCountText = ` <span class="text-xs text-gray-400 relative -top-[0.09rem]">@</span><span class="text-sm text-gray-400 relative top-[0.02rem]">${remainingCount}</span>`;
+      displayCountText = ` <span class="text-xs text-gray-400 relative -top-[0.09rem]">@</span><span class="text-xs text-gray-400 font-bold text-glow relative top-[0.02rem]">${remainingCount}</span>`;
     }
     isLastOne = remainingCount === 1;
   }
@@ -482,11 +482,13 @@ function updateProgressBars() {
   state.mobs.forEach((mob) => {
     mob.repopInfo = calculateRepop(mob, state.maintenance);
 
-    if (mob.repopInfo.nextConditionSpawnDate) {
+    if (mob.repopInfo.nextConditionSpawnDate && mob.repopInfo.conditionWindowEnd) {
       const nowSec = Date.now() / 1000;
       const spawnSec = mob.repopInfo.nextConditionSpawnDate.getTime() / 1000;
-      const diff = spawnSec - nowSec;
-      if (diff > 0 && diff <= 1200) {
+      const endSec = mob.repopInfo.conditionWindowEnd.getTime() / 1000;
+
+      // 15 minutes before spawn ~ end of window
+      if (nowSec >= (spawnSec - 900) && nowSec <= endSec) {
         conditionMobs.push(mob.Name);
       }
     }
