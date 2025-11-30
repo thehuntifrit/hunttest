@@ -53,6 +53,7 @@ body {
     will-change: transform, box-shadow;
     display: flex;
     flex-direction: column;
+    font-size: 0;
 }
 
 .mob-card:hover {
@@ -102,8 +103,9 @@ body {
     padding: 0.36rem 0.5rem 0.36rem;
 }
 
+/* Remove bottom padding for S-rank cards to compensate for ghost space */
 .mob-card[data-rank="S"] .mob-card-header {
-    padding-bottom: 0;
+    padding-bottom: 0 !important;
 }
 
 .progress-bar-bg {
