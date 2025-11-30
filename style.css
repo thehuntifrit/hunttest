@@ -314,3 +314,50 @@ body {
     opacity: 0;
     visibility: hidden;
 }
+
+/* Mobile Header Optimization */
+@media (max-width: 1023px) {
+    #main-header {
+        top: auto;
+        bottom: 0;
+        /* Ensure safe area for iPhone X+ */
+        padding-bottom: env(safe-area-inset-bottom);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: none;
+        box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+}
+
+/* Mob Card Expansion Optimization using Grid */
+.expandable-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease-out;
+    background: var(--bg-card);
+    /* Remove old transition props */
+    max-height: unset;
+    overflow: hidden;
+    padding: 0 !important; /* Controlled by inner content padding or strictly 0 when closed */
+}
+
+.expandable-panel.open {
+    grid-template-rows: 1fr;
+    /* Remove old max-height/padding overrides */
+    max-height: unset;
+    padding: 0 !important;
+}
+
+/* Inner container for grid transition */
+.expandable-panel > div {
+    min-height: 0;
+    /* Apply padding here instead of on the parent to avoid jumpiness */
+    padding: 0.25rem 0.5rem; 
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+    visibility: hidden;
+}
+
+.expandable-panel.open > div {
+    opacity: 1;
+    visibility: visible;
+}
