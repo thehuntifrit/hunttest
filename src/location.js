@@ -25,16 +25,15 @@ function handleCrushToggle(e) {
     const mobNo = parseInt(card.dataset.mobNo, 10);
     const locationId = point.dataset.locationId;
 
-    // スマホ (ホバーできない端末) 向けのダブルタップ判定
     const isTouchDevice = window.matchMedia("(hover: none)").matches;
     if (isTouchDevice) {
         const now = Date.now();
         const timeDiff = now - lastClickTime;
 
         if (locationId === lastClickLocationId && timeDiff < 1000) {
-            lastClickTime = 0; // リセット
+            lastClickTime = 0;
             lastClickLocationId = null;
-            hideTooltip(); // ダブルタップ成功時にツールチップを消す
+            hideTooltip();
         } else {
             lastClickTime = now;
             lastClickLocationId = locationId;
@@ -46,18 +45,16 @@ function handleCrushToggle(e) {
     const nextCulled = !isCurrentlyCulled;
 
     toggleCrushStatus(mobNo, locationId, nextCulled);
-    updateCrushUI(mobNo, locationId, nextCulled); // UI即時反映
+    updateCrushUI(mobNo, locationId, nextCulled);
 }
 
 function isCulled(pointStatus, mobNo) {
     const state = getState();
     const mob = state.mobs.find(m => m.No === mobNo);
     const mobLastKillTime = mob?.last_kill_time || 0;
-    // メンテ情報を取得
     const serverUpSec = state.maintenance?.serverUp
         ? new Date(state.maintenance.serverUp).getTime()
         : 0;
-    // Firestore Timestampの安全取り扱い
     const culledMs = pointStatus?.culled_at && typeof pointStatus.culled_at.toMillis === "function"
         ? pointStatus.culled_at.toMillis()
         : 0;
@@ -65,17 +62,13 @@ function isCulled(pointStatus, mobNo) {
     const uncullMs = pointStatus?.uncull_at && typeof pointStatus.uncull_at.toMillis === "function"
         ? pointStatus.uncull_at.toMillis()
         : 0;
-    // last_kill_time は秒を想定、ミリ秒に変換
     const lastKillMs = typeof mobLastKillTime === "number" ? mobLastKillTime * 1000 : 0;
-    // サーバー再起動より前の湧き潰しイベントは無効化
     const validCulledMs = culledMs > serverUpSec ? culledMs : 0;
     const validUnculledMs = uncullMs > serverUpSec ? uncullMs : 0;
-    // どちらも無ければ未湧き潰し
     if (validCulledMs === 0 && validUnculledMs === 0) return false;
 
     const culledAfterKill = validCulledMs > lastKillMs;
     const unculledAfterKill = validUnculledMs > lastKillMs;
-    // 最も新しい有効イベントを採用
     if (culledAfterKill && (!unculledAfterKill || validCulledMs >= validUnculledMs)) return true;
     if (unculledAfterKill && (!culledAfterKill || validUnculledMs >= validCulledMs)) return false;
 
@@ -93,13 +86,10 @@ function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_Last
     let colorClass = "";
     let dataIsInteractive = "false";
 
-    // ラストワンの場合は最優先で処理を決定する
     if (isLastOne) {
         colorClass = "color-lastone";
-        // 操作を不可にする
         dataIsInteractive = "false";
     } else if (isS_A_Cullable) {
-        // 通常の湧き潰し可能な点（ラストワンではない）
         const rankB = point.mob_ranks.find(r => r.startsWith("B"));
         if (isCulledFlag) {
             colorClass = rankB === "B1" ? "color-b1-culled" : "color-b2-culled";
@@ -108,7 +98,6 @@ function drawSpawnPoint(point, spawnCullStatus, mobNo, rank, isLastOne, isS_Last
         }
         dataIsInteractive = "true";
     } else if (isB_Only) {
-        // Bモブ専用の点
         const rankB = point.mob_ranks[0];
         colorClass = rankB === "B1" ? "color-b1-only" : "color-b2-only";
         dataIsInteractive = "false";
@@ -141,7 +130,6 @@ function updateCrushUI(mobNo, locationId, isCulled) {
     const rank = marker.dataset.rank;
     const isInteractive = marker.dataset.isInteractive === "true";
     const isLastOne = marker.dataset.isLastone === "true";
-    // 湧き潰し可能なマーカーのみを対象にする
     const isS_A_Cullable = isInteractive && !isLastOne;
 
     if (isS_A_Cullable) {
@@ -157,7 +145,7 @@ function updateCrushUI(mobNo, locationId, isCulled) {
     marker.dataset.isCulled = isCulled.toString();
     const pointNumber = locationId.slice(-2);
     marker.setAttribute("data-tooltip", `${pointNumber} (${isCulled ? "済" : ""})`);
-    marker.removeAttribute("title"); // 既存のtitle属性があれば削除
+    marker.removeAttribute("title");
 }
 
 function attachLocationEvents() {
