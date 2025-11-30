@@ -49,9 +49,10 @@ body {
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     position: relative;
     overflow: hidden;
-    /* Hardware acceleration hints */
     transform: translateZ(0);
     will-change: transform, box-shadow;
+    display: flex;
+    flex-direction: column;
 }
 
 .mob-card:hover {
@@ -98,11 +99,8 @@ body {
 
 .mob-card-header {
     background: var(--bg-card);
-    /* Standardized padding for all ranks to ensure alignment */
     padding: 0.36rem 0.5rem 0.36rem;
 }
-
-/* Removed S-rank specific padding override to maintain consistency */
 
 .progress-bar-bg {
     background: var(--progress-fill);
@@ -298,7 +296,6 @@ body {
     z-index: 20;
 }
 
-/* Custom Tooltip */
 .custom-tooltip {
     position: fixed;
     z-index: 9999;
@@ -312,7 +309,6 @@ body {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.1);
     transform: translate(-50%, -100%);
-    /* マウスの上に表示 */
     transition: opacity 0.1s ease;
 }
 
@@ -326,14 +322,12 @@ body {
     #main-header {
         top: auto;
         bottom: 0;
-        /* Ensure safe area for iPhone X+ AND add buffer for system buttons */
         padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
         border-top: 1px solid rgba(255, 255, 255, 0.1);
         border-bottom: none;
         box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
-    /* Reduce gap between Status and Title on mobile */
     #main-header #status-message {
         padding-bottom: 0;
         padding-top: 0.25rem;
@@ -344,40 +338,30 @@ body {
 .expandable-panel {
     display: grid;
     grid-template-rows: 0fr;
-    /* Standard easing for panel expansion */
     transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background: var(--bg-card);
-    /* Remove old transition props */
     max-height: unset;
     overflow: hidden;
     padding: 0 !important;
-    /* Controlled by inner content padding or strictly 0 when closed */
     margin: 0;
-    /* Ensure no external spacing */
     will-change: grid-template-rows;
 }
 
 .expandable-panel.open {
     grid-template-rows: 1fr;
-    /* Remove old max-height/padding overrides */
     max-height: unset;
     padding: 0 !important;
 }
 
-/* Inner container for grid transition */
 .expandable-panel>div {
     min-height: 0;
-    /* Apply padding here instead of on the parent to avoid jumpiness */
     padding: 0.25rem 0.5rem;
-
-    /* Asymmetric transition: Fast fade out when closing */
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.1s ease-out, visibility 0.1s;
 }
 
 .expandable-panel.open>div {
-    /* Asymmetric transition: Delayed fade in when opening */
     opacity: 1;
     visibility: visible;
     transition: opacity 0.3s ease-out 0.1s;
