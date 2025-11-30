@@ -98,13 +98,11 @@ body {
 
 .mob-card-header {
     background: var(--bg-card);
-    padding: 0.36rem 0.5rem 0.5rem;
+    /* Standardized padding for all ranks to ensure alignment */
+    padding: 0.36rem 0.5rem 0.36rem;
 }
 
-/* Compensate for visual difference in S-rank cards (likely due to expandable panel) */
-.mob-card[data-rank="S"] .mob-card-header {
-    padding-bottom: 0.36rem;
-}
+/* Removed S-rank specific padding override to maintain consistency */
 
 .progress-bar-bg {
     background: var(--progress-fill);
@@ -348,6 +346,8 @@ body {
     overflow: hidden;
     padding: 0 !important;
     /* Controlled by inner content padding or strictly 0 when closed */
+    margin: 0;
+    /* Ensure no external spacing */
     will-change: grid-template-rows;
 }
 
