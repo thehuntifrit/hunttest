@@ -318,7 +318,6 @@ body {
     visibility: hidden;
 }
 
-/* Mobile Header Optimization */
 @media (max-width: 1023px) {
     #main-header {
         top: auto;
@@ -335,7 +334,6 @@ body {
     }
 }
 
-/* Mob Card Expansion Optimization using Grid */
 .expandable-panel {
     display: none;
     background: var(--bg-card);
