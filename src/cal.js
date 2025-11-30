@@ -504,7 +504,6 @@ function calculateRepop(mob, maintenance) {
 
   const isMaintenanceStop = (now >= maintenanceStart && now < serverUp);
 
-  // Check if next spawn is blocked by maintenance
   let isBlockedByMaintenance = false;
   const nextTime = nextConditionSpawnDate ? (nextConditionSpawnDate.getTime() / 1000) : minRepop;
 
