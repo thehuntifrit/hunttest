@@ -500,7 +500,7 @@ function updateProgressBars() {
 
   if (DOM.statusMessageTemp) {
     if (conditionMobs.length > 0) {
-      DOM.statusMessageTemp.textContent = `そろそろ時間：${conditionMobs.join(" / ")}`;
+      DOM.statusMessageTemp.textContent = `🔜 ${conditionMobs.join(" / ")}`;
       DOM.statusMessageTemp.className = "text-cyan-300 font-bold animate-pulse";
       DOM.statusMessageTemp.classList.remove("hidden");
     } else {
