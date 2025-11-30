@@ -335,6 +335,7 @@ body {
     }
 }
 
+/* Mob Card Expansion Optimization using Grid */
 .expandable-panel {
     display: none;
     background: var(--bg-card);
