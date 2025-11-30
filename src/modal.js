@@ -8,11 +8,10 @@ async function openReportModal(mobNo) {
     const mob = getState().mobs.find(m => m.No === mobNo);
     if (!mob) return;
 
-    // 現在時刻（クライアント）を取得
     const now = new Date();
     const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
         .toISOString()
-        .slice(0, 16); // "YYYY-MM-DDTHH:mm"
+        .slice(0, 16);
 
     UiDOM.reportForm.dataset.mobNo = String(mobNo);
     UiDOM.modalMobName.textContent = `${mob.Name}`;
@@ -30,7 +29,6 @@ function closeReportModal() {
 }
 
 function initModal() {
-    // Report Modal Handlers
     const cancelReportBtn = document.getElementById("cancel-report");
     if (cancelReportBtn) {
         cancelReportBtn.addEventListener("click", closeReportModal);
@@ -41,7 +39,6 @@ function initModal() {
         }
     });
 
-    // Global Keydown
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
             if (!UiDOM.reportModal.classList.contains("hidden")) closeReportModal();
