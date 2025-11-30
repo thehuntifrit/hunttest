@@ -48,13 +48,27 @@ function initHeaderObserver() {
 
     const adjustPadding = () => {
         const headerHeight = header.offsetHeight;
-        main.style.paddingTop = `${headerHeight + 10}px`;
+        const isMobile = window.innerWidth < 1024; // Matches CSS breakpoint
+
+        if (isMobile) {
+            // Header is at bottom
+            main.style.paddingTop = "1rem"; // Default top padding (e.g. 16px)
+            main.style.paddingBottom = `${headerHeight + 20}px`; // Add extra space for scrolling
+        } else {
+            // Header is at top
+            main.style.paddingTop = `${headerHeight + 10}px`;
+            main.style.paddingBottom = "2.5rem"; // Default bottom padding (pb-10 = 2.5rem)
+        }
     };
+
     adjustPadding();
     const resizeObserver = new ResizeObserver(() => {
         adjustPadding();
     });
     resizeObserver.observe(header);
+
+    // Also listen to window resize to switch modes
+    window.addEventListener("resize", adjustPadding);
 }
 
 function renderMaintenanceStatus() {
