@@ -19,6 +19,7 @@ const DOM = {
   modalStatus: document.getElementById('modal-status'),
   modalTimeInput: document.getElementById('report-datetime'),
   modalForceSubmit: document.getElementById('report-force-submit'), // 追加
+  statusMessageTemp: document.getElementById('status-message-temp'),
 };
 
 function updateEorzeaTime() {
@@ -508,8 +509,19 @@ function updateExpandablePanel(card, mob) {
 
 function updateProgressBars() {
   const state = getState();
+  const conditionMobs = [];
+
   state.mobs.forEach((mob) => {
     mob.repopInfo = calculateRepop(mob, state.maintenance);
+
+    if (mob.repopInfo.nextConditionSpawnDate) {
+      const nowSec = Date.now() / 1000;
+      const spawnSec = mob.repopInfo.nextConditionSpawnDate.getTime() / 1000;
+      const diff = spawnSec - nowSec;
+      if (diff > 0 && diff <= 1200) {
+        conditionMobs.push(mob.Name);
+      }
+    }
 
     const card = document.querySelector(`.mob-card[data-mob-no="${mob.No}"]`);
     if (card) {
@@ -517,6 +529,17 @@ function updateProgressBars() {
       updateProgressBar(card, mob);
     }
   });
+
+  if (DOM.statusMessageTemp) {
+    if (conditionMobs.length > 0) {
+      DOM.statusMessageTemp.textContent = `そろそろ時間：${conditionMobs.join(" / ")}`;
+      DOM.statusMessageTemp.className = "text-cyan-300 font-bold animate-pulse";
+      DOM.statusMessageTemp.classList.remove("hidden");
+    } else {
+      DOM.statusMessageTemp.textContent = "";
+      DOM.statusMessageTemp.classList.add("hidden");
+    }
+  }
 }
 
 const sortAndRedistribute = debounce(() => filterAndRender(), 200);
