@@ -52,12 +52,14 @@ function initHeaderObserver() {
 
         if (isMobile) {
             // Header is at bottom
-            main.style.paddingTop = "1rem"; // Default top padding (e.g. 16px)
-            main.style.paddingBottom = `${headerHeight + 20}px`; // Add extra space for scrolling
+            main.style.paddingTop = "1rem"; // Default top padding
+            main.style.paddingBottom = "2.5rem"; // Default bottom padding
+            document.body.style.paddingBottom = `${headerHeight + 20}px`; // Add extra space to BODY for scrolling past fixed header
         } else {
             // Header is at top
             main.style.paddingTop = `${headerHeight + 10}px`;
-            main.style.paddingBottom = "2.5rem"; // Default bottom padding (pb-10 = 2.5rem)
+            main.style.paddingBottom = "2.5rem"; // Default bottom padding
+            document.body.style.paddingBottom = "0"; // Reset body padding
         }
     };
 
