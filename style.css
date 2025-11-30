@@ -326,11 +326,17 @@ body {
     #main-header {
         top: auto;
         bottom: 0;
-        /* Ensure safe area for iPhone X+ */
-        padding-bottom: env(safe-area-inset-bottom);
+        /* Ensure safe area for iPhone X+ AND add buffer for system buttons */
+        padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
         border-top: 1px solid rgba(255, 255, 255, 0.1);
         border-bottom: none;
         box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Reduce gap between Status and Title on mobile */
+    #main-header #status-message {
+        padding-bottom: 0;
+        padding-top: 0.25rem;
     }
 }
 
