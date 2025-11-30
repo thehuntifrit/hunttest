@@ -201,21 +201,15 @@ function parseMobIdParts(no) {
   };
 }
 
-
-
 function allTabComparator(a, b) {
   const aInfo = a.repopInfo || {};
   const bInfo = b.repopInfo || {};
   const aStatus = aInfo.status;
   const bStatus = bInfo.status;
-  // Special handling for MaxOver
   const isAMaxOver = aStatus === "MaxOver";
   const isBMaxOver = bStatus === "MaxOver";
 
   if (isAMaxOver && isBMaxOver) {
-    // Both are MaxOver: Sort by Rank (S > F > A) > Expansion > MobNo > Instance
-
-    // Helper for MaxOver Rank Priority (S=0, F=1, A=2)
     const getMaxOverRankPriority = (r) => {
       if (r === 'S') return 0;
       if (r === 'F') return 1;
@@ -223,48 +217,37 @@ function allTabComparator(a, b) {
       return 99;
     };
 
-    // 1. Rank (S > F > A)
     const rankDiff = getMaxOverRankPriority(a.Rank) - getMaxOverRankPriority(b.Rank);
     if (rankDiff !== 0) return rankDiff;
-    // 2. Expansion (Descending: Golden > ... > ARR)
     const expA = getExpansionPriority(a.Expansion);
     const expB = getExpansionPriority(b.Expansion);
     if (expA !== expB) return expB - expA;
-    // 3. MobNo (Ascending)
     const pa = parseMobIdParts(a.No);
     const pb = parseMobIdParts(b.No);
     if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
-    // 4. Instance (Ascending)
     return pa.instance - pb.instance;
   }
 
-  // If one is MaxOver and the other isn't, MaxOver should come first (highest %)
   if (isAMaxOver && !isBMaxOver) return -1;
   if (!isAMaxOver && isBMaxOver) return 1;
 
-  // 1. % Rate (Descending)
   const aPercent = aInfo.elapsedPercent || 0;
   const bPercent = bInfo.elapsedPercent || 0;
 
   if (Math.abs(aPercent - bPercent) > 0.001) {
     return bPercent - aPercent;
   }
-  // 2. Time (Ascending - sooner is smaller timestamp)
   const aTime = aInfo.minRepop || 0;
   const bTime = bInfo.minRepop || 0;
   if (aTime !== bTime) return aTime - bTime;
-  // 3. Rank (S > A > F)
   const rankDiff = rankPriority(a.Rank) - rankPriority(b.Rank);
   if (rankDiff !== 0) return rankDiff;
-  // 4. Expansion (Descending: Golden > ... > ARR)
   const expA = getExpansionPriority(a.Expansion);
   const expB = getExpansionPriority(b.Expansion);
   if (expA !== expB) return expB - expA;
-  // 5. MobNo (Ascending)
   const pa = parseMobIdParts(a.No);
   const pb = parseMobIdParts(b.No);
   if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
-  // 6. Instance (Ascending)
   return pa.instance - pb.instance;
 }
 
@@ -394,7 +377,6 @@ function updateProgressText(card, mob) {
 
   const nowSec = Date.now() / 1000;
   let leftStr = timeRemaining || "未確定";
-  // Removed status === "NextCondition"
   const percentStr = (status === "PopWindow" || status === "ConditionActive")
     ? ` (${Number(elapsedPercent || 0).toFixed(0)}%)`
     : "";
@@ -468,7 +450,6 @@ function updateExpandablePanel(card, mob) {
   if (elLast) elLast.textContent = `前回: ${lastStr}`;
 
   if (elMemoInput) {
-    // Only update if not currently focused to avoid overwriting user input while typing
     if (document.activeElement !== elMemoInput) {
       elMemoInput.value = mob.memo_text || "";
     }
@@ -487,7 +468,6 @@ function updateProgressBars() {
       const spawnSec = mob.repopInfo.nextConditionSpawnDate.getTime() / 1000;
       const endSec = mob.repopInfo.conditionWindowEnd.getTime() / 1000;
 
-      // 15 minutes before spawn ~ end of window
       if (nowSec >= (spawnSec - 900) && nowSec <= endSec) {
         conditionMobs.push(mob.Name);
       }
