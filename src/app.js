@@ -48,18 +48,16 @@ function initHeaderObserver() {
 
     const adjustPadding = () => {
         const headerHeight = header.offsetHeight;
-        const isMobile = window.innerWidth < 1024; // Matches CSS breakpoint
+        const isMobile = window.innerWidth < 1024;
 
         if (isMobile) {
-            // Header is at bottom
-            main.style.paddingTop = "1rem"; // Default top padding
-            main.style.paddingBottom = "2.5rem"; // Default bottom padding
-            document.body.style.paddingBottom = `${headerHeight + 20}px`; // Add extra space to BODY for scrolling past fixed header
+            main.style.paddingTop = "1rem";
+            main.style.paddingBottom = "2.5rem";
+            document.body.style.paddingBottom = `${headerHeight + 20}px`;
         } else {
-            // Header is at top
             main.style.paddingTop = `${headerHeight + 10}px`;
-            main.style.paddingBottom = "2.5rem"; // Default bottom padding
-            document.body.style.paddingBottom = "0"; // Reset body padding
+            main.style.paddingBottom = "2.5rem";
+            document.body.style.paddingBottom = "0";
         }
     };
 
@@ -69,7 +67,6 @@ function initHeaderObserver() {
     });
     resizeObserver.observe(header);
 
-    // Also listen to window resize to switch modes
     window.addEventListener("resize", adjustPadding);
 }
 
