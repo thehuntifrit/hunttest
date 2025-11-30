@@ -342,21 +342,15 @@ body {
 
 /* Mob Card Expansion Optimization using Grid */
 .expandable-panel {
-    display: grid;
-    grid-template-rows: 0fr;
-    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: none;
     background: var(--bg-card);
-    max-height: unset;
     overflow: hidden;
     padding: 0 !important;
     margin: 0;
-    will-change: grid-template-rows;
-    min-height: 0;
 }
 
 .expandable-panel.open {
-    grid-template-rows: 1fr;
-    max-height: unset;
+    display: block;
     padding: 0 !important;
 }
 
@@ -364,12 +358,11 @@ body {
     min-height: 0;
     padding: 0.5rem;
     opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.1s ease-out, visibility 0.1s;
+    animation: fadeIn 0.3s ease-out forwards;
 }
 
-.expandable-panel.open>div {
-    opacity: 1;
-    visibility: visible;
-    transition: opacity 0.3s ease-out 0.1s;
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
 }
