@@ -49,6 +49,9 @@ body {
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     position: relative;
     overflow: hidden;
+    /* Hardware acceleration hints */
+    transform: translateZ(0);
+    will-change: transform, box-shadow;
 }
 
 .mob-card:hover {
@@ -96,6 +99,11 @@ body {
 .mob-card-header {
     background: var(--bg-card);
     padding: 0.36rem 0.5rem 0.5rem;
+}
+
+/* Compensate for visual difference in S-rank cards (likely due to expandable panel) */
+.mob-card[data-rank="S"] .mob-card-header {
+    padding-bottom: 0.36rem;
 }
 
 .progress-bar-bg {
@@ -332,12 +340,15 @@ body {
 .expandable-panel {
     display: grid;
     grid-template-rows: 0fr;
-    transition: grid-template-rows 0.3s ease-out;
+    /* Standard easing for panel expansion */
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background: var(--bg-card);
     /* Remove old transition props */
     max-height: unset;
     overflow: hidden;
-    padding: 0 !important; /* Controlled by inner content padding or strictly 0 when closed */
+    padding: 0 !important;
+    /* Controlled by inner content padding or strictly 0 when closed */
+    will-change: grid-template-rows;
 }
 
 .expandable-panel.open {
@@ -348,16 +359,20 @@ body {
 }
 
 /* Inner container for grid transition */
-.expandable-panel > div {
+.expandable-panel>div {
     min-height: 0;
     /* Apply padding here instead of on the parent to avoid jumpiness */
-    padding: 0.25rem 0.5rem; 
+    padding: 0.25rem 0.5rem;
+
+    /* Asymmetric transition: Fast fade out when closing */
     opacity: 0;
-    transition: opacity 0.3s ease-out;
     visibility: hidden;
+    transition: opacity 0.1s ease-out, visibility 0.1s;
 }
 
-.expandable-panel.open > div {
+.expandable-panel.open>div {
+    /* Asymmetric transition: Delayed fade in when opening */
     opacity: 1;
     visibility: visible;
+    transition: opacity 0.3s ease-out 0.1s;
 }
