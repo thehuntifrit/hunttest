@@ -32,7 +32,6 @@ const renderRankTabs = () => {
       `tab-button px-2 py-1 text-sm rounded font-semibold text-white text-center transition ` +
       (isSelected ? "bg-green-500" : "bg-gray-500 hover:bg-gray-400");
 
-    // イベントリスナー設定
     btn.addEventListener("click", () => {
       handleRankTabClick(rank);
     });
@@ -179,7 +178,6 @@ const handleRankTabClick = (rank) => {
   const stored = JSON.parse(localStorage.getItem("huntUIState")) || {};
   let clickStep = stored.clickStep || 1;
 
-  // Toggle Logic
   if (prevRank !== rank) {
     clickStep = 1;
   } else {
@@ -188,13 +186,11 @@ const handleRankTabClick = (rank) => {
     else clickStep = 2;
   }
 
-  // Update State
   setFilter({
     rank,
     areaSets: state.filter.areaSets
   });
 
-  // Save UI State
   localStorage.setItem("huntUIState", JSON.stringify({
     rank,
     clickStep
@@ -211,14 +207,13 @@ function handleAreaFilterClick(e) {
   const state = getState();
   const uiRank = state.filter.rank;
 
-  // Handle ALL tab rank filtering
   if (uiRank === 'ALL') {
     const currentSet = state.filter.allRankSet instanceof Set ? state.filter.allRankSet : new Set();
     const nextSet = new Set(currentSet);
-    const val = btn.dataset.value; // Use generic 'value'
+    const val = btn.dataset.value;
 
     if (val === "ALL") {
-      if (currentSet.size === 3) { // S, A, F
+      if (currentSet.size === 3) {
         nextSet.clear();
       } else {
         nextSet.add("S").add("A").add("F");
@@ -238,7 +233,6 @@ function handleAreaFilterClick(e) {
     return;
   }
 
-  // Handle other tabs area filtering
   const targetRankKey = uiRank === 'FATE' ? 'F' : uiRank;
   const allAreas = getAllAreas();
 
@@ -248,7 +242,7 @@ function handleAreaFilterClick(e) {
       : new Set();
 
   const nextAreaSets = { ...state.filter.areaSets };
-  const val = btn.dataset.value || btn.dataset.area; // Fallback for safety
+  const val = btn.dataset.value || btn.dataset.area;
 
   if (val === "ALL") {
     if (currentSet.size === allAreas.length) {
@@ -299,9 +293,7 @@ function filterMobsByRankAndArea(mobs) {
     if (uiRank === 'ALL') {
       if (filterKey !== 'S' && filterKey !== 'A' && filterKey !== 'F') return false;
 
-      // Rank Filter for ALL tab
       if (allRankSet && allRankSet.size > 0 && allRankSet.size < 3) {
-
         if (!allRankSet.has(filterKey)) return false;
       }
 
