@@ -11,7 +11,7 @@ const state = {
     baseMobData: [],
     mobs: [],
     mobLocations: {},
-    maintenance: null, // メンテナンス情報を保持
+    maintenance: null,
 
     filter: JSON.parse(localStorage.getItem("huntFilterState")) || {
         rank: "ALL",
@@ -21,7 +21,7 @@ const state = {
             F: new Set(),
             ALL: new Set()
         },
-        allRankSet: new Set() // For ALL tab rank filtering
+        allRankSet: new Set()
     },
     openMobCardNo: localStorage.getItem("openMobCardNo")
         ? parseInt(localStorage.getItem("openMobCardNo"), 10)
@@ -123,7 +123,6 @@ async function loadMaintenance() {
     }
 }
 
-// Mobデータの加工処理を共通化
 function processMobData(rawMobData, maintenance) {
     return Object.entries(rawMobData.mobs).map(([no, mob]) => ({
         No: parseInt(no, 10),
@@ -191,12 +190,9 @@ async function loadBaseMobData() {
             state.baseMobData = processed;
             setMobs([...processed]);
 
-            // 初回ロード時(キャッシュなし)か、データ更新時のみ再描画
             if (!cachedData) {
                 filterAndRender({ isInitialLoad: true });
             } else {
-                // 既にキャッシュで表示済みの場合は、静かに更新するだけで良いかも知れないが、
-                // データが変わったので再描画する
                 filterAndRender();
             }
         } else {
@@ -205,7 +201,6 @@ async function loadBaseMobData() {
 
     } catch (e) {
         console.error("Failed to load base data from network:", e);
-        // キャッシュもなく、ネットワークも失敗した場合のみエラー表示
         if (!cachedData) {
             console.error("データの読み込みに失敗しました。");
         }
@@ -272,7 +267,7 @@ function startRealtime() {
 
         const merged = current.map(m => {
             const memos = memoData[m.No] || [];
-            const latest = memos[0]; // 最新のメモ
+            const latest = memos[0];
 
             const updatedMob = { ...m };
             if (latest) {
