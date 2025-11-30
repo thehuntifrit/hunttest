@@ -201,34 +201,7 @@ function parseMobIdParts(no) {
   };
 }
 
-function baseComparator(a, b) {
-  // 1. Rank (S > A > F)
-  const rankDiff = rankPriority(a.Rank) - rankPriority(b.Rank);
-  if (rankDiff !== 0) return rankDiff;
-  // 2. Expansion (Descending: Golden > ... > ARR)
-  const expA = getExpansionPriority(a.Expansion);
-  const expB = getExpansionPriority(b.Expansion);
-  if (expA !== expB) return expB - expA;
-  // 3. MobNo (Ascending)
-  const pa = parseMobIdParts(a.No);
-  const pb = parseMobIdParts(b.No);
-  if (pa.mobNo !== pb.mobNo) return pa.mobNo - pb.mobNo;
-  // 4. Instance (Ascending)
-  if (pa.instance !== pb.instance) return pa.instance - pb.instance;
 
-  const aInfo = a.repopInfo || {};
-  const bInfo = b.repopInfo || {};
-  const aPercent = aInfo.elapsedPercent || 0;
-  const bPercent = bInfo.elapsedPercent || 0;
-
-  if (Math.abs(aPercent - bPercent) > 0.001) {
-    return bPercent - aPercent;
-  }
-
-  const aTime = aInfo.minRepop || 0;
-  const bTime = bInfo.minRepop || 0;
-  return aTime - bTime;
-}
 
 function allTabComparator(a, b) {
   const aInfo = a.repopInfo || {};
@@ -299,12 +272,7 @@ function filterAndRender({ isInitialLoad = false } = {}) {
   const state = getState();
   const filtered = filterMobsByRankAndArea(state.mobs);
 
-  let sortedMobs;
-  if (state.filter.rank === 'ALL') {
-    sortedMobs = filtered.sort(allTabComparator);
-  } else {
-    sortedMobs = filtered.sort(baseComparator);
-  }
+  const sortedMobs = filtered.sort(allTabComparator);
 
   const existingCards = new Map();
   DOM.masterContainer.querySelectorAll('.mob-card').forEach(card => {
