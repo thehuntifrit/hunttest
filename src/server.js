@@ -137,31 +137,26 @@ const submitReport = async (mobNo, timeISO) => {
     const isForceSubmit = forceSubmitEl ? forceSubmitEl.checked : false;
 
     if (!isForceSubmit && mob.last_kill_time) {
-        // メンテナンス情報の取得
         let maintenance = state.maintenance;
         if (maintenance && maintenance.maintenance) {
             maintenance = maintenance.maintenance;
         }
 
-        // 最短Repop時間の計算 (秒)
         let repopSeconds = mob.REPOP_s;
         let baseTimeMs = mob.last_kill_time * 1000;
 
-        // メンテナンス明け初回湧きの判定 (cal.js準拠)
         if (maintenance && maintenance.serverUp) {
             const serverUpMs = new Date(maintenance.serverUp).getTime();
             const serverUpSec = serverUpMs / 1000;
 
-            // 前回討伐がメンテ明け前なら、基準はメンテ明け時刻 & 0.6倍
             if (mob.last_kill_time <= serverUpSec) {
                 repopSeconds = repopSeconds * 0.6;
-                baseTimeMs = serverUpMs; // 基準時刻もメンテ明け時刻になる
+                baseTimeMs = serverUpMs;
             }
         }
 
-        // 基準時刻の計算: (前回討伐 or メンテ明け) + 最短Repop - 5分(300秒)
         const minRepopTimeMs = baseTimeMs + (repopSeconds * 1000);
-        const allowedTimeMs = minRepopTimeMs - (300 * 1000); // 5分前倒し
+        const allowedTimeMs = minRepopTimeMs - (300 * 1000);
 
         if (killTimeDate.getTime() < allowedTimeMs) {
             const allowedDate = new Date(allowedTimeMs);
@@ -171,20 +166,19 @@ const submitReport = async (mobNo, timeISO) => {
             console.warn(msg);
             if (modalStatusEl) {
                 modalStatusEl.textContent = msg;
-                modalStatusEl.style.color = "#ef4444"; // Red color
+                modalStatusEl.style.color = "#ef4444";
                 modalStatusEl.style.whiteSpace = "pre-wrap";
             }
-            return; // 送信中断
+            return;
         }
     }
 
     if (modalStatusEl) {
         modalStatusEl.textContent = "送信中...";
-        modalStatusEl.style.color = ""; // Reset color
+        modalStatusEl.style.color = "";
     }
 
     try {
-        // V2関数を呼び出し (reportsコレクションへの書き込みは廃止)
         const response = await callUpdateMobStatus({
             mob_id: mobNo.toString(),
             kill_time: killTimeDate.toISOString()
