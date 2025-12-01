@@ -864,7 +864,7 @@
       "locations": [] 
     },
       "52031": {"rank": "S", "name":"アームストロング", "area": "ガレマルド",
-      "condition": "「リペアド・インペリアルショートローブ」//「リペアド・インペリアルポットヘルム」//を装備してPOP地点で戦闘不能になる（自爆も可）",
+      "condition": "「リペアド・インペリアルショートローブ」//「リペアド・インペリアルポットヘルム」を//装備してPOP地点で戦闘不能になる（自爆も可）",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "Garlemald.webp",
       "locations": [
