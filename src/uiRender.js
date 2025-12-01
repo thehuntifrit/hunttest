@@ -100,7 +100,7 @@ function createMobCard(mob) {
   const shouldShowMemo = hasMemo && (isMemoNewer || (mob.last_kill_time || 0) === 0);
 
   const memoIcon = shouldShowMemo
-    ? ` <span data-tooltip="${mob.memo_text}" class="cursor-help" style="font-size: 1rem">📝</span>`
+    ? ` <span data-tooltip="${mob.memo_text}" style="font-size: 1rem">📝</span>`
     : "";
 
   // Card Attributes
@@ -527,7 +527,6 @@ function updateMemoIcon(card, mob) {
 
   if (shouldShowMemo) {
     const span = document.createElement('span');
-    span.className = 'cursor-help';
     span.style.fontSize = '1rem';  // font-size: 0の影響を無効化
     span.textContent = '📝';
     span.setAttribute('data-tooltip', mob.memo_text);
