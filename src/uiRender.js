@@ -1,4 +1,3 @@
-
 // uiRender.js
 
 import { calculateRepop, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime, EORZEA_MINUTE_MS } from "./cal.js";
@@ -19,7 +18,7 @@ const DOM = {
   modalMobName: document.getElementById('modal-mob-name'),
   modalStatus: document.getElementById('modal-status'),
   modalTimeInput: document.getElementById('report-datetime'),
-  modalForceSubmit: document.getElementById('report-force-submit'), // 追加
+  modalForceSubmit: document.getElementById('report-force-submit'),
   statusMessageTemp: document.getElementById('status-message-temp'),
 };
 
@@ -100,6 +99,10 @@ function createMobCard(mob) {
   const isMemoNewer = (mob.memo_updated_at || 0) > (mob.last_kill_time || 0);
   const shouldShowMemo = hasMemo && (isMemoNewer || (mob.last_kill_time || 0) === 0);
 
+  const memoIcon = shouldShowMemo
+    ? ` <span data-tooltip="${mob.memo_text}" class="cursor-help">📝</span>`
+    : "";
+
   // Card Attributes
   card.dataset.mobNo = mob.No;
   card.dataset.rank = rank;
@@ -117,7 +120,8 @@ function createMobCard(mob) {
   const mobNameEl = card.querySelector('.mob-name');
   mobNameEl.textContent = mob.Name;
 
-  updateMemoIcon(card, mob);
+  const memoIconContainer = card.querySelector('.memo-icon-container');
+  memoIconContainer.innerHTML = memoIcon;
 
   // Area Info
   const areaInfoContainer = card.querySelector('.area-info-container');
@@ -356,7 +360,6 @@ function updateProgressBar(card, mob) {
     bar.classList.add(PROGRESS_CLASSES.MAX_OVER);
     text.classList.add(PROGRESS_CLASSES.TEXT_POP);
 
-    // Fix: Add white border if MaxOver AND in condition window
     if (mob.repopInfo.isInConditionWindow) {
       wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE);
     }
