@@ -145,7 +145,6 @@ function processMobData(rawMobData, maintenance) {
         last_kill_time: 0,
         prev_kill_time: 0,
         spawn_cull_status: {},
-        // メモ機能用フィールド
         memo_text: "",
         memo_updated_at: 0,
 
@@ -272,7 +271,7 @@ function startRealtime() {
             const updatedMob = { ...m };
             if (latest) {
                 updatedMob.memo_text = latest.memo_text;
-                updatedMob.memo_updated_at = latest.created_at?.seconds || 0;
+                updatedMob.memo_updated_at = latest.created_at ? latest.created_at.seconds : (Date.now() / 1000);
             } else {
                 updatedMob.memo_text = "";
             }
