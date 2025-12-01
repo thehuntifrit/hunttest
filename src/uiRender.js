@@ -459,6 +459,26 @@ function updateExpandablePanel(card, mob) {
   }
 }
 
+function updateMemoIcon(card, mob) {
+  const memoIconContainer = card.querySelector('.memo-icon-container');
+  if (!memoIconContainer) return;
+
+  const hasMemo = mob.memo_text && mob.memo_text.trim() !== "";
+  const isMemoNewer = (mob.memo_updated_at || 0) > (mob.last_kill_time || 0);
+  const shouldShowMemo = hasMemo && (isMemoNewer || (mob.last_kill_time || 0) === 0);
+
+  if (shouldShowMemo) {
+    const span = document.createElement('span');
+    span.style.fontSize = '1rem';
+    span.textContent = '📝';
+    span.setAttribute('data-tooltip', mob.memo_text);
+    memoIconContainer.innerHTML = '';
+    memoIconContainer.appendChild(span);
+  } else {
+    memoIconContainer.innerHTML = '';
+  }
+}
+
 function updateProgressBars() {
   const state = getState();
   const conditionMobs = [];
@@ -516,26 +536,6 @@ function onKillReportReceived(mobId, kill_time) {
 setInterval(() => {
   updateProgressBars();
 }, EORZEA_MINUTE_MS);
-
-function updateMemoIcon(card, mob) {
-  const memoIconContainer = card.querySelector('.memo-icon-container');
-  if (!memoIconContainer) return;
-
-  const hasMemo = mob.memo_text && mob.memo_text.trim() !== "";
-  const isMemoNewer = (mob.memo_updated_at || 0) > (mob.last_kill_time || 0);
-  const shouldShowMemo = hasMemo && (isMemoNewer || (mob.last_kill_time || 0) === 0);
-
-  if (shouldShowMemo) {
-    const span = document.createElement('span');
-    span.style.fontSize = '1rem';  // font-size: 0の影響を無効化
-    span.textContent = '📝';
-    span.setAttribute('data-tooltip', mob.memo_text);
-    memoIconContainer.innerHTML = '';
-    memoIconContainer.appendChild(span);
-  } else {
-    memoIconContainer.innerHTML = '';
-  }
-}
 
 export {
   filterAndRender, distributeCards, updateProgressText, updateProgressBar,
