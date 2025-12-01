@@ -1,4 +1,3 @@
-
 // app.js
 
 import { loadBaseMobData, startRealtime, setOpenMobCardNo, getState, setUserId } from "./dataManager.js";
