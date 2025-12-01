@@ -257,11 +257,27 @@ function filterAndRender({ isInitialLoad = false } = {}) {
 
   const sortedMobs = filtered.sort(allTabComparator);
 
+  // Focus preservation logic
+  const activeElement = document.activeElement;
+  let focusedMobNo = null;
+  let focusedAction = null;
+  let selectionStart = null;
+  let selectionEnd = null;
+
+  if (activeElement && activeElement.closest('.mob-card')) {
+    focusedMobNo = activeElement.closest('.mob-card').dataset.mobNo;
+    if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') {
+      focusedAction = activeElement.dataset.action;
+      selectionStart = activeElement.selectionStart;
+      selectionEnd = activeElement.selectionEnd;
+    }
+  }
+
   const existingCards = new Map();
-  DOM.masterContainer.querySelectorAll('.mob-card').forEach(card => {
+  // Search in the entire document because cards might be in columns
+  document.querySelectorAll('.mob-card').forEach(card => {
     const mobNo = card.getAttribute('data-mob-no');
     existingCards.set(mobNo, card);
-    card.remove();
   });
 
   const frag = document.createDocumentFragment();
@@ -301,6 +317,22 @@ function filterAndRender({ isInitialLoad = false } = {}) {
   attachLocationEvents();
 
   if (isInitialLoad) updateProgressBars();
+
+  // Restore focus
+  if (focusedMobNo) {
+    const card = document.querySelector(`.mob-card[data-mob-no="${focusedMobNo}"]`);
+    if (card) {
+      if (focusedAction) {
+        const input = card.querySelector(`input[data-action="${focusedAction}"]`);
+        if (input) {
+          input.focus();
+          if (selectionStart !== null && selectionEnd !== null) {
+            input.setSelectionRange(selectionStart, selectionEnd);
+          }
+        }
+      }
+    }
+  }
 }
 
 function distributeCards() {
@@ -536,6 +568,11 @@ function onKillReportReceived(mobId, kill_time) {
 setInterval(() => {
   updateProgressBars();
 }, EORZEA_MINUTE_MS);
+
+// 1 minute interval for sorting
+setInterval(() => {
+  sortAndRedistribute();
+}, 60000);
 
 export {
   filterAndRender, distributeCards, updateProgressText, updateProgressBar,
