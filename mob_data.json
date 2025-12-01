@@ -514,7 +514,7 @@
       "locations": []
     },
       "32051": {"rank": "S", "name":"ガンマ", "area": "ヤンサ",
-      "condition": "ミニオン「ミニアレキサンダー」を出してPOP地点を踏む//※ ET 17:00 〜 8:00",
+      "condition": "ミニオン「ミニアレキサンダー」を出してET 17:00 〜 8:00の間にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "timeRange": { "start": 17, "end": 8 },
       "mapImage": "Yanxia.webp",
