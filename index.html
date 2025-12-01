@@ -9,58 +9,50 @@
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Orbitron:wght@400;500;700;900&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="leading-relaxed">
 
-    <header id="main-header"
-        class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-slate-900/90 backdrop-blur-md">
+    <header id="main-header" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
 
         <!-- ステータスメッセージ -->
-        <div id="status-message" class="text-center py-2 text-sm text-white bg-transparent" role="status"
+        <div id="status-message" class="text-center py-1 text-xs font-bold tracking-wider uppercase" role="status"
             aria-live="polite">
             <div id="status-message-maintenance"></div>
             <div id="status-message-temp"></div>
         </div>
 
         <!-- 帯部分（タイトル＋ET＋ランクタブ） -->
-        <div class="max-w-6xl mx-auto px-4 flex items-center justify-between min-h-16 sm:min-h-16 lg:min-h-20">
+        <div class="max-w-[1600px] mx-auto px-4 flex items-center justify-between h-16">
             <!-- 左：タイトル -->
-            <h1 class="flex flex-col text-3xl font-bold font-stretch-condensed leading-[0.8] text-glow">
-                <span class="text-cyan-400">The</span>
-                <span class="text-yellow-400">Hunt</span>
+            <h1 class="flex items-center gap-2 text-2xl font-black tracking-tighter italic">
+                <span class="text-cyan-400 drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]">THE</span>
+                <span class="text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.8)]">HUNT</span>
             </h1>
 
             <!-- 右：ET（上）＋ランクタブ（下） -->
             <div class="flex flex-col items-end justify-center gap-1">
-                <span id="eorzea-time" class="text-sm text-gray-300"></span>
+                <span id="eorzea-time" class="text-xs font-mono text-cyan-200 tracking-widest"></span>
                 <div id="rank-tabs" class="flex justify-end gap-2"></div>
             </div>
         </div>
 
         <!-- エリアパネル（スマホ） -->
         <div id="area-filter-panel-mobile"
-            class="max-w-6xl mx-auto flex flex-wrap justify-end px-4 py-2 block lg:hidden">
+            class="max-w-[1600px] mx-auto flex flex-wrap justify-end px-4 py-2 block lg:hidden">
             <div class="grid grid-cols-2 gap-2 w-full sm:w-auto"></div>
         </div>
         <!-- エリアパネル（デスクトップ） -->
-        <div id="area-filter-panel-desktop" class="max-w-6xl mx-auto flex flex-wrap justify-end px-4 py-2 hidden">
+        <div id="area-filter-panel-desktop" class="max-w-[1600px] mx-auto flex flex-wrap justify-end px-4 py-2 hidden">
             <div class="flex flex-wrap gap-2 justify-end w-full"></div>
         </div>
     </header>
 
-    <main class="mx-auto px-2 py-2 sm:px-4 pb-10 pt-24">
-        <div id="master-mob-container" class="hidden"></div>
-        <div id="column-container"
-            class="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-4 lg:grid-cols-3 max-w-6xl mx-auto"
-            data-breakpoint-md="768" data-breakpoint-lg="1024">
-            <div id="column-1" class="flex flex-col gap-4"></div>
-            <div id="column-2" class="flex flex-col gap-4"></div>
-            <div id="column-3" class="flex flex-col gap-4"></div>
-        </div>
+    <main class="mx-auto px-2 py-4 sm:px-4 pb-20 pt-28 max-w-[1800px]">
+        <div id="mob-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
     </main>
 
     <footer class="max-w-6xl mx-auto px-4 py-8 text-center">
