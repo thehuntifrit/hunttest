@@ -6,9 +6,7 @@ import { getState, RANK_COLORS, PROGRESS_CLASSES } from "./dataManager.js";
 import { filterMobsByRankAndArea } from "./filterUI.js";
 
 const DOM = {
-  masterContainer: document.getElementById('master-mob-container'),
-  colContainer: document.getElementById('column-container'),
-  cols: [document.getElementById('column-1'), document.getElementById('column-2'), document.getElementById('column-3')],
+  mobGrid: document.getElementById('mob-grid'),
   rankTabs: document.getElementById('rank-tabs'),
   areaFilterWrapper: document.getElementById('area-filter-wrapper'),
   areaFilterPanel: document.getElementById('area-filter-panel'),
@@ -18,7 +16,7 @@ const DOM = {
   modalMobName: document.getElementById('modal-mob-name'),
   modalStatus: document.getElementById('modal-status'),
   modalTimeInput: document.getElementById('report-datetime'),
-  modalForceSubmit: document.getElementById('report-force-submit'), // 追加
+  modalForceSubmit: document.getElementById('report-force-submit'),
   statusMessageTemp: document.getElementById('status-message-temp'),
 };
 
@@ -258,7 +256,7 @@ function filterAndRender({ isInitialLoad = false } = {}) {
   const sortedMobs = filtered.sort(allTabComparator);
 
   const existingCards = new Map();
-  DOM.masterContainer.querySelectorAll('.mob-card').forEach(card => {
+  DOM.mobGrid.querySelectorAll('.mob-card').forEach(card => {
     const mobNo = card.getAttribute('data-mob-no');
     existingCards.set(mobNo, card);
     card.remove();
@@ -294,36 +292,14 @@ function filterAndRender({ isInitialLoad = false } = {}) {
     }
   });
 
-  DOM.masterContainer.appendChild(frag);
-
-  distributeCards();
+  DOM.mobGrid.appendChild(frag);
   attachLocationEvents();
 
   if (isInitialLoad) updateProgressBars();
 }
 
 function distributeCards() {
-  const width = window.innerWidth;
-  const md = 768;
-  const lg = 1024;
-  let cols = 1;
-  if (width >= lg) {
-    cols = 3;
-    DOM.cols[2].classList.remove("hidden");
-  } else if (width >= md) {
-    cols = 2;
-    DOM.cols[2].classList.add("hidden");
-  } else {
-    cols = 1;
-    DOM.cols[2].classList.add("hidden");
-  }
-
-  DOM.cols.forEach(col => (col.innerHTML = ""));
-  const cards = Array.from(DOM.masterContainer.children);
-  cards.forEach((card, idx) => {
-    const target = idx % cols;
-    DOM.cols[target].appendChild(card);
-  });
+  // Deprecated: CSS Grid handles layout
 }
 
 function updateProgressBar(card, mob) {
