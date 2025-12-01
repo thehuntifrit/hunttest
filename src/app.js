@@ -1,3 +1,4 @@
+
 // app.js
 
 import { loadBaseMobData, startRealtime, setOpenMobCardNo, getState, setUserId } from "./dataManager.js";
@@ -13,6 +14,9 @@ async function initializeApp() {
         initTooltip();
         await loadBaseMobData();
         console.log("Mob Data Loaded.");
+
+        // デバッグ用
+        window.getState = getState;
 
         const userId = await initializeAuth();
         if (userId) {
