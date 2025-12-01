@@ -1,265 +1,327 @@
-/* style.css */
+/* style.css - Cyber-Fantasy Theme */
 
 :root {
-    /* Modern Dark Palette */
-    --bg-dark: #0b1121;
-    /* Darker, richer blue-black */
-    --bg-card: rgba(30, 41, 59, 0.75);
-    /* More transparent for glass effect */
-    --bg-card-hover: rgba(30, 41, 59, 0.85);
+    /* --- Cyber-Fantasy Palette --- */
+    --bg-deep: #050510;
+    /* Deepest Void */
+    --bg-panel: rgba(10, 15, 30, 0.85);
+    --bg-panel-hover: rgba(20, 30, 50, 0.9);
 
-    /* Accents - Vibrant but refined */
-    --accent-cyan: #22d3ee;
-    /* Brighter cyan */
-    --accent-cyan-glow: rgba(34, 211, 238, 0.4);
-    --accent-gold: #facc15;
-    --accent-crimson: #f87171;
+    /* Neons */
+    --neon-cyan: #00f3ff;
+    --neon-gold: #ffd700;
+    --neon-magenta: #ff00ff;
+    --neon-crimson: #ff2a2a;
+    --neon-green: #00ff9d;
 
     /* Text */
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
+    --text-main: #e0faff;
+    --text-dim: #8090a0;
+    --text-accent: var(--neon-cyan);
 
     /* Ranks */
-    --rank-s: #f97316;
-    /* Orange-500 */
-    --rank-a: #22c55e;
-    /* Green-500 */
-    --rank-f: #a855f7;
-    /* Purple-500 */
+    --rank-s: #ff8800;
+    --rank-a: #00ff9d;
+    --rank-f: #b026ff;
 
-    /* Progress Bars */
-    --progress-bg: rgba(15, 23, 42, 0.6);
-    --progress-fill: linear-gradient(90deg, var(--accent-cyan), #3b82f6);
-    --progress-max-over: linear-gradient(90deg, #6366f1, #818cf8);
-    /* Indigo gradient */
+    /* Progress & Gauges */
+    --gauge-bg: rgba(0, 243, 255, 0.1);
+    --gauge-fill: linear-gradient(90deg, var(--neon-cyan), #0066ff);
+    --gauge-max: linear-gradient(90deg, #ff0055, #ff00aa);
 
     /* Map Markers */
-    --color-b1: #3b82f6;
-    --color-b2: #ef4444;
-    --color-culled: #cbd5e1;
-    --color-lastone: #10b981;
+    --marker-b1: #0088ff;
+    --marker-b2: #ff4444;
+    --marker-culled: #506070;
+    --marker-last: #00ff9d;
 }
 
 body {
-    background-color: var(--bg-dark);
-    color: var(--text-primary);
-    font-family: 'Inter', 'Noto Sans JP', sans-serif;
-    /* Richer, more subtle background gradient */
+    background-color: var(--bg-deep);
+    color: var(--text-main);
+    font-family: 'Noto Sans JP', sans-serif;
+    /* Cyber Grid Background */
     background-image:
-        radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 100% 100%, rgba(250, 204, 21, 0.05) 0%, transparent 40%),
-        radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 1) 0%, transparent 100%);
+        linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+        radial-gradient(circle at 50% 50%, rgba(5, 5, 16, 0.8) 0%, rgba(5, 5, 16, 1) 90%);
+    background-size: 50px 50px, 50px 50px, 100% 100%;
     background-attachment: fixed;
-    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
 }
 
-/* --- Glassmorphism Utilities --- */
-.glass-panel {
-    background: rgba(15, 23, 42, 0.7);
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+/* --- Typography --- */
+h1,
+h2,
+h3,
+.font-numeric,
+.rank-badge,
+.progress-text,
+#eorzea-time {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.05em;
 }
 
-/* --- Mob Card --- */
+/* --- Header (HUD Style) --- */
+#main-header {
+    background: linear-gradient(180deg, rgba(5, 5, 16, 0.95) 0%, rgba(5, 5, 16, 0.8) 80%, transparent 100%);
+    border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+    backdrop-filter: blur(5px);
+}
+
+#status-message {
+    background: rgba(0, 243, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 243, 255, 0.3);
+    color: var(--neon-cyan);
+    text-shadow: 0 0 5px var(--neon-cyan);
+}
+
+/* --- Mob Card (Tech Panel) --- */
 .mob-card {
-    background: var(--bg-card);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 1rem;
-    /* Softer corners */
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--bg-panel);
+    border: 1px solid rgba(0, 243, 255, 0.15);
+    /* Tech Shape: Cut corners */
+    clip-path: polygon(10px 0, 100% 0,
+            100% calc(100% - 10px), calc(100% - 10px) 100%,
+            0 100%, 0 10px);
     position: relative;
-    overflow: hidden;
-    transform: translateZ(0);
-    will-change: transform, box-shadow;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
-    font-size: 0;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    animation: slideUpFade 0.5s ease-out backwards;
 }
 
-/* Staggered animation delay handled by JS or nth-child if static, 
-   but since cards are dynamic, we keep the base animation here. */
+.mob-card::before {
+    /* Corner Accent */
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    border-top: 2px solid var(--neon-cyan);
+    border-left: 2px solid var(--neon-cyan);
+    opacity: 0.5;
+    transition: all 0.3s;
+}
+
+.mob-card::after {
+    /* Corner Accent */
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    border-bottom: 2px solid var(--neon-cyan);
+    border-right: 2px solid var(--neon-cyan);
+    opacity: 0.5;
+    transition: all 0.3s;
+}
 
 .mob-card:hover {
-    transform: translateY(-4px);
-    background: var(--bg-card-hover);
-    box-shadow:
-        0 20px 25px -5px rgba(0, 0, 0, 0.2),
-        0 10px 10px -5px rgba(0, 0, 0, 0.1),
-        0 0 20px rgba(34, 211, 238, 0.15);
-    /* Cyan glow */
-    border-color: rgba(34, 211, 238, 0.3);
+    transform: translateY(-5px) scale(1.01);
+    background: var(--bg-panel-hover);
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+    z-index: 10;
+}
+
+.mob-card:hover::before,
+.mob-card:hover::after {
+    opacity: 1;
+    width: 100%;
+    height: 100%;
+    border-color: rgba(0, 243, 255, 0.1);
 }
 
 .mob-card-disabled {
-    opacity: 0.5;
-    filter: grayscale(0.9);
+    opacity: 0.4;
+    filter: grayscale(1);
     pointer-events: none;
-    border-style: dashed;
+    border-style: dotted;
 }
 
 .mob-card-header {
-    padding: 0.75rem 1rem;
+    padding: 0.75rem;
+    position: relative;
+    z-index: 2;
 }
 
-/* --- Typography & Badges --- */
+/* --- Rank Badges --- */
 .rank-badge {
-    font-weight: 800;
-    font-family: 'Inter', sans-serif;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: 900;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 10px currentColor;
 }
 
 .rank-s {
-    background: linear-gradient(135deg, #fb923c, #ea580c);
+    background: var(--rank-s);
+    color: #000;
+    box-shadow: 0 0 15px var(--rank-s);
 }
 
 .rank-a {
-    background: linear-gradient(135deg, #4ade80, #16a34a);
+    background: var(--rank-a);
+    color: #000;
+    box-shadow: 0 0 15px var(--rank-a);
 }
 
 .rank-f {
-    background: linear-gradient(135deg, #c084fc, #9333ea);
+    background: var(--rank-f);
+    color: #fff;
+    box-shadow: 0 0 15px var(--rank-f);
 }
 
+/* --- Text Styles --- */
 .mob-name {
-    font-family: 'Noto Sans JP', sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    color: var(--text-primary);
+    color: var(--text-main);
+    text-shadow: 0 0 2px var(--neon-cyan);
+    font-size: 1.1rem;
 }
 
 .area-info-container {
-    font-family: 'Noto Sans JP', sans-serif;
-    color: var(--text-secondary);
-    font-weight: 500;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
-/* --- Progress Bar --- */
+/* --- Energy Gauge (Progress Bar) --- */
 .progress-bar-wrapper {
-    background: var(--progress-bg);
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
-    min-height: 0.75rem;
-    /* Slightly taller */
-    border-radius: 9999px;
-    /* Pill shape */
+    background: var(--gauge-bg);
+    height: 12px;
     margin-top: 0.5rem;
+    position: relative;
+    border: 1px solid rgba(0, 243, 255, 0.2);
+    clip-path: polygon(0 0, 100% 0, 98% 100%, 2% 100%);
+    /* Trapezoid */
 }
 
 .progress-bar-bg {
-    background: var(--progress-fill);
-    box-shadow: 0 0 15px var(--accent-cyan-glow);
-    border-radius: 9999px;
+    background: var(--gauge-fill);
+    height: 100%;
+    box-shadow: 0 0 10px var(--neon-cyan);
+    position: relative;
+}
+
+.progress-bar-bg::after {
+    /* Scanline effect */
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.8) 50%, transparent 100%);
+    opacity: 0.3;
+    background-size: 200% 100%;
+    animation: scanline 2s infinite linear;
+}
+
+@keyframes scanline {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
 }
 
 .progress-bar-bg.max-over {
-    background: var(--progress-max-over);
-    box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+    background: var(--gauge-max);
+    box-shadow: 0 0 15px var(--neon-crimson);
 }
 
 .progress-text {
-    color: #fff;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-    font-size: 0.75rem;
-    /* 12px */
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    z-index: 20;
+    position: absolute;
+    top: -1.2rem;
+    right: 0;
+    width: 100%;
+    text-align: right;
+    font-size: 0.7rem;
+    color: var(--text-main);
+    text-shadow: 0 0 2px black;
+    z-index: 5;
 }
 
 /* --- Status Effects --- */
 .progress-text.max-over {
-    color: #fff;
-    animation: pulse-text 2s infinite ease-in-out;
+    color: var(--neon-crimson);
+    text-shadow: 0 0 8px var(--neon-crimson);
+    animation: alert-pulse 0.5s infinite alternate;
 }
 
-@keyframes pulse-text {
-
-    0%,
-    100% {
-        opacity: 1;
-        text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-    }
-
-    50% {
-        opacity: 0.7;
-        text-shadow: none;
-    }
-}
-
-.progress-blink-white {
-    animation: neon-pulse 1.5s infinite alternate;
-}
-
-@keyframes neon-pulse {
+@keyframes alert-pulse {
     from {
-        box-shadow: 0 0 5px var(--accent-crimson), 0 0 10px var(--accent-crimson);
+        opacity: 1;
     }
 
     to {
-        box-shadow: 0 0 15px var(--accent-crimson), 0 0 25px var(--accent-crimson);
+        opacity: 0.5;
     }
 }
 
 .blink-border-white {
-    animation: blink-white-border 1.5s infinite alternate;
-    border-color: rgba(255, 255, 255, 0.9) !important;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.4) !important;
+    border-color: var(--neon-crimson) !important;
+    box-shadow: 0 0 20px var(--neon-crimson), inset 0 0 20px rgba(255, 42, 42, 0.2) !important;
+    animation: critical-border 1s infinite;
 }
 
-@keyframes blink-white-border {
-    from {
-        border-color: rgba(255, 255, 255, 0.3);
-        box-shadow: 0 0 5px rgba(255, 255, 255, 0.1);
+@keyframes critical-border {
+    0% {
+        border-color: var(--neon-crimson);
     }
 
-    to {
-        border-color: rgba(255, 255, 255, 1.0);
-        box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    50% {
+        border-color: #fff;
+    }
+
+    100% {
+        border-color: var(--neon-crimson);
     }
 }
 
 .text-glow {
-    text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+    text-shadow: 0 0 8px currentColor;
 }
 
 .label-next {
-    color: var(--accent-gold);
-    text-shadow: 0 0 10px rgba(250, 204, 21, 0.6);
-    font-weight: 700;
+    color: var(--neon-gold);
+    text-shadow: 0 0 10px var(--neon-gold);
 }
 
-/* --- Report Button --- */
+/* --- Buttons --- */
 .report-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--neon-green);
+    color: var(--neon-green);
+    transition: all 0.2s;
 }
 
 .report-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: var(--neon-green);
+    color: #000;
+    box-shadow: 0 0 15px var(--neon-green);
 }
 
 .report-text {
-    background: linear-gradient(135deg, #16a34a, #15803d);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    background: var(--neon-green);
+    color: #000;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: bold;
 }
 
-/* --- Expandable Panel --- */
+/* --- Expandable Panel (Holo-Display) --- */
 .expandable-panel {
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
-    background: rgba(15, 23, 42, 0.5);
-    /* Slightly darker inner panel */
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    transition: max-height 0.4s ease, padding 0.3s ease;
+    background: rgba(0, 0, 0, 0.6);
+    border-top: 1px solid rgba(0, 243, 255, 0.2);
 }
 
 .expandable-panel.open {
@@ -268,164 +330,139 @@ body {
     padding-bottom: 0.75rem !important;
 }
 
-.expandable-panel>div {
-    opacity: 0;
-    transform: translateY(-10px);
-    animation: slideDownFade 0.3s ease-out 0.1s forwards;
-}
-
-@keyframes slideDownFade {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
 /* --- Inputs --- */
 .memo-input {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--text-dim);
+    color: var(--text-main);
     font-family: 'Noto Sans JP', sans-serif;
-    transition: all 0.2s;
+    transition: all 0.3s;
 }
 
 .memo-input:focus {
-    text-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 10px var(--neon-cyan);
+    background: rgba(0, 243, 255, 0.05);
 }
 
 /* --- Map --- */
 .map-container {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    border-radius: 0.5rem;
+    border: 1px solid var(--neon-cyan);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+    position: relative;
+}
+
+.map-container::after {
+    /* Grid Overlay on Map */
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(0, 243, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 243, 255, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
+    z-index: 1;
 }
 
 .spawn-point {
     position: absolute;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    width: 14px;
-    height: 14px;
-    box-sizing: border-box;
-    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    /* Bouncy pop */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.6);
+    width: 12px;
+    height: 12px;
+    transform: translate(-50%, -50%) rotate(45deg);
+    /* Diamond shape markers */
+    border: 1px solid #fff;
+    box-shadow: 0 0 5px currentColor;
+    transition: all 0.2s;
+    z-index: 2;
 }
 
 .spawn-point:hover {
-    transform: translate(-50%, -50%) scale(1.8);
-    z-index: 50;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    transform: translate(-50%, -50%) rotate(45deg) scale(2);
+    z-index: 100;
+    box-shadow: 0 0 15px currentColor;
 }
 
-/* Spawn Point Colors */
 .color-b1 {
-    background-color: var(--color-b1);
-    border: 2px solid #fff;
+    background-color: var(--marker-b1);
+    border-color: var(--marker-b1);
 }
 
 .color-b2 {
-    background-color: var(--color-b2);
-    border: 2px solid #fff;
-}
-
-.color-b1-culled {
-    background-color: var(--color-culled);
-    border: 2px solid var(--color-b1);
-    opacity: 0.8;
-}
-
-.color-b2-culled {
-    background-color: var(--color-culled);
-    border: 2px solid var(--color-b2);
-    opacity: 0.8;
+    background-color: var(--marker-b2);
+    border-color: var(--marker-b2);
 }
 
 .color-lastone {
-    background-color: var(--color-lastone);
-    border: 2px solid #fff;
-    box-shadow: 0 0 15px var(--color-lastone);
+    background-color: var(--marker-last);
+    box-shadow: 0 0 20px var(--marker-last);
+    animation: pulse-marker 1s infinite;
 }
 
-.color-b1-only {
-    background-color: var(--color-culled);
-    border: 2px solid var(--color-b1);
-    width: 10px;
-    height: 10px;
-    opacity: 0.6;
-}
+@keyframes pulse-marker {
+    0% {
+        transform: translate(-50%, -50%) rotate(45deg) scale(1);
+        opacity: 1;
+    }
 
-.color-b2-only {
-    background-color: var(--color-culled);
-    border: 2px solid var(--color-b2);
-    width: 10px;
-    height: 10px;
-    opacity: 0.6;
+    50% {
+        transform: translate(-50%, -50%) rotate(45deg) scale(1.5);
+        opacity: 0.7;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) rotate(45deg) scale(1);
+        opacity: 1;
+    }
 }
 
 /* --- Tooltip --- */
 .custom-tooltip {
-    position: fixed;
-    z-index: 9999;
-    background: rgba(15, 23, 42, 0.95);
-    color: #fff;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    pointer-events: none;
-    white-space: nowrap;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transform: translate(-50%, -120%);
-    /* Slightly higher */
-    transition: opacity 0.15s ease, transform 0.15s ease;
-}
-
-.custom-tooltip.hidden {
-    opacity: 0;
-    transform: translate(-50%, -100%);
-    visibility: hidden;
+    background: rgba(5, 5, 16, 0.95);
+    border: 1px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.8rem;
+    padding: 0.5rem;
+    border-radius: 0;
+    /* Sharp corners */
 }
 
 /* --- Modal --- */
 #report-modal {
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
+    background-color: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(10px);
 }
 
 #report-modal .bg-gray-800 {
-    background: #1e293b;
-    border: 1px solid rgba(34, 211, 238, 0.3);
-    box-shadow: 0 0 50px rgba(34, 211, 238, 0.15);
+    background: #0a0f1e;
+    border: 2px solid var(--neon-cyan);
+    box-shadow: 0 0 50px rgba(0, 243, 255, 0.2);
+    clip-path: polygon(20px 0, 100% 0,
+            100% calc(100% - 20px), calc(100% - 20px) 100%,
+            0 100%, 0 20px);
 }
 
-#report-modal input {
-    background: #0f172a;
-    border: 1px solid #334155;
-    color: var(--text-primary);
-    transition: all 0.2s;
+#report-modal h2 {
+    color: var(--neon-cyan);
+    text-shadow: 0 0 10px var(--neon-cyan);
+    border-bottom: 1px solid var(--neon-cyan);
+    padding-bottom: 0.5rem;
 }
 
-#report-modal input:focus {
-    border-color: var(--accent-cyan);
-    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
-}
-
-/* --- Mobile Specifics --- */
+/* --- Mobile Adjustments --- */
 @media (max-width: 1023px) {
     #main-header {
         top: auto;
         bottom: 0;
-        padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: 1px solid rgba(0, 243, 255, 0.3);
         border-bottom: none;
-        background: rgba(15, 23, 42, 0.9);
-        /* More opaque on mobile */
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+        background: rgba(5, 5, 16, 0.95);
     }
 
-    #main-header #status-message {
-        padding-bottom: 0;
-        padding-top: 0.25rem;
+    .mob-card {
+        margin-bottom: 0.5rem;
     }
 }
 
@@ -433,7 +470,7 @@ body {
 @keyframes slideUpFade {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(30px);
     }
 
     to {
@@ -442,10 +479,8 @@ body {
     }
 }
 
-/* --- Utility Classes for JS --- */
-.font-numeric {
-    font-family: 'Inter', sans-serif;
-    font-variant-numeric: tabular-nums;
-    font-feature-settings: "tnum";
-    letter-spacing: 0.02em;
+.mob-card {
+    animation: slideUpFade 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
 }
+
+/* Stagger animations would be ideal but require JS index or nth-child tricks */
