@@ -1,3 +1,4 @@
+
 // app.js
 
 import { loadBaseMobData, startRealtime, setOpenMobCardNo, getState, setUserId } from "./dataManager.js";
@@ -123,7 +124,7 @@ function attachGlobalEventListeners() {
         }
     });
 
-    DOM.mobGrid.addEventListener("click", (e) => {
+    DOM.colContainer.addEventListener("click", (e) => {
         const card = e.target.closest(".mob-card");
         if (!card) return;
 
