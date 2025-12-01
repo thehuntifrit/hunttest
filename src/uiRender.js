@@ -528,6 +528,7 @@ function updateMemoIcon(card, mob) {
   if (shouldShowMemo) {
     const span = document.createElement('span');
     span.className = 'cursor-help';
+    span.style.fontSize = '1rem';  // font-size: 0の影響を無効化
     span.textContent = '📝';
     span.setAttribute('data-tooltip', mob.memo_text);
     memoIconContainer.innerHTML = '';
