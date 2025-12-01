@@ -49,51 +49,6 @@ function createMobCard(mob) {
   const isOpen = isExpandable && mob.No === openMobCardNo;
 
   const state = getState();
-  const mobLocationsData = state.mobLocations?.[mob.No];
-  const spawnCullStatus = mobLocationsData || mob.spawn_cull_status;
-
-  let isLastOne = false;
-  let validSpawnPoints = [];
-  let displayCountText = "";
-
-  if (mob.Map && mob.spawn_points) {
-    validSpawnPoints = (mob.spawn_points ?? []).filter(point => {
-      const isS_SpawnPoint = point.mob_ranks.includes("S");
-      if (!isS_SpawnPoint) return false;
-      const pointStatus = spawnCullStatus?.[point.id];
-      return !isCulled(pointStatus, mob.No);
-    });
-
-    const remainingCount = validSpawnPoints.length;
-
-    if (remainingCount === 1) {
-      isLastOne = true;
-      const pointId = validSpawnPoints[0]?.id || "";
-      const pointNumber = pointId.slice(-2);
-      displayCountText = ` <span class="text-xs text-yellow-400 font-bold text-glow">${pointNumber}番</span>`;
-    } else if (remainingCount > 1) {
-      isLastOne = false;
-      displayCountText = ` <span class="text-xs text-gray-400 relative -top-[0.06rem]">@</span><span class="text-xs text-gray-400 font-bold text-glow relative top-[0.02rem]">${remainingCount}</span>`;
-    }
-    isLastOne = remainingCount === 1;
-  }
-
-  const isS_LastOne = rank === "S" && isLastOne;
-  const spawnPointsHtml = (rank === "S" && mob.Map)
-    ? (mob.spawn_points ?? []).map(point => {
-      const isThisPointTheLastOne = isLastOne && point.id === validSpawnPoints[0]?.id;
-      return drawSpawnPoint(
-        point,
-        spawnCullStatus,
-        mob.No,
-        point.mob_ranks.includes("B2") ? "B2"
-          : point.mob_ranks.includes("B1") ? "B1"
-            : point.mob_ranks[0],
-        isThisPointTheLastOne,
-        isS_LastOne
-      );
-    }).join("")
-    : "";
 
   const hasMemo = mob.memo_text && mob.memo_text.trim() !== "";
   const isMemoNewer = (mob.memo_updated_at || 0) > (mob.last_kill_time || 0);
@@ -123,15 +78,6 @@ function createMobCard(mob) {
   const memoIconContainer = card.querySelector('.memo-icon-container');
   memoIconContainer.innerHTML = memoIcon;
 
-  // Area Info
-  const areaInfoContainer = card.querySelector('.area-info-container');
-  let areaInfoHtml = `<span class="flex items-center gap-1"><span>${mob.Area}</span><span class="opacity-50">|</span><span>${mob.Expansion}</span>`;
-  if (mob.Map && mob.spawn_points) {
-    areaInfoHtml += `<span class="flex items-center ml-1">📍 ${displayCountText}</span>`;
-  }
-  areaInfoHtml += `</span>`;
-  areaInfoContainer.innerHTML = areaInfoHtml;
-
   // Report Button
   const reportBtn = card.querySelector('.report-btn');
   reportBtn.dataset.reportType = rank === 'A' ? 'instant' : 'modal';
@@ -159,8 +105,6 @@ function createMobCard(mob) {
       const mapImg = mapContainer.querySelector('.mob-map-img');
       mapImg.src = `./maps/${mob.Map}`;
       mapImg.alt = `${mob.Area} Map`;
-      const mapOverlay = mapContainer.querySelector('.map-overlay');
-      mapOverlay.innerHTML = spawnPointsHtml;
     } else {
       mapContainer.remove();
     }
@@ -168,6 +112,10 @@ function createMobCard(mob) {
   } else {
     expandablePanel.remove();
   }
+
+  // Initial update for area info and map overlay
+  updateAreaInfo(card, mob);
+  updateMapOverlay(card, mob);
 
   return card;
 }
@@ -653,13 +601,11 @@ setInterval(() => {
   updateProgressBars();
 }, EORZEA_MINUTE_MS);
 
-// 1 minute interval for sorting
 setInterval(() => {
   sortAndRedistribute();
 }, 60000);
 
 export {
-  filterAndRender, distributeCards, updateProgressText, updateProgressBar,
-  createMobCard, DOM, sortAndRedistribute, onKillReportReceived, updateProgressBars,
-  updateAreaInfo, updateMapOverlay
+  filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, DOM,
+  sortAndRedistribute, onKillReportReceived, updateProgressBars, updateAreaInfo, updateMapOverlay
 };
