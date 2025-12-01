@@ -1,3 +1,4 @@
+
 // uiRender.js
 
 import { calculateRepop, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime, EORZEA_MINUTE_MS } from "./cal.js";
@@ -18,7 +19,7 @@ const DOM = {
   modalMobName: document.getElementById('modal-mob-name'),
   modalStatus: document.getElementById('modal-status'),
   modalTimeInput: document.getElementById('report-datetime'),
-  modalForceSubmit: document.getElementById('report-force-submit'),
+  modalForceSubmit: document.getElementById('report-force-submit'), // 追加
   statusMessageTemp: document.getElementById('status-message-temp'),
 };
 
@@ -98,10 +99,6 @@ function createMobCard(mob) {
   const hasMemo = mob.memo_text && mob.memo_text.trim() !== "";
   const isMemoNewer = (mob.memo_updated_at || 0) > (mob.last_kill_time || 0);
   const shouldShowMemo = hasMemo && (isMemoNewer || (mob.last_kill_time || 0) === 0);
-
-  const memoIcon = shouldShowMemo
-    ? ` <span class="cursor-help memo-icon-span">📝</span>`
-    : "";
 
   // Card Attributes
   card.dataset.mobNo = mob.No;
@@ -359,6 +356,7 @@ function updateProgressBar(card, mob) {
     bar.classList.add(PROGRESS_CLASSES.MAX_OVER);
     text.classList.add(PROGRESS_CLASSES.TEXT_POP);
 
+    // Fix: Add white border if MaxOver AND in condition window
     if (mob.repopInfo.isInConditionWindow) {
       wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE);
     }
@@ -516,11 +514,6 @@ setInterval(() => {
   updateProgressBars();
 }, EORZEA_MINUTE_MS);
 
-export {
-  filterAndRender, distributeCards, updateProgressText, updateProgressBar,
-  updateProgressBars, updateMemoIcon
-};
-
 function updateMemoIcon(card, mob) {
   const memoIconContainer = card.querySelector('.memo-icon-container');
   if (!memoIconContainer) return;
@@ -529,16 +522,19 @@ function updateMemoIcon(card, mob) {
   const isMemoNewer = (mob.memo_updated_at || 0) > (mob.last_kill_time || 0);
   const shouldShowMemo = hasMemo && (isMemoNewer || (mob.last_kill_time || 0) === 0);
 
-  const memoIcon = shouldShowMemo
-    ? ` <span class="cursor-help memo-icon-span">📝</span>`
-    : "";
-
-  memoIconContainer.innerHTML = memoIcon;
   if (shouldShowMemo) {
-    const iconSpan = memoIconContainer.querySelector('.memo-icon-span');
-    if (iconSpan) {
-      iconSpan.setAttribute('data-tooltip', mob.memo_text);
-    }
+    const span = document.createElement('span');
+    span.className = 'cursor-help';
+    span.textContent = '📝';
+    span.setAttribute('data-tooltip', mob.memo_text);
+    memoIconContainer.innerHTML = '';
+    memoIconContainer.appendChild(span);
+  } else {
+    memoIconContainer.innerHTML = '';
   }
 }
 
+export {
+  filterAndRender, distributeCards, updateProgressText, updateProgressBar,
+  createMobCard, DOM, sortAndRedistribute, onKillReportReceived, updateProgressBars
+};
