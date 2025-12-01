@@ -120,14 +120,7 @@ function createMobCard(mob) {
   const mobNameEl = card.querySelector('.mob-name');
   mobNameEl.textContent = mob.Name;
 
-  const memoIconContainer = card.querySelector('.memo-icon-container');
-  memoIconContainer.innerHTML = memoIcon;
-  if (shouldShowMemo) {
-    const iconSpan = memoIconContainer.querySelector('.memo-icon-span');
-    if (iconSpan) {
-      iconSpan.setAttribute('data-tooltip', mob.memo_text);
-    }
-  }
+  updateMemoIcon(card, mob);
 
   // Area Info
   const areaInfoContainer = card.querySelector('.area-info-container');
@@ -280,6 +273,7 @@ function filterAndRender({ isInitialLoad = false } = {}) {
       updateProgressText(card, mob);
       updateProgressBar(card, mob);
       updateExpandablePanel(card, mob);
+      updateMemoIcon(card, mob);
 
       const repopInfo = calculateRepop(mob, state.maintenance);
       if (repopInfo.isMaintenanceStop) {
@@ -513,6 +507,8 @@ function onKillReportReceived(mobId, kill_time) {
   if (card) {
     updateProgressText(card, mob);
     updateProgressBar(card, mob);
+    updateExpandablePanel(card, mob);
+    updateMemoIcon(card, mob);
   }
 }
 
@@ -522,5 +518,27 @@ setInterval(() => {
 
 export {
   filterAndRender, distributeCards, updateProgressText, updateProgressBar,
-  createMobCard, DOM, sortAndRedistribute, onKillReportReceived, updateProgressBars
+  updateProgressBars, updateMemoIcon
 };
+
+function updateMemoIcon(card, mob) {
+  const memoIconContainer = card.querySelector('.memo-icon-container');
+  if (!memoIconContainer) return;
+
+  const hasMemo = mob.memo_text && mob.memo_text.trim() !== "";
+  const isMemoNewer = (mob.memo_updated_at || 0) > (mob.last_kill_time || 0);
+  const shouldShowMemo = hasMemo && (isMemoNewer || (mob.last_kill_time || 0) === 0);
+
+  const memoIcon = shouldShowMemo
+    ? ` <span class="cursor-help memo-icon-span">📝</span>`
+    : "";
+
+  memoIconContainer.innerHTML = memoIcon;
+  if (shouldShowMemo) {
+    const iconSpan = memoIconContainer.querySelector('.memo-icon-span');
+    if (iconSpan) {
+      iconSpan.setAttribute('data-tooltip', mob.memo_text);
+    }
+  }
+}
+
