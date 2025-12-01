@@ -103,14 +103,14 @@
       "locations": [] 
     },
       "12011": {"rank": "S", "name":"クロック・ミテーヌ", "area": "中央ラノシア",
-      "condition": "「ラノシアンソイルG3」を採掘 （抽選）//※ ET 19:00～22:00",
+      "condition": "「ラノシアンソイルG3」を採掘 （抽選）//※ ET 19:00 〜 22:00",
       "repopSeconds": 234000, "maxRepopSeconds": 270000,
       "timeRange": { "start": 19, "end": 22 },
       "mapImage": "",
       "locations": []
     },
       "12021": {"rank": "S", "name":"ケロゲロス", "area": "低地ラノシア",
-      "condition": "満月IN最初のET17:00にPOP地点を踏む//※ 以降は満月中のET 17:00～3:00",
+      "condition": "満月IN最初のET17:00にPOP地点を踏む//※ 以降は満月中のET 17:00 〜 3:00",
       "repopSeconds": 180000, "maxRepopSeconds": 180000,
       "moonPhase": "満月",
       "timeRange": { "start": 17, "end": 3 },
@@ -126,7 +126,7 @@
       "locations": []
     },
       "12041": {"rank": "S", "name":"ボナコン", "area": "西ラノシア",
-      "condition": "「ラノシアリーキ」を採集 （抽選）//※ ET 8:00～11:00",
+      "condition": "「ラノシアリーキ」を採集 （抽選）//※ ET 8:00 〜 11:00",
       "repopSeconds": 234000, "maxRepopSeconds": 270000,
       "timeRange": { "start": 8, "end": 11 },
       "mapImage": "",
@@ -177,7 +177,7 @@
       "locations": [] 
     },
       "12091": {"rank": "S", "name":"マインドフレア", "area": "南部森林",
-      "condition": "新月IN最初のET0:00以降にPOP地点を踏む//※ 以降は新月中のET 17:00～3:00",
+      "condition": "新月IN最初のET0:00以降にPOP地点を踏む//※ 以降は新月中のET 17:00 〜 3:00",
       "repopSeconds": 180000, "maxRepopSeconds": 180000,
       "moonPhase": "新月",
       "conditions": {"firstNight": { "timeRange": { "start": 0, "end": 3 } },"otherNights": { "timeRange": { "start": 17, "end": 3 } }},
@@ -185,7 +185,7 @@
       "locations": []    
     },
       "12101": {"rank": "S", "name":"サウザンドキャスト・セダ", "area": "北部森林",
-      "condition": "フォールゴウド秋瓜湖畔で「ジャッジレイ」を釣り上げる （抽選） //※ ET 17:00～21:00 餌: フェザントフライ",
+      "condition": "フォールゴウド秋瓜湖畔で「ジャッジレイ」を釣り上げる （抽選） //※ ET 17:00 〜 21:00 餌: フェザントフライ",
       "repopSeconds": 205200, "maxRepopSeconds": 230400,
       "timeRange": { "start": 17, "end": 21 },
       "mapImage": "",
@@ -380,7 +380,7 @@
       "locations": [] 
     },
       "22031": {"rank": "S", "name":"ガンダルヴァ", "area": "ドラヴァニア雲海",
-      "condition": "「皇金鉱 （ET 2:00～4:00 / 14:00～16:00）」//「アストラルフラワー （ET 4:00～6:00 / 16:00～18:00）」を各50回採集",
+      "condition": "「皇金鉱 （ET 2:00 〜 4:00 / 14:00 〜 16:00）」//「アストラルフラワー （ET 4:00 〜 6:00 / 16:00 〜 18:00）」//を各50回採集",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "timeRanges": [{ "start": 2, "end": 6 },{ "start": 14, "end": 18 }],
       "mapImage": "",
@@ -514,7 +514,7 @@
       "locations": []
     },
       "32051": {"rank": "S", "name":"ガンマ", "area": "ヤンサ",
-      "condition": "ミニオン「ミニアレキサンダー」を出してPOP地点を踏む",
+      "condition": "ミニオン「ミニアレキサンダー」を出してPOP地点を踏む//※ ET 17:00 〜 8:00",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "timeRange": { "start": 17, "end": 8 },
       "mapImage": "Yanxia.webp",
@@ -536,7 +536,7 @@
       ]
     },
       "32061": {"rank": "S", "name":"オルガナ", "area": "アジムステップ",
-      "condition": "F.A.T.E. 石人の英雄「ゲルゲイ・チョロー」をコンプリート後にPOP地点を踏む//※ 判定は該当F.A.T.E.が失敗するまで有効",
+      "condition": "F.A.T.E. 石人の英雄「ゲルゲイ・チョロー」をコンプリート後にPOP地点を踏む//※ 判定は上記のF.A.T.E.が失敗するまで有効",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "The_Azim_Steppe.webp",
       "locations": [
@@ -838,7 +838,7 @@
       "locations": [] 
     },
       "52011": {"rank": "S", "name":"ブーフールー", "area": "ラヴィリンソス",
-      "condition": "ミニオン「リトルトロル」を出してPOP地点を踏む//※ ET 9:00～17:00 中の「晴れ or 快晴」",
+      "condition": "ミニオン「リトルトロル」を出してPOP地点を踏む//※ ET 9:00 ～ 17:00 中の「晴れ or 快晴」",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "weatherSeedRange": [0, 59], 
       "timeRange": { "start": 9, "end": 17 },
@@ -864,7 +864,7 @@
       "locations": [] 
     },
       "52031": {"rank": "S", "name":"アームストロング", "area": "ガレマルド",
-      "condition": "「リペアド・インペリアルショートローブ」//「リペアド・インペリアルポットヘルム」を装備して//POP地点で戦闘不能になる（自爆も可）",
+      "condition": "「リペアド・インペリアルショートローブ」//「リペアド・インペリアルポットヘルム」//を装備してPOP地点で戦闘不能になる（自爆も可）",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "Garlemald.webp",
       "locations": [
@@ -1042,7 +1042,7 @@
       "locations": [] 
     },
       "62011": {"rank": "S", "name":"1️⃣ 厭忌のキーリーゲー", "area": "オルコ・パチャ",
-      "condition": "「新月」+「霧」+「ET 0:00～6:00」の条件を満たした時にPOP地点を踏む",
+      "condition": "「新月」+「霧」+「ET 0:00 〜 6:00」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "moonPhase": "新月",
       "weatherSeedRange": [70, 79], 
@@ -1062,7 +1062,7 @@
       ]
     },
       "62012": {"rank": "S", "name":"2️⃣ 厭忌のキーリーゲー", "area": "オルコ・パチャ",
-      "condition": "「新月」+「霧」+「ET 0:00～6:00」の条件を満たした時にPOP地点を踏む",
+      "condition": "「新月」+「霧」+「ET 0:00 〜 6:00」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "moonPhase": "新月",
       "weatherSeedRange": [70, 79], 
@@ -1082,7 +1082,7 @@
       ]
     },
       "62013": {"rank": "S", "name":"3️⃣ 厭忌のキーリーゲー", "area": "オルコ・パチャ",
-      "condition": "「新月」+「霧」+「ET 0:00～6:00」の条件を満たした時にPOP地点を踏む",
+      "condition": "「新月」+「霧」+「ET 0:00 〜 6:00」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "moonPhase": "新月",
       "weatherSeedRange": [70, 79], 
@@ -1125,19 +1125,19 @@
       "locations": [] 
     },
       "62041": {"rank": "S", "name":"1️⃣ サンシェヤ", "area": "シャーローニ荒野",
-      "condition": "F.A.T.E. 悪魔の種火「フレイムドリンカー」 を3回コンプリートする",
+      "condition": "F.A.T.E. 悪魔の種火「フレイムドリンカー」 を3回連続でコンプリートする",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "",
       "locations": [] 
     },
       "62042": {"rank": "S", "name":"2️⃣ サンシェヤ", "area": "シャーローニ荒野",
-      "condition": "F.A.T.E. 悪魔の種火「フレイムドリンカー」 を3回コンプリートする",
+      "condition": "F.A.T.E. 悪魔の種火「フレイムドリンカー」 を3回連続でコンプリートする",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "",
       "locations": [] 
     },
       "62043": {"rank": "S", "name":"3️⃣ サンシェヤ", "area": "シャーローニ荒野",
-      "condition": "F.A.T.E. 悪魔の種火「フレイムドリンカー」 を3回コンプリートする",
+      "condition": "F.A.T.E. 悪魔の種火「フレイムドリンカー」 を3回連続でコンプリートする",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "",
       "locations": [] 
