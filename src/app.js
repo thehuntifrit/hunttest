@@ -123,7 +123,7 @@ function attachGlobalEventListeners() {
         }
     });
 
-    DOM.colContainer.addEventListener("click", (e) => {
+    DOM.mobGrid.addEventListener("click", (e) => {
         const card = e.target.closest(".mob-card");
         if (!card) return;
 
