@@ -1,4 +1,3 @@
-
 // uiRender.js
 
 import { calculateRepop, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime, EORZEA_MINUTE_MS } from "./cal.js";
@@ -19,7 +18,7 @@ const DOM = {
   modalMobName: document.getElementById('modal-mob-name'),
   modalStatus: document.getElementById('modal-status'),
   modalTimeInput: document.getElementById('report-datetime'),
-  modalForceSubmit: document.getElementById('report-force-submit'), // 追加
+  modalForceSubmit: document.getElementById('report-force-submit'),
   statusMessageTemp: document.getElementById('status-message-temp'),
 };
 
@@ -97,11 +96,9 @@ function createMobCard(mob) {
     : "";
 
   const hasMemo = mob.memo_text && mob.memo_text.trim() !== "";
-  // メモの更新時間が最終討伐時間より新しい、または最終討伐時間が0（未討伐）の場合に表示
   const isMemoNewer = (mob.memo_updated_at || 0) > (mob.last_kill_time || 0);
   const shouldShowMemo = hasMemo && (isMemoNewer || (mob.last_kill_time || 0) === 0);
 
-  // ツールチップはHTML属性として設定するため、後で安全に設定する
   const memoIcon = shouldShowMemo
     ? ` <span class="cursor-help memo-icon-span">📝</span>`
     : "";
@@ -368,7 +365,6 @@ function updateProgressBar(card, mob) {
     bar.classList.add(PROGRESS_CLASSES.MAX_OVER);
     text.classList.add(PROGRESS_CLASSES.TEXT_POP);
 
-    // Fix: Add white border if MaxOver AND in condition window
     if (mob.repopInfo.isInConditionWindow) {
       wrapper.classList.add(PROGRESS_CLASSES.BLINK_WHITE);
     }
@@ -460,7 +456,6 @@ function updateExpandablePanel(card, mob) {
 
   if (elMemoInput) {
     if (document.activeElement !== elMemoInput) {
-      // ここでも同様のロジックで表示制御
       const hasMemo = mob.memo_text && mob.memo_text.trim() !== "";
       const isMemoNewer = (mob.memo_updated_at || 0) > (mob.last_kill_time || 0);
       const shouldShowMemo = hasMemo && (isMemoNewer || (mob.last_kill_time || 0) === 0);
