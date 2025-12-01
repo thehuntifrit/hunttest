@@ -100,7 +100,7 @@ function createMobCard(mob) {
   const shouldShowMemo = hasMemo && (isMemoNewer || (mob.last_kill_time || 0) === 0);
 
   const memoIcon = shouldShowMemo
-    ? ` <span data-tooltip="${mob.memo_text}" class="cursor-help">📝</span>`
+    ? ` <span data-tooltip="${mob.memo_text}" class="cursor-help" style="font-size: 1rem">📝</span>`
     : "";
 
   // Card Attributes
