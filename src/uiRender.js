@@ -1,3 +1,4 @@
+
 // uiRender.js
 
 import { calculateRepop, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime, EORZEA_MINUTE_MS } from "./cal.js";
@@ -6,7 +7,9 @@ import { getState, RANK_COLORS, PROGRESS_CLASSES } from "./dataManager.js";
 import { filterMobsByRankAndArea } from "./filterUI.js";
 
 const DOM = {
-  mobGrid: document.getElementById('mob-grid'),
+  masterContainer: document.getElementById('master-mob-container'),
+  colContainer: document.getElementById('column-container'),
+  cols: [document.getElementById('column-1'), document.getElementById('column-2'), document.getElementById('column-3')],
   rankTabs: document.getElementById('rank-tabs'),
   areaFilterWrapper: document.getElementById('area-filter-wrapper'),
   areaFilterPanel: document.getElementById('area-filter-panel'),
@@ -16,7 +19,7 @@ const DOM = {
   modalMobName: document.getElementById('modal-mob-name'),
   modalStatus: document.getElementById('modal-status'),
   modalTimeInput: document.getElementById('report-datetime'),
-  modalForceSubmit: document.getElementById('report-force-submit'),
+  modalForceSubmit: document.getElementById('report-force-submit'), // 追加
   statusMessageTemp: document.getElementById('status-message-temp'),
 };
 
@@ -94,11 +97,13 @@ function createMobCard(mob) {
     : "";
 
   const hasMemo = mob.memo_text && mob.memo_text.trim() !== "";
+  // メモの更新時間が最終討伐時間より新しい、または最終討伐時間が0（未討伐）の場合に表示
   const isMemoNewer = (mob.memo_updated_at || 0) > (mob.last_kill_time || 0);
   const shouldShowMemo = hasMemo && (isMemoNewer || (mob.last_kill_time || 0) === 0);
 
+  // ツールチップはHTML属性として設定するため、後で安全に設定する
   const memoIcon = shouldShowMemo
-    ? ` <span data-tooltip="${mob.memo_text}" class="cursor-help">📝</span>`
+    ? ` <span class="cursor-help memo-icon-span">📝</span>`
     : "";
 
   // Card Attributes
@@ -120,6 +125,12 @@ function createMobCard(mob) {
 
   const memoIconContainer = card.querySelector('.memo-icon-container');
   memoIconContainer.innerHTML = memoIcon;
+  if (shouldShowMemo) {
+    const iconSpan = memoIconContainer.querySelector('.memo-icon-span');
+    if (iconSpan) {
+      iconSpan.setAttribute('data-tooltip', mob.memo_text);
+    }
+  }
 
   // Area Info
   const areaInfoContainer = card.querySelector('.area-info-container');
@@ -144,7 +155,7 @@ function createMobCard(mob) {
 
     // Memo Input
     const memoInput = card.querySelector('.memo-input');
-    memoInput.value = mob.memo_text || "";
+    memoInput.value = shouldShowMemo ? (mob.memo_text || "") : "";
     memoInput.dataset.mobNo = mob.No;
 
     // Condition
@@ -256,7 +267,7 @@ function filterAndRender({ isInitialLoad = false } = {}) {
   const sortedMobs = filtered.sort(allTabComparator);
 
   const existingCards = new Map();
-  DOM.mobGrid.querySelectorAll('.mob-card').forEach(card => {
+  DOM.masterContainer.querySelectorAll('.mob-card').forEach(card => {
     const mobNo = card.getAttribute('data-mob-no');
     existingCards.set(mobNo, card);
     card.remove();
@@ -292,14 +303,36 @@ function filterAndRender({ isInitialLoad = false } = {}) {
     }
   });
 
-  DOM.mobGrid.appendChild(frag);
+  DOM.masterContainer.appendChild(frag);
+
+  distributeCards();
   attachLocationEvents();
 
   if (isInitialLoad) updateProgressBars();
 }
 
 function distributeCards() {
-  // Deprecated: CSS Grid handles layout
+  const width = window.innerWidth;
+  const md = 768;
+  const lg = 1024;
+  let cols = 1;
+  if (width >= lg) {
+    cols = 3;
+    DOM.cols[2].classList.remove("hidden");
+  } else if (width >= md) {
+    cols = 2;
+    DOM.cols[2].classList.add("hidden");
+  } else {
+    cols = 1;
+    DOM.cols[2].classList.add("hidden");
+  }
+
+  DOM.cols.forEach(col => (col.innerHTML = ""));
+  const cards = Array.from(DOM.masterContainer.children);
+  cards.forEach((card, idx) => {
+    const target = idx % cols;
+    DOM.cols[target].appendChild(card);
+  });
 }
 
 function updateProgressBar(card, mob) {
@@ -427,7 +460,11 @@ function updateExpandablePanel(card, mob) {
 
   if (elMemoInput) {
     if (document.activeElement !== elMemoInput) {
-      elMemoInput.value = mob.memo_text || "";
+      // ここでも同様のロジックで表示制御
+      const hasMemo = mob.memo_text && mob.memo_text.trim() !== "";
+      const isMemoNewer = (mob.memo_updated_at || 0) > (mob.last_kill_time || 0);
+      const shouldShowMemo = hasMemo && (isMemoNewer || (mob.last_kill_time || 0) === 0);
+      elMemoInput.value = shouldShowMemo ? (mob.memo_text || "") : "";
     }
   }
 }
