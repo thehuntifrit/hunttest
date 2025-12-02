@@ -12,7 +12,6 @@ initializeApp();
 const db = getFirestore();
 
 // Global Options (全関数共通のデフォルト設定)
-// コスト削減のための徹底的なリソース制限
 setGlobalOptions({
     region: 'asia-northeast1', // 東京リージョン
     memory: '128MiB',          // 最小メモリ
@@ -28,9 +27,6 @@ const COLLECTIONS = {
     MOB_LOCATIONS: 'mob_locations',
     SHARED_DATA: 'shared_data',
 };
-
-// Time Constants
-const MAX_REPORT_HISTORY = 5;
 
 /**
  * Mob IDからMOB_STATUSのドキュメントIDを決定します。
@@ -49,7 +45,6 @@ const getStatusDocId = (mobId) => {
 // =====================================================================
 // 1. updateMobStatusV2: Mobステータス直接更新 (Callable v2)
 // =====================================================================
-
 exports.updateMobStatusV2 = onCall({ cors: true }, async (request) => {
     const { mob_id: mobId, kill_time: killTimeIso } = request.data;
 
@@ -61,12 +56,6 @@ exports.updateMobStatusV2 = onCall({ cors: true }, async (request) => {
     const reportTime = new Date(killTimeIso);
     if (isNaN(reportTime.getTime())) {
         throw new HttpsError('invalid-argument', '無効な日付形式です。');
-    }
-
-    // 未来日付の簡易チェック (サーバー時刻 + 5分以上の未来は弾く)
-    const now = new Date();
-    if (reportTime > new Date(now.getTime() + 5 * 60 * 1000)) {
-        throw new HttpsError('out-of-range', '未来の時刻は登録できません。');
     }
 
     const statusDocId = getStatusDocId(mobId);
@@ -81,7 +70,7 @@ exports.updateMobStatusV2 = onCall({ cors: true }, async (request) => {
         const updateData = {
             [mobId]: {
                 last_kill_time: firestoreTime,
-                last_update: Timestamp.now(), // デバッグ用更新時刻
+                last_update: Timestamp.now(),
                 is_reverted: false
             }
         };
@@ -100,7 +89,6 @@ exports.updateMobStatusV2 = onCall({ cors: true }, async (request) => {
 // =====================================================================
 // 2. mobCullUpdaterV2: 湧き潰し更新 (Callable v2)
 // =====================================================================
-
 exports.mobCullUpdaterV2 = onCall({ cors: true }, async (request) => {
     const { mob_id: mobId, location_id: locationId, action, report_time: clientTime } = request.data;
 
@@ -149,24 +137,13 @@ exports.postMobMemoV2 = onCall({ cors: true }, async (request) => {
             return { success: true, message: 'メモをクリアしました。' };
         }
 
-        await db.runTransaction(async (t) => {
-            const memoSnap = await t.get(memoRef);
-            const memoData = memoSnap.data() || {};
-            const currentEntries = memoData[mobId] || [];
+        const newEntry = {
+            memo_text: memoText,
+            created_at: Timestamp.now(),
+        };
 
-            const newEntry = {
-                memo_text: memoText,
-                created_at: Timestamp.now(),
-            };
-            currentEntries.unshift(newEntry);
-
-            // 最大件数制限 (例: 20件)
-            if (currentEntries.length > 20) {
-                currentEntries.length = 20;
-            }
-
-            t.set(memoRef, { [mobId]: currentEntries }, { merge: true });
-        });
+        // 1モブにつき1件のみ保存 (上書き)
+        await memoRef.set({ [mobId]: [newEntry] }, { merge: true });
 
         return { success: true, message: 'メモを投稿しました。' };
 
@@ -179,7 +156,6 @@ exports.postMobMemoV2 = onCall({ cors: true }, async (request) => {
 // =====================================================================
 // 4. getMobMemosV2: メモ取得 (Callable v2)
 // =====================================================================
-
 exports.getMobMemosV2 = onCall({ cors: true }, async (request) => {
     const { mob_id: mobId } = request.data;
 
@@ -198,10 +174,8 @@ exports.getMobMemosV2 = onCall({ cors: true }, async (request) => {
         }
 
         let memos = memoData[mobId];
-        // 日付順ソート (新しい順)
         memos.sort((a, b) => b.created_at.toMillis() - a.created_at.toMillis());
 
-        // Timestampをミリ秒数値に変換して返す (クライアントで扱いやすくするため)
         const serializedMemos = memos.map(m => ({
             ...m,
             created_at: m.created_at.toMillis()
