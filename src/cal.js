@@ -541,18 +541,4 @@ function calculateRepop(mob, maintenance) {
   }
 }
 
-function checkMobSpawnCondition(mob, date) {
-  const pointSec = Math.floor(date.getTime() / 1000);
-  if (mob.moonPhase) {
-    const moonInfo = getEorzeaMoonInfo(date);
-    if (moonInfo.label !== mob.moonPhase) return false;
-  }
-  if (mob.weatherSeedRange || mob.weatherSeedRanges) {
-    const seed = getEorzeaWeatherSeed(date);
-    if (!checkWeatherInRange(mob, seed)) return false;
-  }
-  if (!checkEtCondition(mob, pointSec)) return false;
-  return true;
-}
-
-export { calculateRepop, checkMobSpawnCondition, getEorzeaTime, formatDurationHM, debounce, formatLastKillTime };
+export { calculateRepop, getEorzeaTime, formatDurationHM, debounce, formatLastKillTime };
