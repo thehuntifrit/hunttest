@@ -113,7 +113,6 @@ function createMobCard(mob) {
     expandablePanel.remove();
   }
 
-  // Initial update for area info and map overlay
   updateAreaInfo(card, mob);
   updateMapOverlay(card, mob);
 
@@ -222,7 +221,6 @@ function filterAndRender({ isInitialLoad = false } = {}) {
   }
 
   const existingCards = new Map();
-  // Search in the entire document because cards might be in columns
   document.querySelectorAll('.mob-card').forEach(card => {
     const mobNo = card.getAttribute('data-mob-no');
     existingCards.set(mobNo, card);
@@ -242,8 +240,7 @@ function filterAndRender({ isInitialLoad = false } = {}) {
       updateAreaInfo(card, mob);
       updateMapOverlay(card, mob);
 
-      const repopInfo = calculateRepop(mob, state.maintenance);
-      if (repopInfo.isMaintenanceStop) {
+      if (mob.repopInfo.isMaintenanceStop) {
         card.classList.add("opacity-50", "grayscale", "pointer-events-none");
       } else {
         card.classList.remove("opacity-50", "grayscale", "pointer-events-none");
