@@ -2,7 +2,7 @@
 
 import { calculateRepop, formatDurationHM, formatLastKillTime, debounce, getEorzeaTime, EORZEA_MINUTE_MS } from "./cal.js";
 import { drawSpawnPoint, isCulled, attachLocationEvents } from "./location.js";
-import { getState, RANK_COLORS, PROGRESS_CLASSES } from "./dataManager.js";
+import { getState, PROGRESS_CLASSES } from "./dataManager.js";
 import { filterMobsByRankAndArea } from "./filterUI.js";
 
 const DOM = {
