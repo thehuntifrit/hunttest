@@ -1,4 +1,3 @@
-
 // app.js
 
 import { loadBaseMobData, startRealtime, setOpenMobCardNo, getState, setUserId } from "./dataManager.js";
@@ -222,4 +221,3 @@ async function handleReportSubmit(e) {
 
 document.addEventListener('DOMContentLoaded', initializeApp);
 
-export { initializeApp };
