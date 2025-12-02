@@ -53,7 +53,6 @@ if (Array.isArray(state.filter.allRankSet)) {
 }
 
 const getState = () => state;
-const getMobByNo = no => state.mobs.find(m => m.No === no);
 
 function setUserId(uid) {
     state.userId = uid;
@@ -97,11 +96,8 @@ const PROGRESS_CLASSES = {
     BLINK_WHITE: "progress-blink-white"
 };
 
-const FILTER_TO_DATA_RANK_MAP = { FATE: 'F', ALL: 'ALL', S: 'S', A: 'A' };
-
 const MOB_DATA_URL = "./mob_data.json";
 const MAINTENANCE_URL = "./maintenance.json";
-
 const MOB_DATA_CACHE_KEY = "mobDataCache";
 
 async function loadMaintenance() {
@@ -280,6 +276,6 @@ function startRealtime() {
 }
 
 export {
-    state, EXPANSION_MAP, getState, getMobByNo, setUserId, setMobs, loadBaseMobData, startRealtime, 
-    setFilter, setOpenMobCardNo, PROGRESS_CLASSES, FILTER_TO_DATA_RANK_MAP, loadMaintenance
+    state, EXPANSION_MAP, getState, setUserId, loadBaseMobData, startRealtime,
+    setFilter, setOpenMobCardNo, PROGRESS_CLASSES
 };
