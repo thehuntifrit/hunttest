@@ -137,18 +137,18 @@ const updateFilterUI = () => {
     const isCurrent = btnRank === state.filter.rank;
 
     btn.classList.remove(
-      "bg-rose-800", "bg-amber-800", "bg-green-800", "bg-purple-800",
-      "bg-gray-500", "hover:bg-gray-400", "bg-green-500", "bg-gray-800",
-      "bg-rose-600", "bg-amber-600", "bg-green-600", "bg-purple-600"
+      "bg-rose-400", "bg-amber-400", "bg-sky-400", "bg-violet-400",
+      "bg-gray-500", "hover:bg-gray-400", "bg-emerald-500", "bg-gray-800",
+      "bg-rose-600", "bg-amber-600", "bg-sky-600", "bg-violet-600"
     );
 
     if (isCurrent) {
       btn.classList.add(
-        btnRank === "ALL" ? "bg-rose-600"
-          : btnRank === "S" ? "bg-amber-600"
-            : btnRank === "A" ? "bg-green-600"
-              : btnRank === "FATE" ? "bg-purple-600"
-                : "bg-gray-800"
+        btnRank === "ALL" ? "bg-rose-400"
+          : btnRank === "S" ? "bg-amber-400"
+            : btnRank === "A" ? "bg-sky-400"
+              : btnRank === "FATE" ? "bg-violet-400"
+                : "bg-gray-400"
       );
 
       const panels = [FilterDOM.areaFilterPanelMobile, FilterDOM.areaFilterPanelDesktop];
