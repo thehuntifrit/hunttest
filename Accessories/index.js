@@ -46,6 +46,11 @@ const getStatusDocId = (mobId) => {
 // 1. updateMobStatusV2: Mobステータス直接更新 (Callable v2)
 // =====================================================================
 exports.updateMobStatusV2 = onCall({ cors: true }, async (request) => {
+    // 認証チェック: 匿名認証でもOKだが、Firebase Auth経由であることを必須とする
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', '認証が必要です。');
+    }
+
     const { mob_id: mobId, kill_time: killTimeIso } = request.data;
 
     // 最低限の入力チェック
@@ -90,6 +95,11 @@ exports.updateMobStatusV2 = onCall({ cors: true }, async (request) => {
 // 2. mobCullUpdaterV2: 湧き潰し更新 (Callable v2)
 // =====================================================================
 exports.mobCullUpdaterV2 = onCall({ cors: true }, async (request) => {
+    // 認証チェック
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', '認証が必要です。');
+    }
+
     const { mob_id: mobId, location_id: locationId, action, report_time: clientTime } = request.data;
 
     if (!mobId || !locationId || (action !== 'CULL' && action !== 'UNCULL') || !clientTime) {
@@ -122,6 +132,11 @@ exports.mobCullUpdaterV2 = onCall({ cors: true }, async (request) => {
 const MEMO_DOC_ID = 'memo';
 
 exports.postMobMemoV2 = onCall({ cors: true }, async (request) => {
+    // 認証チェック
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', '認証が必要です。');
+    }
+
     const { mob_id: mobId, memo_text: memoText } = request.data;
 
     if (!mobId || memoText === undefined || memoText === null) {
@@ -157,6 +172,11 @@ exports.postMobMemoV2 = onCall({ cors: true }, async (request) => {
 // 4. getMobMemosV2: メモ取得 (Callable v2)
 // =====================================================================
 exports.getMobMemosV2 = onCall({ cors: true }, async (request) => {
+    // 認証チェック
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', '認証が必要です。');
+    }
+
     const { mob_id: mobId } = request.data;
 
     if (!mobId) {
