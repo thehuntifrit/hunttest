@@ -232,8 +232,6 @@ function startRealtime() {
     });
     unsubscribes.push(unsubStatus);
 
-    unsubscribes.push(unsubStatus);
-
     const unsubLoc = subscribeMobLocations(locationsMap => {
         const current = state.mobs;
         state.mobLocations = locationsMap;
@@ -248,8 +246,6 @@ function startRealtime() {
         setMobs(merged);
         filterAndRender();
     });
-    unsubscribes.push(unsubLoc);
-
     unsubscribes.push(unsubLoc);
 
     const unsubMemo = subscribeMobMemos(memoData => {
@@ -276,6 +272,6 @@ function startRealtime() {
 }
 
 export {
-    state, EXPANSION_MAP, getState, setUserId, loadBaseMobData, startRealtime,
-    setFilter, setOpenMobCardNo, PROGRESS_CLASSES
+    state, EXPANSION_MAP, getState, setUserId, loadBaseMobData, 
+    startRealtime, setFilter, setOpenMobCardNo, PROGRESS_CLASSES
 };
