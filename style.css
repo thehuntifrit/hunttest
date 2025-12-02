@@ -10,7 +10,7 @@
     --text-secondary: #94a3b8;
 
     --rank-s: #ffb900;
-    --rank-a: #00d492;
+    --rank-a: #00bcff;
     --rank-f: #a684ff;
 
     --progress-bg: rgba(0, 0, 0, 0.5);
@@ -89,7 +89,7 @@ body {
 }
 
 .rank-a {
-    background: linear-gradient(135deg, #00d492, #00d492);
+    background: linear-gradient(135deg, #00bcff, #00bcff);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
