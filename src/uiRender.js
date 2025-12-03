@@ -494,10 +494,7 @@ function updateAreaInfo(card, mob) {
     }
   }
 
-  let areaInfoHtml = `<span class="flex items-center gap-1"><span>${mob.Area}</span><span class="opacity-50">|</span><span>${mob.Expansion}</span>`;
-
-  // Add Rank with white outline
-  areaInfoHtml += `<span class="border border-white text-white px-[3px] rounded text-[10px] font-bold ml-1 leading-tight">${mob.Rank}</span>`;
+  let areaInfoHtml = `<span class="flex items-center gap-1 font-normal"><span>${mob.Area}</span><span class="opacity-50">|</span><span class="flex items-center">${mob.Expansion}<span class="border border-white text-white px-[3px] rounded text-[10px] ml-[1px] leading-tight">${mob.Rank}</span></span>`;
 
   if (mob.Map && mob.spawn_points) {
     areaInfoHtml += `<span class="flex items-center ml-1">📍 ${displayCountText}</span>`;
