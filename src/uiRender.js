@@ -66,14 +66,21 @@ function createMobCard(mob) {
     card.classList.add("opacity-50", "grayscale", "pointer-events-none");
   }
 
-  // Rank Badge
+  // Rank Badge - Removed as requested
   const rankBadge = card.querySelector('.rank-badge');
-  rankBadge.classList.add(`rank-${rank.toLowerCase()}`);
-  rankBadge.textContent = rankLabel;
+  if (rankBadge) rankBadge.remove();
+
+  // Adjust grid layout
+  const headerGrid = card.querySelector('.mob-card-header > div');
+  if (headerGrid) {
+    headerGrid.classList.remove('grid-cols-[auto_1fr_auto]');
+    headerGrid.classList.add('grid-cols-[1fr_auto]');
+  }
 
   // Mob Name
   const mobNameEl = card.querySelector('.mob-name');
   mobNameEl.textContent = mob.Name;
+  mobNameEl.style.color = `var(--rank-${rank.toLowerCase()})`;
 
   const memoIconContainer = card.querySelector('.memo-icon-container');
   memoIconContainer.innerHTML = memoIcon;
@@ -488,6 +495,10 @@ function updateAreaInfo(card, mob) {
   }
 
   let areaInfoHtml = `<span class="flex items-center gap-1"><span>${mob.Area}</span><span class="opacity-50">|</span><span>${mob.Expansion}</span>`;
+
+  // Add Rank with white outline
+  areaInfoHtml += `<span class="border border-white text-white px-[3px] rounded text-[10px] font-bold ml-1 leading-tight">${mob.Rank}</span>`;
+
   if (mob.Map && mob.spawn_points) {
     areaInfoHtml += `<span class="flex items-center ml-1">📍 ${displayCountText}</span>`;
   }
@@ -597,10 +608,6 @@ function onKillReportReceived(mobId, kill_time) {
 setInterval(() => {
   updateProgressBars();
 }, EORZEA_MINUTE_MS);
-
-setInterval(() => {
-  sortAndRedistribute();
-}, 60000);
 
 export {
   filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, DOM,
