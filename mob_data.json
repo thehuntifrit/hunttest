@@ -608,25 +608,25 @@
       "mapImage": "",
       "locations": [] 
     },
-      "41071": {"rank": "A", "name":"1️⃣ 泥人", "area": "イル・メグ",
+      "41071": {"rank": "A", "name":"泥人 1️⃣", "area": "イル・メグ",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
       "locations": [] 
     },
-      "41081": {"rank": "A", "name":"1️⃣ ポールディア", "area": "イル・メグ",
+      "41081": {"rank": "A", "name":"ポールディア 1️⃣", "area": "イル・メグ",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
       "locations": [] 
     },
-      "41072": {"rank": "A", "name":"2️⃣ 泥人", "area": "イル・メグ",
+      "41072": {"rank": "A", "name":"泥人 2️⃣", "area": "イル・メグ",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
       "locations": [] 
     },
-      "41082": {"rank": "A", "name":"2️⃣ ポールディア", "area": "イル・メグ",
+      "41082": {"rank": "A", "name":"ポールディア 2️⃣", "area": "イル・メグ",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
@@ -693,7 +693,7 @@
         {"id":"AA_118", "x": 52.4, "y": 22.6, "mob_ranks": ["B1"]}
       ]
     },
-      "42041": {"rank": "S", "name":"アグラオペ1️⃣", "area": "イル・メグ",
+      "42041": {"rank": "S", "name":"アグラオペ 1️⃣", "area": "イル・メグ",
       "condition": "ミニオン「朱孔雀」を出してPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "Il_Mheg.webp",
@@ -717,7 +717,7 @@
         {"id":"IM_117", "x": 63.6, "y": 43.6, "mob_ranks": ["S", "A", "B1"]}
       ]
     },
-      "42042": {"rank": "S", "name":"アグラオペ2️⃣", "area": "イル・メグ",
+      "42042": {"rank": "S", "name":"アグラオペ 2️⃣", "area": "イル・メグ",
       "condition": "ミニオン「朱孔雀」を出してPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "Il_Mheg.webp",
@@ -921,37 +921,37 @@
       "mapImage": "",
       "locations": [] 
     },
-      "61011": {"rank": "A", "name":"クイーンホーク1️⃣", "area": "オルコ・パチャ",
+      "61011": {"rank": "A", "name":"クイーンホーク 1️⃣", "area": "オルコ・パチャ",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
       "locations": [] 
     },
-      "61021": {"rank": "A", "name":"ネチュキホ1️⃣", "area": "オルコ・パチャ",
+      "61021": {"rank": "A", "name":"ネチュキホ 1️⃣", "area": "オルコ・パチャ",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
       "locations": [] 
     },
-      "61012": {"rank": "A", "name":"クイーンホーク2️⃣", "area": "オルコ・パチャ",
+      "61012": {"rank": "A", "name":"クイーンホーク 2️⃣", "area": "オルコ・パチャ",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
       "locations": [] 
     },
-      "61022": {"rank": "A", "name":"ネチュキホ2️⃣", "area": "オルコ・パチャ",
+      "61022": {"rank": "A", "name":"ネチュキホ 2️⃣", "area": "オルコ・パチャ",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
       "locations": [] 
     },
-      "61013": {"rank": "A", "name":"クイーンホーク3️⃣", "area": "オルコ・パチャ",
+      "61013": {"rank": "A", "name":"クイーンホーク 3️⃣", "area": "オルコ・パチャ",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
       "locations": [] 
     },
-      "61023": {"rank": "A", "name":"ネチュキホ3️⃣", "area": "オルコ・パチャ",
+      "61023": {"rank": "A", "name":"ネチュキホ 3️⃣", "area": "オルコ・パチャ",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
@@ -981,37 +981,37 @@
       "mapImage": "",
       "locations": [] 
     },
-      "61071": {"rank": "A", "name":"エヘヘトーワポ1️⃣", "area": "シャーローニ荒野",
+      "61071": {"rank": "A", "name":"エヘヘトーワポ 1️⃣", "area": "シャーローニ荒野",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
       "locations": [] 
     },
-      "61081": {"rank": "A", "name":"ケヘニヘヤメウィ1️⃣", "area": "シャーローニ荒野",
+      "61081": {"rank": "A", "name":"ケヘニヘヤメウィ 1️⃣", "area": "シャーローニ荒野",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
       "locations": [] 
     },
-      "61072": {"rank": "A", "name":"エヘヘトーワポ2️⃣", "area": "シャーローニ荒野",
+      "61072": {"rank": "A", "name":"エヘヘトーワポ 2️⃣", "area": "シャーローニ荒野",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
       "locations": [] 
     },
-      "61082": {"rank": "A", "name":"ケヘニヘヤメウィ2️⃣", "area": "シャーローニ荒野",
+      "61082": {"rank": "A", "name":"ケヘニヘヤメウィ 2️⃣", "area": "シャーローニ荒野",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
       "locations": [] 
     },
-      "61073": {"rank": "A", "name":"エヘヘトーワポ3️⃣", "area": "シャーローニ荒野",
+      "61073": {"rank": "A", "name":"エヘヘトーワポ 3️⃣", "area": "シャーローニ荒野",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
       "locations": [] 
     },
-      "61083": {"rank": "A", "name":"ケヘニヘヤメウィ3️⃣", "area": "シャーローニ荒野",
+      "61083": {"rank": "A", "name":"ケヘニヘヤメウィ 3️⃣", "area": "シャーローニ荒野",
       "condition": "",
       "repopSeconds": 14400, "maxRepopSeconds": 21600,
       "mapImage": "",
@@ -1041,7 +1041,7 @@
       "mapImage": "",
       "locations": [] 
     },
-      "62011": {"rank": "S", "name":"怨忌のキーリーゲー1️⃣", "area": "オルコ・パチャ",
+      "62011": {"rank": "S", "name":"怨忌のキーリーゲー 1️⃣", "area": "オルコ・パチャ",
       "condition": "「新月」+「霧」+「ET 0:00 〜 6:00」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "moonPhase": "新月",
@@ -1061,7 +1061,7 @@
         {"id":"UP_110", "x": 46.2, "y": 54.8, "mob_ranks": ["B1"]}
       ]
     },
-      "62012": {"rank": "S", "name":"怨忌のキーリーゲー2️⃣", "area": "オルコ・パチャ",
+      "62012": {"rank": "S", "name":"怨忌のキーリーゲー 2️⃣", "area": "オルコ・パチャ",
       "condition": "「新月」+「霧」+「ET 0:00 〜 6:00」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "moonPhase": "新月",
@@ -1081,7 +1081,7 @@
         {"id":"UP_210", "x": 46.2, "y": 54.8, "mob_ranks": ["B1"]}
       ]
     },
-      "62013": {"rank": "S", "name":"怨忌のキーリーゲー3️⃣", "area": "オルコ・パチャ",
+      "62013": {"rank": "S", "name":"怨忌のキーリーゲー 3️⃣", "area": "オルコ・パチャ",
       "condition": "「新月」+「霧」+「ET 0:00 〜 6:00」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "moonPhase": "新月",
@@ -1124,19 +1124,19 @@
       "mapImage": "",
       "locations": [] 
     },
-      "62041": {"rank": "S", "name":"サンシェヤ1️⃣", "area": "シャーローニ荒野",
+      "62041": {"rank": "S", "name":"サンシェヤ 1️⃣", "area": "シャーローニ荒野",
       "condition": "F.A.T.E. 悪魔の種火「フレイムドリンカー」 を3回連続でコンプリートする",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "",
       "locations": [] 
     },
-      "62042": {"rank": "S", "name":"サンシェヤ2️⃣", "area": "シャーローニ荒野",
+      "62042": {"rank": "S", "name":"サンシェヤ 2️⃣", "area": "シャーローニ荒野",
       "condition": "F.A.T.E. 悪魔の種火「フレイムドリンカー」 を3回連続でコンプリートする",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "",
       "locations": [] 
     },
-      "62043": {"rank": "S", "name":"サンシェヤ3️⃣", "area": "シャーローニ荒野",
+      "62043": {"rank": "S", "name":"サンシェヤ 3️⃣", "area": "シャーローニ荒野",
       "condition": "F.A.T.E. 悪魔の種火「フレイムドリンカー」 を3回連続でコンプリートする",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "mapImage": "",
@@ -1165,19 +1165,19 @@
         {"id":"LM_110", "x": 8.0, "y": 78.6, "mob_ranks": ["B1"]}
       ]
     },
-      "63011": {"rank": "F", "name":"トクローネ：荒野の死闘1️⃣", "area": "シャーローニ荒野",
+      "63011": {"rank": "F", "name":"トクローネ：荒野の死闘 1️⃣", "area": "シャーローニ荒野",
       "condition": "",
       "repopSeconds": 129600, "maxRepopSeconds": 259200,
       "mapImage": "",
       "locations": [] 
     },
-      "63012": {"rank": "F", "name":"トクローネ：荒野の死闘2️⃣", "area": "シャーローニ荒野",
+      "63012": {"rank": "F", "name":"トクローネ：荒野の死闘  2️⃣", "area": "シャーローニ荒野",
       "condition": "",
       "repopSeconds": 129600, "maxRepopSeconds": 259200,
       "mapImage": "",
       "locations": [] 
     },
-      "63013": {"rank": "F", "name":"トクローネ：荒野の死闘3️⃣", "area": "シャーローニ荒野",
+      "63013": {"rank": "F", "name":"トクローネ：荒野の死闘 3️⃣", "area": "シャーローニ荒野",
       "condition": "",
       "repopSeconds": 129600, "maxRepopSeconds": 259200,
       "mapImage": "",
