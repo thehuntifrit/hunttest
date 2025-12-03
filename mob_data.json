@@ -1041,7 +1041,7 @@
       "mapImage": "",
       "locations": [] 
     },
-      "62011": {"rank": "S", "name":"怨忌のキーリーゲー 1️⃣", "area": "オルコ・パチャ",
+      "62011": {"rank": "S", "name":"厭忌のキーリーゲー 1️⃣", "area": "オルコ・パチャ",
       "condition": "「新月」+「霧」+「ET 0:00 〜 6:00」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "moonPhase": "新月",
@@ -1061,7 +1061,7 @@
         {"id":"UP_110", "x": 46.2, "y": 54.8, "mob_ranks": ["B1"]}
       ]
     },
-      "62012": {"rank": "S", "name":"怨忌のキーリーゲー 2️⃣", "area": "オルコ・パチャ",
+      "62012": {"rank": "S", "name":"厭忌のキーリーゲー 2️⃣", "area": "オルコ・パチャ",
       "condition": "「新月」+「霧」+「ET 0:00 〜 6:00」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "moonPhase": "新月",
@@ -1081,7 +1081,7 @@
         {"id":"UP_210", "x": 46.2, "y": 54.8, "mob_ranks": ["B1"]}
       ]
     },
-      "62013": {"rank": "S", "name":"怨忌のキーリーゲー 3️⃣", "area": "オルコ・パチャ",
+      "62013": {"rank": "S", "name":"厭忌のキーリーゲー 3️⃣", "area": "オルコ・パチャ",
       "condition": "「新月」+「霧」+「ET 0:00 〜 6:00」の条件を満たした時にPOP地点を踏む",
       "repopSeconds": 302400, "maxRepopSeconds": 475200,
       "moonPhase": "新月",
