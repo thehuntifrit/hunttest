@@ -6,7 +6,7 @@
     --accent-cyan: #06b6d4;
     --accent-gold: #ffca2d;
     --accent-crimson: #ef4444;
-    --text-primary: #f1f5f9;
+    --text-primary: #dddddd;
     --text-secondary: #94a3b8;
 
     --rank-s: #ffb869;
@@ -90,7 +90,7 @@ body {
 }
 
 .progress-text {
-    color: #dadada;
+    color: #dddddd;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
     font-size: 13px;
     font-family: 'Inter', sans-serif;
