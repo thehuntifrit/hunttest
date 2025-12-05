@@ -62,13 +62,13 @@
     </main>
 
     <footer class="max-w-6xl mx-auto px-4 py-8 text-center">
-        <button id="toggle-readme-btn"
-            class="text-gray-400 hover:text-cyan-400 transition text-sm font-semibold flex items-center justify-center mx-auto gap-2">
+        <button id="toggle-readme-btn" class="text-gray-400 hover:text-cyan-400 transition text-sm font-semibold flex items-center 
+            justify-center mx-auto gap-2">
             <span>📖</span> ユーザーマニュアルを表示
         </button>
 
-        <div id="readme-container"
-            class="hidden mt-8 text-left bg-slate-900/80 p-6 rounded-xl border border-gray-700 shadow-2xl prose prose-invert prose-sm max-w-none">
+        <div id="readme-container" class="hidden mt-8 text-left bg-slate-900/80 p-6 rounded-xl border border-gray-700 shadow-2xl 
+            prose prose-invert prose-sm max-w-none">
             <!-- README content will be loaded here -->
         </div>
 
@@ -78,8 +78,8 @@
     </footer>
 
     <div id="report-modal" class="fixed inset-0 hidden items-center justify-center p-4 z-50">
-        <div
-            class="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md border border-gray-600 text-white relative overflow-hidden">
+        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md border border-gray-600 text-white 
+            relative overflow-hidden">
             <!-- Decorative glow -->
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600"></div>
 
@@ -89,24 +89,25 @@
             <form id="report-form" data-mob-no="">
                 <div class="mb-4">
                     <label for="report-datetime" class="block text-sm font-medium mb-1 text-gray-400">討伐日時 (JST)</label>
-                    <input type="datetime-local" id="report-datetime" name="kill-time" required
-                        class="w-full p-2 rounded bg-gray-900 border 
-                        border-gray-700 text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all">
+                    <input type="datetime-local" id="report-datetime" name="kill-time" required class="w-full p-2 rounded bg-gray-900 border 
+                        border-gray-700 text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent 
+                        outline-none transition-all">
                 </div>
 
                 <div id="modal-status" class="text-sm text-center my-3 text-red-400 font-bold"></div>
 
                 <div class="flex justify-between items-center mt-6">
                     <div class="flex items-center gap-2">
-                        <input type="checkbox" id="report-force-submit"
-                            class="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-600 ring-offset-gray-800">
+                        <input type="checkbox" id="report-force-submit" class="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded 
+                            focus:ring-blue-600 ring-offset-gray-800">
                         <label for="report-force-submit" class="text-sm text-gray-300 select-none">修正する</label>
                     </div>
                     <div class="flex gap-2">
-                        <button type="button" id="cancel-report"
-                            class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition text-white font-medium">キャンセル</button>
-                        <button type="submit" class="px-6 py-2 rounded bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 
-                            transition font-bold text-white shadow-lg shadow-cyan-500/30">送信</button>
+                        <button type="button" id="cancel-report" class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition text-white 
+                            font-medium">キャンセル</button>
+                        <button type="submit" class="px-6 py-2 rounded bg-gradient-to-r from-cyan-600 to-blue-600 
+                        hover:from-cyan-500 hover:to-blue-500 transition font-bold text-white shadow-lg 
+                        shadow-cyan-500/30">送信</button>
                     </div>
                 </div>
             </form>
@@ -118,37 +119,36 @@
             <div class="mob-card-header space-y-1" data-toggle="card-header">
                 <div class="grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
                     <!-- Rank Badge -->
-                    <span
-                        class="rank-badge w-6 h-6 flex items-center justify-center rounded-md text-white text-sm mt-[2px]"></span>
+                    <span class="rank-badge w-6 h-6 flex items-center justify-center rounded-md text-white 
+                        text-sm mt-[2px]"></span>
 
                     <div class="flex flex-col min-w-0">
                         <div class="flex items-baseline min-w-0 mob-name-container">
                             <span class="text-base font-bold truncate text-gray-100 mob-name"></span>
                             <span class="memo-icon-container ml-1 text-sm leading-none"></span>
                         </div>
-                        <div
-                            class="area-info-container text-xs text-gray-400 truncate font-numeric tracking-wide h-5 flex items-center -mt-1 pl-[1px]">
+                        <div class="area-info-container text-xs text-gray-400 truncate font-numeric tracking-wide h-5 
+                            flex items-center -mt-1 pl-[1px]">
                         </div>
                     </div>
 
                     <div class="flex-shrink-0 flex items-center justify-end">
-                        <button
-                            class="report-btn w-7 h-7 flex items-center justify-center rounded-md transition text-center leading-tight hover:scale-110 active:scale-95">
+                        <button class="report-btn w-7 h-7 flex items-center justify-center rounded-md transition 
+                            text-center leading-tight hover:scale-110 active:scale-95">
                             <img src="./icon/reports.webp" alt="報告する"
                                 class="report-icon w-7 h-7 object-contain filter drop-shadow-lg"
                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <span
-                                class="report-text w-7 h-7 flex items-center justify-center text-[10px] rounded 
-                            bg-green-600 hover:bg-green-500 text-white font-bold leading-tight whitespace-pre-line shadow-lg"
-                                style="display:none;">報告</span>
+                            <span class="report-text w-7 h-7 flex items-center justify-center text-[10px] rounded 
+                            bg-green-600 hover:bg-green-500 text-white font-bold leading-tight whitespace-pre-line 
+                            shadow-lg" style="display:none;">報告</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Progress Bar -->
                 <div class="progress-bar-wrapper rounded relative overflow-hidden text-center">
-                    <div class="progress-bar-bg absolute left-0 top-0 h-full rounded transition-all duration-100 ease-linear"
-                        style="width: 0%"></div>
+                    <div class="progress-bar-bg absolute left-0 top-0 h-full rounded transition-all duration-100 
+                    ease-linear" style="width: 0%"></div>
                     <div class="progress-text relative z-10 text-xs font-bold"></div>
                 </div>
             </div>
@@ -159,13 +159,13 @@
                         <div class="last-kill-time w-full text-right text-xs text-gray-400 font-mono" data-last-kill>
                         </div>
                         <div class="mob-memo-row w-full mt-1">
-                            <div
-                                class="flex items-center bg-gray-800/50 rounded px-2 py-1 border border-gray-700 hover:bg-gray-700/50 transition">
+                            <div class="flex items-center bg-gray-800/50 rounded px-2 py-1 border border-gray-700 
+                                hover:bg-gray-700/50 transition">
                                 <span class="mr-2 text-cyan-400 font-bold text-xs">Memo:</span>
-                                <input type="text"
-                                    class="memo-input bg-transparent text-gray-200 text-sm w-full outline-none placeholder-gray-500 appearance-none"
-                                    placeholder="メモを入力 (全角30文字)" maxlength="30" autocomplete="off" spellcheck="false"
-                                    autocorrect="off" autocapitalize="off" data-action="save-memo">
+                                <input type="text" class="memo-input bg-transparent text-gray-200 text-sm w-full outline-none 
+                                    placeholder-gray-500 appearance-none" placeholder="メモを入力 (全角30文字)" maxlength="30"
+                                    autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"
+                                    data-action="save-memo">
                             </div>
                         </div>
 
