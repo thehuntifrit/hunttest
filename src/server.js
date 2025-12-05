@@ -136,6 +136,18 @@ const submitReport = async (mobNo, timeISO) => {
     const forceSubmitEl = document.querySelector("#report-force-submit");
     const isForceSubmit = forceSubmitEl ? forceSubmitEl.checked : false;
 
+    // 未来時刻チェック (現在時刻 + 10分)
+    const nowMs = Date.now();
+    if (killTimeDate.getTime() > nowMs + 600000) {
+        const msg = "現在時刻より10分以上未来の時刻は報告できません。";
+        console.warn(msg);
+        if (modalStatusEl) {
+            modalStatusEl.textContent = msg;
+            modalStatusEl.style.color = "#ef4444";
+        }
+        return;
+    }
+
     if (!isForceSubmit && mob.last_kill_time) {
         let maintenance = state.maintenance;
         if (maintenance && maintenance.maintenance) {
@@ -173,10 +185,8 @@ const submitReport = async (mobNo, timeISO) => {
         }
     }
 
-    if (modalStatusEl) {
-        modalStatusEl.textContent = "送信中...";
-        modalStatusEl.style.color = "";
-    }
+    // 即座にモーダルを閉じる (バックグラウンド送信)
+    closeReportModal();
 
     try {
         const response = await callUpdateMobStatus({
@@ -185,15 +195,14 @@ const submitReport = async (mobNo, timeISO) => {
         });
 
         const result = response.data;
-        if (result?.success) {
-            closeReportModal();
-        } else {
+        if (!result?.success) {
             throw new Error(result?.message || "不明なエラー");
         }
+        console.log(`[Report] Success: Mob ${mobNo}`);
 
     } catch (error) {
         console.error("レポート送信エラー:", error);
-        if (modalStatusEl) modalStatusEl.textContent = "送信エラー: " + (error.message || "通信失敗");
+        alert("レポート送信エラー: " + (error.message || "通信失敗"));
     }
 };
 
