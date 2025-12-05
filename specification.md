@@ -1,94 +1,132 @@
-# The Hunt - プロジェクト仕様書
+# The Hunt - システム仕様書
 
 ## 1. プロジェクト概要
-FFXIVのモブハント情報を管理・共有するためのWebアプリケーション。
-ユーザーはモブの湧き時間、討伐状況、湧き位置などをリアルタイムで確認・報告できる。
+FFXIVのモブハント情報をリアルタイムで管理・共有するWebアプリケーション。
+ユーザーはモブの湧き時間、討伐状況、湧き位置などを確認・報告できる。
 
 ### 技術スタック
-- **Frontend**: HTML5, CSS3 (Tailwind CSS via CDN), Vanilla JavaScript (ES Modules)
+- **Frontend**: HTML5, CSS3 (Tailwind CSS + Custom CSS), Vanilla JavaScript (ES Modules)
 - **Backend**: Firebase (Firestore, Authentication, Cloud Functions)
-- **Hosting**: Firebase Hosting (想定)
+- **Hosting**: Firebase Hosting
+- **Libraries**:
+  - Tailwind CSS (CDN)
+  - Marked.js (Markdown parsing)
+  - Google Fonts (Inter)
 
 ## 2. ディレクトリ構成
 ```
 /
-├── index.html          # メインエントリーポイント
-├── style.css           # カスタムスタイル定義
-├── mob_data.json       # モブの基本データ（静的）
-├── maintenance.json    # メンテナンス情報
-├── icon/               # アイコン画像
-├── maps/               # マップ画像
-└── src/                # JavaScriptソースコード
-    ├── app.js          # アプリケーション初期化、イベントハンドリング
-    ├── dataManager.js  # 状態管理、データロード、データ加工
-    ├── server.js       # Firebase連携 (Auth, Firestore, Functions)
-    ├── uiRender.js     # UIレンダリング、DOM操作
-    ├── filterUI.js     # フィルタリング機能のUIロジック
-    ├── cal.js          # 時間計算、湧き時間算出ロジック
-    ├── location.js     # マップ・位置情報関連ロジック
-    ├── modal.js        # モーダルウィンドウ制御
-    └── tooltip.js      # ツールチップ機能
+├── index.html          # アプリケーションエントリーポイント
+├── style.css           # グローバルスタイル・カスタムCSS変数
+├── mob_data.json       # モブ基本データ（静的）
+├── maintenance.json    # メンテナンススケジュール情報
+├── icon/               # アセット：アイコン類
+├── maps/               # アセット：マップ画像
+└── src/                # ソースコード
+    ├── app.js          # 初期化、イベントリスナー設定
+    ├── dataManager.js  # 状態管理 (State)、データフェッチ
+    ├── server.js       # Firebase連携 (Firestore, Auth)
+    ├── uiRender.js     # DOM生成・更新、レンダリングロジック
+    ├── filterUI.js     # フィルタリング・ソートロジック
+    ├── cal.js          # 時間計算 (ET/LT)、湧き時間算出
+    ├── location.js     # マップ描画、湧き位置管理
+    ├── modal.js        # 報告モーダル制御
+    ├── tooltip.js      # ツールチップ表示制御
+    └── readme.js       # README表示制御
 ```
 
-## 3. アーキテクチャ
+## 3. データアーキテクチャ
 
-### 3.1 データフロー
-1. **初期化**: `app.js` が `dataManager.js` を呼び出し、`mob_data.json` と `maintenance.json` をロード。
-2. **リアルタイム更新**: `server.js` が Firestore のリスナーを設定し、他ユーザーの報告（討伐時間、湧き潰し状況、メモ）を受信。
-3. **状態管理**: `dataManager.js` の `state` オブジェクトで一元管理。
-4. **描画**: 状態変更をトリガーに `uiRender.js` が画面を更新。
-
-### 3.2 データ構造
-
-#### `mob_data.json` (静的データ)
+### 3.1 静的データ (`mob_data.json`)
 モブIDをキーとしたオブジェクト。
-- `rank`: ランク (S, A, F)
-- `name`: モブ名
+- `rank`: S, A, F
+- `name`: モブ名称
 - `area`: エリア名
-- `repopSeconds`: 最短湧き時間 (秒)
-- `maxRepopSeconds`: 最長湧き時間 (秒)
+- `repopSeconds`: 最短湧き間隔 (秒)
+- `maxRepopSeconds`: 最長湧き間隔 (秒)
 - `condition`: 湧き条件テキスト
-- `locations`: 湧き候補地点リスト (Sランクなど)
+- `locations`: 湧き候補地点リスト (id, x, y, mob_ranks)
 
-#### Firestore (動的データ)
-- **`mob_status` コレクション**:
-  - ドキュメント: `s_latest`, `a_latest`, `f_latest`
-  - フィールド: モブIDをキーとし、`last_kill_time` (Timestamp) を保持。
-- **`mob_locations` コレクション**:
-  - ドキュメント: モブID
-  - フィールド: 湧き地点IDごとのステータス (湧き潰し状況)。
-- **`shared_data/memo` ドキュメント**:
-  - フィールド: モブIDごとのメモ情報。
+### 3.2 動的データ (Firestore)
+- **`mob_status`**: 討伐情報
+  - `last_kill_time`: 最終討伐時刻 (Timestamp)
+  - `prev_kill_time`: 前回の討伐時刻
+- **`mob_locations`**: 湧き潰し情報
+  - モブIDごとのドキュメント。フィールドは `point_id: boolean` (true=culled)。
+- **`shared_data/memo`**: メモ情報
+  - `memo_text`: メモ内容
+  - `created_at`: 作成日時
 
-## 4. 主な機能とロジック
+### 3.3 状態管理 (`dataManager.js`)
+`state` オブジェクトで一元管理。
+- `mobs`: 結合されたモブデータの配列
+- `maintenance`: メンテナンス情報
+- `filter`: フィルタ設定 (Rank, Area)
+- `mobLocations`: 湧き潰し状態のキャッシュ
 
-### 4.1 討伐報告 (Report)
-- ユーザーは「報告」ボタンまたはモーダルから討伐時間を報告。
-- **バリデーション**:
-  - `server.js` にて、前回の討伐時間やメンテナンス明け時間を考慮し、理論上湧き得ない時間の報告を警告。
-  - 「強制送信」チェックボックスでオーバーライド可能。
-- **処理**: Cloud Functions (`updateMobStatusV2`) を経由してデータを更新。
+## 4. コアロジック
 
-### 4.2 湧き時間計算
-- `cal.js` (推測) および `dataManager.js` にて計算。
-- メンテナンス明けの場合は、サーバー稼働開始時間を基準に計算（初回湧き短縮ロジック含む）。
+### 4.1 湧き時間計算 (`cal.js`)
+- **通常時**: `last_kill_time` + `repopSeconds` = `minRepop`
+- **メンテナンス時**:
+  - メンテナンス開始〜終了(ServerUp)の間はカウント停止扱い。
+  - `ServerUp` + `repopSeconds * 0.6` = メンテナンス明けの短縮湧き時間。
+- **特殊条件**: 天候、ET、月齢などの条件を考慮し、`nextConditionSpawnDate` を算出。
 
-### 4.3 フィルタリング
-- ランク別 (S, A, F, ALL)
-- エリア別 (拡張パッチごと)
-- `filterUI.js` で制御し、`localStorage` に設定を保存。
+### 4.2 ステータス判定
+- **Next**: 湧き時間前
+- **PopWindow**: 湧き時間内 (MinRepop <= Now < MaxRepop)
+- **MaxOver**: 最長湧き時間超過 (Now >= MaxRepop)
+- **ConditionActive**: 特殊条件を満たしている期間
 
-### 4.4 UI/UX
-- **プログレスバー**: 湧きまでの時間を視覚化。状態に応じて色や点滅 (Condition Active) を変化。
-- **モブカード**:
-  - Sランクは展開可能で、詳細情報（マップ、湧き条件、メモ）を表示。
-  - A/Fランクはコンパクト表示。
-- **レスポンシブ**: PCとモバイルでレイアウトを最適化。
+### 4.3 ソートロジック (`uiRender.js`)
+1. **MaxOver優先**: MaxOver状態のモブを最優先 (S > F > A)。
+2. **進行度順**: 湧き時間の進行度 (`elapsedPercent`) が高い順。
+3. **時間順**: `minRepop` が早い順。
+4. **ランク順**: S > A > F。
+5. **拡張パッチ順**: 黄金 > 暁月 > 漆黒 > 紅蓮 > 蒼天 > 新生。
+6. **ID順**: 最終的な安定ソート用。
 
-## 5. 開発・運用ルール
-- **コード規約**: ES Modulesを使用。グローバル汚染を避ける。
-- **デザイン**: Tailwind CSS を基本とし、必要に応じて `style.css` で補完。
-- **デプロイ**: 静的ファイルとしてホスティング可能だが、Firebase Functions との連携が必要。
+※メンテナンス影響下（停止中・被り）のモブは、リストの**一番下**に自動的に並び替えられる。
+
+## 5. UIデザインシステム
+
+### 5.1 カラーパレット (`style.css`)
+- **背景**: `--bg-dark` (#0f172a) + グラデーション
+- **カード背景**: `--bg-card` (rgba(41, 55, 79, 0.85)) + Glassmorphism
+- **アクセント**:
+  - Cyan: `#06b6d4` (The)
+  - Gold: `#ffca2d` (Hunt, Next Label)
+  - Crimson: `#ef4444` (Alert)
+- **ランクカラー**:
+  - S: `#ffb869`
+  - A: `#5ee9b5`
+  - F: `#a3b3ff`
+
+### 5.2 プログレスバー
+- **通常**: Cyan -> Blue グラデーション (`#06b6d4` -> `#3963bd`)
+- **MaxOver**: 赤系グラデーション
+- **ConditionActive**: 枠が白く点滅 (`blink-border-white`)
+
+### 5.3 背景エフェクト
+- 上部: `linear-gradient` (Cyan系, 上から下へフェード)
+- 右下: `radial-gradient` (Gold系)
+
+## 6. 機能仕様
+
+### 6.1 討伐報告
+- **Aランク**: ボタン押下で即時報告（現在時刻）。
+- **S/Fランク**: モーダル表示。日時指定可能。
+- **バリデーション**: 未来時間や、理論上あり得ない時間の報告時に警告・修正オプションを表示。
+
+### 6.2 マップ・湧き潰し
+- Sランクカード展開時にマップ表示。
+- 湧き候補地点 (`spawn-point`) をクリックでトグル（未確認/済）。
+- **スマホ対応**: 誤操作防止のためダブルタップでトグル。
+
+### 6.3 メンテナンス表示
+- **停止中**: カード全体がグレーアウト、操作無効。
+- **被り**: カードはグレーアウトするが、報告等の操作は可能。
 
 ---
-*この仕様書は 2025-11-28 時点のコードベースに基づいています。*
+*Last Updated: 2025-12-01*
