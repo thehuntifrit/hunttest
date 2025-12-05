@@ -10,12 +10,12 @@
     --text-secondary: #94a3b8;
 
     --rank-s: #ffb869;
-    --rank-a: #74d4ff;
-    --rank-f: #a684ff;
+    --rank-a: #5ee9b5;
+    --rank-f: #a3b3ff;
 
     --progress-bg: rgba(0, 0, 0, 0.5);
-    --progress-fill: linear-gradient(90deg, var(--accent-cyan), #3b82f6);
-    --progress-max-over: linear-gradient(90deg, #4858a0, #4858a0);
+    --progress-fill: linear-gradient(90deg, var(--accent-cyan), #3963bd);
+    --progress-max-over: linear-gradient(90deg, #3963bd, #3963bd);
 
     --color-b1: #4494f7;
     --color-b2: #fd5c5c;
@@ -28,7 +28,7 @@ body {
     color: var(--text-primary);
     font-family: 'Inter', sans-serif;
     background-image:
-        radial-gradient(circle at 10% 20%, rgba(6, 182, 212, 0.1) 0%, transparent 20%),
+        radial-gradient(circle at 10% 20%, rgba(6, 182, 212, 0.1) 0%, transparent 35%),
         radial-gradient(circle at 90% 80%, rgba(234, 179, 8, 0.05) 0%, transparent 20%);
     background-attachment: fixed;
 }
@@ -170,7 +170,7 @@ body {
 }
 
 .progress-blink-white {
-    animation: neon-pulse 1.5s infinite alternate;
+    animation: neon-pulse 3s infinite alternate;
 }
 
 @keyframes neon-pulse {
@@ -184,20 +184,20 @@ body {
 }
 
 .blink-border-white {
-    animation: blink-white-border 1.5s infinite alternate;
-    border-color: rgba(255, 255, 255, 0.8) !important;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3) !important;
+    animation: blink-white-border 1.0s infinite alternate;
+    border-color: rgba(255, 255, 255, 1.0);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
 }
 
 @keyframes blink-white-border {
     from {
-        border-color: rgba(255, 255, 255, 0.3);
-        box-shadow: 0 0 5px rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 0 2px rgba(255, 255, 255, 0.1);
     }
 
     to {
         border-color: rgba(255, 255, 255, 1.0);
-        box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
     }
 }
 
@@ -249,6 +249,32 @@ body {
     max-height: 2000px;
     padding-top: 2px !important;
     padding-bottom: 0.25rem !important;
+}
+
+.expandable-panel {
+    display: none;
+    background: var(--bg-card);
+    overflow: hidden;
+    padding: 0 !important;
+    margin: 0;
+}
+
+.expandable-panel.open {
+    display: block;
+    padding: 0 !important;
+}
+
+.expandable-panel>div {
+    min-height: 0;
+    padding: 0.5rem;
+    opacity: 0;
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
 }
 
 .spawn-point {
@@ -345,31 +371,5 @@ body {
     #main-header #status-message {
         padding-bottom: 0;
         padding-top: 0.25rem;
-    }
-}
-
-.expandable-panel {
-    display: none;
-    background: var(--bg-card);
-    overflow: hidden;
-    padding: 0 !important;
-    margin: 0;
-}
-
-.expandable-panel.open {
-    display: block;
-    padding: 0 !important;
-}
-
-.expandable-panel>div {
-    min-height: 0;
-    padding: 0.5rem;
-    opacity: 0;
-    animation: fadeIn 0.3s ease-out forwards;
-}
-
-@keyframes fadeIn {
-    to {
-        opacity: 1;
     }
 }
