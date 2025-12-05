@@ -484,7 +484,7 @@ function calculateRepop(mob, maintenance) {
   if (now >= maxRepop) {
     status = "MaxOver";
     elapsedPercent = 100;
-    timeRemaining = `Time Over (100%)`;
+    timeRemaining = `&thinsp;Time Over (100%)`;
   } else if (now < minRepop) {
     status = "Next";
     timeRemaining = `🔜 ${formatDurationHM(minRepop - now)}`;
