@@ -220,4 +220,3 @@ async function handleReportSubmit(e) {
 }
 
 document.addEventListener('DOMContentLoaded', initializeApp);
-
