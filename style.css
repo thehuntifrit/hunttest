@@ -149,7 +149,7 @@ body {
 
 .progress-text.max-over {
     color: #dadada;
-    animation: pulse-text 3s infinite;
+    animation: pulse-text 2s infinite;
 }
 
 @keyframes pulse-text {
@@ -184,7 +184,7 @@ body {
 }
 
 .blink-border-white {
-    animation: blink-white-border 3s infinite alternate;
+    animation: blink-white-border 2s infinite alternate;
     border-color: rgba(255, 255, 255, 1.0);
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
 }
