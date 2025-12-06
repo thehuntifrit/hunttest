@@ -444,11 +444,11 @@ function updateProgressText(card, mob) {
   let rightContent = `<span class="${isSpecialCondition ? 'label-next' : ''}">${rightStr}</span>`;
 
   text.innerHTML = `
-    <div class="w-full h-full grid grid-cols-2 items-center text-sm font-bold">
-      <div class="pl-1 text-left truncate">${leftStr}${percentStr}</div>
-      <div class="pr-2 text-right truncate">${rightContent}</div>
-    </div>
-  `;
+<div class="w-full h-full grid grid-cols-2 items-center text-sm font-bold">
+<div class="pl-1 text-left truncate">${leftStr}${percentStr}</div>
+<div class="pr-2 text-right truncate">${rightContent}</div>
+</div>
+`;
 
   if (status === "MaxOver") text.classList.add("max-over");
   else text.classList.remove("max-over");
@@ -528,8 +528,8 @@ function updateMobCount(card, mob) {
     } else if (remainingCount > 1) {
       displayCountText = `<span class="text-xs text-gray-400 relative -top-[0.09rem]">@</span><span class="text-sm text-gray-400 font-bold text-glow relative">&thinsp;${remainingCount}</span>`;
     }
-    
-    displayCountText = `📍${displayCountText}`;
+
+    displayCountText = `📍&thinsp;${displayCountText}`;
   }
 
   countContainer.innerHTML = displayCountText;
@@ -540,10 +540,10 @@ function updateAreaInfo(card, mob) {
   if (!areaInfoContainer) return;
 
   let areaInfoHtml = `<span class="flex items-center gap-1 font-normal"><span>${mob.Area}</span>
-                      <span class="opacity-50">|</span>
-                      <span class="flex items-center">${mob.Expansion}&thinsp;
-                      <span class="inline-flex items-center justify-center w-[13px] h-[13px] border 
-                        border-current rounded-[3px] text-[9px] leading-none relative">${mob.Rank}</span>`;
+<span class="opacity-50">|</span>
+<span class="flex items-center">${mob.Expansion}&thinsp;
+<span class="inline-flex items-center justify-center w-[13px] h-[13px] border 
+border-current rounded-[3px] text-[9px] leading-none relative">${mob.Rank}</span>`;
 
   areaInfoHtml += `</span></span>`;
   areaInfoContainer.innerHTML = areaInfoHtml;
