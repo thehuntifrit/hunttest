@@ -121,6 +121,7 @@ function createMobCard(mob) {
   }
 
   updateAreaInfo(card, mob);
+  updateMobCount(card, mob);
   updateMapOverlay(card, mob);
 
   return card;
@@ -253,6 +254,7 @@ function filterAndRender({ isInitialLoad = false } = {}) {
       updateExpandablePanel(card, mob);
       updateMemoIcon(card, mob);
       updateAreaInfo(card, mob);
+      updateMobCount(card, mob);
       updateMapOverlay(card, mob);
 
       if (mob.repopInfo.isMaintenanceStop) {
@@ -499,9 +501,9 @@ function updateMemoIcon(card, mob) {
   }
 }
 
-function updateAreaInfo(card, mob) {
-  const areaInfoContainer = card.querySelector('.area-info-container');
-  if (!areaInfoContainer) return;
+function updateMobCount(card, mob) {
+  const countContainer = card.querySelector('.mob-count-container');
+  if (!countContainer) return;
 
   const state = getState();
   const mobLocationsData = state.mobLocations?.[mob.No];
@@ -522,12 +524,18 @@ function updateAreaInfo(card, mob) {
     if (remainingCount === 1) {
       const pointId = validSpawnPoints[0]?.id || "";
       const pointNumber = pointId.slice(-2);
-      displayCountText = ` <span class="text-xs text-yellow-400 font-bold text-glow">${pointNumber}番</span>`;
+      displayCountText = `<span class="text-yellow-400 font-bold text-glow">${pointNumber}番</span>`;
     } else if (remainingCount > 1) {
-      displayCountText = `<span class="text-xs text-gray-400 relative -top-[0.09rem]">@</span>
-                          <span class="text-sm text-gray-400 font-bold text-glow relative">&thinsp;${remainingCount}</span>`;
+      displayCountText = `<span class="text-xs text-gray-400 relative -top-[0.09rem]">@</span><span class="text-sm text-gray-400 font-bold text-glow relative">&thinsp;${remainingCount}</span>`;
     }
   }
+
+  countContainer.innerHTML = displayCountText;
+}
+
+function updateAreaInfo(card, mob) {
+  const areaInfoContainer = card.querySelector('.area-info-container');
+  if (!areaInfoContainer) return;
 
   let areaInfoHtml = `<span class="flex items-center gap-1 font-normal"><span>${mob.Area}</span>
                       <span class="opacity-50">|</span>
@@ -535,9 +543,6 @@ function updateAreaInfo(card, mob) {
                       <span class="inline-flex items-center justify-center w-[13px] h-[13px] border 
                         border-current rounded-[3px] text-[9px] leading-none relative">${mob.Rank}</span>`;
 
-  if (mob.Map && mob.spawn_points) {
-    areaInfoHtml += `<span class="flex items-center">&thinsp;📍${displayCountText}</span>`;
-  }
   areaInfoHtml += `</span></span>`;
   areaInfoContainer.innerHTML = areaInfoHtml;
 }
@@ -637,6 +642,7 @@ function onKillReportReceived(mobId, kill_time) {
     updateExpandablePanel(card, mob);
     updateMemoIcon(card, mob);
     updateAreaInfo(card, mob);
+    updateMobCount(card, mob);
     updateMapOverlay(card, mob);
   }
 }
@@ -647,5 +653,5 @@ setInterval(() => {
 
 export {
   filterAndRender, distributeCards, updateProgressText, updateProgressBar, createMobCard, DOM,
-  sortAndRedistribute, onKillReportReceived, updateProgressBars, updateAreaInfo, updateMapOverlay
+  sortAndRedistribute, onKillReportReceived, updateProgressBars, updateAreaInfo, updateMapOverlay, updateMobCount
 };
