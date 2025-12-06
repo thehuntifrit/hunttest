@@ -15,7 +15,7 @@
 
     --progress-bg: rgba(0, 0, 0, 0.5);
     --progress-fill: linear-gradient(90deg, var(--accent-cyan), #3b82f6);
-    --progress-max-over: linear-gradient(90deg, #215dbd, #215dbd);
+    --progress-max-over: linear-gradient(90deg, #2257ac, #2257ac);
 
     --color-b1: #4494f7;
     --color-b2: #fd5c5c;
