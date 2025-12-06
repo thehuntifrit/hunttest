@@ -528,6 +528,8 @@ function updateMobCount(card, mob) {
     } else if (remainingCount > 1) {
       displayCountText = `<span class="text-xs text-gray-400 relative -top-[0.09rem]">@</span><span class="text-sm text-gray-400 font-bold text-glow relative">&thinsp;${remainingCount}</span>`;
     }
+    
+    displayCountText = `📍${displayCountText}`;
   }
 
   countContainer.innerHTML = displayCountText;
