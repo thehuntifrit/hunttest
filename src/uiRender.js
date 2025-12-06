@@ -491,7 +491,7 @@ function updateMemoIcon(card, mob) {
 
   if (shouldShowMemo) {
     const span = document.createElement('span');
-    span.style.fontSize = '1rem';
+    span.style.fontSize = '0.875rem';
     span.textContent = '📝';
     span.setAttribute('data-tooltip', mob.memo_text);
     memoIconContainer.innerHTML = '';
@@ -524,12 +524,12 @@ function updateMobCount(card, mob) {
     if (remainingCount === 1) {
       const pointId = validSpawnPoints[0]?.id || "";
       const pointNumber = pointId.slice(-2);
-      displayCountText = `<span class="text-yellow-400 font-bold text-glow">${pointNumber}番</span>`;
+      displayCountText = `<span class="text-sm text-yellow-400 font-bold text-glow">${pointNumber}番</span>`;
     } else if (remainingCount > 1) {
-      displayCountText = `<span class="text-xs text-gray-400 relative -top-[0.09rem]">@</span><span class="text-sm text-gray-400 font-bold text-glow relative">&thinsp;${remainingCount}</span>`;
+      displayCountText = `<span class="text-sm text-gray-400 relative -top-[0.09rem]">@</span><span class="text-base text-gray-400 font-bold text-glow relative top-[0.02rem]">&thinsp;${remainingCount}</span>`;
     }
 
-    displayCountText = `📍&thinsp;${displayCountText}`;
+    displayCountText = `<span class="text-sm">📍</span>${displayCountText}`;
   }
 
   countContainer.innerHTML = displayCountText;
